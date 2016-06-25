@@ -148,17 +148,17 @@ Based on the top 20 terms in each topic, we might tentatively assign the followi
 
 • topic 2: *Physics*
 
-topic 3: *Microbiology*
+• topic 3: *Microbiology*
 
-topic 4: *Computer Science*
+• topic 4: *Computer Science*
 
-topic 5: *Academia*
+• topic 5: *Academia*
 
-topic 6: *Sociobiology*
+• topic 6: *Sociobiology*
 
-topic 7: *Chemistry*
+• topic 7: *Chemistry*
 
-topic 8: *Mathematics*
+• topic 8: *Mathematics*
 
 Now let's take a look at the topic-covariance matrix
 ```julia
