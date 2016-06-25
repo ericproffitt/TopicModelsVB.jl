@@ -107,7 +107,7 @@ fixcorp!(nsfcorp)
 # Notice that the post-fix lexicon is considerably smaller after removing all but the first 5000 docs.
 
 nsflda = LDA(nsfcorp, 8)
-train!(nsflda, iter=150)
+train!(nsflda, iter=200)
 
 # training...
 
@@ -119,7 +119,7 @@ One thing we notice is all the words which would be considered informative to a 
 srand(1)
 
 nsfflda = fLDA(nsfcorp, 8)
-train!(nsfflda, iter=150)
+train!(nsfflda, iter=200)
 
 # training...
 
@@ -134,7 +134,7 @@ For our final test with the NSF Abstracts corpus, let's upgrade our model to a f
 srand(1)
 
 nsffctm = fLDA(nsfcorp, 8)
-train!(nsffctm, iter=150)
+train!(nsffctm, iter=200)
 
 # training...
 
@@ -143,7 +143,21 @@ showtopics(nsffctm)
 Not only have corpus-specific stop words been removed, but we can see that the topics are significantly more well defined and consistent than in the non-correlated LDA model.  Let's take a look at the correlations between topics
 ```julia
 model.sigma
+
+# Positively correlated entries:
+model.sigma[1][2]
+model.sigma[1][6]
+model.sigma[1][7]
+model.sigma[2][4]
+model.sigma[2][8]
+model.sigma[3][5]
+model.sigma[3][6]
+model.sigma[3][7]
+model.sigma[4][5]
+model.sigma[4][8]
+model.sigma[5][6]
 ```
+
 
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model looks lexical temporal-dynamics of topics which are, nevertheless, thematically static.  A good example a topic which is thematically-static, but which exhibits an evolving lexicon, is computer storage.  
@@ -162,7 +176,7 @@ fixcorp!(corp, stop=true, order=false, b=150, len=10)
 cmaglda = LDA(corp, 10)
 train!(cmaglda, iter=100, chkelbo=101)
 cmagdtm = vDTM(cmagcorp, 10, 200, cmaglda)
-train!(cmagdtm, cgiter=10, iter=150)
+train!(cmagdtm, cgiter=10, iter=200)
 
 showtopics(model, 20, topics=5)
 ```
