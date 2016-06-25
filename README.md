@@ -276,6 +276,10 @@ CTPF(corp, K, pmodel) <: TopicModel
 
 
 # Function Master-list
+### Generic Functions
+```julia
+ispositive(*)
+```
 
 # Advanced Material
 ###Setting Hyperparameters
