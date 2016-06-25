@@ -194,8 +194,8 @@ cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp
 fixcorp!(corp, stop=true, order=false, b=150, len=10)
 
 cmaglda = fLDA(corp, 10)
-train!(cmaglda, iter=150, chkelbo=151)
-cmagdtm = DTM(cmagcorp, 10, 200, cmaglda)
+train!(cmagflda, iter=150, chkelbo=151)
+cmagdtm = DTM(cmagcorp, 10, 200, cmagflda)
 train!(cmagdtm, cgiter=10, iter=200)
 
 showtopics(model, 20, topics=5)
