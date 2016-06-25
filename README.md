@@ -86,4 +86,4 @@ CTPF(corp, K, pmodel)
 # Collaborative topic Poisson factorization model with K topics.
 ```
 
-Notice that both ```julia DTM``` and ```CTPF``` have a ```pmodel``` argument.  It is *highly* advisable that you prime these models with a pretrained model from one of the first four topic models, otherwise learning for these models may take a prohibitively long amount of time.
+Notice that both ```DTM``` and ```CTPF``` have a ```pmodel``` argument.  It is *highly* advisable that you prime these models with a pretrained model from one of the first four topic models, otherwise learning for these models may take a prohibitively long amount of time.
