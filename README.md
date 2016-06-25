@@ -331,7 +331,7 @@ partition(xs, n)
 # n: positive Int
 
 # Returns a VectorList containing contiguous portions of xs of length n (includes remainder).
-# e.g. partition([1,5,"HI",5,-7.1], 2) == [[1,5],["HI",5],[-7.1]]
+# e.g. partition([1,5,"HI",5,-7.1], 2) == Vector[[1,5],["HI",5],[-7.1]]
 ```
 
 ### Document/Corpus Functions
