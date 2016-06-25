@@ -184,7 +184,7 @@ Now that we have covered static topic models, let's transition to the dynamic to
 
 Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
 
-For our example, let's take a look at 11,000 apple magazine articles, drawn from MacWorld and MacAddict magazine, between the years 1984 - 2005, where we sample 500 articles randomly from each year.
+For our example, let's take a look at 11,000 Apple magazine articles, drawn from *MacWorld* and *MacAddict* magazine, between the years 1984 - 2005, where we sample 500 articles randomly from each year.
 ```julia
 srand(1)
 
