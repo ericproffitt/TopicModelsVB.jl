@@ -23,3 +23,18 @@ Included in TopicModelsVB.jl are three datasets:
 ```julia
 Pkg.add("TopicModelsVB")
 ```
+
+# Tutorial
+Let's begin with the Corpus-Document datastructure.  The Corpus-Document datastructure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format, corpora can be easily molded and modified to meet the user's needs.
+
+Any useful corpus needs a non-empty collection of documents.  The document file should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on the amount of information one has about the document.  Since a document is essential a list of terms, each document *must* contain at least one line containing a list of delimited numerical values corresponding to the terms from which it is composed.  The lines for a particular document block are as follows
+
+1. This line is mandatory, and is a delimited list of positive integers corresponding to the terms which make up the document.
+
+2. A line of delimited positive integers equal in length to the first line, corresponding to the number of times a particular term appears in a document.
+
+3. A line delimited positive integers corresponding to the readers which have the corresponding document in their library.
+
+4. A line of delimited positive integers equal in length to the third line, corresponding to the rating each reader gave the corresponding document.
+
+5. a numerical value in the range ```julia [-inf, inf]``` denoting the timestamp of the document.
