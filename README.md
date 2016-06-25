@@ -3,6 +3,16 @@ A Julia Package for Variational Bayesian Topic Modeling.
 
 Topic Modeling is concerned with discovering the latent low-dimensional thematic structure within corpora of documents.  Modeling this latent thematic structure is done using either Markov chain Monte Carlo methods, or variational Bayesian methods.  The former approach is slower but unbiased, in that given infinite time, the desired model will be fit exactly.  The latter method is faster (often much faster), but is biased.  This package takes the latter approach to topic modeling.
 
+# Dependencies
+```julia
+Pkg.add("Distributions.jl")
+```
+
+# Install
+```julia
+Pkg.add("TopicModelsVB")
+```
+
 # Datasets
 Included in TopicModelsVB.jl are three datasets:
 
@@ -19,18 +29,8 @@ Included in TopicModelsVB.jl are three datasets:
   * 330577 documents
   * 16020 lexicon
 
-# Dependencies
-```julia
-Pkg.add("Distributions.jl")
-```
-
-# Install
-```julia
-Pkg.add("TopicModelsVB")
-```
-
 # Corpus
-Let's begin with the Corpus datastructure.  The Corpus datastructure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format, corpora can be easily molded and modified to meet the user's needs.
+Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format, corpora can be easily molded and modified to meet the user's needs.
 
 Any useful corpus needs a non-empty collection of documents.  The document file should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on the amount of information one has about the document.  Since a document is essential a list of terms, each document *must* contain at least one line containing a list of delimited positive integer values corresponding to the terms from which it is composed.  The lines for a particular document block (if they are present) must come in the following order:
 
