@@ -76,9 +76,16 @@ fLDA(corp, K)
 CTM(corp, K)
 # Correlated topic model with K topics.
 
-fCTM(corp, K)                # Filtered correlated topic model with K topics.
-vDTM(corp, K, delta, pmodel) # Dynamic topic model with K topics and ∆ = delta.
-jDTM(corp, K, delta, pmodel) # Dynamic topic model with K topics and ∆ = delta.
-CTPF(corp, K, pmodel)        # Collaborative topic Poisson factorization model with K topics.
+fCTM(corp, K)
+# Filtered correlated topic model with K topics.
+
+vDTM(corp, K, delta, pmodel)
+# Dynamic topic model with K topics and ∆ = delta.
+
+jDTM(corp, K, delta, pmodel)
+# Dynamic topic model with K topics and ∆ = delta.
+
+CTPF(corp, K, pmodel)
+# Collaborative topic Poisson factorization model with K topics.
 ```
 
