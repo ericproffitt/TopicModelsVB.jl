@@ -101,7 +101,7 @@ nsfcorp = readcorp(nsf)
 corp = corp[1:5000]
 fixcorp!(nsfcorp)
 
-# Notice that after keeping only the first 5000 documents, the lexicon-size post-fix is considerably smaller.
+# Notice that after keeping only the first 5000 documents, the post-fix lexicon is considerably smaller.
 
 nsflda = LDA(nsfcorp, 8)
 train!(corp, iter=150)
