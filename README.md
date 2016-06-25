@@ -164,7 +164,7 @@ Now let's take a look at the topic-covariance matrix
 ```julia
 model.sigma
 
-# Off-diagonal positively correlated entries, sorted in descending order:
+# Off-diagonal positive entries, sorted in descending order:
 model.sigma[4,8]
 model.sigma[3,6]
 model.sigma[2,8]
