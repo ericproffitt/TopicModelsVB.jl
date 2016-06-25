@@ -46,18 +46,33 @@ readcorp(;docfile, lexfile, userfile, titlefile, delim::Char, counts::Bool, read
 
 The file keywords are all strings indicating the path where the file is located.
 
-Even once the files are in the correct format and are read into a corpus, it's still often the case that the files are not sufficiently cleaned and formatted to be usable by the models.  Thus it's **important** that the user always runs either
+Even once the files are in the correct format and are read into a corpus, it's still often the case that the files are not sufficiently cleaned and formatted to be usable by the models.  Thus it's **important** that the user always runs one of the following
 ```julia
 fixcorp!(corp; kwargs...)
 ```
-on the corpus, or first runs either
+or
 ```julia
 padcorp!(corp; kwargs...)
+fixcorp!(corp; kwargs...)
 ```
 or
 ```julia
 cullcorp!(corp; kwargs...)
+fixcorp!(corp; kwargs...)
 ```
 first, and then runs ```fixcorp!``` afterwards.  Padding a corpus before fixing it will insure that any documents which contain lexkeys or userkeys not in the lex or user dictionaries attached to the corpus are not removed.  Instead generic lex and user keys will be added to the lex and user dicionaries (resp.).
 
 On the other hand, culling a corpus prior to fixing it will remove those documents which contain bogus lex or user keys not contained in the lex and user dictionaries (resp.)
+
+## Models
+The available models are as follows:
+```julia
+LDA(corp, K) # Latent Dirichlet Allocation model with K topics.
+fLDA(corp, K) # Filtered latent Dirichlet allocation model with K topics.
+CTM(corp, K) # Correlated topic model with K topics.
+fCTM(corp, K) # Filtered correlated topic model with K topics.
+vDTM(corp, K, delta, pmodel) # Dynamic topic model with K topics and ∆ = delta.
+jDTM(corp, K, delta, pmodel) # Dynamic topic model with K topics and ∆ = delta.
+CTPF(corp, K, pmodel) # Collaborative topic Poisson factorization model with K topics.
+```
+
