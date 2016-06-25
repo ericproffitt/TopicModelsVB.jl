@@ -218,34 +218,34 @@ Finally, we take a look at a topic model which is not primarily interested in th
 ```julia
 srand(1)
 
-corp = readcorp(:citeu)
+citeucorp = readcorp(:citeu)
 
 testukeys = Int[]
-for doc in corp
+for doc in citeucorp
     index = sample(1:length(doc.readers), 1)
     push!(testukeys, doc.readers[index])
     deleteat!(doc.readers, index)
 end
 
-fixcorp!(corp)
+fixcorp!(citeucorp)
 ```
 
 Notice that 158 of the the documents had only a single reader (no documents had 0 readers), since CTPF can depend entirely on thematic structure for making recommendations if need be, this poses no problem for the model.
 
 Now let's train a ```CTPF``` model on our modified corpus, and then we will evaluate the success of our model at imputing the correct users back into document libraries
 ```julia
-citeulda = LDA(corp, 8)
+citeulda = LDA(citeucorp, 8)
 train!(citeulda, iter=150)
 
-citeuctpf = CTPF(corp, 8, citeulda)
+citeuctpf = CTPF(citeucorp, 8, citeulda)
 train!(citeuctpf, iter=200)
 ```
 Now let's evaluate the accuracy of this model against the test set.  Where the base line is ```mean(acc) = 0.5```.
 ```julia
 acc = Float64[]
 for (d, u) in enumerate(testukeys)
-    rank = findin(model.drecs[d], u)
-    nrlen = length(model.drecs[d])
+    rank = findin(citeuctpf.drecs[d], u)
+    nrlen = length(citeuctpf.drecs[d])
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
