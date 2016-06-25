@@ -105,4 +105,8 @@ fixcorp!(nsfcorp)
 
 nsflda = LDA(nsfcorp, 8)
 train!(corp, iter=150)
+
+# training...
+
+showtopics(nsflda)
 ```
