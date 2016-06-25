@@ -113,12 +113,6 @@ showtopics(nsflda)
 
 One thing we notice is all the words which would be considered informative to a generic corpus, but which are effectively stopwords in a corpus of science article abstracts.  These words will be missed by most stopword lists, and can be a pain to pinpoint and individually remove.  Thus let's upgrade our model to a filtered latent Dirichlet allocation (fLDA) model.
 ```julia
-using TopicModelsVB
-
-nsfcorp = readcorp(:nsf)
-nsfcorp = nsfcorp[1:5000]
-fixcorp!(nsfcorp)
-
 nsfflda = fLDA(nsfcorp, 8)
 train!(nsfflda, iter=150)
 
