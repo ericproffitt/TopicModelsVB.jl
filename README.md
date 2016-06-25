@@ -160,7 +160,7 @@ topic 7: *Chemistry*
 
 topic 8: *Mathematics*
 
-Now let's take a look at the correlations between topics
+Now let's take a look at the topic-covariance matrix
 ```julia
 model.sigma
 
