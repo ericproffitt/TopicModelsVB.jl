@@ -111,7 +111,7 @@ train!(nsflda, iter=150)
 showtopics(nsflda)
 ```
 
-One thing we notice is all the words which would be considered informative to a generic corpus, but which are effectively stopwords in a corpus of science article abstracts.  These words will be missed by most stopword lists, and can be a pain to pinpoint and individually remove.  Thus let's upgrade our model to a filtered latent Dirichlet allocation (fLDA) model.
+One thing we notice is all the words which would be considered informative to a generic corpus, but which are effectively stop words in a corpus of science article abstracts.  These words will be missed by most stop word lists, and can be a pain to pinpoint and individually remove.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
 ```julia
 nsfflda = fLDA(nsfcorp, 8)
 train!(nsfflda, iter=150)
@@ -119,4 +119,20 @@ train!(nsfflda, iter=150)
 # training...
 
 showtopics(nsfflda)
+```
+
+Now we see can see that many of the most troublesome corpus-specific stop words have been automatically filtered out of the topics, and those that remain are those which tend to belong to their own, more generic, topic.
+
+For our final test with the NSF Abstracts corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
+```julia
+nsffctm = fLDA(nsfcorp, 8)
+train!(nsffctm, iter=150)
+
+# training...
+
+showtopics(nsffctm)
+```
+Not only have corpus-specific stop words been removed, but we can see that the topics are significantly more well defined and consistent than in the non-correlated LDA model.  Let's take a look at the correlations between topics
+```julia
+model.sigma
 ```
