@@ -237,8 +237,8 @@ Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(r
 
 Corpus(;docs=Document[], lex=[], users=[])
 # FIELDNAMES:
-#	docs::Vector{Document}
-#	lex::Dict{Int, UTF8String}
+#docs::Vector{Document}
+#lex::Dict{Int, UTF8String}
 #	users::Dict{Int, UTF8String}
 
 TopicModel
@@ -261,7 +261,6 @@ DTM(corp, K, delta, pmodel) <: TopicModel
 
 CTPF(corp, K, pmodel) <: TopicModel
 # collaborative topic Poisson factorization type
-
 ```
 
 
