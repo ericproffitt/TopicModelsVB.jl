@@ -50,7 +50,7 @@ readcorp(;docfile, lexfile, userfile, titlefile, delim::Char, counts::Bool, read
 
 The file keywords are all strings indicating the path where the file is located.
 
-Even once the files are in the correct format and are read into a corpus, it's still often the case that the files are not sufficiently cleaned and formatted to be usable by the models.  Thus it's **important** that the user always runs one of the following
+Even once the files are in the correct format and are read into a corpus, it's still often the case that the files are not sufficiently cleaned and formatted to be usable by the models.  Thus it's **very important** that the user always runs one of the following
 ```julia
 fixcorp!(corp; kwargs...)
 ```
