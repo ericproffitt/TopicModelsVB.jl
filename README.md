@@ -1,7 +1,7 @@
 # TopicModelsVB.jl
 A Julia Package for Variational Bayesian Topic Modeling.
 
-Topic Modeling is concerned with discovering the latent low-dimensional thematic structure within corpora.  Modeling this latent structure is done using either Markov chain Monte Carlo (MCMC) methods, or variational Bayesian (VB) methods.  The former approach is slower, but unbiased.  Given infinite time, MCMC will fit the desired model exactly.  The latter method is faster (often much faster), but biased, as approximations to distributions must be made in order to insure model tractability.  This package takes the latter approach to topic modeling.
+Topic Modeling is concerned with discovering the latent low-dimensional thematic structure within corpora.  Modeling this latent structure is done using either Markov chain Monte Carlo (MCMC) methods, or variational Bayesian (VB) methods.  The former approach is slower, but unbiased.  Given infinite time, MCMC will fit the desired model exactly.  The latter method is faster (often much faster), but biased since one must approximate distributions in order to insure tractability.  This package takes the latter approach to topic modeling.
 
 # Dependencies
 ```julia
@@ -168,7 +168,7 @@ showtopics(model, 20, topics=5)
 ```
 
 ### CTPF
-Finally, we took a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.
+Finally, we take a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.
 
 # Advanced Material
 ###Hyperparameters
