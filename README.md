@@ -326,7 +326,7 @@ padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
 # Pads a corpus by entering generic values for lex and/or user keys which appear in documents but not in the corpus dictionaries.
 
 cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Int=1)
-# Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields which don't appear in the corpus dictionaries.
+# Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields yet don't appear in the corpus dictionaries.
 # All documents of length < len are removed.
 
 fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabet::Bool=true)
@@ -335,6 +335,22 @@ fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, reade
 # trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
 # cullcorp!(corp, len=len)	
 # compactcorp!(corp, lex=lex, users=users, alphabet=alphabet)
+
+showdocs(corp::Corpus, doc(s)/d(s))
+# Displays the text of a document.
+# The second argument can be: Document, Vector{Document}, Vector{Int}, UnitRange{Int}, Int
+
+getlex(corp::Corpus)
+# Collects the sorted values from the corpus lexicon
+
+getusers(corp::Corpus)
+# Collects the sorted values from the list of corpus users.
+```
+
+### Model Functions
+```julia
+train!(model<:TopicModel; kwargs...)
+# Trains a TopicModel
 ```
 
 # Advanced Material
