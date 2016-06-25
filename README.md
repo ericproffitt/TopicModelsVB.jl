@@ -172,9 +172,9 @@ Finally, we take a look at a topic model which is not primarily interested in th
 
 # Miscellaneous Material
 
-# Type Master-List
+# Type Master-list
 
-# Function Master-List
+# Function Master-list
 
 # Advanced Material
 ###Setting Hyperparameters
