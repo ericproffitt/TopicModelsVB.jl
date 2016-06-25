@@ -142,3 +142,23 @@ Not only have corpus-specific stop words been removed, but we can see that the t
 ```julia
 model.sigma
 ```
+Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model looks lexical temporal-dynamics of topics which are, nevertheless, thematically static.  A good example a topic which is thematically-static, but which exhibits an evolving lexicon, is computer storage.  
+
+Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
+
+For our example, let's take a look at 11,000 apple magazine articles, drawn from MacWorld and MacAddict magazine, between the years 1984 - 2005, where we sample 500 articles randomly from each year.
+```julia
+srand(1)
+
+cmagcorp = readcorp(:cmag)
+cmagcorp.docs = filter(doc -> doc.title[1:3] == "Mac", corp.docs)
+cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, corp.docs), 500, replace=false) for y in 1984:2005]...)
+fixcorp!(corp, stop=true, order=false, b=150, len=10)
+
+cmaglda = LDA(corp, 10)
+train!(cmaglda, iter=100, chkelbo=101)
+cmagdtm = vDTM(cmagcorp, 10, 200, cmaglda)
+train!(cmagdtm, cgiter=10, iter=150)
+
+showtopics(model, 20, topics=5)
+```
