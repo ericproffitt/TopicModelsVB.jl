@@ -193,8 +193,8 @@ cmagcorp.docs = filter(doc -> doc.title[1:3] == "Mac", cmagcorp.docs)
 cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 500, replace=false) for y in 1984:2005]...)
 fixcorp!(corp, stop=true, order=false, b=150, len=10)
 
-cmaglda = LDA(corp, 10)
-train!(cmaglda, iter=100, chkelbo=101)
+cmaglda = fLDA(corp, 10)
+train!(cmaglda, iter=150, chkelbo=151)
 cmagdtm = DTM(cmagcorp, 10, 200, cmaglda)
 train!(cmagdtm, cgiter=10, iter=200)
 
