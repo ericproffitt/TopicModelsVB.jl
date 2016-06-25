@@ -10,12 +10,12 @@ Included in TopicModelsVB.jl are three datasets:
   * 128804 documents
   * 25319 lexicon
 
-2. The CiteULike Science Article database:
+2. The CiteULike Science Article Database:
   * 16980 documents
   * 8000 lexicon
   * 5551 users
 
-3. Computer Magazine Archive articles 1975 - 2014:
+3. Computer Magazine Archive Articles 1975 - 2014:
   * 330577 documents
   * 16020 lexicon
 
