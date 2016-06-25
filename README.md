@@ -71,7 +71,7 @@ LDA(corp, K)
 # Latent Dirichlet Allocation model with K topics.
 
 fLDA(corp, K)
-# Filtered latent Dirichlet allocation model with K topics."
+# Filtered latent Dirichlet allocation model with K topics.
 
 CTM(corp, K)
 # Correlated topic model with K topics.
@@ -86,3 +86,4 @@ CTPF(corp, K, pmodel)
 # Collaborative topic Poisson factorization model with K topics.
 ```
 
+Notice that both the ```DTM``` and ```CTPF``` models have a ```pmodel``` argument.  It is *highly* advisable that you prime these models with a pretrained model from one of the first four models, otherwise learning for these models may take a prohibitively long amount of time.
