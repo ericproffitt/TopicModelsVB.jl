@@ -244,8 +244,19 @@ Corpus(;docs=Document[], lex=[], users=[])
 TopicModel
 # abstract type
 
-LDA(corp, K) <: TopicModel
-# latent Dirichlet allocation type
+type LDA <: TopicModel
+	K::Int
+	M::Int
+	V::Int
+	N::Vector{Int}
+	C::Vector{Int}
+	corp::Corpus
+	topics::VectorList{Int}
+	alpha::Vector{Float64}
+	beta::Matrix{Float64}
+	gamma::VectorList{Float64}
+	phi::MatrixList{Float64}
+	elbo::Float64
 
 fLDA(corp, K) <: TopicModel
 # filtered latent Dirichlet allocation type
