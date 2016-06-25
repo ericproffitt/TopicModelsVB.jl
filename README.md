@@ -98,8 +98,8 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 using TopicModelsVB
 
 nsfcorp = readcorp(nsf)
-fixcorp!(nsfcorp) # This corpus has of course already been fixed,
-                  # however it's always a good idea to fix a corpus before loading it into a model.
+fixcorp!(nsfcorp) # This corpus has of course already been fixed, however just to be safe it's
+                  # always a good idea to fix a corpus before loading it into a model.
                
 nsflda = LDA(nsfcorp, 8)
 train!(corp, iter=150)
