@@ -181,8 +181,8 @@ As for the least associated topics, the most unrelated pair of topics is 6 and 8
 
 Interestingly enough, the topic which is least correlated with all other topics is not in fact the *Academia* topic (which is the second least correlated), but the *Chemistry* topic
 ```julia
-sum(abs(model.sigma[:,7]) - model.sigma[7,7] # Chemistry topic, absolute off-diagonal covariance 0.037.
-sum(abs(model.sigma[:,5]) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 16.904.
+sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Chemistry topic, absolute off-diagonal covariance 0.037.
+sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 16.904.
 ```
 however looking at the variance of these two topics
 ```julia
@@ -214,7 +214,7 @@ showtopics(model, 20, topics=5)
 ```
 
 ### CTPF
-Finally, we take a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.  The collaborative toipc Poisson fatorization (CTPF) model blends the latent thematic structure of documents with the document-user matrix, in order to obtain higher accuracy than would be achievable with just the user library information, and also overcomes the cold-start problem for documents with no readers.  Let's take the CiteULike dataset and remove a single reader from each of the documents
+Finally, we take a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.  The collaborative toipc Poisson fatorization (CTPF) model blends the latent thematic structure of documents with the document-user matrix, in order to obtain higher accuracy than would be achievable with just the user library information, and also overcomes the cold-start problem for documents with no readers.  Let's take the CiteULike dataset and randomly remove a single reader from each of the documents
 ```julia
 srand(1)
 
@@ -222,10 +222,11 @@ corp = readcorp(:citeu)
 
 testukeys = Int[]
 for doc in corp
-	index = sample(1:length(doc.readers), 1)
-	push!(testukeys, doc.readers[index])
-	deleteat!(doc.readers, index)
+    index = sample(1:length(doc.readers), 1)
+    push!(testukeys, doc.readers[index])
+    deleteat!(doc.readers, index)
 end
+
 fixcorp!(corp)
 ```
 
@@ -235,16 +236,17 @@ Now let's train a ```CTPF``` model on our modified corpus, and then we will eval
 ```julia
 citeulda = LDA(corp, 8)
 train!(citeulda, iter=150)
+
 citeuctpf = CTPF(corp, 8, citeulda)
 train!(citeuctpf, iter=200)
 ```
 Now let's evaluate the accuracy of this model against the test set.  Where the base line is ```mean(acc) = 0.5```.
 ```julia
 acc = Float64[]
-for (d, u) in testpairs
-	rank = findin(model.drecs[d], u)
-	nr = length(model.drecs[d])
-	push!(acc, (nr - rank) / (nr - 1))
+for (d, u) in enumerate(testukeys)
+    rank = findin(model.drecs[d], u)
+    nrlen = length(model.drecs[d])
+    push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
 @show mean(acc)
