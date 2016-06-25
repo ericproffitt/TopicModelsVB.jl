@@ -101,7 +101,7 @@ using TopicModelsVB
 srand(1)
 
 nsfcorp = readcorp(:nsf)
-nsfcorp = nsfcorp[1:5000]
+nsfcorp.docs = nsfcorp[1:5000]
 fixcorp!(nsfcorp)
 
 # Notice that the post-fix lexicon is considerably smaller after removing all but the first 5000 docs.
