@@ -349,8 +349,31 @@ getusers(corp::Corpus)
 
 ### Model Functions
 ```julia
-train!(model<:TopicModel; kwargs...)
-# Trains a TopicModel
+checkmodel(model <: TopicModel)
+# Verifies that all model fields have legal values.
+
+train!(model <: TopicModel; kwargs...)
+# Trains a TopicModel.
+
+gendoc(model <: Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
+# Generates a generic document from the model parameters by running the associated graphical model as a generative process.
+# The argument 'a' uses Laplace smoothing to smooth the topic-term distribution.
+
+gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
+# Generates a generic corpus of size 'corpsize' from the model parameters by running gendoc(corp, a) iteratively.
+
+showtopics(model::TopicModel, N::Int; cols=4)
+# Displays the top 'N' words for each topic, defaults to 4 columns per line.
+
+showlibs(ctpf::CTPF)
+# Shows the documents in a user's library.
+
+showdrecs(ctpf::CTPF)
+# Shows the users that are recommended to read a document(s).
+
+showurecs(ctpf::CTPF)
+# Shows the documents recommnded that a user(s) read.
+
 ```
 
 # Advanced Material
