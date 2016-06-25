@@ -68,6 +68,8 @@ first, and then runs ```fixcorp!``` afterwards.  Padding a corpus before fixing 
 
 On the other hand, culling a corpus prior to fixing it will remove those documents which contain bogus lex or user keys not contained in the lex and user dictionaries (resp.)
 
+**Important:** The Corpus type is just a container for documents along with two dictionaries which give lex keys and user keys sensible names.  Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus (remove documents, re-order lex keys, etc.), this will not affect the corpus attached to the model.  However!  Since corpora are just containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  Thus **be very careful** whenever you modify the internals of documents themselves, either manually or through the use of ```corp``` functions. 
+
 # Models
 The available models are as follows:
 ```julia
@@ -388,30 +390,34 @@ getusers(corp::Corpus)
 
 ### Model Functions
 ```julia
-checkmodel(model <: TopicModel)
+checkmodel(model::TopicModel)
 # Verifies that all model fields have legal values.
 
-train!(model <: TopicModel; kwargs...)
+train!(model::TopicModel; kwargs...)
 # Trains a TopicModel.
 
-gendoc(model <: Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
+gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
 # Generates a generic document from the model parameters by running the associated graphical model as a generative process.
 # The argument 'a' uses Laplace smoothing to smooth the topic-term distribution.
 
 gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
 # Generates a generic corpus of size 'corpsize' from the model parameters by running gendoc(corp, a) iteratively.
 
-showtopics(model::TopicModel, N::Int; cols=4)
-# Displays the top 'N' words for each topic, defaults to 4 columns per line.
+showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
+# Displays the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
 
-showlibs(ctpf::CTPF)
+showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
+# Displays the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
+
+function showlibs(model::CTPF, users::Union{Int, Vector{Int}})
 # Shows the documents in a user's library.
 
-showdrecs(ctpf::CTPF)
-# Shows the users that are recommended to read a document(s).
+showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
+# Shows the top 'U' users that are recommended to read a document(s), defaults to 4 columns per line.
 
-showurecs(ctpf::CTPF)
-# Shows the documents recommnded that a user(s) read.
+showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.M); cols::Int=1)
+# Shows the top 'M' documents recommnded for a user(s), defaults to 1 column per line.
+# If a document has no title, the documents index in the corpus will be shown instead.
 
 ```
 
