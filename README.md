@@ -97,7 +97,7 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 ```julia
 using TopicModelsVB
 
-nsfcorp = readcorp(nsf)
+nsfcorp = readcorp(:nsf)
 corp = corp[1:5000]
 fixcorp!(nsfcorp)
 
