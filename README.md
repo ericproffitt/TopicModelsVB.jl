@@ -228,18 +228,18 @@ MatrixList
 
 Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), stamp=-Inf, title="")
 # FIELDNAMES:
-#	terms::Vector{Int}
-#	counts::Vector{Int}
-#	readers::Vector{Int}
-#	ratings::Vector{Int}
-#	stamp::Float64
-#	title::UTF8String
+# terms::Vector{Int}
+# counts::Vector{Int}
+# readers::Vector{Int}
+# ratings::Vector{Int}
+# stamp::Float64
+# title::UTF8String
 
 Corpus(;docs=Document[], lex=[], users=[])
 # FIELDNAMES:
-#docs::Vector{Document}
-#lex::Dict{Int, UTF8String}
-#	users::Dict{Int, UTF8String}
+# docs::Vector{Document}
+# lex::Dict{Int, UTF8String}
+# users::Dict{Int, UTF8String}
 
 TopicModel
 # abstract type
