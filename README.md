@@ -142,11 +142,11 @@ showtopics(nsffctm, 20)
 ```
 Not only have corpus-specific stop words been removed, but we can see that the topics are significantly more well defined and consistent than in the non-correlated LDA model.
 
-Based on the top 20 terms in each topics, we might tentatively assign the following topic labels:
+Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
-topic 1: *Earth Science*
+• topic 1: *Earth Science*
 
-topic 2: *Physics*
+• topic 2: *Physics*
 
 topic 3: *Microbiology*
 
@@ -195,7 +195,7 @@ fixcorp!(corp, stop=true, order=false, b=150, len=10)
 
 cmaglda = LDA(corp, 10)
 train!(cmaglda, iter=100, chkelbo=101)
-cmagdtm = vDTM(cmagcorp, 10, 200, cmaglda)
+cmagdtm = DTM(cmagcorp, 10, 200, cmaglda)
 train!(cmagdtm, cgiter=10, iter=200)
 
 showtopics(model, 20, topics=5)
