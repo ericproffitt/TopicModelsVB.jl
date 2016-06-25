@@ -138,24 +138,44 @@ train!(nsffctm, iter=200)
 
 # training...
 
-showtopics(nsffctm)
+showtopics(nsffctm, 20)
 ```
-Not only have corpus-specific stop words been removed, but we can see that the topics are significantly more well defined and consistent than in the non-correlated LDA model.  Let's take a look at the correlations between topics
+Not only have corpus-specific stop words been removed, but we can see that the topics are significantly more well defined and consistent than in the non-correlated LDA model.
+
+Based on the top 20 terms in each topics, we might tentatively assign the following topic labels:
+
+topic 1: *Earth Science*
+
+topic 2: *Physics*
+
+topic 3: *Microbiology*
+
+topic 4: *Computer Science*
+
+topic 5: *Academia*
+
+topic 6: *Sociobiology*
+
+topic 7: *Chemistry*
+
+topic 8: *Mathematics*
+
+Now let's take a look at the correlations between topics
 ```julia
 model.sigma
 
-# Positively correlated entries:
-model.sigma[1][2]
-model.sigma[1][6]
-model.sigma[1][7]
-model.sigma[2][4]
-model.sigma[2][8]
-model.sigma[3][5]
-model.sigma[3][6]
-model.sigma[3][7]
-model.sigma[4][5]
-model.sigma[4][8]
-model.sigma[5][6]
+# Off-diagonal positively correlated entries:
+model.sigma[4,8]
+model.sigma[3,6]
+model.sigma[2,8]
+model.sigma[5,6]
+model.sigma[1,6]
+model.sigma[3,5]
+model.sigma[1,2]
+model.sigma[4,5]
+model.sigma[2,4]
+model.sigma[1,7]
+model.sigma[3,7]
 ```
 
 
