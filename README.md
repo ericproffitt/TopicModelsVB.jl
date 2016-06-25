@@ -19,6 +19,11 @@ Included in TopicModelsVB.jl are three datasets:
   * 330577 documents
   * 16020 lexicon
 
+# Dependencies
+```julia
+Pkg.add("Distributions.jl")
+```
+
 # Install
 ```julia
 Pkg.add("TopicModelsVB")
@@ -90,6 +95,12 @@ Notice that both ```DTM``` and ```CTPF``` have a ```pmodel``` argument.  It is *
 ## Tutorial
 Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 8 topics, trained on the first 5000 documents from the NSF Abstracts corpus.
 ```julia
-readcorp(nsf)
-fixcorp!(corp) # This corpus has of course already been fixed, however it's always a good idea to fix a corpus before loading it into a model.
+using TopicModelsVB
+
+nsfcorp = readcorp(nsf)
+fixcorp!(nsfcorp) # This corpus has of course already been fixed,
+                  # however it's always a good idea to fix a corpus before loading it into a model.
+               
+nsflda = LDA(nsfcorp, 8)
+train!(corp, iter=150)
 ```
