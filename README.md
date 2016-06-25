@@ -97,6 +97,8 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 ```julia
 using TopicModelsVB
 
+srand(1)
+
 nsfcorp = readcorp(:nsf)
 nsfcorp = nsfcorp[1:5000]
 fixcorp!(nsfcorp)
@@ -113,6 +115,8 @@ showtopics(nsflda)
 
 One thing we notice is all the words which would be considered informative to a generic corpus, but which are effectively stop words in a corpus of science article abstracts.  These words will be missed by most stop word lists, and can be a pain to pinpoint and individually remove.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
 ```julia
+srand(1)
+
 nsfflda = fLDA(nsfcorp, 8)
 train!(nsfflda, iter=150)
 
@@ -125,6 +129,8 @@ Now we see can see that many of the most troublesome corpus-specific stop words 
 
 For our final test with the NSF Abstracts corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
 ```julia
+srand(1)
+
 nsffctm = fLDA(nsfcorp, 8)
 train!(nsffctm, iter=150)
 
