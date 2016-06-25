@@ -133,7 +133,7 @@ For our final test with the NSF Abstracts corpus, let's upgrade our model to a f
 ```julia
 srand(1)
 
-nsffctm = fLDA(nsfcorp, 8)
+nsffctm = fCTM(nsfcorp, 8)
 train!(nsffctm, iter=200)
 
 # training...
