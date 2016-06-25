@@ -104,7 +104,7 @@ fixcorp!(nsfcorp)
 # Notice that the post-fix lexicon is considerably smaller after removing all but the first 5000 docs.
 
 nsflda = LDA(nsfcorp, 8)
-train!(corp, iter=150)
+train!(nsflda, iter=150)
 
 # training...
 
