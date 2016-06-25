@@ -155,8 +155,8 @@ For our example, let's take a look at 11,000 apple magazine articles, drawn from
 srand(1)
 
 cmagcorp = readcorp(:cmag)
-cmagcorp.docs = filter(doc -> doc.title[1:3] == "Mac", corp.docs)
-cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, corp.docs), 500, replace=false) for y in 1984:2005]...)
+cmagcorp.docs = filter(doc -> doc.title[1:3] == "Mac", cmagcorp.docs)
+cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 500, replace=false) for y in 1984:2005]...)
 fixcorp!(corp, stop=true, order=false, b=150, len=10)
 
 cmaglda = LDA(corp, 10)
@@ -166,3 +166,6 @@ train!(cmagdtm, cgiter=10, iter=150)
 
 showtopics(model, 20, topics=5)
 ```
+
+###CTPF
+Finally, we took a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.
