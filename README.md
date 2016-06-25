@@ -6,16 +6,16 @@ Topic Modeling is concerned with discovering the latent low-dimensional thematic
 # Datasets
 Included in TopicModelsVB.jl are three datasets:
 
-1. The National Science Foundation Abstracts 1989 - 2003:
+1. National Science Foundation Abstracts 1989 - 2003:
   * 128804 documents
   * 25319 lexicon
 
-2. The CiteULike Science Article Database:
+2. CiteULike Science Article Database:
   * 16980 documents
   * 8000 lexicon
   * 5551 users
 
-3. Computer Magazine Archive Articles 1975 - 2014:
+3. Computer Magazine Archive Article Collection 1975 - 2014:
   * 330577 documents
   * 16020 lexicon
 
@@ -39,3 +39,7 @@ Any useful corpus needs a non-empty collection of documents.  The document file 
 4. A line of delimited positive integers equal in length to the third line, corresponding to the rating each reader gave the corresponding document.
 
 5. A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
+
+```julia
+readcorp(;docfile::AbstractString, lexfile::AbstractString, userfile::AbstractString, titlefile::AbstractString, delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
+```
