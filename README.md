@@ -37,4 +37,4 @@ Any useful corpus needs a non-empty collection of documents.  The document file 
 
 4. A line of delimited positive integers equal in length to the third line, corresponding to the rating each reader gave the corresponding document.
 
-5. a numerical value in the range ```julia [-inf, inf]``` denoting the timestamp of the document.
+5. A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
