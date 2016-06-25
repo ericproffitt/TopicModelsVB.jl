@@ -164,20 +164,20 @@ Now let's take a look at the topic-covariance matrix
 ```julia
 model.sigma
 
-# Off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8]
-model.sigma[3,6]
-model.sigma[2,8]
-model.sigma[5,6]
-model.sigma[1,6]
-model.sigma[3,5]
-model.sigma[1,2]
-model.sigma[4,5]
-model.sigma[2,4]
-model.sigma[1,7]
-model.sigma[3,7]
+# Top 3 Off-diagonal positive entries, sorted in descending order:
+model.sigma[4,8] # 16.770
+model.sigma[3,6] # 14.758
+model.sigma[2,8] # 8.970
+
+# Top 3 negative entries, sorted in ascending order:
+model.sigma[6,8] # -21.677
+model.sigma[1,8] # -19.016
+model.sigma[2,6] # -15.107
 ```
 
+According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Microbiology* and *Sociobiology*, and then by 2 and 8, corresponding to *Physics* and *Mathematics*.
+
+As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Sociobiology* and *Mathematics*, followed closely by topics 1 and 8, corresponding to *Earth Science* and *Mathematics*, and then third are topics 2 and 6, corresponding to *Physics* and *Sociobiology*.
 
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model looks lexical temporal-dynamics of topics which are, nevertheless, thematically static.  A good example a topic which is thematically-static, but which exhibits an evolving lexicon, is computer storage.  
