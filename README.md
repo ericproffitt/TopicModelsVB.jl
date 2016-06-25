@@ -377,9 +377,8 @@ fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, reade
 # cullcorp!(corp, len=len)	
 # compactcorp!(corp, lex=lex, users=users, alphabet=alphabet)
 
-showdocs(corp::Corpus, doc(s)/d(s))
-# Displays the text of a document.
-# The second argument can be: Document, Vector{Document}, Vector{Int}, UnitRange{Int}, Int
+showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Int, Vector{Int}})
+# Displays the text and title of a document.
 
 getlex(corp::Corpus)
 # Collects the sorted values from the corpus lexicon
