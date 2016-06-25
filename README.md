@@ -278,11 +278,11 @@ CTPF(corp, K, pmodel) <: TopicModel
 # Function Master-list
 ### Generic Functions
 ```julia
-ispositive(.)
-# Takes a number or an array of numbers, and returns Bool or Array{Bool} (resp.).
-
 isnegative(.)
-# Takes a number or an array of numbers, and returns Bool or Array{Bool} (resp.).
+# Takes a number or an array of numbers and returns Bool or Array{Bool} (resp.).
+
+ispositive(.)
+# Takes a number or an array of numbers and returns Bool or Array{Bool} (resp.).
 
 tetragamma(.)
 # polygamma(2, x)
@@ -295,7 +295,47 @@ partition(xs, n)
 # e.g. partition([1,5,3,5,7],2) == [[1,5],[3,7],[2]]
 ```
 
-### Corpus Functions
+### Document/Corpus Functions
+```julia
+checkdoc(doc::Document)
+# Verifies that all Document fields have legal values.
+
+checkcorp(corp::Corpus)
+# Verifies that all Corpus fields have legal values.
+
+readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
+# Reads corpus from plaintext files.
+
+writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
+# Writes a corpus to plaintext files.
+
+abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1)
+# Abridges a corpus.
+# If stop = true, stop words are removed.
+# If order = false, order is ignored and multiple seperate occurrences of words are stacked and the associated counts increased.
+# All terms which appear < b times are removed from documents.
+
+trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
+# Those values which appear in the indicated fields of documents, but don't appear in the corpus dictionaries, are removed.
+
+compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabet::Bool=true)
+# Compacts a corpus by relabeling lex and/or user keys so that they form a unit range.
+# If alphabet=true, the lex and/or user dictionaries are alphabetized.
+
+padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
+# Pads a corpus by entering generic values for lex and/or user keys which appear in documents but not in the corpus dictionaries.
+
+cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Int=1)
+# Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields which don't appear in the corpus dictionaries.
+# All documents of length < len are removed.
+
+fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabet::Bool=true)
+# Fixes a corp by running the following four functions:
+# abridgecorp!(corp, stop=stop, order=order, b=b)
+# trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
+# cullcorp!(corp, len=len)	
+# compactcorp!(corp, lex=lex, users=users, alphabet=alphabet)
+```
 
 # Advanced Material
 ###Setting Hyperparameters
