@@ -219,6 +219,51 @@ Finally, we take a look at a topic model which is not primarily interested in th
 # Miscellaneous Material
 
 # Type Master-list
+```julia
+VectorList
+# Array{Array{T,1},1}
+
+MatrixList
+# Array{Array{T,2},1}
+
+Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), stamp=-Inf, title="")
+# Document fieldnames:
+#	   terms::Vector{Int}
+#	   counts::Vector{Int}
+#	   readers::Vector{Int}
+#	   ratings::Vector{Int}
+#	   stamp::Float64
+#	   title::UTF8String
+
+Corpus(;docs=Document[], lex=[], users=[])
+# Corpus fieldnames:
+#	   docs::Vector{Document}
+#	   lex::Dict{Int, UTF8String}
+#	   users::Dict{Int, UTF8String}
+
+TopicModel
+# abstract type
+
+LDA(corp, K) <: TopicModel
+# latent Dirichlet allocation type
+
+fLDA(corp, K) <: TopicModel
+# filtered latent Dirichlet allocation type
+
+CTM(corp, K) <: TopicModel
+# correlated topic model type
+
+fCTM(corp, K) <: TopicModel
+# filtered correlated topic model type
+
+DTM(corp, K, delta, pmodel) <: TopicModel
+# dynamitc topic model type
+
+CTPF(corp, K, pmodel) <: TopicModel
+# collaborative topic Poisson factorization type
+
+```
+
 
 # Function Master-list
 
