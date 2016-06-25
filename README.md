@@ -170,6 +170,12 @@ showtopics(model, 20, topics=5)
 ### CTPF
 Finally, we take a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.
 
+# Miscellaneous Material
+
+# Type Masterlist
+
+# Function Masterlist
+
 # Advanced Material
 ###Setting Hyperparameters
 ###DTM Variations
