@@ -278,8 +278,24 @@ CTPF(corp, K, pmodel) <: TopicModel
 # Function Master-list
 ### Generic Functions
 ```julia
-ispositive(*)
+ispositive(.)
+# Takes a number or an array of numbers, and returns Bool or Array{Bool} (resp.).
+
+isnegative(.)
+# Takes a number or an array of numbers, and returns Bool or Array{Bool} (resp.).
+
+tetragamma(.)
+# polygamma(2, x)
+
+partition(xs, n)
+# xs: Vector or UnitRange
+# n: positive Int
+
+# Returns a VectorList containing contiguous portions of xs of length n (includes remainder).
+# e.g. partition([1,5,3,5,7],2) == [[1,5],[3,7],[2]]
 ```
+
+### Corpus Functions
 
 # Advanced Material
 ###Setting Hyperparameters
