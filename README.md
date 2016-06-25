@@ -67,14 +67,14 @@ On the other hand, culling a corpus prior to fixing it will remove those documen
 ## Models
 The available models are as follows:
 ```julia
-"Latent Dirichlet Allocation model with K topics."
-LDA(corp, K)                 # Latent Dirichlet Allocation model with K topics.
+LDA(corp, K)
+# Latent Dirichlet Allocation model with K topics.
 
-"Filtered latent Dirichlet allocation model with K topics."
 fLDA(corp, K)
+# Filtered latent Dirichlet allocation model with K topics."
 
-"Correlated topic model with K topics."
-CTM(corp, K)                 # 
+CTM(corp, K)
+# Correlated topic model with K topics.
 
 fCTM(corp, K)                # Filtered correlated topic model with K topics.
 vDTM(corp, K, delta, pmodel) # Dynamic topic model with K topics and ∆ = delta.
