@@ -145,7 +145,7 @@ Not only have corpus-specific stop words been removed, but we can see that the t
 model.sigma
 ```
 
-###DTM
+### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model looks lexical temporal-dynamics of topics which are, nevertheless, thematically static.  A good example a topic which is thematically-static, but which exhibits an evolving lexicon, is computer storage.  
 
 Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
@@ -167,5 +167,10 @@ train!(cmagdtm, cgiter=10, iter=150)
 showtopics(model, 20, topics=5)
 ```
 
-###CTPF
+### CTPF
 Finally, we took a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.
+
+# Advanced Material
+##Hyperparameters
+
+
