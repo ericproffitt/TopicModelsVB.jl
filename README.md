@@ -281,7 +281,7 @@ Corpus(;docs=Document[], lex=[], users=[])
 TopicModel
 # abstract type
 
-type LDA <: TopicModel
+LDA <: TopicModel
 # Latent Dirichlet allocation
 # 'K' denotes the number of topics.
 
