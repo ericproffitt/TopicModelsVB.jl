@@ -84,7 +84,7 @@ readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::Abst
 
 The ```file``` keyword arguments indicate the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will return an empty corpus.
 
-It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that one always runs either:
+It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that one runs either:
 
 ```julia
 fixcorp!(corp; kwargs...)
@@ -205,24 +205,22 @@ According to the list above, the most closely related topics are topics 4 and 8,
 
 As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Sociobiology* and *Mathematics*, followed closely by topics 1 and 8, corresponding to *Earth Science* and *Mathematics*, and then third are topics 2 and 6, corresponding to *Physics* and *Sociobiology*.
 
-Interestingly enough, the topic which is least correlated with all other topics is not in fact the *Academia* topic (which is the second least correlated), but the *Chemistry* topic
+Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but the *Chemistry* topic
 ```julia
 sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Chemistry topic, absolute off-diagonal covariance 0.037.
 sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 16.904.
 ```
-however looking at the variance of these two topics
+however, looking at the variance of these two topics
 ```julia
 model.sigma[7,7] # 0.002
 model.sigma[5,5] # 16.675
 ```
-it appears suprisingly that the *Chemistry* topic appears to use a very tightly controlled and idiosyncratic lexicon, with few vocabulary words shared across topics, unlike the way topics such as *Physics* and *Mathematics*, or *Microbiology* and *Sociobiology* tend to share terminology.
+it appears, suprisingly, that the *Chemistry* topic does not fluctuate significantly between documents, and likely uses its own idiosyncratic lexicon, sharing relatively few vocabulary words across topics when compared to *Physics* and *Mathematics*, or *Microbiology* and *Sociobiology*.
 
 ### DTM
-Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model looks lexical temporal-dynamics of topics which are, nevertheless, thematically static.  A good example a topic which is thematically-static, but which exhibits an evolving lexicon, is computer storage.  
+Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example a topic which is thematically-static, yet exhibits an evolving lexicon, is computer storage.  Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
 
-Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
-
-For our example, let's take a look at 11,000 Apple magazine articles, drawn from *MacWorld* and *MacAddict* magazine, between the years 1984 - 2005, where we sample 500 articles randomly from each year.
+As an example, let's consider a corpus of approximately 8000 Apple magazine articles, drawn from the magazines *MacWorld* and *MacAddict*, between the years 1984 - 2005.  We sample 400 articles randomly from each year.
 ```julia
 srand(1)
 
