@@ -498,11 +498,11 @@ train!(ctpf::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64
 # Train CTPF.
 
 gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
-# Generate a generic document from the model parameters by running the associated graphical model as a generative process.
+# Generate a generic document from model parameters by running the associated graphical model as a generative process.
 # The argument 'a' uses Laplace smoothing to smooth the topic-term distributions ('a' must be nonnegative).
 
 gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
-# Generate a generic corpus of size 'corpsize' from the model parameters.
+# Generate a generic corpus of size 'corpsize' from model parameters.
 
 showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
 # Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
