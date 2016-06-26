@@ -180,28 +180,27 @@ showtopics(nsfflda, 20, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4          topic 5         topic 6       topic 7          topic 8
-earthquake      chemistry       species          design           university      cell          economic         theory
-ocean           chemical        plant            algorithms       support         protein       social           equations
-water           program         genetic          parallel         students        cells         theory           geometry
-measurements    reactions       populations      performance      program         proteins      policy           mathematical
-program         metal           plants           computer         science         gene          human            differential
-soil            surface         evolutionary     processing       scientists      plant         political        algebraic
-climate         molecular       population       applications     award           molecular     change           groups
-seismic         electron        patterns         network          sciences        genes         public           solutions
-solar           theoretical     variation        networks         conference      function      science          mathematics
-earth           university      dna              approach         national        regulation    decision         finite
-global          award           test             software         projects        dna           people           dimensional
-surface         temperature     food             efficient        engineering     expression    labor            functions
-sea             organic         forest           power            year            plants        market           nonlinear
-response        gas             ecology          computational    workshop        mechanisms    theoretical      spaces
-observations    laser           host             program          researchers     membrane      environmental    questions
-damage          molecules       environmental    distributed      months          binding       women            numerical
-pacific         reaction        diversity        programming      faculty         brain         cultural         manifolds
-samples         quantum         factors          speed            mathematical    genetic       groups           applications
-atmospheric     measurements    ecological       dynamic          institute       cellular      factors          professor
-chemical        compounds       reproductive     image            equipment       biological    relationship     operators
-
+topic 1         topic 2         topic 3          topic 4           topic 5          topic 6       topic 7          topic 8         topic 9
+earthquake      theoretical     species          algorithms        university       cell          economic         theory          chemistry
+ocean           physics         plant            parallel          students         protein       social           equations       reactions
+water           flow            genetic          performance       program          cells         theory           geometry        chemical
+measurements    phase           populations      computer          science          plant         policy           mathematical    metal
+program         quantum         evolutionary     processing        scientists       proteins      human            differential    program
+soil            particle        plants           applications      sciences         gene          change           algebraic       molecular
+climate         temperature     population       network           scientific       genes         political        groups          organic
+seismic         phenomena       patterns         networks          conference       molecular     public           solutions       surface
+global          energy          variation        software          national         function      science          mathematics     compounds
+sea             measurements    dna              computational     projects         expression    decision         finite          molecules
+response        laser           ecology          efficient         engineering      regulation    people           dimensional     electron
+earth           particles       food             distributed       year             plants        labor            spaces          university
+solar           numerical       test             program           workshop         dna           market           functions       reaction
+pacific         liquid          ecological       power             months           mechanisms    scientific       manifolds       synthesis
+damage          fluid           host             programming       mathematical     membrane      factors          professor       spectroscopy
+surface         heat            diversity        estimation        faculty          cellular      environmental    applications    complexes
+samples         waves           forest           implementation    institute        genetic       theoretical      operators       species
+ground          theory          environmental    programs          equipment        binding       cultural         nonlinear       energy
+atmospheric     transport       animals          dynamic           international    brain         women            algebra         professor
+ice             optical         reproductive     neural            nsf              enzymes       relationship     boundary        carbon
 
 ```
 
@@ -253,12 +252,13 @@ Based on the top 15 terms in each topic, we might tentatively assign the followi
 
 * topic 1: *Earth Science*
 * topic 2: *Physics*
-* topic 3: *Microbiology*
+* topic 3: *Sociobiology*
 * topic 4: *Computer Science*
 * topic 5: *Academia*
-* topic 6: *Sociobiology*
-* topic 7: *Chemistry*
+* topic 6: *Microbiology*
+* topic 7: *Economics*
 * topic 8: *Mathematics*
+* topic 9: *Chemistry*
 
 Now let's take a look at the topic-covariance matrix
 ```julia
