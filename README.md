@@ -388,8 +388,23 @@ getusers(corp::Corpus)
 checkmodel(model::TopicModel)
 # Verifies that all model fields have legal values.
 
-train!(model::TopicModel; kwargs...)
-# Trains a TopicModel.
+train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
+# Trains one of the models: LDA, fLDA, CTM, fCTM.
+# 'iter'    - the maximum number of iterations through the corpus
+# 'tol'     - the absolute tolerance and ∆elbo required as a stopping criterion.
+# 'niter'   - the maximum number of iterations for Newton's and interior-point Newton's methods.
+# 'ntol'    - the tolerance for the change of function value as a stopping criterion for Newton's and interior-point Newton's methods.
+# 'viter'   - the maximum number of iterations for optimizing the variational parameters (at the document level).
+# 'vtol'    - the tolerance for the change of variational parameter values as a stopping criterion.
+# 'chkelbo' - how often the elbo should be checked (for both user evaluation and convergence).
+
+train!(model::DTM; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, cgiter::Int=100, cgtol::Float64=1/model.T^2, chkelbo::Int=1)
+# Trains DTM.
+# 'cgiter' - the maximum number of iterations for the Polak-Ribière conjugate gradient method.
+# 'cgtol'  - the tolerance for the change of function value as a stopping criterion for Polak-Ribière conjugate gradient method.
+
+train!(model::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
+# Trains CTPF.
 
 gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
 # Generates a generic document from the model parameters by running the associated graphical model as a generative process.
