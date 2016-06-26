@@ -127,7 +127,7 @@ Notice that both ```DTM``` and ```CTPF``` have a ```pmodel``` argument.  It is *
 
 # Tutorial
 ### LDA
-Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 8 topics, trained on the first 5000 documents from the NSF Abstracts corpus.
+Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 9 topics, trained on the first 5000 documents from the NSF Abstracts corpus.
 ```julia
 using TopicModelsVB
 
