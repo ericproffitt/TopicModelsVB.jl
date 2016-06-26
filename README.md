@@ -481,6 +481,9 @@ getusers(corp::Corpus)
 checkmodel(model::TopicModel)
 # Verify that all model fields have legal values.
 
+push!(model::TopicModel, docs::Union{Document, Vector{Document}})
+# Add more documents to an already trained model (online support).
+
 train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
 # 'iter'    - the maximum number of iterations through the corpus
