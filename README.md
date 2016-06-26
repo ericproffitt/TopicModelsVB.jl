@@ -30,7 +30,13 @@ Included in TopicModelsVB.jl are three datasets:
   * 16020 lexicon
 
 # Corpus
-Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format, corpora can be easily molded and modified to meet the user's needs.
+Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
+
+There are four files that make up a corpus:
+ * docfile
+ * lexfile
+ * userfile
+ * titlefile
 
 Any useful corpus needs a non-empty collection of documents.  The document file should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on the amount of information one has about the document.  Since a document is essential a list of terms, each document *must* contain at least one line containing a list of delimited positive integer values corresponding to the terms from which it is composed.  The lines for a particular document block (if they are present) must come in the following order:
 
