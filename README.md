@@ -287,8 +287,6 @@ end
 @show mean(acc)
 ```
 
-# Miscellaneous Material
-
 # Type Master-list
 ```julia
 VectorList
