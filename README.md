@@ -51,13 +51,13 @@ The docfile should be a plaintext file containing lines of delimited numerical v
  - A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to ```ones(length(terms))```).
 
 3. ```readers```
-- A line delimited positive integers corresponding to the readers which have read the document.
+ - A line delimited positive integers corresponding to the readers which have read the document.
 
 4. ```ratings```
-- A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document (defaults to ```ones(length(readers))```).
+ - A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document (defaults to ```ones(length(readers))```).
 
 5. ```stamp```
-- A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
+ - A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
 
 The lex and userfiles are dictionaries mapping positive integers to terms and usernames (resp.).  For example,
 
