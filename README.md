@@ -417,9 +417,8 @@ ispositive(x::Union{Number, Array{Number}})
 tetragamma(.)
 # polygamma(2, .)
 
-partition(xs, n)
-# xs: Vector or UnitRange
-# n: positive Int
+partition(xs::Union{Vector, UnitRange}, n::Int)
+# 'n' must be positive.
 # Return VectorList containing contiguous portions of xs of length n (includes remainder).
 # e.g. partition([1,5,"HI",5,-7.1], 2) == Vector[[1,5],["HI",5],[-7.1]]
 ```
