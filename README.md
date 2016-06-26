@@ -179,7 +179,26 @@ train!(nsfflda, iter=200)
 showtopics(nsfflda)
 ```
 
-Now we see can see that many of the most troublesome corpus-specific stop words have been automatically filtered out of the topics, and those that remain are only those which tend to belong to their own, more generic, topic.
+```
+topic 1         topic 2        topic 3         topic 4          topic 5        topic 6       topic 7          topic 8
+earthquake      chemistry      species         design           university     cell          economic         theory
+ocean           chemical       plant           algorithms       support        protein       social           equations
+water           program        genetic         parallel         students       cells         theory           geometry
+measurements    reactions      populations     performance      program        proteins      policy           mathematical
+program         metal          plants          computer         science        gene          human            differential
+soil            surface        evolutionary    processing       scientists     plant         political        algebraic
+climate         molecular      population      applications     award          molecular     change           groups
+seismic         electron       patterns        network          sciences       genes         public           solutions
+solar           theoretical    variation       networks         conference     function      science          mathematics
+earth           university     dna             approach         national       regulation    decision         finite
+global          award          test            software         projects       dna           people           dimensional
+surface         temperature    food            efficient        engineering    expression    labor            functions
+sea             organic        forest          power            year           plants        market           nonlinear
+response        gas            ecology         computational    workshop       mechanisms    theoretical      spaces
+observations    laser          host            program          researchers    membrane      environmental    questions
+```
+
+We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
 
 ### CTM
 For our final test with the NSF Abstracts corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
