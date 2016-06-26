@@ -242,6 +242,8 @@ Now let's train a ```CTPF``` model on our modified corpus, and then we will eval
 citeulda = LDA(citeucorp, 8)
 train!(citeulda, iter=150)
 
+# training...
+
 citeuctpf = CTPF(citeucorp, 8, citeulda)
 train!(citeuctpf, iter=200)
 
