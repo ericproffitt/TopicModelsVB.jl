@@ -358,6 +358,8 @@ end
 @show mean(acc)
 ```
 
+# Parallel Computing Support
+
 # Type Master-list
 ```julia
 VectorList
@@ -525,12 +527,6 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.
 # If a document has no title, the documents index in the corpus will be shown instead.
 
 ```
-
-# Advanced Material
-###Setting Hyperparameters
-###DTM Variations
-###Hidden Markov Topic Model (HMTM)
-###Parallel Computing Support
 
 # Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
