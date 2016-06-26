@@ -532,7 +532,7 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.
 
 # Future Directions
 ### Hidden Markov Topic Model
-### Nonparametriv Variational Bayesian Topic Modeling
+### Nonparametric Variational Bayesian Topic Modeling
 
 # Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
