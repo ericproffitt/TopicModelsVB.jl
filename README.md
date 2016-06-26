@@ -275,7 +275,7 @@ train!(citeuctpf, iter=200)
 
 # training...
 ```
-Now let's evaluate the accuracy of this model against the test set.  The baseline for the mean accuracy will be ```mean(acc) = 0.5```.
+Now let's evaluate the accuracy of this model against the test set.  Baseline for the mean accuracy will be ```mean(acc) = 0.5```.
 ```julia
 acc = Float64[]
 for (d, u) in enumerate(testukeys)
