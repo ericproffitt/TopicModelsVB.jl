@@ -140,8 +140,8 @@ fixcorp!(nsfcorp)
 # Notice that the post-fix lexicon is considerably smaller after removing all but the first 5000 docs.
 
 nsflda = LDA(nsfcorp, 9)
-train!(nsflda, iter=150, tol=0.0) # Setting tol=0.0 will ensure that all 200 iterations are completed.
-                                  # If you don't want to watch the ∆elbo, set chkelbo=201.
+train!(nsflda, iter=150, tol=0.0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
+                                  # If you don't want to watch the ∆elbo, set chkelbo=151.
 
 # training...
 
