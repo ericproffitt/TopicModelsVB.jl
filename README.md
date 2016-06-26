@@ -481,18 +481,18 @@ checkmodel(model::TopicModel)
 
 train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
-# 'iter'    - the maximum number of iterations through the corpus.
-# 'tol'     - the absolute tolerance and ∆elbo required as a stopping criterion.
-# 'niter'   - the maximum number of iterations for Newton's and interior-point Newton's methods.
-# 'ntol'    - the tolerance for the change of function value as a stopping criterion for Newton's and interior-point Newton's methods.
-# 'viter'   - the maximum number of iterations for optimizing the variational parameters (at the document level).
-# 'vtol'    - the tolerance for the change of variational parameter values as a stopping criterion.
-# 'chkelbo' - how often the elbo should be checked (for both user evaluation and convergence).
+# 'iter'    - maximum number of iterations through the corpus.
+# 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
+# 'niter'   - maximum number of iterations for Newton's and interior-point Newton's methods.
+# 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods.
+# 'viter'   - maximum number of iterations for optimizing variational parameters (at the document level).
+# 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
+# 'chkelbo' - number of iterations between elbo checks (for both evaluation and convergence checking).
 
 train!(dtm::DTM; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/dtm.K^2, cgiter::Int=100, cgtol::Float64=1/dtm.T^2, chkelbo::Int=1)
 # Train DTM.
-# 'cgiter' - the maximum number of iterations for the Polak-Ribière conjugate gradient method.
-# 'cgtol'  - the tolerance for the change of function value as a stopping criterion for Polak-Ribière conjugate gradient method.
+# 'cgiter' - maximum number of iterations for the Polak-Ribière conjugate gradient method.
+# 'cgtol'  - tolerance for change in function value as stopping criterion for Polak-Ribière conjugate gradient method.
 
 train!(ctpf::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64=1/ctpf.K^2, chkelbo::Int=1)
 # Train CTPF.
