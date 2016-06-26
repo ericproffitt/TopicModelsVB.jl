@@ -70,7 +70,7 @@ On the other hand, culling a corpus prior to fixing it will remove those documen
 
 **Important:** The Corpus type is just a container for documents, along with two dictionaries which give lex and user keys sensible names.  
 
-Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  Thus **be very careful whenever you modify the internals of documents themselves, either manually or through the use of ```corp``` functions.** 
+Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever you modify the internals of documents themselves, either manually or through the use of** ```corp``` **functions**. 
 
 # Models
 The available models are as follows:
