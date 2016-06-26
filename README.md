@@ -342,10 +342,10 @@ CTPF(corp, K, pmodel) <: TopicModel
 ### Generic Functions
 ```julia
 isnegative(.)
-# Takes a number or an array of numbers and returns Bool or Array{Bool} (resp.).
+# Take a number or an array of numbers and return Bool or Array{Bool} (resp.).
 
 ispositive(.)
-# Takes a number or an array of numbers and returns Bool or Array{Bool} (resp.).
+# Take a number or an array of numbers and return Bool or Array{Bool} (resp.).
 
 tetragamma(.)
 # polygamma(2, x)
@@ -361,32 +361,32 @@ partition(xs, n)
 ### Document/Corpus Functions
 ```julia
 checkdoc(doc::Document)
-# Verifies that all Document fields have legal values.
+# Verify that all Document fields have legal values.
 
 checkcorp(corp::Corpus)
-# Verifies that all Corpus fields have legal values.
+# Verify that all Corpus fields have legal values.
 
 readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
-# Reads corpus from plaintext files.
+# Read corpus from plaintext files.
 
 writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
-# Writes a corpus to plaintext files.
+# Write corpus to plaintext files.
 
 abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1)
-# Abridges a corpus.
+# Abridge corpus.
 # If stop = true, stop words are removed.
 # If order = false, order is ignored and multiple seperate occurrences of words are stacked and the associated counts increased.
 # All terms which appear < b times are removed from documents.
 
 trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
-# Those values which appear in the indicated fields of documents, but don't appear in the corpus dictionaries, are removed.
+# Those values which appear in the indicated fields of documents, yet don't appear in the corpus dictionaries, are removed.
 
 compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabet::Bool=true)
-# Compacts a corpus by relabeling lex and/or user keys so that they form a unit range.
-# If alphabet=true, the lex and/or user dictionaries are alphabetized.
+# Compact a corpus by relabeling lex and/or userkeys so that they form a unit range.
+# If alphabet=true the lex and/or user dictionaries are alphabetized.
 
 padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
-# Pads a corpus by entering generic values for lex and/or user keys which appear in documents but not in the corpus dictionaries.
+# Pad a corpus by entering generic values for lex and/or userkeys which appear in documents but not in the lex/user dictionaries.
 
 cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Int=1)
 # Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields yet don't appear in the corpus dictionaries.
@@ -400,22 +400,22 @@ fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, reade
 # compactcorp!(corp, lex=lex, users=users, alphabet=alphabet)
 
 showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Int, Vector{Int}})
-# Displays the text and title of a document.
+# Display the text and title of a document(s).
 
 getlex(corp::Corpus)
-# Collects the sorted values from the corpus lexicon
+# Collect sorted values from the lex dictionary.
 
 getusers(corp::Corpus)
-# Collects the sorted values from the list of corpus users.
+# Collect sorted values from the user dictionary.
 ```
 
 ### Model Functions
 ```julia
 checkmodel(model::TopicModel)
-# Verifies that all model fields have legal values.
+# Verify that all model fields have legal values.
 
 train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
-# Trains one of the models: LDA, fLDA, CTM, fCTM.
+# Train one of the following models: LDA, fLDA, CTM, fCTM.
 # 'iter'    - the maximum number of iterations through the corpus
 # 'tol'     - the absolute tolerance and ∆elbo required as a stopping criterion.
 # 'niter'   - the maximum number of iterations for Newton's and interior-point Newton's methods.
@@ -425,34 +425,34 @@ train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, nite
 # 'chkelbo' - how often the elbo should be checked (for both user evaluation and convergence).
 
 train!(dtm::DTM; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/dtm.K^2, cgiter::Int=100, cgtol::Float64=1/dtm.T^2, chkelbo::Int=1)
-# Trains DTM.
+# Train DTM.
 # 'cgiter' - the maximum number of iterations for the Polak-Ribière conjugate gradient method.
 # 'cgtol'  - the tolerance for the change of function value as a stopping criterion for Polak-Ribière conjugate gradient method.
 
 train!(ctpf::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64=1/ctpf.K^2, chkelbo::Int=1)
-# Trains CTPF.
+# Train CTPF.
 
 gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
-# Generates a generic document from the model parameters by running the associated graphical model as a generative process.
-# The argument 'a' uses Laplace smoothing to smooth the topic-term distribution.
+# Generate a generic document from the model parameters by running the associated graphical model as a generative process.
+# The argument 'a' uses Laplace smoothing to smooth the topic-term distributions.
 
 gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
-# Generates a generic corpus of size 'corpsize' from the model parameters by running gendoc(corp, a) iteratively.
+# Generate a generic corpus of size 'corpsize' from the model parameters.
 
 showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
-# Displays the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
+# Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
 
 showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
-# Displays the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
+# Display the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
 
 showlibs(ctpf::CTPF, users::Union{Int, Vector{Int}})
-# Shows the documents in a user's library.
+# Show the document(s) in a user's library.
 
 showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
-# Shows the top 'U' users that are recommended to read a document(s), defaults to 4 columns per line.
+# Show the top 'U' user recommendations for a document(s), defaults to 4 columns per line.
 
 showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.M); cols::Int=1)
-# Shows the top 'M' documents recommnded for a user(s), defaults to 1 column per line.
+# Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
 # If a document has no title, the documents index in the corpus will be shown instead.
 
 ```
