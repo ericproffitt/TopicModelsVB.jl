@@ -74,7 +74,7 @@ title4
 title5
 ```
 
-Each line is a document title, and the order of these titles corresponds to the other of document blocks in the associated docfile.
+Each line is a document title, and the order of these titles corresponds to the order of document blocks in the associated docfile.
 
 To read a corpus into TopicModelsVB.jl, use the following function:
 
