@@ -79,7 +79,7 @@ Each line is a document title, and the order of these titles corresponds to the 
 To read a corpus into TopicModelsVB.jl, use the following function:
 
 ```julia
-readcorp(;docfile="", lexfile="", userfile="", titlefil="", delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
+readcorp(;docfile="", lexfile="", userfile="", titlefil="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
 ```
 
 The ```file``` keyword arguments indicate the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will return an empty corpus.
