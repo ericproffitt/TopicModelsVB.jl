@@ -140,12 +140,33 @@ fixcorp!(nsfcorp)
 # Notice that the post-fix lexicon is considerably smaller after removing all but the first 5000 docs.
 
 nsflda = LDA(nsfcorp, 8)
-train!(nsflda, iter=200)
+train!(nsflda, iter=200, tol=0.0) # Setting tol=0.0 will ensure that all 200 iterations are completed.
+                                  # If you don't want to watch the ∆elbo, set chkelbo=201.
 
 # training...
 
-showtopics(nsflda)
+showtopics(nsflda, cols=8)
 ```
+
+```
+topic 1         topic 2         topic 3          topic 4        topic 5       topic 6      topic 7          topic 8
+data            research        species          research       research      cell         research         theory
+project         study           research         system         university    protein      project          problems
+research        chemistry       plant            systems        support       cells        data             study
+study           studies         study            design         students      proteins     study            research
+earthquake      program         genetic          data           program       gene         economic         equations
+ocean           experimental    populations      based          science       studies      important        work
+studies         high            plants           high           dr            plant        social           investigator
+water           properties      evolutionary     algorithms     award         genes        information      project
+field           reactions       population       control        scientists    molecular    understanding    geometry
+time            chemical        data             project        project       research     work             principal
+provide         systems         dr               performance    sciences      specific     development      mathematical
+measurements    materials       studies          techniques     scientific    function     provide          methods
+models          phase           patterns         parallel       conference    system       theory           analysis
+important       work            relationships    computer       national      study        analysis         systems
+results         surface         determine        analysis       projects      important    human            differential
+```
+
 
 One thing we notice is all the words which would be considered informative to a generic corpus, but which are effectively stop words in a corpus of science article abstracts.  These words will be missed by most stop word lists, and can be a pain to pinpoint and individually remove.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
 ```julia
