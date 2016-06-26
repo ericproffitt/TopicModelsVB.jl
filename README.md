@@ -208,8 +208,12 @@ fixcorp!(corp, stop=true, order=false, b=150, len=10)
 cmaglda = fLDA(corp, 10)
 train!(cmagflda, iter=150, chkelbo=151)
 
+# training...
+
 cmagdtm = DTM(cmagcorp, 10, 200, cmagflda)
 train!(cmagdtm, cgiter=10, iter=200)
+
+# training...
 
 showtopics(model, 20, topics=5)
 ```
@@ -240,6 +244,8 @@ train!(citeulda, iter=150)
 
 citeuctpf = CTPF(citeucorp, 8, citeulda)
 train!(citeuctpf, iter=200)
+
+# training...
 ```
 Now let's evaluate the accuracy of this model against the test set.  Where the base line is ```mean(acc) = 0.5```.
 ```julia
