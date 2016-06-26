@@ -356,6 +356,12 @@ end
 
 # Parallel Computing Support
 
+Coming soon...
+
+# Online support
+
+Coming soon...
+
 # Types
 ```julia
 VectorList
@@ -481,9 +487,6 @@ getusers(corp::Corpus)
 checkmodel(model::TopicModel)
 # Verify that all model fields have legal values.
 
-push!(model::TopicModel, docs::Union{Document, Vector{Document}})
-# Add more documents to an already trained model (online support).
-
 train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
 # 'iter'    - the maximum number of iterations through the corpus
@@ -526,6 +529,10 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.
 # If a document has no title, the documents index in the corpus will be shown instead.
 
 ```
+
+# Future Directions
+### Hidden Markov Topic Model
+### Nonparametriv Variational Bayesian Topic Modeling
 
 # Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
