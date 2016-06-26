@@ -409,10 +409,10 @@ CTPF(corp, K, pmodel) <: TopicModel
 ### Generic Functions
 ```julia
 isnegative(x::Union{Number, Array{Number}})
-# Take a Number or Array{Number} and return Bool or Array{Bool} (resp.).
+# Take Number or Array{Number} and return Bool or Array{Bool} (resp.).
 
 ispositive(x::Union{Number, Array{Number}})
-# Take Number or an Array{Number} and return Bool or Array{Bool} (resp.).
+# Take Number or Array{Number} and return Bool or Array{Bool} (resp.).
 
 tetragamma(.)
 # polygamma(2, .)
@@ -420,8 +420,7 @@ tetragamma(.)
 partition(xs, n)
 # xs: Vector or UnitRange
 # n: positive Int
-
-# Returns a VectorList containing contiguous portions of xs of length n (includes remainder).
+# Return VectorList containing contiguous portions of xs of length n (includes remainder).
 # e.g. partition([1,5,"HI",5,-7.1], 2) == Vector[[1,5],["HI",5],[-7.1]]
 ```
 
