@@ -44,7 +44,7 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 
 1. ```terms``` (this line is mandatory)
 
-A line of delimited positive integers corresponding to the terms which make up the document.
+ - A line of delimited positive integers corresponding to the terms which make up the document.
 
 2. ```counts``` - A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to ```ones(length(terms))```).
 
