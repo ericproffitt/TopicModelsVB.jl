@@ -201,7 +201,7 @@ observations    laser          host            program          researchers    m
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
 
 ### CTM
-For our final test with the NSF Abstracts corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
+For our final example using the NSF Abstracts corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
 ```julia
 srand(1)
 
