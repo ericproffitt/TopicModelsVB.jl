@@ -458,7 +458,7 @@ cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Int=1)
 # All documents of length < len are removed.
 
 fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabet::Bool=true)
-# Fixes a corp by running the following four functions:
+# Fixes a corp by running the following four functions in order:
 # abridgecorp!(corp, stop=stop, order=order, b=b)
 # trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
 # cullcorp!(corp, len=len)	
