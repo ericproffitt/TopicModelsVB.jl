@@ -59,14 +59,7 @@ or
 padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
 ```
-or
-```julia
-cullcorp!(corp; kwargs...)
-fixcorp!(corp; kwargs...)
-```
-first, and then runs ```fixcorp!``` afterwards.  Padding a corpus before fixing it will insure that any documents which contain lexkeys or userkeys not in the lex or user dictionaries attached to the corpus are not removed.  Instead generic lex and user keys will be added to the lex and user dicionaries (resp.).
-
-On the other hand, culling a corpus prior to fixing it will remove those documents which contain bogus lex or user keys not contained in the lex and user dictionaries (resp.)
+Padding a corpus before fixing it will insure that any documents which contain lexkeys or userkeys not in the lex or user dictionaries attached to the corpus are not removed.  Instead, generic lex and user keys will be added to the lex and user dicionaries (resp.).
 
 **Important:** The Corpus type is just a container for documents, along with two dictionaries which give lex and user keys sensible names.  
 
