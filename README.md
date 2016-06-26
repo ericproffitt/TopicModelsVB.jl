@@ -282,33 +282,25 @@ TopicModel
 # abstract type
 
 type LDA <: TopicModel
-	K::Int
-	M::Int
-	V::Int
-	N::Vector{Int}
-	C::Vector{Int}
-	corp::Corpus
-	topics::VectorList{Int}
-	alpha::Vector{Float64}
-	beta::Matrix{Float64}
-	gamma::VectorList{Float64}
-	phi::MatrixList{Float64}
-	elbo::Float64
+# Latent Dirichlet allocation
+# 'K' denotes the number of topics.
 
 fLDA(corp, K) <: TopicModel
-# filtered latent Dirichlet allocation type
+# Filtered latent Dirichlet allocation
 
 CTM(corp, K) <: TopicModel
-# correlated topic model type
+# Correlated topic model
 
 fCTM(corp, K) <: TopicModel
-# filtered correlated topic model type
+# Filtered correlated topic model
 
 DTM(corp, K, delta, pmodel) <: TopicModel
-# dynamitc topic model type
+# Dynamic topic model
+# 'delta' denotes the time-step size.
+# 'pmodel' is a pre-trained model from Union{LDA, fLDA, CTM, fCTM}
 
 CTPF(corp, K, pmodel) <: TopicModel
-# collaborative topic Poisson factorization type
+# Collaborative topic Poisson factorization
 ```
 
 
