@@ -84,7 +84,7 @@ readcorp(;docfile="", lexfile="", userfile="", titlefil="", delim=',', counts=fa
 
 The ```file``` keyword arguments indicate the path where the file is located.
 
-It is often the case that even once the files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be loaded into a topic model.  Therefore before loading a corpus into a model, it's **very important** that one of the following is run:
+It is often the case that even once files are correctly formatted and read, the corpus is still not sufficiently cleaned and formatted to be loaded into a topic model.  Therefore before loading a corpus into a model, it's **very important** that one of the following is run:
 
 ```julia
 fixcorp!(corp; kwargs...)
