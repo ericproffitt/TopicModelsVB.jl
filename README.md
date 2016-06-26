@@ -384,7 +384,7 @@ TopicModel
 
 LDA(corp, K) <: TopicModel
 # Latent Dirichlet allocation
-# 'K' denotes the number of topics.
+# 'K' - number of topics.
 
 fLDA(corp, K) <: TopicModel
 # Filtered latent Dirichlet allocation
@@ -397,8 +397,8 @@ fCTM(corp, K) <: TopicModel
 
 DTM(corp, K, delta, pmodel) <: TopicModel
 # Dynamic topic model
-# 'delta' denotes the time-step size.
-# 'pmodel' is a pre-trained model from Union{LDA, fLDA, CTM, fCTM}
+# 'delta'  - time-interval size.
+# 'pmodel' - pre-trained model of type Union{LDA, fLDA, CTM, fCTM}.
 
 CTPF(corp, K, pmodel) <: TopicModel
 # Collaborative topic Poisson factorization
@@ -481,7 +481,7 @@ checkmodel(model::TopicModel)
 
 train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
-# 'iter'    - the maximum number of iterations through the corpus
+# 'iter'    - the maximum number of iterations through the corpus.
 # 'tol'     - the absolute tolerance and ∆elbo required as a stopping criterion.
 # 'niter'   - the maximum number of iterations for Newton's and interior-point Newton's methods.
 # 'ntol'    - the tolerance for the change of function value as a stopping criterion for Newton's and interior-point Newton's methods.
