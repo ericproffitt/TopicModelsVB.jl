@@ -420,7 +420,7 @@ tetragamma(.)
 partition(xs::Union{Vector, UnitRange}, n::Int)
 # 'n' must be positive.
 # Return VectorList containing contiguous portions of xs of length n (includes remainder).
-# e.g. partition([1,5,"HI",5,-7.1], 2) == Vector[[1,5],["HI",5],[-7.1]]
+# e.g. partition([1,-7.1,"HI",5,5], 2) == Vector[[1,-7.1],["HI",5],[5]]
 ```
 
 ### Document/Corpus Functions
