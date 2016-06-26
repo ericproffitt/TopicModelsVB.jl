@@ -180,22 +180,29 @@ showtopics(nsfflda, cols=8)
 ```
 
 ```
-topic 1         topic 2        topic 3         topic 4          topic 5        topic 6       topic 7          topic 8
-earthquake      chemistry      species         design           university     cell          economic         theory
-ocean           chemical       plant           algorithms       support        protein       social           equations
-water           program        genetic         parallel         students       cells         theory           geometry
-measurements    reactions      populations     performance      program        proteins      policy           mathematical
-program         metal          plants          computer         science        gene          human            differential
-soil            surface        evolutionary    processing       scientists     plant         political        algebraic
-climate         molecular      population      applications     award          molecular     change           groups
-seismic         electron       patterns        network          sciences       genes         public           solutions
-solar           theoretical    variation       networks         conference     function      science          mathematics
-earth           university     dna             approach         national       regulation    decision         finite
-global          award          test            software         projects       dna           people           dimensional
-surface         temperature    food            efficient        engineering    expression    labor            functions
-sea             organic        forest          power            year           plants        market           nonlinear
-response        gas            ecology         computational    workshop       mechanisms    theoretical      spaces
-observations    laser          host            program          researchers    membrane      environmental    questions
+topic 1         topic 2         topic 3          topic 4          topic 5         topic 6       topic 7          topic 8
+earthquake      chemistry       species          design           university      cell          economic         theory
+ocean           chemical        plant            algorithms       support         protein       social           equations
+water           program         genetic          parallel         students        cells         theory           geometry
+measurements    reactions       populations      performance      program         proteins      policy           mathematical
+program         metal           plants           computer         science         gene          human            differential
+soil            surface         evolutionary     processing       scientists      plant         political        algebraic
+climate         molecular       population       applications     award           molecular     change           groups
+seismic         electron        patterns         network          sciences        genes         public           solutions
+solar           theoretical     variation        networks         conference      function      science          mathematics
+earth           university      dna              approach         national        regulation    decision         finite
+global          award           test             software         projects        dna           people           dimensional
+surface         temperature     food             efficient        engineering     expression    labor            functions
+sea             organic         forest           power            year            plants        market           nonlinear
+response        gas             ecology          computational    workshop        mechanisms    theoretical      spaces
+observations    laser           host             program          researchers     membrane      environmental    questions
+damage          molecules       environmental    distributed      months          binding       women            numerical
+pacific         reaction        diversity        programming      faculty         brain         cultural         manifolds
+samples         quantum         factors          speed            mathematical    genetic       groups           applications
+atmospheric     measurements    ecological       dynamic          institute       cellular      factors          professor
+chemical        compounds       reproductive     image            equipment       biological    relationship     operators
+
+
 ```
 
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
@@ -212,7 +219,7 @@ train!(nsffctm, iter=200, tol=0.0)
 
 showtopics(nsffctm, cols=8)
 ```
-Not only have corpus-specific stop words been removed, but we can see that the topics are significantly more well defined and consistent than in the non-correlated LDA model.
+Since the topics were already so well defined in the fLDA model, there's little room for improvement in topic coherence with the fCTM model, however what's most interesting is the correlation between topics.
 
 Based on the top 15 terms in each topic, we might tentatively assign the following topic labels:
 
