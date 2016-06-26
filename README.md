@@ -379,16 +379,16 @@ showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Int, Vector{Int}}
 getlex(corp::Corpus)
 # Collects the sorted values from the corpus lexicon
 
-getusers(corp::Corpus)
+function getusers(corp::Corpus)
 # Collects the sorted values from the list of corpus users.
 ```
 
 ### Model Functions
 ```julia
-checkmodel(model::TopicModel)
+function checkmodel(model::TopicModel)
 # Verifies that all model fields have legal values.
 
-train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
+function train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
 # Trains one of the models: LDA, fLDA, CTM, fCTM.
 # 'iter'    - the maximum number of iterations through the corpus
 # 'tol'     - the absolute tolerance and ∆elbo required as a stopping criterion.
@@ -398,34 +398,34 @@ train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, nite
 # 'vtol'    - the tolerance for the change of variational parameter values as a stopping criterion.
 # 'chkelbo' - how often the elbo should be checked (for both user evaluation and convergence).
 
-train!(dtm::DTM; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/dtm.K^2, cgiter::Int=100, cgtol::Float64=1/dtm.T^2, chkelbo::Int=1)
+function train!(dtm::DTM; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/dtm.K^2, cgiter::Int=100, cgtol::Float64=1/dtm.T^2, chkelbo::Int=1)
 # Trains DTM.
 # 'cgiter' - the maximum number of iterations for the Polak-Ribière conjugate gradient method.
 # 'cgtol'  - the tolerance for the change of function value as a stopping criterion for Polak-Ribière conjugate gradient method.
 
-train!(ctpf::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64=1/ctpf.K^2, chkelbo::Int=1)
+function train!(ctpf::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64=1/ctpf.K^2, chkelbo::Int=1)
 # Trains CTPF.
 
-gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
+function gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
 # Generates a generic document from the model parameters by running the associated graphical model as a generative process.
 # The argument 'a' uses Laplace smoothing to smooth the topic-term distribution.
 
-gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
+function gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
 # Generates a generic corpus of size 'corpsize' from the model parameters by running gendoc(corp, a) iteratively.
 
-showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
+function showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
 # Displays the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
 
-showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
+function showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
 # Displays the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
 
 function showlibs(model::CTPF, users::Union{Int, Vector{Int}})
 # Shows the documents in a user's library.
 
-showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
+function showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
 # Shows the top 'U' users that are recommended to read a document(s), defaults to 4 columns per line.
 
-showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.M); cols::Int=1)
+function showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.M); cols::Int=1)
 # Shows the top 'M' documents recommnded for a user(s), defaults to 1 column per line.
 # If a document has no title, the documents index in the corpus will be shown instead.
 
