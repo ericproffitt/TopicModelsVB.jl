@@ -167,7 +167,7 @@ important       work            relationships    computer       national      st
 results         surface         determine        analysis       projects      important    human            differential
 ```
 
-One thing we notice is all the words such as *research*, *study*, *data*, etc., which would be considered informative in a generic corpus, are effectively stop words in a corpus composed of science article abstracts.  Such words will be missed by most stop word lists, and can be a difficult to pinpoint and individually remove.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
+One thing we notice is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and can be a difficult to pinpoint and individually remove.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
 ```julia
 srand(1)
 
@@ -179,7 +179,7 @@ train!(nsfflda, iter=200)
 showtopics(nsfflda)
 ```
 
-Now we see can see that many of the most troublesome corpus-specific stop words have been automatically filtered out of the topics, and those that remain are those which tend to belong to their own, more generic, topic.
+Now we see can see that many of the most troublesome corpus-specific stop words have been automatically filtered out of the topics, and those that remain are only those which tend to belong to their own, more generic, topic.
 
 ### CTM
 For our final test with the NSF Abstracts corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
