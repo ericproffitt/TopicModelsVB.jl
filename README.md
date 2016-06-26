@@ -516,7 +516,7 @@ showlibs(ctpf::CTPF, users::Union{Int, Vector{Int}})
 showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
 # Show the top 'U' user recommendations for a document(s), defaults to 4 columns per line.
 
-showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.M); cols::Int=1)
+showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
 # Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
 # If a document has no title, the documents index in the corpus will be shown instead.
 
