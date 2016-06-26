@@ -278,8 +278,8 @@ As for the least associated topics, the most unrelated pair of topics is 6 and 8
 
 Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but the *Economics* topic
 ```julia
-sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Chemistry topic, absolute off-diagonal covariance 0.037.
-sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 16.904.
+sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Economics topic, absolute off-diagonal covariance 5.732.
+sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 18.766.
 ```
 
 Looking closer at ```model.sigma```, it appears that there is a tendency within the natural sciences for the softer side of the spectrum to use slightly more academic buzzwords, while the harder sciences tend to eschew them.  The *Economics* topic is also the only non-natural science found among the 9 topics, and thus its lack of overlapping lexicon with the natural sciences likely leads to little correlation between between it and the remaining 8 topics.
