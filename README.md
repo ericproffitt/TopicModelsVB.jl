@@ -42,22 +42,15 @@ None of these files are mandatory to read a corpus, and in fact reading no files
 
 The docfile should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on what information is known about the documents.  Since a document is at its essence a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms from which it is composed.  Any further lines in a document block are optional, however if they are present they must be present for all documents and must come in the following order:
 
-1. ```terms``` (this line is mandatory)
+1. ```terms``` (this line is mandatory): A line of delimited positive integers corresponding to the terms which make up the document.
 
- - A line of delimited positive integers corresponding to the terms which make up the document.
+2. ```counts```: A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to ```ones(length(terms))```).
 
-2. ```counts```
+3. ```readers```: A line delimited positive integers corresponding to the readers which have read the document.
 
- - A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to ```ones(length(terms))```).
+4. ```ratings```: A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document (defaults to ```ones(length(readers))```).
 
-3. ```readers```
- - A line delimited positive integers corresponding to the readers which have read the document.
-
-4. ```ratings```
- - A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document (defaults to ```ones(length(readers))```).
-
-5. ```stamp```
- - A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
+5. ```stamp```: A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
 
 The lex and userfiles are dictionaries mapping positive integers to terms and usernames (resp.).  For example,
 
