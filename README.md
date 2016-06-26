@@ -48,9 +48,9 @@ Any useful corpus needs a non-empty collection of documents.  The document file 
 readcorp(;docfile, lexfile, userfile, titlefile, delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
 ```
 
-The file keywords are all strings indicating the path where the file is located.  It's not necessary to include all (or even any) of the files.  It's ok to only load your ```docfile```, or even to leave your corpus completely empty and only load a ```lexfile```.  Loading no files will simply return an empty corpus.
+The file keywords are all strings indicating the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will simply return an empty corpus.
 
-Even once the files are in the correct format and are read into a corpus, it's still often the case that the files are not sufficiently cleaned and formatted to be usable by the models.  Thus it's **very important** that the user always runs one of the following
+Even once the files are correctly formatted and read into a corpus, it's often still the case that the corpus is not sufficiently cleaned and formatted to be usable by the models.  Thus before loading a corpus into a model, it's **very important** that the user always runs one of the following
 ```julia
 fixcorp!(corp; kwargs...)
 ```
@@ -59,6 +59,7 @@ or
 padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
 ```
+
 Padding a corpus before fixing it will insure that any documents which contain lexkeys or userkeys not in the lex or user dictionaries attached to the corpus are not removed.  Instead, generic lex and user keys will be added to the lex and user dicionaries (resp.).
 
 **Important:** The Corpus type is just a container for documents, along with two dictionaries which give lex and user keys sensible names.  
