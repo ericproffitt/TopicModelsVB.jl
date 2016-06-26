@@ -356,8 +356,6 @@ end
 
 # Parallel Computing Support
 
-Coming soon...
-
 # Types
 ```julia
 VectorList
