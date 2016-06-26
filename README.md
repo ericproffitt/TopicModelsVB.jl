@@ -48,7 +48,7 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 
 3. ```readers``` line.  A line delimited positive integers corresponding to the readers which have read the document.
 
-4. ```ratings``` line.  A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document.
+4. ```ratings``` line.  A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document (defaults to ```ones(length(readers))```).
 
 5. ```stamp``` line.  A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
 
