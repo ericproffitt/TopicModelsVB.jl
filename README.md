@@ -333,12 +333,12 @@ Notice that 158 of the the documents had only a single reader (no documents had 
 Now let's train a ```CTPF``` model on our modified corpus, and then we will evaluate the success of our model at imputing the correct users back into document libraries
 ```julia
 citeulda = LDA(citeucorp, 8)
-train!(citeulda, iter=150)
+train!(citeulda, iter=150, chkelbo=151)
 
 # training...
 
-citeuctpf = CTPF(citeucorp, 8, citeulda)
-train!(citeuctpf, iter=200)
+citeuctpf = CTPF(citeucorp, 8, citeulda) # Will likely take 5 - 10 minutes.
+train!(citeuctpf, iter=150, chkelbo=50)  # Will likely take 1 - 2 hours.
 
 # training...
 ```
