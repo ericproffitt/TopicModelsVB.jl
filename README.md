@@ -148,21 +148,14 @@ Not only have corpus-specific stop words been removed, but we can see that the t
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
-• topic 1: *Earth Science*
-
-• topic 2: *Physics*
-
-• topic 3: *Microbiology*
-
-• topic 4: *Computer Science*
-
-• topic 5: *Academia*
-
-• topic 6: *Sociobiology*
-
-• topic 7: *Chemistry*
-
-• topic 8: *Mathematics*
+* topic 1: *Earth Science*
+* topic 2: *Physics*
+* topic 3: *Microbiology*
+* topic 4: *Computer Science*
+* topic 5: *Academia*
+* topic 6: *Sociobiology*
+* topic 7: *Chemistry*
+* topic 8: *Mathematics*
 
 Now let's take a look at the topic-covariance matrix
 ```julia
