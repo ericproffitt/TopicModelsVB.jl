@@ -38,9 +38,9 @@ There are four plaintext files that make up a corpus:
  * userfile
  * titlefile
  
-None of these files are mandatory to read a corpus into TopicModelsVB.jl, and in fact reading no files will result in an empty corpus.  However to train a model, a docfile will be mandatory, since it contains the quantitative data known about the documents in a corpus.  The remaining three files are solely for interpreting output.
+None of these files are mandatory to read a corpus, and in fact reading no files will result in an empty corpus.  However in order to train a model a docfile will be mandatory, since it contains all quantitative data known about the documents in a corpus.  The remaining three files are solely for interpreting output.
 
-The docfile should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on what information one has about the documents.  Since a document is essential a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values, corresponding to the terms from which it is composed.  Any further lines in a document block are optional, but if they are present, they must come in the following order:
+The docfile should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on what information is known about the documents.  Since a document is essential a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms of which it is composed.  Any further lines in a document block are optional, but if they are present they must be present for all documents and they must come in the following order:
 
 1. ```terms``` line (this line is mandatory).  A line of delimited positive integers corresponding to the terms which make up the document.
 
@@ -74,7 +74,7 @@ title4
 title5
 ```
 
-Each line is a document title, and the order of these titles corresponds to the order of document blocks in the associated docfile.
+The order of these titles correspond to the order of document blocks in the associated docfile.
 
 To read a corpus into TopicModelsVB.jl, use the following function:
 
@@ -82,9 +82,9 @@ To read a corpus into TopicModelsVB.jl, use the following function:
 readcorp(;docfile="", lexfile="", userfile="", titlefil="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
 ```
 
-The ```file``` keyword arguments indicate the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will return an empty corpus.
+The ```file``` keyword arguments indicate the path where the file is located.
 
-It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that one of the following is run:
+It is often the case that even once the files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be loaded into a topic model.  Therefore before loading a corpus into a model, it's **very important** that one of the following is run:
 
 ```julia
 fixcorp!(corp; kwargs...)
@@ -95,11 +95,11 @@ padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
 ```
 
-Padding a corpus before fixing it will ensure that any documents which contain lex or userkeys not in the lex or user dictionaries are not removed.  Instead, generic lex and userkeys will be added to the lex and user dicionaries (resp.).
+Padding a corpus before fixing it will ensure that any documents which contain lex or userkeys not in the lex or user dictionaries are not removed.  Instead, generic lex and userkeys will be added as necessary to the lex and user dicionaries (resp.).
 
-**Important:** The Corpus type is just a container for documents, along with two dictionaries which give lex and user keys sensible names.  
+**Important:** The Corpus type is just a container for documents coupled with two dictionaries which give lex and user keys sensible names.  
 
-Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever you modify the internals of documents themselves, either manually or through the use of** ```corp``` **functions**. 
+Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever you modify the internals of documents themselves, either manually or through the use of** ```corp!``` **functions**. 
 
 # Models
 The available models are as follows:
@@ -262,31 +262,27 @@ Now let's take a look at the topic-covariance matrix
 model.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 16.770
-model.sigma[3,6] # 14.758
-model.sigma[2,8] # 8.970
+model.sigma[4,8] # 15.005
+model.sigma[3,6] # 13.219
+model.sigma[2,9] # 7.502
 
 # Top 3 negative entries, sorted in ascending order:
-model.sigma[6,8] # -21.677
-model.sigma[1,8] # -19.016
-model.sigma[2,6] # -15.107
+model.sigma[6,8] # -22.347
+model.sigma[3,8] # -20.198
+model.sigma[4,6] # -14.160
 ```
 
-According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Microbiology* and *Sociology*, and then by 2 and 8, corresponding to *Physics* and *Mathematics*.
+According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Mathematics*.
 
-As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Sociology* and *Mathematics*, followed closely by topics 1 and 8, corresponding to *Earth Science* and *Mathematics*, and then third are topics 2 and 6, corresponding to *Physics* and *Sociology*.
+As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Microbiology* and *Mathematics*, followed closely by topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 4 and 6, corresponding to *Computer Science* and *Microbiology*.
 
-Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but the *Chemistry* topic
+Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but the *Economics* topic
 ```julia
 sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Chemistry topic, absolute off-diagonal covariance 0.037.
 sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 16.904.
 ```
-however, looking at the variance of these two topics
-```julia
-model.sigma[7,7] # 0.002
-model.sigma[5,5] # 16.675
-```
-it appears, suprisingly, that the *Chemistry* topic does not fluctuate significantly between documents, and likely uses its own idiosyncratic lexicon, sharing relatively few vocabulary words across topics when compared to say *Physics* and *Mathematics*.
+
+Looking closer at ```model.sigma```, it appears that there is a tendency within the natural sciences for the softer side of the spectrum to use slightly more academic buzzwords, while the harder sciences tend to eschew them.  The *Economics* topic is also the only non-natural science found among the 9 topics, and thus its lack of overlapping lexicon with the natural sciences likely leads to little correlation between between it and the remaining 8 topics.
 
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example a topic which is thematically-static, yet exhibits an evolving lexicon, is computer storage.  Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
