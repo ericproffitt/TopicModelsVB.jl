@@ -360,7 +360,7 @@ end
 
 # Parallel Computing Support
 
-# Type Master-list
+# Types
 ```julia
 VectorList
 # Array{Array{T,1},1}
@@ -409,7 +409,7 @@ CTPF(corp, K, pmodel) <: TopicModel
 ```
 
 
-# Function Master-list
+# Functions
 ### Generic Functions
 ```julia
 isnegative(.)
