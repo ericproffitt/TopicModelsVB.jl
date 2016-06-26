@@ -82,9 +82,9 @@ To read a corpus into TopicModelsVB.jl, use the following function:
 readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
 ```
 
-The ```file``` keyword arguments indicate the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will simply return an empty corpus.
+The ```file``` keyword arguments indicate the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will return an empty corpus.
 
-It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that the user always runs one of the following:
+It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that one always runs either:
 
 ```julia
 fixcorp!(corp; kwargs...)
@@ -465,4 +465,10 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.
 ###Hidden Markov Topic Model (HMTM)
 
 # Bibliography
-
+1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
+2. Correlated Topic Models (2003); Blei, Lafferty [pdf](http://www.cs.columbia.edu/~blei/papers/BleiLafferty2006.pdf)
+3. Dynamic Topic Models (2006); Blei, Lafferty [pdf](http://www.cs.columbia.edu/~blei/papers/BleiLafferty2006a.pdf)
+4. Learning Semantic Representations with Hidden Markov Topic Models (2009); Andrews, Vigliocco [pdf](http://www.mjandrews.net/papers/andrews.cogsci.2009.pdf)
+5. Content-based Recommendations with Poisson Factorization (2014); Gopalan, Charlin, Blei [pdf](http://www.cs.columbia.edu/~blei/papers/GopalanCharlinBlei2014.pdf)
+6. Machine Learning: A Probabilistic Perspective (2012); Murphy [Amazon](https://www.amazon.com/Machine-Learning-Probabilistic-Perspective-Computation/dp/0262018020/ref=tmm_hrd_swatch_0?_encoding=UTF8&qid=&sr=)
+7. Numerical Optimization (2006); Nocedal, Wright [Amazon](https://www.amazon.com/Numerical-Optimization-Operations-Financial-Engineering/dp/0387303030)
