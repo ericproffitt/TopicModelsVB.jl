@@ -48,7 +48,7 @@ Any useful corpus needs a non-empty collection of documents.  The document file 
 readcorp(;docfile, lexfile, userfile, titlefile, delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
 ```
 
-The file keywords are all strings indicating the path where the file is located.  It's not necessary to include all (or even any) of the files.  It's fine to only load your ```docfile```, or even to leave your corpus completely empty and only load a ```lexfile```.  Loading no files will simply return an empty corpus.
+The file keywords are all strings indicating the path where the file is located.  It's not necessary to include all (or even any) of the files.  It's ok to only load your ```docfile```, or even to leave your corpus completely empty and only load a ```lexfile```.  Loading no files will simply return an empty corpus.
 
 Even once the files are in the correct format and are read into a corpus, it's still often the case that the files are not sufficiently cleaned and formatted to be usable by the models.  Thus it's **very important** that the user always runs one of the following
 ```julia
