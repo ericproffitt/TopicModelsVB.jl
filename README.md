@@ -243,12 +243,9 @@ damage          laser           growth           implementation    mathematical 
 change          phenomena       test             algorithm         faculty         site          market         operators       materials
 ```
 
-Not only have the corpus-specific stop words been effectively filtered, but the topics are noticeably more coherent.  No longer are there two biology topics
+Because the topics in the fLDA were already so well defined, there's little room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at correlations between topics.
 
-
-there's little room for improvement in topic coherence with the fCTM model, however what's most interesting is the correlation between topics.
-
-Based on the top 15 terms in each topic, we might tentatively assign the following topic labels:
+Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
 * topic 1: *Earth Science*
 * topic 2: *Physics*
