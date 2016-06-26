@@ -358,10 +358,6 @@ end
 
 Coming soon...
 
-# Online support
-
-Coming soon...
-
 # Types
 ```julia
 VectorList
@@ -529,10 +525,6 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.
 # If a document has no title, the documents index in the corpus will be shown instead.
 
 ```
-
-# Future Directions
-### Hidden Markov Topic Model
-### Nonparametric Variational Bayesian Topic Modeling
 
 # Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
