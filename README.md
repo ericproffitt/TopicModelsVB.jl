@@ -38,7 +38,21 @@ There are four plaintext files that make up a corpus:
  * userfile
  * titlefile
  
-None of these files are mandatory to read a corpus into TopicModelsVB.jl, and in fact reading no files will result in an empty corpus.  However to train a model, a docfile will be mandatory, since it contains all quantitative data known about the documents in a corpus.  The remaining three files are solely for interpretation.  The lexfile and userfile are dictionaries mapping positive integers to terms and usernames (resp.).  For example
+None of these files are mandatory to read a corpus into TopicModelsVB.jl, and in fact reading no files will result in an empty corpus.  However to train a model, a docfile will be mandatory, since it contains the quantitative data known about the documents in a corpus.  The remaining three files are solely for interpreting output.
+
+The docfile should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on what information one has about the documents.  Since a document is essential a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values, corresponding to the terms from which it is composed.  Any further lines in a document block are optional, but if they are present, they must come in the following order:
+
+1. ```terms``` line (this line is mandatory).  A line of delimited positive integers corresponding to the terms which make up the document.
+
+2. ```counts``` line.  A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to ```ones(length(terms))```).
+
+3. ```readers``` line.  A line delimited positive integers corresponding to the readers which have read the document.
+
+4. ```ratings``` line.  A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document.
+
+5. ```stamp``` line.  A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
+
+The lex and userfiles are dictionaries mapping positive integers to terms and usernames (resp.).  For example,
 
 ```
 1    this
@@ -48,25 +62,30 @@ None of these files are mandatory to read a corpus into TopicModelsVB.jl, and in
 5    file
 ```
 
-Any useful corpus needs a non-empty collection of documents.  The document file should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on the amount of information one has about the document.  Since a document is essential a list of terms, each document *must* contain at least one line containing a list of delimited positive integer values corresponding to the terms from which it is composed.  The lines for a particular document block (if they are present) must come in the following order:
+A userfile is identitcal to a lexfile, except usernames will appear in place of a vocabulary terms.
 
-1. This line is mandatory, and is a delimited list of positive integers corresponding to the terms which make up the document.
+Finally, a titlefile is simply a list of titles, not a dictionary, and is of the form
 
-2. A line of delimited positive integers equal in length to the first line, corresponding to the number of times a particular term appears in a document.
+```
+title1
+title2
+title3
+title4
+title5
+```
 
-3. A line delimited positive integers corresponding to the readers which have the corresponding document in their library.
+Each line is a document title, and the order of these titles corresponds to the other of document blocks in the associated docfile.
 
-4. A line of delimited positive integers equal in length to the third line, corresponding to the rating each reader gave the corresponding document.
-
-5. A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
+To read a corpus into TopicModelsVB.jl, use the following function:
 
 ```julia
 readcorp(;docfile, lexfile, userfile, titlefile, delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
 ```
 
-The file keywords are all strings indicating the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will simply return an empty corpus.
+The file keyword arguments are all strings indicating the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will simply return an empty corpus.
 
-Even once the files are correctly formatted and read into a corpus, it's often still the case that the corpus is not sufficiently cleaned and formatted to be usable by the models.  Thus before loading a corpus into a model, it's **very important** that the user always runs one of the following
+It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that the user always runs one of the following:
+
 ```julia
 fixcorp!(corp; kwargs...)
 ```
@@ -76,7 +95,7 @@ padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
 ```
 
-Padding a corpus before fixing it will insure that any documents which contain lexkeys or userkeys not in the lex or user dictionaries attached to the corpus are not removed.  Instead, generic lex and userkeys will be added to the lex and user dicionaries (resp.).
+Padding a corpus before fixing it will ensure that any documents which contain lex or userkeys not in the lex or user dictionaries are not removed.  Instead, generic lex and userkeys will be added to the lex and user dicionaries (resp.).
 
 **Important:** The Corpus type is just a container for documents, along with two dictionaries which give lex and user keys sensible names.  
 
