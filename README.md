@@ -435,7 +435,6 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.
 ###Setting Hyperparameters
 ###DTM Variations
 ###Hidden Markov Topic Model (HMTM)
-###Nonparametric Variational Bayesian Topic Models
 
 # Bibliography
 
