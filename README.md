@@ -408,14 +408,14 @@ CTPF(corp, K, pmodel) <: TopicModel
 # Functions
 ### Generic Functions
 ```julia
-isnegative(.)
-# Take a number or an array of numbers and return Bool or Array{Bool} (resp.).
+isnegative(x::Union{Number, Array{Number}})
+# Take a Number or Array{Number} and return Bool or Array{Bool} (resp.).
 
-ispositive(.)
-# Take a number or an array of numbers and return Bool or Array{Bool} (resp.).
+ispositive(x::Union{Number, Array{Number}})
+# Take Number or an Array{Number} and return Bool or Array{Bool} (resp.).
 
 tetragamma(.)
-# polygamma(2, x)
+# polygamma(2, .)
 
 partition(xs, n)
 # xs: Vector or UnitRange
