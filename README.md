@@ -147,10 +147,11 @@ train!(nsflda, iter=200, tol=0.0) # Setting tol=0.0 will ensure that all 200 ite
 
 showtopics(nsflda, cols=8)
 ```
-**
+**d
 ```
 topic 1         topic 2         topic 3          topic 4        topic 5       topic 6      topic 7          topic 8
 ```**
+
 ```
 data            research        species          research       research      cell         research         theory
 project         study           research         system         university    protein      project          problems
