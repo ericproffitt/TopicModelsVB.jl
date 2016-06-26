@@ -285,25 +285,25 @@ sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-dia
 Looking closer at ```model.sigma```, it appears that there is a tendency within the natural sciences for the softer side of the spectrum to use slightly more academic buzzwords, while the harder sciences tend to eschew them.  The *Economics* topic is also the only non-natural science found among the 9 topics, and thus its lack of overlapping lexicon with the natural sciences likely leads to little correlation between between it and the remaining 8 topics.
 
 ### DTM
-Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example a topic which is thematically-static, yet exhibits an evolving lexicon, is computer storage.  Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
+Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example of a topic which is thematically-static, yet exhibits an evolving lexicon, is computer storage.  Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
 
-As an example, let's consider a corpus of approximately 8000 Apple magazine articles, drawn from the magazines *MacWorld* and *MacAddict*, between the years 1984 - 2005.  We sample 400 articles randomly from each year.
+As our example, let's consider a corpus of approximately 8000 Apple magazine articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year.
 ```julia
 srand(1)
 
 cmagcorp = readcorp(:cmag)
 
 cmagcorp.docs = filter(doc -> doc.title[1:3] == "Mac", cmagcorp.docs)
-cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 500, replace=false) for y in 1984:2005]...)
+cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(corp, stop=true, order=false, b=150, len=10)
+fixcorp!(corp, stop=true, order=false, b=200, len=10)
 
-cmaglda = fLDA(corp, 10)
+cmaglda = fLDA(corp, 8)
 train!(cmagflda, iter=150, chkelbo=151)
 
 # training...
 
-cmagdtm = DTM(cmagcorp, 10, 200, cmagflda)
+cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
 train!(cmagdtm, cgiter=10, iter=200)
 
 # training...
