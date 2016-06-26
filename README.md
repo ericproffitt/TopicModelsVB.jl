@@ -79,10 +79,10 @@ Each line is a document title, and the order of these titles corresponds to the 
 To read a corpus into TopicModelsVB.jl, use the following function:
 
 ```julia
-readcorp(;docfile, lexfile, userfile, titlefile, delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
+readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char, counts::Bool, readers::Bool, ratings::Bool, stamps::Bool)
 ```
 
-The file keyword arguments are all strings indicating the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will simply return an empty corpus.
+The ```file``` keyword arguments indicate the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will simply return an empty corpus.
 
 It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that the user always runs one of the following:
 
