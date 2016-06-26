@@ -46,7 +46,7 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 
 * ```counts```: A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to ```ones(length(terms))```).
 
-* ```readers```: A line delimited positive integers corresponding to the readers which have read the document.
+* ```readers```: A line of delimited positive integers corresponding to the readers which have read the document.
 
 * ```ratings```: A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document (defaults to ```ones(length(readers))```).
 
