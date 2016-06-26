@@ -354,7 +354,7 @@ end
 @show mean(acc)
 ```
 
-# Parallel Computing Support
+# Parallel Computing and GPU Support
 
 # Types
 ```julia
