@@ -84,7 +84,7 @@ readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::Abst
 
 The ```file``` keyword arguments indicate the path where the file is located.  It's not necessary to include all (or even any) of the files.  Loading no files will return an empty corpus.
 
-It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that one runs either:
+It is often the case that even once corpus files are correctly formatted and read into a corpus, the corpus is still not sufficiently cleaned and formatted to be usable by the topic models.  Therefore before loading a corpus into a model, it's **very important** that one of the following is run:
 
 ```julia
 fixcorp!(corp; kwargs...)
