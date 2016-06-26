@@ -139,13 +139,13 @@ fixcorp!(nsfcorp)
 
 # Notice that the post-fix lexicon is considerably smaller after removing all but the first 5000 docs.
 
-nsflda = LDA(nsfcorp, 8)
-train!(nsflda, iter=200, tol=0.0) # Setting tol=0.0 will ensure that all 200 iterations are completed.
+nsflda = LDA(nsfcorp, 9)
+train!(nsflda, iter=150, tol=0.0) # Setting tol=0.0 will ensure that all 200 iterations are completed.
                                   # If you don't want to watch the ∆elbo, set chkelbo=201.
 
 # training...
 
-showtopics(nsflda, cols=8)
+showtopics(nsflda, cols=9)
 ```
 
 ```
@@ -171,12 +171,12 @@ One thing we notice is that despite producing what are clearly coherent topics, 
 ```julia
 srand(1)
 
-nsfflda = fLDA(nsfcorp, 8)
-train!(nsfflda, iter=200, tol=0.0)
+nsfflda = fLDA(nsfcorp, 9)
+train!(nsfflda, iter=150, tol=0.0)
 
 # training...
 
-showtopics(nsfflda, cols=8)
+showtopics(nsfflda, 20, cols=9)
 ```
 
 ```
@@ -212,14 +212,42 @@ For our final example using the NSF Abstracts corpus, let's upgrade our model to
 ```julia
 srand(1)
 
-nsffctm = fCTM(nsfcorp, 8)
-train!(nsffctm, iter=200, tol=0.0)
+nsffctm = fCTM(nsfcorp, 9)
+train!(nsffctm, iter=150, tol=0.0)
 
 # training...
 
-showtopics(nsffctm, cols=8)
+showtopics(nsffctm, 20, cols=9)
 ```
-Since the topics were already so well defined in the fLDA model, there's little room for improvement in topic coherence with the fCTM model, however what's most interesting is the correlation between topics.
+
+```
+topic 1         topic 2         topic 3          topic 4           topic 5         topic 6       topic 7        topic 8         topic 9
+earthquake      flow            species          design            university      protein       social         theory          chemistry
+ocean           experimental    plant            algorithms        support         cell          economic       equations       chemical
+water           materials       genetic          models            students        cells         theory         investigator    reactions
+program         model           populations      parallel          program         proteins      policy         geometry        metal
+measurements    phase           plants           computer          science         gene          models         mathematical    molecular
+soil            theoretical     evolutionary     performance       scientists      plant         change         differential    program
+models          optical         population       model             award           genes         human          algebraic       dr
+climate         temperature     dr               processing        dr              molecular     public         groups          properties
+seismic         particle        patterns         applications      scientific      dr            model          space           organic
+global          models          evolution        network           sciences        regulation    political      solutions       university
+sea             heat            relationships    networks          conference      plants        examine        mathematics     surface
+effects         properties      dna              software          national        expression    case           spaces          electron
+response        growth          variation        efficient         projects        mechanisms    issues         dimensional     molecules
+pacific         fluid           effects          computational     engineering     dna           people         finite          compounds
+earth           numerical       biology          distributed       year            membrane      theoretical    functions       reaction
+solar           surface         molecular        programming       researchers     growth        effects        questions       synthesis
+model           quantum         reproductive     estimation        workshop        binding       factors        manifolds       spectroscopy
+atmospheric     effects         animals          program           months          acid          decision       properties      energy
+damage          laser           growth           implementation    mathematical    enzymes       labor          professor       dynamics
+change          phenomena       test             algorithm         faculty         site          market         operators       materials
+```
+
+Not only have the corpus-specific stop words been effectively filtered, but the topics are noticeably more coherent.  No longer are there two biology topics
+
+
+there's little room for improvement in topic coherence with the fCTM model, however what's most interesting is the correlation between topics.
 
 Based on the top 15 terms in each topic, we might tentatively assign the following topic labels:
 
@@ -247,9 +275,9 @@ model.sigma[1,8] # -19.016
 model.sigma[2,6] # -15.107
 ```
 
-According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Microbiology* and *Sociobiology*, and then by 2 and 8, corresponding to *Physics* and *Mathematics*.
+According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Microbiology* and *Sociology*, and then by 2 and 8, corresponding to *Physics* and *Mathematics*.
 
-As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Sociobiology* and *Mathematics*, followed closely by topics 1 and 8, corresponding to *Earth Science* and *Mathematics*, and then third are topics 2 and 6, corresponding to *Physics* and *Sociobiology*.
+As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Sociology* and *Mathematics*, followed closely by topics 1 and 8, corresponding to *Earth Science* and *Mathematics*, and then third are topics 2 and 6, corresponding to *Physics* and *Sociology*.
 
 Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but the *Chemistry* topic
 ```julia
@@ -261,7 +289,7 @@ however, looking at the variance of these two topics
 model.sigma[7,7] # 0.002
 model.sigma[5,5] # 16.675
 ```
-it appears, suprisingly, that the *Chemistry* topic does not fluctuate significantly between documents, and likely uses its own idiosyncratic lexicon, sharing relatively few vocabulary words across topics when compared to *Physics* and *Mathematics*, or *Microbiology* and *Sociobiology*.
+it appears, suprisingly, that the *Chemistry* topic does not fluctuate significantly between documents, and likely uses its own idiosyncratic lexicon, sharing relatively few vocabulary words across topics when compared to say *Physics* and *Mathematics*.
 
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example a topic which is thematically-static, yet exhibits an evolving lexicon, is computer storage.  Methods of data storage have evolved rapidly in the last 40 years.  Evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
@@ -505,6 +533,7 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}=Int[], M::Int=min(10, ctpf.
 ###Setting Hyperparameters
 ###DTM Variations
 ###Hidden Markov Topic Model (HMTM)
+###Parallel Computing Support
 
 # Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
