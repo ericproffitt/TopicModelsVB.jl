@@ -172,11 +172,11 @@ One thing we notice is that despite producing what are clearly coherent topics, 
 srand(1)
 
 nsfflda = fLDA(nsfcorp, 8)
-train!(nsfflda, iter=200)
+train!(nsfflda, iter=200, tol=0.0)
 
 # training...
 
-showtopics(nsfflda)
+showtopics(nsfflda, cols=8)
 ```
 
 ```
@@ -206,15 +206,15 @@ For our final example using the NSF Abstracts corpus, let's upgrade our model to
 srand(1)
 
 nsffctm = fCTM(nsfcorp, 8)
-train!(nsffctm, iter=200)
+train!(nsffctm, iter=200, tol=0.0)
 
 # training...
 
-showtopics(nsffctm, 20)
+showtopics(nsffctm, cols=8)
 ```
 Not only have corpus-specific stop words been removed, but we can see that the topics are significantly more well defined and consistent than in the non-correlated LDA model.
 
-Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
+Based on the top 15 terms in each topic, we might tentatively assign the following topic labels:
 
 * topic 1: *Earth Science*
 * topic 2: *Physics*
