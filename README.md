@@ -32,11 +32,21 @@ Included in TopicModelsVB.jl are three datasets:
 # Corpus
 Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
 
-There are four files that make up a corpus:
+There are four plaintext files that make up a corpus:
  * docfile
  * lexfile
  * userfile
  * titlefile
+ 
+None of these files are mandatory to read a corpus into TopicModelsVB.jl, and in fact reading no files will result in an empty corpus.  However to train a model, a docfile will be mandatory, since it contains all quantitative data known about the documents in a corpus.  The remaining three files are solely for interpretation.  The lexfile and userfile are dictionaries mapping positive integers to terms and usernames (resp.).  For example
+
+```
+1    this
+2    is
+3    a
+4    lex
+5    file
+```
 
 Any useful corpus needs a non-empty collection of documents.  The document file should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on the amount of information one has about the document.  Since a document is essential a list of terms, each document *must* contain at least one line containing a list of delimited positive integer values corresponding to the terms from which it is composed.  The lines for a particular document block (if they are present) must come in the following order:
 
