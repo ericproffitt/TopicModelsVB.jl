@@ -97,9 +97,9 @@ fixcorp!(corp; kwargs...)
 
 Padding a corpus before fixing it will ensure that any documents which contain lex or userkeys not in the lex or user dictionaries are not removed.  Instead, generic lex and userkeys will be added as necessary to the lex and user dicionaries (resp.).
 
-**Important:** The Corpus type is just a container for documents coupled with two dictionaries which give lex and user keys sensible names.  
+**Important:** A corpus is only a container for documents.  
 
-Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever you modify the internals of documents themselves, either manually or through the use of** ```corp!``` **functions**. 
+Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever modifying the internals of documents themselves, either manually or through the use of** ```corp!``` **functions**. 
 
 # Models
 The available models are as follows:
