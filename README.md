@@ -353,7 +353,9 @@ train!(citeuctpf, iter=150, chkelbo=50)  # Will likely take 2 - 3 hours.
 
 # training...
 ```
-Now let's evaluate the accuracy of this model against the test set.  Where the baseline for the mean accuracy will be ```mean(acc) = 0.5```.
+Now let's evaluate the accuracy of this model against the test set.  Where baseline for mean accuracy will be
+
+```mean(acc) = 0.5```.
 ```julia
 acc = Float64[]
 for (d, u) in enumerate(testukeys)
