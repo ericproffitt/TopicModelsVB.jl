@@ -331,9 +331,10 @@ citeucorp = readcorp(:citeu)
 
 testukeys = Int[]
 for doc in citeucorp
-    index = sample(1:length(doc.readers), 1)
+    index = sample(1:length(doc.readers), 1)[1]
     push!(testukeys, doc.readers[index])
     deleteat!(doc.readers, index)
+    deleteat!(doc.ratings, index)
 end
 
 fixcorp!(citeucorp)
