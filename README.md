@@ -336,9 +336,9 @@ for doc in citeucorp
     deleteat!(doc.readers, index)
     deleteat!(doc.ratings, index)
 end
-
-fixcorp!(citeucorp)
 ```
+
+**Important:** In this case we specifically *do not* fix our corpus, since this is a pre-packaged corpus it is already fixed, and removing user keys from documents live we've done above might result in a re-ordering of the user dictionary if we now were to fix it.
 
 Notice that 158 of the the documents had only a single reader (no documents had 0 readers), since CTPF can depend entirely on thematic structure for making recommendations if need be, this poses no problem for the model.
 
