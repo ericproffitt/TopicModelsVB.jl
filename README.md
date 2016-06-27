@@ -534,7 +534,7 @@ train!(ctpf::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64
 
 gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
 # Generate a generic document from model parameters by running the associated graphical model as a generative process.
-# The argument 'a' uses Laplace smoothing to smooth the topic-term distributions ('a' must be nonnegative).
+# 'a' - amount of Laplace smoothing to apply to the topic-term distributions ('a' must be nonnegative).
 
 gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
 # Generate a generic corpus of size 'corpsize' from model parameters.
