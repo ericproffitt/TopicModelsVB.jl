@@ -52,7 +52,7 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 
 * ```stamp```: A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
 
-An example of a single block of a docfile with all possible lines included,
+An example of a single doc block from a docfile with all possible lines included:
 ```
 ...
 4,10,3,100,57
