@@ -514,7 +514,7 @@ showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{
 checkmodel(model::TopicModel)
 # Verify that all model fields have legal values.
 
-train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/model.K^2, viter::Int=10, vtol::Float64=1/model.K^2, chkelbo::Int=1)
+train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
 # 'iter'    - maximum number of iterations through the corpus.
 # 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
@@ -524,12 +524,12 @@ train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=200, tol::Float64=1.0, nite
 # 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
 # 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence checking).
 
-train!(dtm::DTM; iter::Int=200, tol::Float64=1.0, niter=1000, ntol::Float64=1/dtm.K^2, cgiter::Int=100, cgtol::Float64=1/dtm.T^2, chkelbo::Int=1)
+train!(dtm::DTM; iter::Int=200, tol::Real=1.0, niter=1000, ntol::Real=1/dtm.K^2, cgiter::Int=100, cgtol::Real=1/dtm.T^2, chkelbo::Int=1)
 # Train DTM.
 # 'cgiter' - maximum number of iterations for the Polak-Ribière conjugate gradient method.
 # 'cgtol'  - tolerance for change in function value as stopping criterion for Polak-Ribière conjugate gradient method.
 
-train!(ctpf::CTPF; iter::Int=200, tol::Float64=1.0, viter::Int=10, vtol::Float64=1/ctpf.K^2, chkelbo::Int=1)
+train!(ctpf::CTPF; iter::Int=200, tol::Real=1.0, viter::Int=10, vtol::Real=1/ctpf.K^2, chkelbo::Int=1)
 # Train CTPF.
 
 gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
