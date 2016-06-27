@@ -482,7 +482,7 @@ fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, reade
 # cullcorp!(corp, len=len)	
 # compactcorp!(corp, lex=lex, users=users, alphabet=alphabet)
 
-showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Int, Vector{Int}})
+showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
 # Display the text and title of a document(s).
 
 getlex(corp::Corpus)
@@ -494,6 +494,8 @@ getusers(corp::Corpus)
 
 ### Model Functions
 ```julia
+showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
+
 checkmodel(model::TopicModel)
 # Verify that all model fields have legal values.
 
@@ -527,6 +529,9 @@ showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector
 
 showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
 # Display the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
+
+showreaders(ctpf::CTPF, docs::Uniont{Int, Vector{Int}})
+# Show the reader(s) for a document.
 
 showlibs(ctpf::CTPF, users::Union{Int, Vector{Int}})
 # Show the document(s) in a user's library.
