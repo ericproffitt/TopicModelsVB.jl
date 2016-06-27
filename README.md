@@ -349,8 +349,8 @@ train!(citeulda, iter=150, chkelbo=151)
 
 # training...
 
-citeuctpf = CTPF(citeucorp, 8, citeulda) # Will likely take 5 - 10 minutes.
-train!(citeuctpf, iter=150, chkelbo=50)  # Will likely take 2 - 3 hours.
+citeuctpf = CTPF(citeucorp, 8, citeulda)
+train!(citeuctpf, iter=150, chkelbo=50) # Will likely take 2 - 3 hours.
 
 # training...
 ```
