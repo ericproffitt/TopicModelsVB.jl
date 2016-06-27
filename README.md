@@ -52,6 +52,15 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 
 * ```stamp```: A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
 
+An example of a single block of a docfile with all possible lines included,
+```
+4,10,3,100,57
+1,1,2,1,3
+1,9,10
+1,1,5
+19990112.0
+```
+
 The lex and userfiles are dictionaries mapping positive integers to terms and usernames (resp.).  For example,
 
 ```
