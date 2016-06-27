@@ -374,6 +374,8 @@ showurecs(model, 12)
 
 # Parallel Computing and GPU Support
 
+Coming soon...
+
 # Types
 ```julia
 VectorList
