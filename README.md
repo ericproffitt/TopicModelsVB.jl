@@ -112,7 +112,7 @@ Padding a corpus before fixing it will ensure that any documents which contain l
 
 Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever modifying the internals of documents themselves, either manually or through the use of** ```corp!``` **functions**. 
 
-# Models
+## Models
 The available models are as follows:
 ```julia
 LDA(corp, K)
@@ -136,7 +136,7 @@ CTPF(corp, K, pmodel)
 
 Notice that both ```DTM``` and ```CTPF``` have a ```pmodel``` argument.  It is **highly advisable** that you prime these final two models with a pretrained model from one of the first four, otherwise learning may take a prohibitively long time.
 
-# Tutorial
+## Tutorial
 ### LDA
 Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 9 topics, trained on the first 5000 documents from the NSF Abstracts corpus.
 ```julia
@@ -384,11 +384,11 @@ showurecs(model, 1)
 urecs
 ```
 
-# Parallel Computing and GPU Support
+## Parallel Computing and GPU Support
 
 Coming soon...
 
-# Types
+## Types
 ```julia
 VectorList
 # Array{Array{T,1},1}
@@ -437,7 +437,7 @@ CTPF(corp, K, pmodel) <: TopicModel
 ```
 
 
-# Functions
+## Functions
 ### Generic Functions
 ```julia
 isnegative(x::Union{Number, Array{Number}})
@@ -556,7 +556,7 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); co
 
 ```
 
-# Bibliography
+## Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
 2. Correlated Topic Models (2006); Blei, Lafferty. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiLafferty2006.pdf)
 3. Dynamic Topic Models (2006); Blei, Lafferty. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiLafferty2006a.pdf)
