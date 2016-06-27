@@ -362,7 +362,7 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc)
+@show mean(acc) # mean(acc) = 98.351
 ```
 
 We can also take a look at the top recommendations for a particular document(s):
