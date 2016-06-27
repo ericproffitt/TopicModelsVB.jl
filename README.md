@@ -357,12 +357,19 @@ Now let's evaluate the accuracy of this model against the test set.  Where the b
 ```julia
 acc = Float64[]
 for (d, u) in enumerate(testukeys)
-    rank = findin(citeuctpf.drecs[d], u)
+    rank = findin(citeuctpf.drecs[d], u)[1]
     nrlen = length(citeuctpf.drecs[d])
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
 @show mean(acc)
+```
+
+We can also take a look a top recommendations for a particular document(s) or user(s):
+
+```julia
+showdrecs(model, 100)
+showurecs(model, 12)
 ```
 
 # Parallel Computing and GPU Support
