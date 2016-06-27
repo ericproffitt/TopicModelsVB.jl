@@ -365,11 +365,21 @@ end
 @show mean(acc)
 ```
 
-We can also take a look a top recommendations for a particular document(s) or user(s):
+We can also take a look at the top recommendations for a particular document(s):
 
 ```julia
-showdrecs(model, 100)
-showurecs(model, 12)
+showdrecs(model, 1)
+```
+```
+drecs
+```
+as well as those for a particular user(s):
+
+```julia
+showurecs(model, 1)
+```
+```
+urecs
 ```
 
 # Parallel Computing and GPU Support
