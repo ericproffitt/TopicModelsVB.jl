@@ -530,10 +530,10 @@ showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector
 showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
 # Display the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
 
-showreaders(ctpf::CTPF, docs::Uniont{Int, Vector{Int}})
+showreaders(ctpf::CTPF, docs::Uniont{Int, Vector{Int}}; cols::Int=4)
 # Show the reader(s) for a document.
 
-showlibs(ctpf::CTPF, users::Union{Int, Vector{Int}})
+showlibs(ctpf::CTPF, users::Union{Int, Vector{Int}}; cols::Int=1)
 # Show the document(s) in a user's library.
 
 showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
