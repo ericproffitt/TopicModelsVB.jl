@@ -323,7 +323,7 @@ showtopics(model, 20, topics=5)
 ```
 
 ### CTPF
-Finally, we take a look at the collaborative topic Poisson factorization model (CTPF).  The CTPF model is a collaborative filtering topic model which uses the latent thematic structure of documents in order to make higher quality document recommendations than would otherwise be possible if only the document-user matrix was taken into account.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents
+As our final model, we take a look at collaborative topic Poisson factorization (CTPF).  The CTPF model is a collaborative filtering topic model which uses the latent thematic structure of documents in order to improve the quality of document recommendations.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents
 ```julia
 srand(1)
 
@@ -338,9 +338,9 @@ for doc in citeucorp
 end
 ```
 
-**Important:** We refrain from fixing our corpus in this case, first because the CiteULike corpus is pre-packaged and has thus already been fixed, however more importantly, because removing user keys from documents and then fixing our corpus may result in a re-ordering of the user dictionary.
+**Important:** We refrain from fixing our corpus in this case, first because the CiteULike corpus is pre-packaged and thus pre-fixed, but more importantly, because removing user keys from documents and then fixing our corpus may result in a re-ordering of its user dictionary.
 
-After training our model, we will evaluate model quality by measuring its success at imputing the correct user back into each of the document libraries.
+After training, we will evaluate model quality by measuring its success at imputing the correct user back into each of the document libraries.
 
 It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers.
 
@@ -350,7 +350,7 @@ sum([isempty(doc.readers) for doc in corp]) # = 158
 
 Fortunately since CTPF can, if need be, depend entirely on thematic structure when making recommendations, this poses no problem for the model.
 
-Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger number than usual of topics (K=50), and then run it for a relatively short number of iterations (iter=10).
+Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=50), and then run it for a relatively short number of iterations (iter=10).
 
 ```julia
 citeulda = LDA(citeucorp, 8)
@@ -359,7 +359,7 @@ train!(citeulda, iter=150, chkelbo=151)
 # training...
 
 citeuctpf = CTPF(citeucorp, 8, citeulda)
-train!(citeuctpf, iter=150, chkelbo=50) # Will likely take 2 - 3 hours.
+train!(citeuctpf, iter=150, chkelbo=50) # Will likely take 10 - 20 minutes.
 
 # training...
 ```
@@ -374,8 +374,10 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 98.351
+@show mean(acc) # mean(acc) = 91.351
 ```
+
+We can see that, on average, our model predicts the true hidden reader in the top 10% of all non-readers for each document.
 
 We can also take a look at the top recommendations for a particular document(s):
 
