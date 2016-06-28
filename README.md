@@ -372,7 +372,7 @@ end
 @show mean(acc) # mean(acc) = 0.913
 ```
 
-We can see that, on average, our model predicts the true hidden reader in the top 9% of all non-readers for each document.
+We can see that, on average, our model ranks the true hidden reader in the top 9% of all non-readers for each document.
 
 We can also take a look at the top recommendations for a particular document(s):
 
