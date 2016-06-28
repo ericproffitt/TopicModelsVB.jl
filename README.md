@@ -78,7 +78,7 @@ The lex and user files are dictionaries mapping positive integers to terms and u
 
 A userfile is identitcal to a lexfile, except usernames will appear in place of a vocabulary terms.
 
-Finally, a titlefile is simply a list of titles, not a dictionary, and is of the form
+Finally, a titlefile is simply a list of titles, not a dictionary, and is of the form:
 
 ```
 title1
@@ -225,7 +225,7 @@ ice             optical         reproductive     neural            nsf          
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
 
 ### CTM
-For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
+For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).
 
 ```julia
 srand(1)
@@ -276,7 +276,7 @@ Based on the top 20 terms in each topic, we might tentatively assign the followi
 * topic 8: *Mathematics*
 * topic 9: *Chemistry*
 
-Now let's take a look at the topic-covariance matrix
+Now let's take a look at the topic-covariance matrix:
 
 ```julia
 model.sigma
@@ -296,7 +296,7 @@ According to the list above, the most closely related topics are topics 4 and 8,
 
 As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Microbiology* and *Mathematics*, followed closely by topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 4 and 6, corresponding to *Computer Science* and *Microbiology*.
 
-Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but instead the *Economics* topic
+Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but instead the *Economics* topic.
 
 ```julia
 sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Economics topic, absolute off-diagonal covariance 5.732.
@@ -328,7 +328,7 @@ train!(cmagflda, iter=150, chkelbo=151)
 cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
 ```
 
-However before training our DTM model, let's manually set one of its hyperparameters
+However before training our DTM model, let's manually set one of its hyperparameters.
 
 ```julia
 cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
@@ -345,7 +345,7 @@ showtopics(model, 20, topics=5)
 ```
 
 ### CTPF
-As our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  The CTPF model is a collaborative filtering topic model which uses the latent thematic structure of documents in order to improve the quality of document recommendations.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents
+As our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  The CTPF model is a collaborative filtering topic model which uses the latent thematic structure of documents in order to improve the quality of document recommendations.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
 srand(1)
