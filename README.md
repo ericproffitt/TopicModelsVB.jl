@@ -216,10 +216,6 @@ solar           numerical       test             program           workshop     
 pacific         liquid          ecological       power             months           mechanisms    scientific       manifolds       synthesis
 damage          fluid           host             programming       mathematical     membrane      factors          professor       spectroscopy
 surface         heat            diversity        estimation        faculty          cellular      environmental    applications    complexes
-samples         waves           forest           implementation    institute        genetic       theoretical      operators       species
-ground          theory          environmental    programs          equipment        binding       cultural         nonlinear       energy
-atmospheric     transport       animals          dynamic           international    brain         women            algebra         professor
-ice             optical         reproductive     neural            nsf              enzymes       relationship     boundary        carbon
 ```
 
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
