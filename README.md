@@ -391,6 +391,10 @@ showurecs(model, 1)
 urecs
 ```
 
+## GPU Support
+
+Hopefully coming soon...
+
 ## Types
 ```julia
 VectorList
