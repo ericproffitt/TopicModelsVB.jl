@@ -219,6 +219,7 @@ We can now see that many of the most troublesome corpus-specific stop words have
 
 ### CTM
 For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM)
+
 ```julia
 srand(1)
 
@@ -299,6 +300,7 @@ Taking a closer look at topic-covariance matrix, it appears that there is a tend
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example of a topic which is thematically-static, yet exhibits an evolving lexicon, is *Computer Storage*.  Methods of data storage have evolved rapidly in the last 40 years, evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
 
 As an example, let's consider a corpus of approximately 8000 Apple magazine articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year.
+
 ```julia
 srand(1)
 
@@ -315,6 +317,17 @@ train!(cmagflda, iter=150, chkelbo=151)
 # training...
 
 cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
+```
+
+However before training our DTM model, let's manually set one of it's hyperparameters
+
+```julia
+cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
+```
+
+This hyperparameter governs how quickly the same topic in different time intervals mix, as well as how much temporal variance is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
+
+```
 train!(cmagdtm, cgiter=10, iter=200)
 
 # training...
@@ -324,6 +337,7 @@ showtopics(model, 20, topics=5)
 
 ### CTPF
 As our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  The CTPF model is a collaborative filtering topic model which uses the latent thematic structure of documents in order to improve the quality of document recommendations.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents
+
 ```julia
 srand(1)
 
@@ -412,6 +426,7 @@ showurecs(model, 216, 426)
 Hopefully coming soon...
 
 ## Types
+
 ```julia
 VectorList
 # Array{Array{T,1},1}
@@ -462,6 +477,7 @@ CTPF(corp, K, pmodel) <: TopicModel
 
 ## Functions
 ### Generic Functions
+
 ```julia
 isnegative(x::Union{Number, Array{Number}})
 # Take Number or Array{Number} and return Bool or Array{Bool} (resp.).
@@ -530,6 +546,7 @@ getusers(corp::Corpus)
 ```
 
 ### Model Functions
+
 ```julia
 showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
 
@@ -576,7 +593,6 @@ showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); col
 showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
 # Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
 # If a document has no title, the documents index in the corpus will be shown instead.
-
 ```
 
 ## Bibliography
