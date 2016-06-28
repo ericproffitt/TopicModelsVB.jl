@@ -378,6 +378,7 @@ We can also take a look at the top recommendations for a particular document(s):
 
 ```julia
 testukeys[1] # = 216
+acc[1] # = 0.973
 
 showdrecs(model, 1, 152, cols=1)
 ```
