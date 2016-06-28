@@ -338,12 +338,12 @@ for doc in citeucorp
 end
 ```
 
-**Important:** In this case we refrain from fixing our corpus.  First because this is a pre-packaged corpus which has already been fixed, but more importantly, because removing user keys from documents, like we've done above, might result, during the compacting step, in a re-ordering of the user dictionary.
+**Important:** We refrain from fixing our corpus in this case, first because this corpus is pre-packaged and has thus already been fixed, but more importantly, because removing user keys from documents, like we've done above, might result during the compacting step in a re-ordering of the user dictionary.
 
 Notice also that after removing a single reader from each of the documents, 158 of them now have 0 readers.  However since CTPF can, if need be, depend entirely on thematic structure for making recommendations, this poses no problem for the model.
 
 ```julia
-sum([isempty(doc.readers) for doc in corp])
+sum([isempty(doc.readers) for doc in corp]) # = 158
 ```
 
 Now that we have set up our experiment, let's train a ```CTPF``` model on our corpus.  Let's set our number of topics ```K``` to be unusually large (since we're not interested in interpretation), and the number of iterations to be quite short, since all optimizations in the underlying coordinate ascent algorithm are analytic.  Then after training our model we will measure its success at imputing the correct users back into document libraries
