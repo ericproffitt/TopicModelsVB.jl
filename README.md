@@ -344,6 +344,10 @@ train!(cmagdtm, iter=200) # This will likely take about 4 hours on a personal co
 showtopics(model, 20, topics=5)
 ```
 
+```
+topics
+```
+
 ### CTPF
 As our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  The CTPF model is a collaborative filtering topic model which uses the latent thematic structure of documents in order to improve the quality of document recommendations.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
