@@ -106,7 +106,7 @@ padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
 ```
 
-Padding a corpus before fixing it will ensure that any documents which contain lex or userkeys not in the lex or user dictionaries are not removed.  Instead, generic lex and userkeys will be added as necessary to the lex and user dicionaries (resp.).
+Padding a corpus before fixing it will ensure that any documents which contain lex or userkeys not in the lex or user dictionaries are not removed.  Instead, generic lex and userkeys will be added as necessary to the lex and user dictionaries (resp.).
 
 **Important:** A corpus is only a container for documents.  
 
