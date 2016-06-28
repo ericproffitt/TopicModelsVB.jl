@@ -334,7 +334,7 @@ However before training our DTM model, let's manually set one of its hyperparame
 cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
 ```
 
-This hyperparameter governs how quickly the same topic in different time intervals mix, as well as how much temporal variance is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
+This hyperparameter governs both how quickly the same topic mixes within different time intervals, as well as how much variance between time intervals is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
 
 ```julia
 train!(cmagdtm, cgiter=10, iter=200)
