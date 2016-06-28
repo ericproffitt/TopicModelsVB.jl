@@ -354,12 +354,12 @@ Now that we have set up our experiment, we instantiate and train a CTPF model on
 
 ```julia
 citeulda = LDA(citeucorp, 50)
-train!(citeulda, iter=150, chkelbo=151) # Will likely take 10 - 20 minutes
+train!(citeulda, iter=150, chkelbo=151) # Will likely take 20 - 30 minutes.
 
 # training...
 
 citeuctpf = CTPF(citeucorp, 50, citeulda)
-train!(citeuctpf, iter=10) # Will likely take 10 - 20 minutes.
+train!(citeuctpf, iter=10) # Will likely take 20 - 30 minutes.
 
 # training...
 ```
