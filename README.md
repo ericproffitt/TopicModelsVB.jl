@@ -369,7 +369,7 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 91.351
+@show mean(acc) # mean(acc) = 0.913
 ```
 
 We can see that, on average, our model predicts the true hidden reader in the top 10% of all non-readers for each document.
