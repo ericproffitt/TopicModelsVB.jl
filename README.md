@@ -254,7 +254,7 @@ damage          laser           growth           implementation    mathematical 
 change          phenomena       test             algorithm         faculty         site          market         operators       materials
 ```
 
-Because the topics in the fLDA were already so well defined, there's little room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at correlations between topics.
+Because the topics in the fLDA model were already so well defined, there's little room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at correlations between topics.
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
