@@ -308,7 +308,7 @@ Taking a closer look at topic-covariance matrix, it appears that there is a tend
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example of a topic which is thematically-static, yet exhibits an evolving lexicon, is *Computer Storage*.  Methods of data storage have evolved rapidly in the last 40 years, evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
 
-As an example, let's consider a corpus of approximately 8000 Apple magazine articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year.
+As an example, let's consider a corpus of approximately 8000 Apple magazine articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year, and break time periods into 2 year intervals.
 
 ```julia
 srand(1)
@@ -320,12 +320,12 @@ cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp
 
 fixcorp!(corp, stop=true, order=false, b=200, len=10)
 
-cmaglda = fLDA(corp, 8)
+cmaglda = fLDA(corp, 9)
 train!(cmagflda, iter=150, chkelbo=151)
 
 # training...
 
-cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
+cmagdtm = DTM(cmagcorp, 9, 200, cmagflda)
 ```
 
 However before training our DTM model, let's manually set one of its hyperparameters:
@@ -337,7 +337,7 @@ cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
 This hyperparameter governs both how quickly the same topic mixes within different time intervals, as well as how much variance between time intervals is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
 
 ```julia
-train!(cmagdtm, cgiter=10, iter=200)
+train!(cmagdtm, iter=200) # This will likely take about 4 hours on a personal computer.
 
 # training...
 
