@@ -195,7 +195,7 @@ train!(nsfflda, iter=150, tol=0.0)
 
 # training...
 
-showtopics(nsfflda, 20, cols=9)
+showtopics(nsfflda, cols=9)
 ```
 
 ```
@@ -215,7 +215,6 @@ earth           particles       food             distributed       year         
 solar           numerical       test             program           workshop         dna           market           functions       reaction
 pacific         liquid          ecological       power             months           mechanisms    scientific       manifolds       synthesis
 damage          fluid           host             programming       mathematical     membrane      factors          professor       spectroscopy
-surface         heat            diversity        estimation        faculty          cellular      environmental    applications    complexes
 ```
 
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
