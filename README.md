@@ -63,7 +63,7 @@ An example of a single doc block from a docfile with all possible lines included
 ...
 ```
 
-The lex and userfiles are dictionaries mapping positive integers to terms and usernames (resp.).  For example,
+The lex and user files are dictionaries mapping positive integers to terms and usernames (resp.).  For example,
 
 ```
 1    this
@@ -93,9 +93,9 @@ To read a corpus into TopicModelsVB.jl, use the following function:
 readcorp(;docfile="", lexfile="", userfile="", titlefil="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
 ```
 
-The ```file``` keyword arguments indicate the path where the file is located.
+The ```file``` keyword arguments indicate the path where the respective file is located.
 
-It is often the case that even once files are correctly formatted and read, the corpus will still contain formatting defects which prevent the corpus from being loaded into a topic model.  Therefore, before loading a corpus into a model, it's **very important** that one of the following is run:
+It is often the case that even once files are correctly formatted and read, the corpus will still contain formatting defects which prevent it from being loaded into a model.  Therefore, before loading a corpus into a model, it is **very important** that one of the following is run:
 
 ```julia
 fixcorp!(corp; kwargs...)
@@ -106,7 +106,7 @@ padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
 ```
 
-Padding a corpus before fixing it will ensure that any documents which contain lex or userkeys not in the lex or user dictionaries are not removed.  Instead, generic lex and userkeys will be added as necessary to the lex and user dictionaries (resp.).
+Padding a corpus before fixing it will ensure that any documents which contain lex or user keys not in the lex or user dictionaries are not removed.  Instead, generic lex and user keys will be added as necessary to the lex and user dictionaries (resp.).
 
 **Important:** A corpus is only a container for documents.  
 
