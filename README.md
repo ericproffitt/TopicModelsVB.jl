@@ -332,7 +332,7 @@ cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
 This hyperparameter governs both how quickly the same topic mixes within different time intervals, as well as how much variance between time intervals is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
 
 ```julia
-train!(cmagdtm, iter=150, tol=0.0, chkelbo=10) # This will likely take 5 - 6 hours on a personal computer.
+train!(cmagdtm, iter=150, chkelbo=10) # This will likely take 5 - 6 hours on a personal computer.
 
 # training...
 
