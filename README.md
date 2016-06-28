@@ -328,7 +328,7 @@ train!(cmagflda, iter=150, chkelbo=151)
 cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
 ```
 
-However before training our DTM model, let's manually set one of its hyperparameters.
+However before training our DTM model, let's manually set one of its hyperparameters:
 
 ```julia
 cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
