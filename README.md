@@ -4,11 +4,13 @@ A Julia Package for Variational Bayesian Topic Modeling.
 Topic Modeling is concerned with discovering the latent low-dimensional thematic structure within corpora.  Modeling this latent structure is done using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC) methods, or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.  The former approach is slower, but unbiased.  Given infinite time, MCMC will fit the desired model exactly.  The latter method is faster (often much faster), but biased, since one must approximate distributions in order to ensure tractability.  This package takes the latter approach to topic modeling.
 
 ## Dependencies
+
 ```julia
 Pkg.add("Distributions.jl")
 ```
 
 ## Install
+
 ```julia
 Pkg.add("TopicModelsVB")
 ```
@@ -53,6 +55,7 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 * ```stamp```: A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
 
 An example of a single doc block from a docfile with all possible lines included:
+
 ```
 ...
 4,10,3,100,57
@@ -100,7 +103,9 @@ It is often the case that even once files are correctly formatted and read, the 
 ```julia
 fixcorp!(corp; kwargs...)
 ```
+
 or
+
 ```julia
 padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
@@ -114,6 +119,7 @@ Whenever you load a corpus into a model, a copy of that corpus is made, such tha
 
 ## Models
 The available models are as follows:
+
 ```julia
 LDA(corp, K)
 # Latent Dirichlet Allocation model with K topics.
@@ -139,6 +145,7 @@ Notice that both ```DTM``` and ```CTPF``` have a ```pmodel``` argument.  It is *
 ## Tutorial
 ### LDA
 Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 9 topics, trained on the first 5000 documents from the NSF corpus.
+
 ```julia
 using TopicModelsVB
 
@@ -179,6 +186,7 @@ program         dynamics        determine        models         projects      im
 ```
 
 One thing we notice is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and can be a difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
+
 ```julia
 srand(1)
 
@@ -212,7 +220,6 @@ samples         waves           forest           implementation    institute    
 ground          theory          environmental    programs          equipment        binding       cultural         nonlinear       energy
 atmospheric     transport       animals          dynamic           international    brain         women            algebra         professor
 ice             optical         reproductive     neural            nsf              enzymes       relationship     boundary        carbon
-
 ```
 
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
@@ -270,6 +277,7 @@ Based on the top 20 terms in each topic, we might tentatively assign the followi
 * topic 9: *Chemistry*
 
 Now let's take a look at the topic-covariance matrix
+
 ```julia
 model.sigma
 
@@ -289,6 +297,7 @@ According to the list above, the most closely related topics are topics 4 and 8,
 As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Microbiology* and *Mathematics*, followed closely by topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 4 and 6, corresponding to *Computer Science* and *Microbiology*.
 
 Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but instead the *Economics* topic
+
 ```julia
 sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Economics topic, absolute off-diagonal covariance 5.732.
 sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 18.766.
@@ -327,7 +336,7 @@ cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
 
 This hyperparameter governs how quickly the same topic in different time intervals mix, as well as how much temporal variance is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
 
-```
+```julia
 train!(cmagdtm, cgiter=10, iter=200)
 
 # training...
