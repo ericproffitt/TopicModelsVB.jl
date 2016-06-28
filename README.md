@@ -354,7 +354,7 @@ Now that we have set up our experiment, we instantiate and train a CTPF model on
 
 ```julia
 citeuctpf = CTPF(citeucorp, 30) # Note: 'pmodel' defaults to a 100 iteration LDA model.
-train!(citeuctpf, iter=5)       # Instantiation and training will likely take 30 - 40 minutes.
+train!(citeuctpf, iter=5)       # Instantiation and training will likely take 30 - 40 minutes on a personal computer.
 
 # training...
 ```
@@ -369,7 +369,7 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 0.905
+@show mean(acc) # mean(acc) = 0.913
 ```
 
 We can see that, on average, our model predicts the true hidden reader in the top 10% of all non-readers for each document.
@@ -377,18 +377,33 @@ We can see that, on average, our model predicts the true hidden reader in the to
 We can also take a look at the top recommendations for a particular document(s):
 
 ```julia
-showdrecs(model, 1)
+testukeys[1] # = 216
+
+showdrecs(model, 1, 152)
 ```
 ```
-drecs
+ ●●● Doc: 1
+ ●●● The metabolic world of Escherichia coli is not small
+...
+148. #user4157
+149. #user1543
+150. #user817
+151. #user1642
+152. #user216
 ```
 as well as those for a particular user(s):
 
 ```julia
-showurecs(model, 1)
+showurecs(model, 216, 426)
 ```
 ```
-urecs
+ ●●● User: 216
+...
+422. Improving loss resilience with multi-radio diversity in wireless networks
+423. Stochastic protein expression in individual cells at the single molecule level
+424. Dynamical and correlation properties of the Internet
+425. Multifractal Network Generator
+426. The metabolic world of Escherichia coli is not small
 ```
 
 ## GPU Support
