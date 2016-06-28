@@ -338,15 +338,19 @@ for doc in citeucorp
 end
 ```
 
-**Important:** We refrain from fixing our corpus in this case, first because this corpus is pre-packaged and has thus already been fixed, but more importantly, because removing user keys from documents, like we've done above, might result during the compacting step in a re-ordering of the user dictionary.
+**Important:** We refrain from fixing our corpus in this case, first because the CiteULike corpus is pre-packaged and has thus already been fixed, however more importantly, because removing user keys from documents and then fixing our corpus may result in a re-ordering of the user dictionary.
 
-Notice also that after removing a single reader from each of the documents, 158 of them now have 0 readers.  However since CTPF can, if need be, depend entirely on thematic structure for making recommendations, this poses no problem for the model.
+After training our model, we will evaluate model quality by measuring its success at imputing the correct user back into each of the document libraries.
+
+It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers.
 
 ```julia
 sum([isempty(doc.readers) for doc in corp]) # = 158
 ```
 
-Now that we have set up our experiment, let's train a ```CTPF``` model on our corpus.  Let's set our number of topics ```K``` to be unusually large (since we're not interested in interpretation), and the number of iterations to be quite short, since all optimizations in the underlying coordinate ascent algorithm are analytic.  Then after training our model we will measure its success at imputing the correct users back into document libraries
+Fortunately since CTPF can, if need be, depend entirely on thematic structure when making recommendations, this poses no problem for the model.
+
+Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger number than usual of topics (K=50), and then run it for a relatively short number of iterations (iter=10).
 
 ```julia
 citeulda = LDA(citeucorp, 8)
