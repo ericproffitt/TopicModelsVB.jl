@@ -323,7 +323,7 @@ showtopics(model, 20, topics=5)
 ```
 
 ### CTPF
-Finally, we take a look at a topic model which is not primarily interested in the topics, but rather in their ability to collaborative filtering in order to better recommend users unseen documents.  The collaborative toipc Poisson fatorization (CTPF) model blends the latent thematic structure of documents with the document-user matrix, in order to obtain higher accuracy than would be achievable with just the user library information, and also overcomes the cold-start problem for documents with no readers.  Let's take the CiteULike dataset and randomly remove a single reader from each of the documents
+Finally, we take a look at the collaborative topic Poisson factorization model (CTPF).  The CTPF model is a collaborative filtering topic model which uses the latent thematic structure of documents in order to make higher quality document recommendations than would otherwise be possible if only the document-user matrix was taken into account.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents
 ```julia
 srand(1)
 
@@ -338,11 +338,16 @@ for doc in citeucorp
 end
 ```
 
-**Important:** In this case we specifically *do not* fix our corpus, since this is a pre-packaged corpus it is already fixed, and removing user keys from documents live we've done above might result in a re-ordering of the user dictionary if we now were to fix it.
+**Important:** In this case we refrain from fixing our corpus.  First because this is a pre-packaged corpus which has already been fixed, but more importantly, because removing user keys from documents, like we've done above, might result, during the compacting step, in a re-ordering of the user dictionary.
 
-Notice that 158 of the the documents had only a single reader (no documents had 0 readers), since CTPF can depend entirely on thematic structure for making recommendations if need be, this poses no problem for the model.
+Notice also that after removing a single reader from each of the documents, 158 of them now have 0 readers.  However since CTPF can, if need be, depend entirely on thematic structure for making recommendations, this poses no problem for the model.
 
-Now let's train a ```CTPF``` model on our modified corpus, and then we will evaluate the success of our model at imputing the correct users back into document libraries
+```julia
+sum([isempty(doc.readers) for doc in corp])
+```
+
+Now that we have set up our experiment, let's train a ```CTPF``` model on our corpus.  Let's set our number of topics ```K``` to be unusually large (since we're not interested in interpretation), and the number of iterations to be quite short, since all optimizations in the underlying coordinate ascent algorithm are analytic.  Then after training our model we will measure its success at imputing the correct users back into document libraries
+
 ```julia
 citeulda = LDA(citeucorp, 8)
 train!(citeulda, iter=150, chkelbo=151)
@@ -354,7 +359,8 @@ train!(citeuctpf, iter=150, chkelbo=50) # Will likely take 2 - 3 hours.
 
 # training...
 ```
-Now let's evaluate the accuracy of this model against the test set.  Where baseline for mean accuracy is 0.5.
+
+Finally, we evaluate the accuracy of this model against the test set, where baseline for mean accuracy is 0.5.
 
 ```julia
 acc = Float64[]
