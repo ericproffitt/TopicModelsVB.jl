@@ -185,6 +185,39 @@ results         model           relationships    problems       national      st
 program         dynamics        determine        models         projects      important    policy           space           molecules
 ```
 
+Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance document 1 has topic breakdown:
+
+```julia
+nsflda.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0.025]
+```
+This weighting over topics suggests that document 1 is mostly about biology, and in fact looking at the text of the document confirms this observation:
+
+```julia
+showdocs(nsflda, 1) # could also have done showdocs(nsfcorp, 1)
+```
+
+```
+ ●●● Doc: 1
+ ●●● CRB: Genetic Diversity of Endangered Populations of Mysticete Whales: Mitochondrial DNA and Historical Demography
+commercial exploitation past hundred years great extinction variation sizes populations prior minimal population size current permit analyses effects differing levels species distributions life history...
+```
+
+On the other hand some documents will be a combination of topics.  For instance consider the topic breakdown for document 25:
+
+```julia
+nsflda.gamma[25] # = [11.575, 44.889, 0.0204, 0.036, 0.049, 0.022, 0.020, 66.629, 0.025]
+
+showdocs(nsflda, 25)
+```
+
+```
+ ●●● Doc: 25
+ ●●● Mathematical Sciences: Nonlinear Partial Differential Equations from Hydrodynamics
+work project continues mathematical research nonlinear elliptic problems arising perfect fluid hydrodynamics emphasis analytical study propagation waves stratified media techniques analysis partial differential equations form basis studies primary goals understand nature internal presence vortex rings arise density stratification due salinity temperature...
+```
+
+We see that document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds very well to the large topic weights on topics 2 and 8, with a smaller but not insignificant weighting on topic 1.
+
 One thing we notice is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and can be a difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
 
 ```julia
