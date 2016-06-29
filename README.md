@@ -76,7 +76,7 @@ The lex and user files are dictionaries mapping positive integers to terms and u
 5    file
 ```
 
-A userfile is identitcal to a lexfile, except usernames will appear in place of a vocabulary terms.
+A userfile is identitcal to a lexfile, except usernames will appear in place of vocabulary terms.
 
 Finally, a titlefile is simply a list of titles, not a dictionary, and is of the form:
 
