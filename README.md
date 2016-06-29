@@ -358,7 +358,7 @@ model.sigma[4,6] # -14.160
 
 According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Mathematics*.
 
-As for the least associated topics, the most unrelated pair of topics is 6 and 8, corresponding to *Microbiology* and *Mathematics*, followed closely by topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 4 and 6, corresponding to *Computer Science* and *Microbiology*.
+As for the most unlikely topic pairings, first are topics 6 and 8, corresponding to *Microbiology* and *Mathematics*, followed closely by topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 4 and 6, corresponding to *Computer Science* and *Microbiology*.
 
 Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but instead the *Economics* topic.
 
