@@ -430,9 +430,9 @@ for doc in citeucorp
 end
 ```
 
-**Important:** We refrain from fixing our corpus in this case, first because the CiteULike dataset is pre-packaged and thus pre-fixed, but more importantly, because removing user keys from documents and then fixing our corpus may result in a re-ordering of its user dictionary.
+**Important:** We refrain from fixing our corpus in this case, first because the CiteULike dataset is pre-packaged and thus pre-fixed, but more importantly, because removing user keys from documents and then fixing our corpus may result in a re-ordering of its user dictionary, which would in turn invalidate our `testukeys` test set.
 
-After training, we will evaluate model quality by measuring its success at imputing the correct user back into each of the document libraries.
+After training, we will evaluate model quality by measuring our model's success at imputing the correct user back into each of the document libraries.
 
 It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers.
 
@@ -440,7 +440,7 @@ It's also worth noting that after removing a single reader from each document, 1
 sum([isempty(doc.readers) for doc in corp]) # = 158
 ```
 
-Fortunately since CTPF can, if need be, depend entirely on thematic structure when making recommendations, this poses no problem for the model.
+Fortunately, since CTPF can, if need be, depend entirely on thematic structure when making recommendations, this poses no problem for the model.
 
 Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=5).
 
