@@ -503,28 +503,38 @@ showurecs(model, 216, 426)
 We can also take a more holistic and informal approach to evaluating model quality.  Let's take a look at the first few documents in user 216's library,
 
 ```julia
-showlibs(citeuctpf, 25)
+showlibs(citeuctpf, 216)
 ```
 
 ```
  ●●● User: 216
- • The metabolic world of Escherichia coli is not small
  • Network motifs: simple building blocks of complex networks.
  • The large-scale organization of metabolic networks.
  • Here is the evidence, now what is the hypothesis? The complementary roles of inductive and hypothesis-driven science in the post-genomic era
  • Classification and Regression Trees
+ • {Evolutionary rate in the protein interaction network}
  ...
- ```
+```
  
  user 216 appears to be interested in some combination of network theory and microbiology.  Now comparing user 216's actually library with the top few recommendations made by the model,
  
- ```julia
- showurecs(citeuctpf, 25, 5)
- ```
+```julia
+ showurecs(citeuctpf, 216, 10)
+```
  
- ```
- recs
- ```
+```
+ ●●● User: 216
+1.  The hallmarks of cancer.
+2.  The structure and function of complex networks
+3.  Collective dynamics of 'small-world' networks.
+4.  Emergence of scaling in random networks
+5.  Statistical mechanics of complex networks
+6.  MicroRNA Control in the Immune System: Basic Principles
+7.  Power laws, Pareto distributions and Zipf's law
+8.  Exploring complex networks
+9.  Network biology: understanding the cell's functional organization.
+10. Systems Biology: A Brief Overview
+```
 
 ## GPU Support
 
