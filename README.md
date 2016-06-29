@@ -371,6 +371,8 @@ This hyperparameter governs both how quickly the same topic mixes within differe
 
 ```julia
 train!(cmagdtm, iter=150, chkelbo=10) # This will likely take 4 - 5 hours on a personal computer.
+                                      # Convergence for all other models is worst-case quadratic,
+                                      # while DTM convergence is linear or at best super-linear.
 
 # training...
 
@@ -415,7 +417,7 @@ Now that we have set up our experiment, we instantiate and train a CTPF model on
 ```julia
 citeuctpf = CTPF(citeucorp, 30) # Note: 'pmodel' defaults to a 100 iteration LDA model.
 train!(citeuctpf, iter=5)       # Instantiation and training will likely take 30 - 40 minutes on a personal computer.
-
+                                # All optimizations in CTPF are analytic, allowing for very fast convergence properties.
 # training...
 ```
 
