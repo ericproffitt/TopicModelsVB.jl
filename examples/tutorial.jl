@@ -130,6 +130,8 @@ showtopics(model, 20, topics=5)
 #                                           #
 #############################################
 
+import Distributions.sample
+
 srand(1)
 
 citeucorp = readcorp(:citeu)
