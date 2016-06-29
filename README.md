@@ -237,7 +237,22 @@ showtopics(artificiallda, cols=9)
 ```
 
 ```
-topics
+topic 1       topic 2          topic 3       topic 4          topic 5         topic 6         topic 7      topic 8         topic 9
+cell          research         research      species          theory          data            chemistry    research        research
+protein       project          university    plant            problems        project         research     study           systems
+cells         study            students      research         study           research        reactions    systems         design
+gene          data             support       study            research        earthquake      metal        phase           system
+proteins      economic         program       evolutionary     equations       study           chemical     experimental    data
+plant         social           science       genetic          work            studies         organic      flow            algorithms
+studies       important        scientists    population       project         water           structure    theoretical     based
+genes         understanding    scientific    plants           investigator    ocean           program      materials       parallel
+research      work             award         populations      principal       measurements    study        high            performance
+molecular     information      sciences      dr               geometry        program         dr           quantum         techniques
+specific      theory           projects      data             differential    important       molecular    physics         computer
+mechanisms    provide          dr            patterns         mathematical    time            synthesis    properties      problems
+system        development      project       relationships    algebraic       models          compounds    temperature     control
+role          human            national      evolution        methods         seismic         surface      dynamics        project
+study         political        provide       variation        analysis        field           studies      proposed        methods
 ```
 
 One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic product by the LDA model are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and can be a difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
