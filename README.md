@@ -223,7 +223,24 @@ internal presence vortex rings arise density stratification due salinity tempera
 
 We see that document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds very well to the large weights on topics 2 and 8, with a smaller but not insignificant weight on topic 1.
 
-One thing we notice is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and can be a difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
+Furthermore, if we want to, we can also generate artificla corpora by using the ```gencorp``` function.  Generating artificla corpora will run the the underlying probabilistic graphical model as a generative process to produce a new collect of documents, let's try it out.
+
+```julia
+artificialcorp = gencorp(nsflda, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
+
+artificiallda = LDA(artificialcorp, 9)
+train!(artificiallda, iter=150, tol=0.0, chkelbo=15)
+
+# training...
+
+showtopics(artificiallda, cols=9)
+```
+
+```
+topics
+```
+
+One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic product by the LDA model are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and can be a difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
 
 ```julia
 srand(1)
