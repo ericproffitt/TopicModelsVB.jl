@@ -184,12 +184,12 @@ results         model           relationships    problems       national      st
 program         dynamics        determine        models         projects      important    policy           space           molecules
 ```
 
-Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance document 1 has topic breakdown:
+Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance, document 1 has topic breakdown:
 
 ```julia
 nsflda.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0.025]
 ```
-This weighting over topics suggests that document 1 is mostly about biology, and in fact looking at the text of the document confirms this observation:
+This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the text of the document confirms this observation:
 
 ```julia
 showdocs(nsflda, 1) # could also have done showdocs(nsfcorp, 1)
