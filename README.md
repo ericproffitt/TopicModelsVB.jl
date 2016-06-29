@@ -385,24 +385,24 @@ cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp
 
 fixcorp!(corp, stop=true, order=false, b=200, len=10)
 
-cmaglda = fLDA(corp, 9)
+cmaglda = fLDA(corp, 8)
 train!(cmagflda, iter=150, chkelbo=151)
 
 # training...
 
-cmagdtm = DTM(cmagcorp, 9, 200, cmagflda)
+cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
 ```
 
 However before training our DTM model, let's manually set one of its hyperparameters:
 
 ```julia
-cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
+cmagdtm.sigmasq=100.0 # 'sigmasq' defaults to 1.0.
 ```
 
 This hyperparameter governs both how quickly the same topic mixes within different time intervals, as well as how much variance between time intervals is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
 
 ```julia
-train!(cmagdtm, iter=150, chkelbo=10) # This will likely take 4 - 5 hours on a personal computer.
+train!(cmagdtm, iter=200, chkelbo=10) # This will likely about 5 hours on a personal computer.
                                       # Convergence for all other models is worst-case quadratic,
                                       # while DTM convergence is linear or at best super-linear.
 # training...
