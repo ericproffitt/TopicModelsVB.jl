@@ -12,7 +12,7 @@ Pkg.add("Distributions.jl")
 ## Install
 
 ```julia
-Pkg.add("TopicModelsVB")
+Pkg.clone("git://github.com/esproff/TopicModelsVB.jl.git")
 ```
 
 ## Datasets
