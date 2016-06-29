@@ -44,3 +44,4 @@ function partition{T<:Any}(xs::Vector{T}, n::Int)
 end
 
 partition{T<:Real}(xs::UnitRange{T}, n::Int) = partition(collect(xs), n)
+
