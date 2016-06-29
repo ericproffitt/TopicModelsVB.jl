@@ -516,7 +516,7 @@ showlibs(citeuctpf, 216)
  ...
 ```
  
- user 216 appears to be interested in the intersection of network theory and microbiology.  Now comparing user 216's actually library with the top few recommendations made by the model,
+ user 216 appears to be interested in the intersection of network theory and microbiology.  Now Compare this with the top 10 recommendations made by the model,
  
 ```julia
  showurecs(citeuctpf, 216, 10)
