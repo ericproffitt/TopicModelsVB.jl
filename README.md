@@ -533,10 +533,10 @@ Hopefully coming soon...
 ## Types
 
 ```julia
-VectorList
+VectorList{T}
 # Array{Array{T,1},1}
 
-MatrixList
+MatrixList{T}
 # Array{Array{T,2},1}
 
 Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), stamp=-Inf, title="")
