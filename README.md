@@ -199,7 +199,8 @@ showdocs(nsflda, 1) # could also have done showdocs(nsfcorp, 1)
 ```
  ●●● Doc: 1
  ●●● CRB: Genetic Diversity of Endangered Populations of Mysticete Whales: Mitochondrial DNA and Historical Demography
-commercial exploitation past hundred years great extinction variation sizes populations prior minimal population size current permit analyses effects differing levels species distributions life history...
+commercial exploitation past hundred years great extinction variation sizes populations prior minimal population size
+current permit analyses effects differing levels species distributions life history...
 ```
 
 On the other hand some documents will be a combination of topics.  For instance consider the topic breakdown for document 25:
