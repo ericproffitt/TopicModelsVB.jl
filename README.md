@@ -373,7 +373,6 @@ This hyperparameter governs both how quickly the same topic mixes within differe
 train!(cmagdtm, iter=150, chkelbo=10) # This will likely take 4 - 5 hours on a personal computer.
                                       # Convergence for all other models is worst-case quadratic,
                                       # while DTM convergence is linear or at best super-linear.
-
 # training...
 
 showtopics(model, 20, topics=5)
