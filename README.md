@@ -199,8 +199,9 @@ showdocs(nsflda, 1) # could also have done showdocs(nsfcorp, 1)
 ```
  ●●● Doc: 1
  ●●● CRB: Genetic Diversity of Endangered Populations of Mysticete Whales: Mitochondrial DNA and Historical Demography
-commercial exploitation past hundred years great extinction variation sizes populations prior minimal population size
-current permit analyses effects differing levels species distributions life history...
+commercial exploitation past hundred years great extinction variation sizes
+populations prior minimal population size current permit analyses effects 
+differing levels species distributions life history...
 ```
 
 On the other hand some documents will be a combination of topics.  For instance consider the topic breakdown for document 25:
@@ -217,7 +218,7 @@ showdocs(nsflda, 25)
 work project continues mathematical research nonlinear elliptic problems arising perfect fluid hydrodynamics emphasis analytical study propagation waves stratified media techniques analysis partial differential equations form basis studies primary goals understand nature internal presence vortex rings arise density stratification due salinity temperature...
 ```
 
-We see that document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds very well to the large topic weights on topics 2 and 8, with a smaller but not insignificant weighting on topic 1.
+We see that document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds very well to the large weights on topics 2 and 8, with a smaller but not insignificant weighting on topic 1.
 
 One thing we notice is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and can be a difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a filtered latent Dirichlet allocation (fLDA) model.
 
