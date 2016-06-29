@@ -32,7 +32,7 @@ Included in TopicModelsVB.jl are three datasets:
   * 16020 lexicon
 
 ## Corpus
-Let's begin with the Corpus data structure.  The `Corpus` data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
+Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
 
 There are four plaintext files that make up a corpus:
  * docfile
@@ -44,15 +44,15 @@ None of these files are mandatory to read a corpus, and in fact reading no files
 
 The docfile should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on what information is known about the documents.  Since a document is at its essence a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms from which it is composed.  Any further lines in a document block are optional, however if they are present they must be present for all documents and must come in the following order:
 
-* ```terms```: A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).
+* `terms`: A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).
 
-* ```counts```: A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to ```ones(length(terms))```).
+* `counts`: A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to `ones(length(terms))`).
 
-* ```readers```: A line of delimited positive integers corresponding to those users which have read the document.
+* `readers`: A line of delimited positive integers corresponding to those users which have read the document.
 
-* ```ratings```: A line of delimited positive integers equal in length to the ```readers``` line, corresponding to the rating each reader gave the document (defaults to ```ones(length(readers))```).
+* `ratings`: A line of delimited positive integers equal in length to the `readers` line, corresponding to the rating each reader gave the document (defaults to `ones(length(readers))`).
 
-* ```stamp```: A numerical value in the range ```[-inf, inf]``` denoting the timestamp of the document.
+* `stamp`: A numerical value in the range `[-inf, inf]` denoting the timestamp of the document.
 
 An example of a single doc block from a docfile with all possible lines included:
 
@@ -115,7 +115,7 @@ Padding a corpus before fixing it will ensure that any documents which contain l
 
 **Important:** A corpus is only a container for documents.  
 
-Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever modifying the internals of documents themselves, either manually or through the use of** ```corp!``` **functions**. 
+Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  **Be very careful whenever modifying the internals of documents themselves, either manually or through the use of** `corp!` **functions**. 
 
 ## Models
 The available models are as follows:
@@ -140,7 +140,7 @@ CTPF(corp, K, pmodel)
 # Collaborative topic Poisson factorization model with K topics.
 ```
 
-Notice that both ```DTM``` and ```CTPF``` have a ```pmodel``` argument.  It is **highly advisable** that you prime these final two models with a pretrained model from one of the first four, otherwise learning may take a prohibitively long time.
+Notice that both `DTM` and `CTPF` have a `pmodel` argument.  It is **highly advisable** that you prime these final two models with a pretrained model from one of the first four, otherwise learning may take a prohibitively long time.
 
 ## Tutorial
 ### LDA
