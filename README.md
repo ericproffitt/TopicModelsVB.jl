@@ -160,7 +160,6 @@ fixcorp!(nsfcorp)
 nsflda = LDA(nsfcorp, 9)
 train!(nsflda, iter=150, tol=0.0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
                                   # If you don't want to watch the ∆elbo, set chkelbo=151.
-
 # training...
 
 showtopics(nsflda, cols=9)
