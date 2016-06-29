@@ -468,6 +468,32 @@ showurecs(model, 216, 426)
 426. The metabolic world of Escherichia coli is not small
 ```
 
+We can also take a more holistic and informal approach to evaluating model quality.  Let's take a look at the first few documents in user 216's library,
+
+```julia
+showlibs(citeuctpf, 25)
+```
+
+```
+ ●●● User: 216
+ • The metabolic world of Escherichia coli is not small
+ • Network motifs: simple building blocks of complex networks.
+ • The large-scale organization of metabolic networks.
+ • Here is the evidence, now what is the hypothesis? The complementary roles of inductive and hypothesis-driven science in the post-genomic era
+ • Classification and Regression Trees
+ ...
+ ```
+ 
+ user 216 appears to be interested in some combination of network theory and microbiology.  Now comparing user 216's actually library with the top few recommendations made by the model,
+ 
+ ```julia
+ showurecs(citeuctpf, 25, 5)
+ ```
+ 
+ ```
+ recs
+ ```
+
 ## GPU Support
 
 Hopefully coming soon...
