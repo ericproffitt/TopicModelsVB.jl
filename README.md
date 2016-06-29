@@ -451,7 +451,7 @@ train!(citeuctpf, iter=5)       # Instantiation and training will likely take 30
 # training...
 ```
 
-Finally, we evaluate the accuracy of this model against the test set, where baseline for mean accuracy is 0.5.
+Finally, we evaluate the accuracy of our model against the test set, where baseline for mean accuracy is 0.5.
 
 ```julia
 acc = Float64[]
