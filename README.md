@@ -189,7 +189,7 @@ Now that we've trained our LDA model we can, if we want, take a look at the topi
 ```julia
 nsflda.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0.025]
 ```
-This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the text of the document confirms this observation:
+This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
 
 ```julia
 showdocs(nsflda, 1) # could also have done showdocs(nsfcorp, 1)
@@ -203,7 +203,7 @@ populations prior minimal population size current permit analyses effects
 differing levels species distributions life history...
 ```
 
-On the other hand some documents will be a combination of topics.  For instance consider the topic breakdown for document 25:
+On the other hand, some documents will be a combination of topics.  Consider the topic breakdown for document 25:
 
 ```julia
 nsflda.gamma[25] # = [11.575, 44.889, 0.0204, 0.036, 0.049, 0.022, 0.020, 66.629, 0.025]
@@ -220,9 +220,9 @@ analysis partial differential equations form basis studies primary goals underst
 internal presence vortex rings arise density stratification due salinity temperature...
 ```
 
-We see that document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds very well to the large weights on topics 2 and 8, with a smaller but not insignificant weight on topic 1.
+We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 2 and 8, with a smaller but not insignificant weight on topic 1.
 
-Furthermore, if we want to, we can also generate artificla corpora by using the ```gencorp``` function.  Generating artificla corpora will run the the underlying probabilistic graphical model as a generative process to produce a new collect of documents, let's try it out.
+Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.  Generating artificial corpora will in turn run the the underlying probabilistic graphical model as a generative process in order to produce a new collection of documents, let's try it out:
 
 ```julia
 artificialcorp = gencorp(nsflda, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
