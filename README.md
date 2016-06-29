@@ -449,7 +449,7 @@ Now that we have set up our experiment, we instantiate and train a CTPF model on
 ```julia
 citeuctpf = CTPF(citeucorp, 30) # Note: 'pmodel' defaults to a 100 iteration LDA model.
 train!(citeuctpf, iter=5)       # Instantiation and training will likely take 30 - 40 minutes on a personal computer.
-                                # All optimizations in CTPF are analytic, allowing for very fast convergence properties.
+                                # All optimizations in CTPF are analytic, often allowing for very fast convergence.
 # training...
 ```
 
