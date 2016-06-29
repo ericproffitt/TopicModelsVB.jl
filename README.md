@@ -215,7 +215,10 @@ showdocs(nsflda, 25)
 ```
  ●●● Doc: 25
  ●●● Mathematical Sciences: Nonlinear Partial Differential Equations from Hydrodynamics
-work project continues mathematical research nonlinear elliptic problems arising perfect fluid hydrodynamics emphasis analytical study propagation waves stratified media techniques analysis partial differential equations form basis studies primary goals understand nature internal presence vortex rings arise density stratification due salinity temperature...
+work project continues mathematical research nonlinear elliptic problems arising perfect
+fluid hydrodynamics emphasis analytical study propagation waves stratified media techniques
+analysis partial differential equations form basis studies primary goals understand nature 
+internal presence vortex rings arise density stratification due salinity temperature...
 ```
 
 We see that document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds very well to the large weights on topics 2 and 8, with a smaller but not insignificant weighting on topic 1.
