@@ -32,7 +32,7 @@ Included in TopicModelsVB.jl are three datasets:
   * 16020 lexicon
 
 ## Corpus
-Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
+Let's begin with the Corpus data structure.  The `Corpus` data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
 
 There are four plaintext files that make up a corpus:
  * docfile
