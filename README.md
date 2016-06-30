@@ -546,12 +546,6 @@ showlibs(citeuctpf, 216)
 
 Hopefully coming soon...
 
-## Constants
-
-```julia
-epsln # = 1e-14
-```
-
 ## Types
 
 ```julia
@@ -723,13 +717,6 @@ showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); col
 showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
 # Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
 # If a document has no title, the documents index in the corpus will be shown instead.
-```
-
-## Macros
-
-```julia
-@buffer expr::Expr
-# Add 'epsln' during evaluation.
 ```
 
 ## Bibliography
