@@ -192,7 +192,7 @@ nsflda.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
 
 ```julia
-showdocs(nsflda, 1) # could also have done showdocs(nsfcorp, 1)
+showdocs(nsflda, 1) # Could also have done showdocs(nsfcorp, 1).
 ```
 
 ```
