@@ -600,11 +600,11 @@ CTPF(corp, K, pmodel) <: TopicModel
 ### Generic Functions
 
 ```julia
-isnegative(x::Union{Number, Array{Number}})
-# Take Number or Array{Number} and return Bool or Array{Bool} (resp.).
+isnegative(x::Union{Real, Array{Real}})
+# Take Real or Array{Real} and return Bool or Array{Bool} (resp.).
 
-ispositive(x::Union{Number, Array{Number}})
-# Take Number or Array{Number} and return Bool or Array{Bool} (resp.).
+ispositive(x::Union{Real, Array{Real}})
+# Take Real or Array{Real} and return Bool or Array{Bool} (resp.).
 
 tetragamma(.)
 # polygamma(2, .)
