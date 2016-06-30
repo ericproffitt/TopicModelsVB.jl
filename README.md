@@ -612,7 +612,7 @@ tetragamma(.)
 logsumexp(x::Array{Real})
 # Overflow safe log(sum(exp(x))).
 
-addlogistic(x::Vector{Real})
+addlogistic(x::Array{Real})
 # Overflow safe additive logistic function.
 
 addlogistic(x::Matrix{Real}, region::Int)
