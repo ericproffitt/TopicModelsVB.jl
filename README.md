@@ -447,8 +447,8 @@ Fortunately, since CTPF can, if need be, depend entirely on thematic structure w
 Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=5).
 
 ```julia
-pmodel = LDA(citeucorp, 30) # This will likely take 10 - 15 minutes on a personal computer.
-train!(pmodel, iter=150)
+pmodel = LDA(citeucorp, 30)
+train!(pmodel, iter=150, chkelbo=15) # This will likely take 10 - 15 minutes on a personal computer.
 
 # training...
 
