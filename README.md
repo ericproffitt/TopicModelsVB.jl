@@ -612,11 +612,9 @@ tetragamma(.)
 logsumexp(x::Array{Real})
 # Overflow safe log(sum(exp(x))).
 
-addlogistic(x::Array{Real})
+addlogistic(x::Array{Real}, region::Int)
 # Overflow safe additive logistic function.
-
-addlogistic(x::Matrix{Real}, region::Int)
-# Overflow safe additive logistic function across columns ('region' = 1) or rows ('region' = 2).
+# 'region' is optional, across columns: 'region' = 1, rows: 'region' = 2.
 
 partition(xs::Union{Vector, UnitRange}, n::Int)
 # 'n' must be positive.
