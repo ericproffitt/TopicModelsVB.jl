@@ -537,7 +537,7 @@ showlibs(citeuctpf, 216)
 10. Systems Biology: A Brief Overview
 ```
 
-## GPGPU Support
+## GPU Support
 
 Hopefully coming soon...
 
