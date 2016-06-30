@@ -606,11 +606,11 @@ isnegative(x::Union{Number, Array{Number}})
 ispositive(x::Union{Number, Array{Number}})
 # Take Number or Array{Number} and return Bool or Array{Bool} (resp.).
 
-logsumexp(x::Array{Real})
-# Overflow safe log(sum(exp(x))).
-
 tetragamma(.)
 # polygamma(2, .)
+
+logsumexp(x::Array{Real})
+# Overflow safe log(sum(exp(x))).
 
 partition(xs::Union{Vector, UnitRange}, n::Int)
 # 'n' must be positive.
