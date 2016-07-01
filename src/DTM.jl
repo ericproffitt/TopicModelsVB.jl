@@ -295,7 +295,7 @@ function updateLzeta!(model::DTM, t::Int, d::Int)
 	model.lzeta[d] = model.a[t] + log(sum(counts .* model.phi[d]' * sum(model.rEexpbeta[t], 2)) + epsln)
 end
 
-function train!(model::DTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, cgiter::Int=10, cgtol::Real=1/model.T^2, chkelbo::Int=1)
+function train!(model::DTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, cgiter::Int=20, cgtol::Real=1/model.T^2, chkelbo::Int=1)
 	@assert all(!isnegative([tol, ntol, vtol, cgtol]))
 	@assert all(ispositive([iter, niter, viter, cgiter, chkelbo]))	
 	checkmodel(model)
