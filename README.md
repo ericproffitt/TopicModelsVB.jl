@@ -18,7 +18,7 @@ Pkg.clone("git://github.com/esproff/TopicModelsVB.jl.git")
 ## Datasets
 Included in TopicModelsVB.jl are three datasets:
 
-1. National Science Foundation Abstracts 1989 - 2003:
+1. National Science Foundation Abstracts 1989 - 2001:
   * 30000 documents
   * 20323 lexicon
 
