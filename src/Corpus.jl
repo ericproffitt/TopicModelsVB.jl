@@ -391,7 +391,7 @@ function readcorp(corpsym::Symbol)
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	else
-		error("Corpus not found.")
+		println("Included corpora:\n:nsf\n:citeu\n:mac")
 	end
 
 	return corp
