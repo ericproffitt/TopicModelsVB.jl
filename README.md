@@ -438,7 +438,7 @@ powerpc        digital        port         osx          speed
 slots          upgrade        powerbook    airport      digital
 ```
 
-or a particular time-slice, by writing:
+or a particular time slice, by writing:
 
 ```julia
 showtopics(model, times=11, cols=9)
