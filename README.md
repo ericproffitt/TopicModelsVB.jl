@@ -372,30 +372,29 @@ Taking a closer look at topic-covariance matrix, it appears that there is a tend
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example of a topic which is thematically-static, yet exhibits an evolving lexicon, is *Computer Storage*.  Methods of data storage have evolved rapidly in the last 40 years, evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
 
-As an example, let's consider a corpus of approximately 8000 Apple magazine articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year, and break time periods into 2 year intervals.
+As an example, let's load the corpus of Macintosh articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year, and break time periods into 2 year intervals.
 
 ```julia
 srand(1)
 
-cmagcorp = readcorp(:cmag)
+cmagcorp = readcorp(:mac)
 
-cmagcorp.docs = filter(doc -> doc.title[1:3] == "Mac", cmagcorp.docs)
 cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(corp, stop=true, order=false, b=200, len=10)
+fixcorp!(corp, stop=true, order=false, b=100, len=10) # Remove words that which appear < 100 times and documents of length < 10.
 
-cmaglda = fLDA(corp, 8)
+cmaglda = LDA(corp, 9)
 train!(cmagflda, iter=150, chkelbo=151)
 
 # training...
 
-cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
+cmagdtm = DTM(cmagcorp, 9, 200, cmagflda)
 ```
 
 However before training our DTM model, let's manually set one of its hyperparameters:
 
 ```julia
-cmagdtm.sigmasq=100.0 # 'sigmasq' defaults to 1.0.
+cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
 ```
 
 This hyperparameter governs both how quickly the same topic mixes within different time intervals, as well as how much variance between time intervals is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
