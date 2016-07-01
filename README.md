@@ -486,7 +486,7 @@ for doc in citeucorp
 end
 ```
 
-**Important:** We refrain from fixing our corpus in this case, first because the CiteULike dataset is pre-packaged and thus pre-fixed, but more importantly, because removing user keys from documents and then fixing our corpus may result in a re-ordering of its user dictionary, which would in turn invalidate our test set.
+**Important:** We refrain from fixing our corpus in this case, first because the CiteULike dataset is pre-packaged and thus pre-fixed, but more importantly, because removing user keys from documents and then fixing a corpus may result in a re-ordering of its user dictionary, which would in turn invalidate our test set.
 
 After training, we will evaluate model quality by measuring our model's success at imputing the correct user back into each of the document libraries.
 
