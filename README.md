@@ -402,40 +402,40 @@ showtopics(model, topics=3, cols=6)
 ```
 
 ```
- ●●● Topic: 4
-time 1      time 2      time 3      time 4         time 5          time 6
-drawing     drawing     graphics    color          color           color
-macpaint    graphics    images      image          image           tools
-images      program     image       images         tool            program
-objects     text        drawing     adobe          tools           features
-image       draw        tools       tool           images          image
-pattern     object      tool        tools          objects         design
-drawings    image       art         create         program         interface
-patterns    paint       design      freehand       quicktime       includes
-object      objects     program     drawing        presentation    version
-effects     drawings    create      illustrator    features        graphics
-program     images      objects     graphics       paint           tool
-paint       macpaint    color       program        effects         photoshop
-tools       tools       effects     animation      drawing         supports
-draw        graphic     graphic     version        graphics        adobe
-create      patterns    colors      creating       programs        offers
+ ●●● Topic: 3
+time 1         time 2         time 3         time 4       time 5       time 6
+music          music          music          drive        drive        mac
+midi           sound          sound          video        mac          apple
+software       instruments    midi           midi         powerbook    macs
+video          midi           ethernet       sound        apple        modem
+sound          software       software       software     software     video
+instruments    video          audio          music        sound        upgrade
+slot           bus            slot           ethernet     video        performance
+playback       slot           bus            voice        devices      powerbook
+bus            audio          video          quicktime    powerpc      multimedia
+audio          drive          drive          digital      macs         desktop
+battery        ethernet       instruments    audio        duo          ram
+play           play           input          input        port         drive
+drive          playback       play           interface    ethernet     software
+channel        recording      voice          slot         music        audio
+tracks         sounds         apple          play         digital      speed
 
-time 7       time 8       time 9       time 10      time 11      
-mac          color        web          web          web          
-web          web          version      tools        video        
-color        adobe        features     osx          effects      
-page         mac          create       features     software     
-internet     features     photoshop    version      photoshop    
-features     files        files        create       image        
-create       pro          tool         text         features     
-version      version      tools        tool         site         
-make         quicktime    site         image        tools        
-opendoc      support      free         software     interface    
-interface    graphics     graphics     photoshop    imovie       
-quicktime    interface    movie        indesign     create       
-text         image        interface    interface    include      
-program      free         full         support      makes        
-tools        photoshop    quicktime    apps         tool
+time 7         time 8         time 9       time 10      time 11     
+power          power          usb          mac          apple       
+ram            g3             apple        apple        mini        
+video          usb            power        g4           music       
+processor      imac           g4           power        audio       
+system         speed          audio        usb          usb         
+fast           video          video        audio        itunes      
+speed          ram            ram          ram          video       
+running        powerbook      sound        pro          g5          
+audio          audio          firewire     video        dvd         
+performance    performance    digital      digital      power       
+install        modem          memory       imac         g4          
+sound          macs           g3           powerbook    software    
+powerbook      drive          imac         sound        ram         
+powerpc        digital        port         osx          speed       
+slots          upgrade        powerbook    airport      digital
 ```
 
 or a particular time-slice, by writing:
