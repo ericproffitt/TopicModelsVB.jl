@@ -303,27 +303,27 @@ showtopics(nsffctm, 20, cols=9)
 ```
 
 ```
-topic 1         topic 2        topic 3          topic 4           topic 5          topic 6       topic 7           topic 8         topic 9
-earthquake      flow           species          design            university       cell          economic          theory          chemistry
-ocean           numerical      populations      algorithms        students         protein       social            geometry        chemical
-water           physics        plant            parallel          science          cells         theory            equations       reactions
-measurements    quantum        genetic          computer          scientists       gene          policy            algebraic       metal
-soil            theory         evolutionary     performance       award            plant         human             groups          molecular
-seismic         nonlinear      plants           processing        sciences         proteins      political         differential    surface
-sea             dynamics       population       network           conference       molecular     change            mathematical    organic
-global          phenomena      patterns         networks          national         genes         public            mathematics     university
-climate         particle       variation        software          projects         dna           science           spaces          electron
-earth           equations      forest           computational     engineering      regulation    people            manifolds       compounds
-surface         award          environmental    efficient         year             plants        decision          dimensional     molecules
-damage          waves          ecological       programming       mathematical     expression    labor             finite          reaction
-solar           heat           food             distributed       workshop         membrane      market            professor       synthesis
-pacific         energy         ecology          estimation        faculty          genetic       women             operators       spectroscopy
-samples         fluid          test             power             months           cellular      children          algebra         professor
-ground          wave           animals          theory            institute        binding       cultural          solutions       energy
-ice             particles      rates            implementation    international    brain         groups            geometric       species
-chemical        temperature    reproductive     algorithm         equipment        enzymes       test              algebras        dynamics
-atmospheric     laser          community        optimization      nsf              enzyme        relationship      concerned       complexes
-test            optical        diversity        programs          graduate         acid          archaeological    objects         gas
+topic 1         topic 2         topic 3          topic 4          topic 5         topic 6       topic 7      topic 8         topic 9
+data            flow            species          system           university      cell          data         theory          chemistry
+earthquake      numerical       plant            design           support         protein       social       problems        chemical
+ocean           theoretical     populations      data             program         cells         economic     geometry        materials
+water           models          genetic          algorithms       students        plant         theory       investigator    reactions
+measurements    model           evolutionary     control          science         proteins      policy       algebraic       properties
+program         physics         plants           problems         dr              gene          human        equations       metal
+climate         theory          population       models           award           molecular     political    groups          surface
+models          nonlinear       data             parallel         scientists      genes         models       differential    electron
+seismic         dynamics        dr               computer         scientific      dna           public       space           program
+soil            experimental    patterns         performance      sciences        system        change       mathematical    molecular
+earth           equations       relationships    model            national        function      model        mathematics     organic
+global          particle        evolution        processing       projects        regulation    science      spaces          dr
+sea             phenomena       variation        applications     engineering     plants        people       functions       university
+response        quantum         group            network          conference      expression    decision     questions       compounds
+damage          heat            ecology          networks         year            mechanisms    issues       manifolds       temperature
+solar           fluid           ecological       approach         researchers     dr            labor        finite          molecules
+pacific         particles       forest           software         workshop        membrane      market       dimensional     laser
+ice             waves           environmental    efficient        mathematical    genetic       case         properties      reaction
+surface         problems        food             computational    months          binding       women        group           optical
+system          award           experiments      distributed      equipment       cellular      factors      operators       measurements
 ```
 
 Because the topics in the fLDA model were already so well defined, there's little room to improve topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
@@ -346,28 +346,25 @@ Now let's take a look at the topic-covariance matrix:
 model.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 15.005
-model.sigma[3,6] # 13.219
-model.sigma[2,9] # 7.502
+model.sigma[4,8] # 9.315
+model.sigma[3,6] # 6.522
+model.sigma[2,9] # 5.148
 
 # Top 3 negative entries, sorted in ascending order:
-model.sigma[6,8] # -22.347
-model.sigma[3,8] # -20.198
-model.sigma[4,6] # -14.160
+model.sigma[7,9] # -13.212
+model.sigma[1,8] # -13.134
+model.sigma[3,8] # -11.429
 ```
 
-According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Mathematics*.
+According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Chemistry*.
 
-As for the most unlikely topic pairings, first are topics 6 and 8, corresponding to *Microbiology* and *Mathematics*, followed closely by topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 4 and 6, corresponding to *Computer Science* and *Microbiology*.
+As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed closely by topics 1 and 8, corresponding to *Earth Science* and *Mathematics*, and then third are topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*.
 
-Interestingly, the topic which is least correlated with all other topics is not the *Academia* topic (which is the second least correlated), but instead the *Economics* topic.
+Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
 
 ```julia
-sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Economics topic, absolute off-diagonal covariance 5.732.
-sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 18.766.
+sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
 ```
-
-Taking a closer look at the topic-covariance matrix, it appears that there is a tendency within the natural sciences for the softer sciences to use slightly more academic buzzwords, while the harder sciences tend to eschew them.  The *Economics* topic also happens to be the only non-natural science found among the 9 topics (excluding the *Academia* topic), and thus a potential lack of overlapping lexicon with the natural sciences may have been what led to its observed lack of correlation with the other 7 topics.
 
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example of a topic which is thematically-static, yet exhibits an evolving lexicon, is *Computer Storage*.  Methods of data storage have evolved rapidly in the last 40 years, evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
