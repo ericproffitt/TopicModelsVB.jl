@@ -1,3 +1,5 @@
+const epsln = eps(1e-14)
+
 typealias VectorList{T} Vector{Vector{T}}
 typealias MatrixList{T} Vector{Matrix{T}}
 
@@ -12,12 +14,49 @@ macro juliadots(stringexpr::Expr)
 	return stringexpr
 end
 
+macro buffer(expr::Expr)
+	if expr.head == :.
+		expr = :($expr += epsln)
+	elseif expr.head == :(=)
+		expr = :($(expr.args[1]) = epsln + $(expr.args[2]))
+	end
+	return expr
+end
+
 isnegative(x::Real) = x < 0
 ispositive(x::Real) = x > 0
 isnegative{T<:Real}(xs::Array{T}) = Bool[isnegative(x) for x in xs]
 ispositive{T<:Real}(xs::Array{T}) = Bool[ispositive(x) for x in xs]
 tetragamma(x) = polygamma(2, x)
 
+function logsumexp{T<:Real}(xs::Array{T})
+	maxval = maximum(xs)
+	return maxval + log(sum(exp(xs - maxval)))
+end
+
+function addlogistic{T<:Real}(xs::Array{T})
+	maxval = maximum(xs)
+	xs -= maxval
+	xs = exp(xs) / sum(exp(xs))
+	return xs
+end
+
+function addlogistic{T<:Real}(xs::Matrix{T}, region::Int)
+	if region == 1
+		maxvals = [maximum(xs[:,j]) for j in 1:size(xs, 2)]
+		xs .-= maxvals'
+		xs = exp(xs) ./ sum(exp(xs), 1)
+	elseif region == 2
+		maxvals = [maximum(xs[i,:]) for i in 1:size(xs, 1)]
+		xs .-= maxvals
+		xs = exp(xs) ./ sum(exp(xs), 2)
+	else
+		xs = addlogistic(xs)
+	end
+	return xs
+end
+
+Distributions.isprobvec(p::Vector{Float64}) = isapprox(sum(p), 1)	
 Distributions.isprobvec(P::Matrix{Float64}) = isprobvec(vcat(P...))
 
 function Distributions.isprobvec(P::Matrix{Float64}, region::Int)
@@ -25,7 +64,7 @@ function Distributions.isprobvec(P::Matrix{Float64}, region::Int)
 
 	if region == 1
 		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
-	else
+	elseif region == 2
 		x = all([isprobvec(vec(P[i,:])) for i in 1:size(P, 1)])
 	end
 	return x
@@ -44,4 +83,9 @@ function partition{T<:Any}(xs::Vector{T}, n::Int)
 end
 
 partition{T<:Real}(xs::UnitRange{T}, n::Int) = partition(collect(xs), n)
+
+
+
+
+
 
