@@ -381,7 +381,7 @@ cmagcorp = readcorp(:mac)
 
 cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(corp, stop=true, order=false, b=100, len=10) # Remove words that which appear < 100 times and documents of length < 10.
+fixcorp!(corp, stop=true, order=false, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
 cmaglda = LDA(corp, 9)
 train!(cmagflda, iter=150, chkelbo=151)
