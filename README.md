@@ -377,40 +377,91 @@ As an example, let's load the corpus of Macintosh articles, drawn from the magaz
 ```julia
 srand(1)
 
-cmagcorp = readcorp(:mac)
+maccorp = readcorp(:mac)
 
-cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 400, replace=false) for y in 1984:2005]...)
+maccorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, maccorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(corp, stop=true, order=false, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
+fixcorp!(maccorp, stop=true, order=false, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
-cmaglda = LDA(corp, 9)
-train!(cmagflda, iter=150, chkelbo=151)
+pmodel = LDA(corp, 9)
+train!(pmodel, iter=150, chkelbo=151)
 
 # training...
 
-cmagdtm = DTM(cmagcorp, 9, 200, cmagflda)
+macdtm = DTM(maccorp, 9, 200, pmodel)
 ```
 
-However before training our DTM model, let's manually set one of its hyperparameters:
 
 ```julia
-cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
-```
-
-This hyperparameter governs both how quickly the same topic mixes within different time intervals, as well as how much variance between time intervals is allowed overall.  Since computer technology is a rapidly evolving field, increasing the value of this parameter will hopefully lead to better quality topic dynamics, as well as a quicker fit for our model.
-
-```julia
-train!(cmagdtm, iter=200, chkelbo=20) # This will likely take about 5 hours on a personal computer.
-                                      # Convergence for all other models is worst-case quadratic,
-                                      # while DTM convergence is linear or at best super-linear.
+train!(macdtm, iter=10) # This will likely take several hours on a personal computer.
+                        # Convergence for all other models is worst-case quadratic,
+                        # while DTM convergence is linear or at best super-linear.
 # training...
 
-showtopics(model, 20, topics=5)
+We can look at a particular topic-slice by writing:
+
+showtopics(model, topics=3, cols=6)
 ```
 
 ```
-topics
+ ●●● Topic: 4
+time 1      time 2      time 3      time 4         time 5          time 6
+drawing     drawing     graphics    color          color           color
+macpaint    graphics    images      image          image           tools
+images      program     image       images         tool            program
+objects     text        drawing     adobe          tools           features
+image       draw        tools       tool           images          image
+pattern     object      tool        tools          objects         design
+drawings    image       art         create         program         interface
+patterns    paint       design      freehand       quicktime       includes
+object      objects     program     drawing        presentation    version
+effects     drawings    create      illustrator    features        graphics
+program     images      objects     graphics       paint           tool
+paint       macpaint    color       program        effects         photoshop
+tools       tools       effects     animation      drawing         supports
+draw        graphic     graphic     version        graphics        adobe
+create      patterns    colors      creating       programs        offers
+
+time 7       time 8       time 9       time 10      time 11      
+mac          color        web          web          web          
+web          web          version      tools        video        
+color        adobe        features     osx          effects      
+page         mac          create       features     software     
+internet     features     photoshop    version      photoshop    
+features     files        files        create       image        
+create       pro          tool         text         features     
+version      version      tools        tool         site         
+make         quicktime    site         image        tools        
+opendoc      support      free         software     interface    
+interface    graphics     graphics     photoshop    imovie       
+quicktime    interface    movie        indesign     create       
+text         image        interface    interface    include      
+program      free         full         support      makes        
+tools        photoshop    quicktime    apps         tool
 ```
+
+or a particular time-slice, by writing
+
+```
+topic 1    topic 2        topic 3     topic 4      topic 5       topic 6      topic 7      topic 8     topic 9
+ipod       mac            apple       web          drive         mac          pro          color       game
+click      rebate         mini        video        mac           network      office       mac         games
+file       contest        music       effects      backup        future       data         image       good
+select     free           audio       software     firewire      demo         software     printer     power
+folder     offer          usb         photoshop    drives        manager      excel        images      learn
+set        subject        itunes      image        storage       shareware    mac          lcd         play
+open       prices         video       features     hard_drive    director     microsoft    print       working
+menu       purchase       g5          site         power         apple        business     photo       design
+files      products       dvd         tools        data          usa          demo         display     level
+button     entries        power       interface    disk          editor       quicken      mode        classic
+find       orders         g4          imovie       buffer        smart        chart        light       things
+window     errors         software    create       mercury       year         fax          digital     online
+type       price          ram         include      pro           phone        filemaker    printing    pick
+choose     product        speed       makes        external      address      font         lens        world
+press      responsible    digital     tool         retrospect    group        word         quality     action
+```
+
+As you may have noticed, the dynamic topic model is *extremely* computationally intensive, hopefully gpgpu support will ameliorate this problem to at least some degree, however running a DTM model on a industry-size dataset will likely always require more computational power than can be provided by your standard personal computer.
 
 ### CTPF
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations, beyond what would be capable using just the document-user matrix.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
