@@ -392,6 +392,7 @@ function readcorp(corpsym::Symbol)
 
 	else
 		println("Included corpora:\n:nsf\n:citeu\n:mac")
+		corp = nothing
 	end
 
 	return corp
