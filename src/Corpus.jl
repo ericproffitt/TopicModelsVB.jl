@@ -371,13 +371,13 @@ getusers(corp::Corpus) = sort(collect(values(corp.users)))
 
 function readcorp(corpsym::Symbol)
 	if corpsym == :nsf
-		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/nsf/nsfdocs.csv"
+		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/nsf/nsfdocs.txt"
 		lexfile = "~/.julia/v0.4/topicmodelsvb/datasets/nsf/nsflex.txt"
 		titlefile = "~/.julia/v0.4/topicmodelsvb/datasets/nsf/nsftitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	elseif corpsym == :citeu
-		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/citeu/citeudocs.csv"
+		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/citeu/citeudocs.txt"
 		lexfile = "~/.julia/v0.4/topicmodelsvb/datasets/citeu/citeulex.txt"
 		userfile = "~/.julia/v0.4/topicmodelsvb/datasets/citeu/citeuusers.txt"
 		titlefile = "~/.julia/v0.4/topicmodelsvb/datasets/citeu/citeutitles.txt"
@@ -385,7 +385,7 @@ function readcorp(corpsym::Symbol)
 		padcorp!(corp)
 
 	elseif corpsym == :mac
-		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/mac/macdocs.csv"
+		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/mac/macdocs.txt"
 		lexfile = "~/.julia/v0.4/topicmodelsvb/datasets/mac/maclex.txt"
 		titlefile = "~/.julia/v0.4/topicmodelsvb/datasets/mac/mactitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
