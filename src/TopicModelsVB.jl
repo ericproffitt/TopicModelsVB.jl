@@ -1,7 +1,9 @@
 module TopicModelsVB
 
+using Distributions
+
 export VectorList, MatrixList, Document, Corpus, TopicModel, LDA, fLDA, CTM, fCTM, DTM, CTPF
-export isnegative, ispositive, tetragamma, partition
+export isnegative, ispositive, tetragamma, logsumexp, addlogistic, partition
 export checkdoc, checkcorp, readcorp, writecorp, abridgecorp!, trimcorp!, compactcorp!, padcorp!, cullcorp!, fixcorp!, showdocs, getlex, getusers
 export train!
 export checkmodel, gendoc, gencorp, showtopics, showlibs, showdrecs, showurecs
@@ -18,4 +20,3 @@ include("CTPF.jl")
 include("modelutils.jl")
 
 end
-
