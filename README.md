@@ -303,27 +303,27 @@ showtopics(nsffctm, 20, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4           topic 5         topic 6       topic 7        topic 8         topic 9
-earthquake      flow            species          design            university      protein       social         theory          chemistry
-ocean           experimental    plant            algorithms        support         cell          economic       equations       chemical
-water           materials       genetic          models            students        cells         theory         investigator    reactions
-program         model           populations      parallel          program         proteins      policy         geometry        metal
-measurements    phase           plants           computer          science         gene          models         mathematical    molecular
-soil            theoretical     evolutionary     performance       scientists      plant         change         differential    program
-models          optical         population       model             award           genes         human          algebraic       dr
-climate         temperature     dr               processing        dr              molecular     public         groups          properties
-seismic         particle        patterns         applications      scientific      dr            model          space           organic
-global          models          evolution        network           sciences        regulation    political      solutions       university
-sea             heat            relationships    networks          conference      plants        examine        mathematics     surface
-effects         properties      dna              software          national        expression    case           spaces          electron
-response        growth          variation        efficient         projects        mechanisms    issues         dimensional     molecules
-pacific         fluid           effects          computational     engineering     dna           people         finite          compounds
-earth           numerical       biology          distributed       year            membrane      theoretical    functions       reaction
-solar           surface         molecular        programming       researchers     growth        effects        questions       synthesis
-model           quantum         reproductive     estimation        workshop        binding       factors        manifolds       spectroscopy
-atmospheric     effects         animals          program           months          acid          decision       properties      energy
-damage          laser           growth           implementation    mathematical    enzymes       labor          professor       dynamics
-change          phenomena       test             algorithm         faculty         site          market         operators       materials
+topic 1         topic 2        topic 3          topic 4           topic 5          topic 6       topic 7           topic 8         topic 9
+earthquake      flow           species          design            university       cell          economic          theory          chemistry
+ocean           numerical      populations      algorithms        students         protein       social            geometry        chemical
+water           physics        plant            parallel          science          cells         theory            equations       reactions
+measurements    quantum        genetic          computer          scientists       gene          policy            algebraic       metal
+soil            theory         evolutionary     performance       award            plant         human             groups          molecular
+seismic         nonlinear      plants           processing        sciences         proteins      political         differential    surface
+sea             dynamics       population       network           conference       molecular     change            mathematical    organic
+global          phenomena      patterns         networks          national         genes         public            mathematics     university
+climate         particle       variation        software          projects         dna           science           spaces          electron
+earth           equations      forest           computational     engineering      regulation    people            manifolds       compounds
+surface         award          environmental    efficient         year             plants        decision          dimensional     molecules
+damage          waves          ecological       programming       mathematical     expression    labor             finite          reaction
+solar           heat           food             distributed       workshop         membrane      market            professor       synthesis
+pacific         energy         ecology          estimation        faculty          genetic       women             operators       spectroscopy
+samples         fluid          test             power             months           cellular      children          algebra         professor
+ground          wave           animals          theory            institute        binding       cultural          solutions       energy
+ice             particles      rates            implementation    international    brain         groups            geometric       species
+chemical        temperature    reproductive     algorithm         equipment        enzymes       test              algebras        dynamics
+atmospheric     laser          community        optimization      nsf              enzyme        relationship      concerned       complexes
+test            optical        diversity        programs          graduate         acid          archaeological    objects         gas
 ```
 
 Because the topics in the fLDA model were already so well defined, there's little room to improve topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
