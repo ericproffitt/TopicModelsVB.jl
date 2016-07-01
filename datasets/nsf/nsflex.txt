@@ -19846,7 +19846,7 @@
 19846	walks
 19847	walkthrough
 19848	wall
-19849 wallace
+19849 	wallace
 19850	walled
 19851	wallpaper
 19852	walls
