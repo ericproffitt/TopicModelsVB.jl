@@ -99,21 +99,20 @@ sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-dia
 
 srand(1)
 
-cmagcorp = readcorp(:cmag)
+cmagcorp = readcorp(:mac)
 
-cmagcorp.docs = filter(doc -> doc.title[1:3] == "Mac", cmagcorp.docs)
 cmagcorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, cmagcorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(corp, stop=true, order=false, b=200, len=10)
+fixcorp!(corp, stop=true, order=false, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
-cmaglda = fLDA(corp, 8)
+cmaglda = LDA(corp, 9)
 train!(cmagflda, iter=150, chkelbo=151)
 
 # training...
 
-cmagdtm = DTM(cmagcorp, 8, 200, cmagflda)
+cmagdtm = DTM(cmagcorp, 9, 200, cmagflda)
 
-cmagdtm.sigmasq=100.0 # 'sigmasq' defaults to 1.0.
+cmagdtm.sigmasq=10.0 # 'sigmasq' defaults to 1.0.
 
 train!(cmagdtm, iter=200, chkelbo=20) # This will likely take about 5 hours on a personal computer.
                                       # Convergence for all other models is worst-case quadratic,
