@@ -398,44 +398,44 @@ train!(macdtm, iter=10) # This will likely take about an hour on a personal comp
 We can look at a particular topic slice by writing:
 
 ```julia
-showtopics(model, topics=3, cols=6)
+showtopics(model, topics=4, cols=6)
 ```
 
 ```
- ●●● Topic: 3
-time 1         time 2         time 3         time 4       time 5       time 6
-music          music          music          drive        drive        mac
-midi           sound          sound          video        mac          apple
-software       instruments    midi           midi         powerbook    macs
-video          midi           ethernet       sound        apple        modem
-sound          software       software       software     software     video
-instruments    video          audio          music        sound        upgrade
-slot           bus            slot           ethernet     video        performance
-playback       slot           bus            voice        devices      powerbook
-bus            audio          video          quicktime    powerpc      multimedia
-audio          drive          drive          digital      macs         desktop
-battery        ethernet       instruments    audio        duo          ram
-play           play           input          input        port         drive
-drive          playback       play           interface    ethernet     software
-channel        recording      voice          slot         music        audio
-tracks         sounds         apple          play         digital      speed
+ ●●● Topic: 4
+time 1       time 2       time 3         time 4       time 5       time 6
+board        macintosh    color          board        board        power
+serial       upgrade      system         video        powerbook    macs
+memory       port         board          ram          color        price
+power        memory       video          upgrade      upgrade      video
+upgrade      board        display        system       display      speed
+port         power        memory         rom          apple        upgrade
+chips        expansion    boards         simms        scsi         performance
+unit         unit         radius         macintosh    video        apple
+ports        digital      upgrade        ethernet     monitor      fast
+chip         connect      power          classic      power        monitors
+expansion    radius       ram            apple        quadra       powerbook
+digital      device       monitor        math         memory       radius
+boards       devices      accelerator    rasterops    designed     small
+plug         boards       device         scsi         processor    cpu
+adapter      chip         supermac       digital      macintosh    faster
 
-time 7         time 8         time 9       time 10      time 11     
-power          power          usb          mac          apple       
-ram            g3             apple        apple        mini        
-video          usb            power        g4           music       
-processor      imac           g4           power        audio       
-system         speed          audio        usb          usb         
-fast           video          video        audio        itunes      
-speed          ram            ram          ram          video       
-running        powerbook      sound        pro          g5          
-audio          audio          firewire     video        dvd         
-performance    performance    digital      digital      power       
-install        modem          memory       imac         g4          
-sound          macs           g3           powerbook    software    
-powerbook      drive          imac         sound        ram         
-powerpc        digital        port         osx          speed       
-slots          upgrade        powerbook    airport      digital
+time 7         time 8         time 9         time 10      time 11       
+power          g3             usb            g4           ipod          
+ram            usb            firewire       power        mini          
+speed          imac           g4             usb          power         
+processor      ram            ram            firewire     usb           
+standard       apple          apple          apple        apple         
+fast           modem          power          ram          g5            
+drive          upgrade        palm           imac         firewire      
+performance    power          g3             powerbook    g4            
+keyboard       pci            refurbished    drive        ram           
+faster         speed          powerbook      airport      models        
+upgrade        drive          hardware       port         display       
+memory         powerbook      machine        processor    memory        
+apple          internal       port           models       hard_drive    
+slots          serial         imac           memory       speed         
+powerbook      performance    device         pci          port  
 ```
 
 or a particular time slice, by writing:
@@ -447,22 +447,22 @@ showtopics(model, times=11, cols=9)
 ```
  ●●● Time: 11
  ●●● Span: 200405.0 - 200512.0
-topic 1    topic 2        topic 3     topic 4      topic 5       topic 6      topic 7      topic 8     topic 9
-ipod       mac            apple       web          drive         mac          pro          color       game
-click      rebate         mini        video        mac           network      office       mac         games
-file       contest        music       effects      backup        future       data         image       good
-select     free           audio       software     firewire      demo         software     printer     power
-folder     offer          usb         photoshop    drives        manager      excel        images      learn
-set        subject        itunes      image        storage       shareware    mac          lcd         play
-open       prices         video       features     hard_drive    director     microsoft    print       working
-menu       purchase       g5          site         power         apple        business     photo       design
-files      products       dvd         tools        data          usa          demo         display     level
-button     entries        power       interface    disk          editor       quicken      mode        classic
-find       orders         g4          imovie       buffer        smart        chart        light       things
-window     errors         software    create       mercury       year         fax          digital     online
-type       price          ram         include      pro           phone        filemaker    printing    pick
-choose     product        speed       makes        external      address      font         lens        world
-press      responsible    digital     tool         retrospect    group        word         quality     action
+topic 1    topic 2      topic 3     topic 4       topic 5        topic 6      topic 7     topic 8       topic 9
+file       color        system      ipod          demo           click        apple       drive         mac
+select     image        files       mini          manager        video        site        express       mouse
+folder     images       disk        power         future         software     price       backup        cover
+set        photo        osx         usb           director       music        web         drives        fax
+open       photoshop    utility     apple         usa            audio        products    buffer        software
+menu       print        install     g5            network        good         contest     prices        ea
+choose     light        finder      firewire      shareware      game         smart       subject       pad
+text       photos       user        g4            charts         itunes       year        data          laserwriter
+button     printer      terminal    ram           accounts       play         computer    warranty      kensington
+find       mode         run         models        editor         time         world       mac           stylewriter
+window     digital      folders     display       advertising    effects      phone       disk          turbo
+type       quality      network     memory        entries        pro          group       retrospect    apple
+create     elements     classic     hard_drive    production     dvd          product     orders        printer
+press      lens         desktop     speed         california     makes        service     notice        modem
+line       printing     windows     port          marketing      interface    people      shipping      ext
 ```
 
 As you may have noticed, the dynamic topic model is *extremely* computationally intensive, hopefully GPGPU support will ameliorate this problem to at least some degree.  However it is likely that running a DTM model on a industry-sized dataset will always require more computational power than can be provided by a standard personal computer.
