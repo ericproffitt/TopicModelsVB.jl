@@ -56,7 +56,6 @@ function addlogistic{T<:Real}(xs::Matrix{T}, region::Int)
 	return xs
 end
 
-Distributions.isprobvec(p::Vector{Float64}) = isapprox(sum(p), 1)	
 Distributions.isprobvec(P::Matrix{Float64}) = isprobvec(vcat(P...))
 
 function Distributions.isprobvec(P::Matrix{Float64}, region::Int)
