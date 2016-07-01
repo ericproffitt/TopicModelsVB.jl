@@ -452,7 +452,7 @@ train!(pmodel, iter=150, chkelbo=15) # This will likely take 10 - 15 minutes on 
 
 # training...
 
-citeuctpf = CTPF(citeucorp, 30, pmodel) # Note: 'pmodel' defaults to a 100 iteration LDA model.
+citeuctpf = CTPF(citeucorp, 30, pmodel) # Note: 'pmodel' defaults to a 150 iteration LDA model.
 train!(citeuctpf, iter=5)
 
 # training...
