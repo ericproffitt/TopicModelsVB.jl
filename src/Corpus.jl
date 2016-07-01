@@ -384,11 +384,11 @@ function readcorp(corpsym::Symbol)
 		corp = readcorp(docfile=docfile, lexfile=lexfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 		padcorp!(corp)
 
-	elseif corpsym == :apple
-		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/apple/appledocs.csv"
-		lexfile = "~/.julia/v0.4/topicmodelsvb/datasets/apple/applelex.txt"
-		titlefile = "~/.julia/v0.4/topicmodelsvb/datasets/apple/appletitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, stamps=true)
+	elseif corpsym == :mac
+		docfile = "~/.julia/v0.4/topicmodelsvb/datasets/mac/macdocs.csv"
+		lexfile = "~/.julia/v0.4/topicmodelsvb/datasets/mac/maclex.txt"
+		titlefile = "~/.julia/v0.4/topicmodelsvb/datasets/mac/mactitles.txt"
+		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	else
 		error("Corpus not found.")
