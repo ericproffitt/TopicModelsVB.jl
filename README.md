@@ -449,6 +449,8 @@ showtopics(model, times=11, cols=9)
 ```
 
 ```
+ ●●● Time: 11
+ ●●● Span: 200405.0 - 200512.0
 topic 1    topic 2        topic 3     topic 4      topic 5       topic 6      topic 7      topic 8     topic 9
 ipod       mac            apple       web          drive         mac          pro          color       game
 click      rebate         mini        video        mac           network      office       mac         games
