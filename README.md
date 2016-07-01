@@ -465,7 +465,7 @@ choose     product        speed       makes        external      address      fo
 press      responsible    digital     tool         retrospect    group        word         quality     action
 ```
 
-As you may have noticed, the dynamic topic model is *extremely* computationally intensive, hopefully gpgpu support will ameliorate this problem to at least some degree.  However it is likely that running a DTM model on a industry-sized dataset will always require more computational power than can be provided by a standard personal computer.
+As you may have noticed, the dynamic topic model is *extremely* computationally intensive, hopefully GPGPU support will ameliorate this problem to at least some degree.  However it is likely that running a DTM model on a industry-sized dataset will always require more computational power than can be provided by a standard personal computer.
 
 ### CTPF
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be capable using just the document-user matrix.  This blending of latent thematic structure with the document-user matrix not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
