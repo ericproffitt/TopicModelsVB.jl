@@ -27,7 +27,7 @@ Included in TopicModelsVB.jl are three datasets:
   * 8000 lexicon
   * 5551 users
 
-3. Macintosh Magazine Article Collection 1975 - 2014:
+3. Macintosh Magazine Article Collection 1984 - 2005:
   * 75011 documents
   * 15113 lexicon
 
