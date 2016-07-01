@@ -397,9 +397,11 @@ train!(macdtm, iter=10) # This will likely take several hours on a personal comp
                         # Convergence for all other models is worst-case quadratic,
                         # while DTM convergence is linear or at best super-linear.
 # training...
+```
 
-We can look at a particular topic-slice by writing:
+We can look at a particular topic slice by writing:
 
+```julia
 showtopics(model, topics=3, cols=6)
 ```
 
@@ -440,7 +442,11 @@ program      free         full         support      makes
 tools        photoshop    quicktime    apps         tool
 ```
 
-or a particular time-slice, by writing
+or a particular time-slice, by writing:
+
+```julia
+showtopics(model, times=11, cols=9)
+```
 
 ```
 topic 1    topic 2        topic 3     topic 4      topic 5       topic 6      topic 7      topic 8     topic 9
