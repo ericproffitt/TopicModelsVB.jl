@@ -19,17 +19,17 @@ Pkg.clone("git://github.com/esproff/TopicModelsVB.jl.git")
 Included in TopicModelsVB.jl are three datasets:
 
 1. National Science Foundation Abstracts 1989 - 2003:
-  * 128804 documents
-  * 25319 lexicon
+  * 30000 documents
+  * 20323 lexicon
 
 2. CiteULike Science Article Database:
   * 16980 documents
   * 8000 lexicon
   * 5551 users
 
-3. Computer Magazine Archive Article Collection 1975 - 2014:
-  * 330577 documents
-  * 16020 lexicon
+3. Macintosh Magazine Article Collection 1975 - 2014:
+  * 75011 documents
+  * 15113 lexicon
 
 ## Corpus
 Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
