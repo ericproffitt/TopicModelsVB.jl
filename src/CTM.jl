@@ -105,8 +105,8 @@ function updateLambda!(model::CTM, d::Int, niter::Int, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambdaGrad = (-model.invsigma * (model.lambda[d] - model.mu) + model.phi[d] * counts - model.N[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]))
-		lambdaHessInv = -inv(eye(model.K) + model.N[d] * model.sigma * diagm(exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]))) * model.sigma
+		lambdaGrad = (-model.invsigma * (model.lambda[d] - model.mu) + model.phi[d] * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]))
+		lambdaHessInv = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]))) * model.sigma
 		model.lambda[d] -= lambdaHessInv * lambdaGrad
 		if norm(lambdaGrad) < ntol
 			break
@@ -120,8 +120,8 @@ function updateVsq!(model::CTM, d::Int, niter::Int, ntol::Real)
 
 	for _ in 1:niter
 		rho = 1.0
-		vsqGrad = -0.5 * (diag(model.invsigma) + model.N[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]) - 1 ./ model.vsq[d])
-		vsqHessInv = -diagm(1 ./ (0.25 * model.N[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]) + 0.5 ./ model.vsq[d].^2))
+		vsqGrad = -0.5 * (diag(model.invsigma) + model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]) - 1 ./ model.vsq[d])
+		vsqHessInv = -diagm(1 ./ (0.25 * model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]) + 0.5 ./ model.vsq[d].^2))
 		p = vsqHessInv * vsqGrad
 		
 		while minimum(model.vsq[d] - rho * p) <= 0
