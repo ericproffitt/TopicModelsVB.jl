@@ -366,7 +366,7 @@ Furthermore, as expected, the topic which is least correlated with all other top
 sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
 ```
 
-Note: Both CTM and fCTM will sometimes have to numerical invert ill-conditioned matrices, thus don't be alarmed if the ```∆elbo``` periodically goes negative for stretches, it should right itself in fairly quick order.
+Note: Both CTM and fCTM will sometimes have to numerical invert ill-conditioned matrices, thus don't be alarmed if the ```∆elbo``` periodically goes negative for stretches, it should always right itself in fairly short order.
 
 ### DTM
 Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example of a topic which is thematically-static, yet exhibits an evolving lexicon, is *Computer Storage*.  Methods of data storage have evolved rapidly in the last 40 years, evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
