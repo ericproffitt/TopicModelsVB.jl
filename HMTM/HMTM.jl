@@ -1,5 +1,3 @@
-# http://www.mjandrews.net/papers/andrews.cogsci.2009.pdf
-
 type HMTM <: TopicModel
 	K::Int
 	M::Int
@@ -42,7 +40,7 @@ type HMTM <: TopicModel
 	end
 end
 
-Base.show(io::IO, model::LDA) = print(io, "Hidden Markov topic model with $(model.K) topics.")
+Base.show(io::IO, model::HMTM) = print(io, "Hidden Markov topic model with $(model.K) topics.")
 
 function Elogppi(model::HMTM, d::Int)
 	x = lgamma(sum(model.eta)) - sum(lgamma(model.eta)) + dot(model.eta - 1, digamma(model.tau[d]) - digamma(sum(model.tau[d])))
