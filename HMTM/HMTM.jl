@@ -193,7 +193,6 @@ function train!(model::HMTM; iter::Int=200, tol::Real=1.0, niter=1000, ntol::Rea
 
 	for p in 1:iter
 		for d in 1:model.M
-			updatePhi!(model, d, niter, ntol)
 			for _ in 1:viter
 				oldgamma = model.gamma[d]
 				updateTau!(model, d)
