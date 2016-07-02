@@ -1,3 +1,5 @@
+# http://www.mjandrews.net/papers/andrews.cogsci.2009.pdf
+
 type HMTM <: TopicModel
 	K::Int
 	M::Int
