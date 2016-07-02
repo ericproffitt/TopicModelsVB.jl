@@ -77,17 +77,14 @@ showtopics(nsffctm, 20, cols=9)
 model.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 15.005
-model.sigma[3,6] # 13.219
-model.sigma[2,9] # 7.502
+model.sigma[4,8] # 9.315
+model.sigma[3,6] # 6.522
+model.sigma[2,9] # 5.148
 
 # Top 3 negative entries, sorted in ascending order:
-model.sigma[6,8] # -22.347
-model.sigma[3,8] # -20.198
-model.sigma[4,6] # -14.160
-
-sum(abs(model.sigma[:,7])) - model.sigma[7,7] # Economics topic, absolute off-diagonal covariance 5.732.
-sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 18.766.
+model.sigma[7,9] # -13.212
+model.sigma[1,8] # -13.134
+model.sigma[3,8] # -11.429
 
 
 
@@ -103,7 +100,7 @@ maccorp = readcorp(:mac)
 
 maccorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, maccorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(maccorp, stop=true, order=false, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
+fixcorp!(maccorp, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
 pmodel = LDA(corp, 9)
 train!(pmodel, iter=150, chkelbo=151)
