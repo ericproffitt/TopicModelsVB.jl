@@ -31,14 +31,14 @@ nsflda.gamma[25] # = [11.575, 44.889, 0.0204, 0.036, 0.049, 0.022, 0.020, 66.629
 
 showdocs(nsflda, 25)
 
-artificialcorp = gencorp(nsflda, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
+artifnsfcorp = gencorp(nsflda, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
 
-artificiallda = LDA(artificialcorp, 9)
-train!(artificiallda, iter=150, tol=0.0, chkelbo=15)
+artifnsflda = LDA(artifnsfcorp, 9)
+train!(artifnsflda, iter=150, tol=0.0, chkelbo=15)
 
 # training...
 
-showtopics(artificiallda, cols=9)
+showtopics(artifnsflda, cols=9)
 
 
 
