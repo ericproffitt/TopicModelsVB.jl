@@ -227,7 +227,7 @@ Furthermore, if we want to, we can also generate artificial corpora by using the
 ```julia
 artifnsfcorp = gencorp(nsflda, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
 
-artifsnflda = LDA(artifnsfcorp, 9)
+artifnsflda = LDA(artifnsfcorp, 9)
 train!(artifnsflda, iter=150, tol=0.0, chkelbo=15)
 
 # training...
