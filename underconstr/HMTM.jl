@@ -103,7 +103,7 @@ function updateELBO!(model::HMTM)
 	return model.elbo
 end
 
-function updateEta!(model::HMTM, niter::Int, ntol::Float64)
+function updateEta!(model::HMTM, niter::Int, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
@@ -125,7 +125,7 @@ function updateEta!(model::HMTM, niter::Int, ntol::Float64)
 	end
 end
 
-function updateAlpha!(model::HMTM, niter::Int, ntol::Float64)
+function updateAlpha!(model::HMTM, niter::Int, ntol::Real)
 	for l in 1:model.K
 		nu = model.K
 		for _ in 1:niter
@@ -168,7 +168,7 @@ function updateGamma!(model::HMTM, d::Int)
 	model.gamma[d] = model.alpha + model.phi[d] .* (sum([model.phi[d]^(n-2) for n in 2:model.N[d]]) * model.lambda[d])' 
 end
 
-function updateLambda!(model::HMTM, d::Int, niter::Int, ntol::Float64)
+function updateLambda!(model::HMTM, d::Int, niter::Int, ntol::Real)
 	terms = model.corp[d].terms
 
 	c = vec(digamma(model.tau[d]') - digamma(sum(model.tau[d]))
@@ -186,7 +186,7 @@ function updateLambda!(model::HMTM, d::Int, niter::Int, ntol::Float64)
 	model.lambda[d] = exp(c + v - 1)
 end
 
-function updatePhi!(model::HMTM, d::Int, niter::Int, ntol::Float64)
+function updatePhi!(model::HMTM, d::Int)
 end
 
 function train!(model::HMTM; iter::Int=200, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
