@@ -168,7 +168,7 @@ end
 
 function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1)
 	if stop
-		stopwords = vec(readdlm("~/.julia/v0.4/topicmodelsvb/datasets/stopwords.txt", UTF8String))
+		stopwords = vec(readdlm(pwd() * "~/.julia/v0.4/topicmodelsvb/datasets/stopwords.txt", UTF8String))
 		stopkeys = filter(j -> lowercase(corp.lex[j]) in stopwords, collect(keys(corp.lex)))
 		for doc in corp
 			keep = Bool[!(j in stopkeys) for j in doc.terms]
