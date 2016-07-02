@@ -184,7 +184,7 @@ function checkmodel(model::CTPF)
 	@assert isfinite(model.elbo)
 end
 
-function checkELBO!(model::TopicModel, k::Int, chkelbo::Int, tol::Float64)
+function checkELBO!(model::TopicModel, k::Int, chkelbo::Int, tol::Real)
 	converged = false
 	if k % chkelbo == 0
 		∆elbo = -(model.elbo - updateELBO!(model))
