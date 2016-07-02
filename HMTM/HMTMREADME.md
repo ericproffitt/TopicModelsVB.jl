@@ -8,7 +8,7 @@ I designed a variational Bayes algorithm for HMTM, but was unable to update one 
 
 In order to manually integrate the HMTM.jl file into the TopicModelsVB package, so that you can try to complete this algorithm yourself, all you need to do is to put the HMTM.jl file in the path:
 
-~/.julia/v0.4/topicmodelsvb/src/HMTM.jl
+```~/.julia/v0.4/topicmodelsvb/src/HMTM.jl```
 
 Then the final thing you need to do is open up the TopicModelsVB.jl file in the path:
 
