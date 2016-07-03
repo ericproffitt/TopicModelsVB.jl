@@ -98,6 +98,8 @@ model.sigma[3,8] # -11.429
 #                     #
 #######################
 
+import Distributions.sample
+
 srand(1)
 
 maccorp = readcorp(:mac)
