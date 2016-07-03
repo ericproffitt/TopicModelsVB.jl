@@ -374,6 +374,8 @@ Now that we have covered static topic models, let's transition to the dynamic to
 As an example, let's load the Macintosh corpus of articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year, and break time periods into 2 year intervals.
 
 ```julia
+import Distributions.sample
+
 srand(1)
 
 maccorp = readcorp(:mac)
