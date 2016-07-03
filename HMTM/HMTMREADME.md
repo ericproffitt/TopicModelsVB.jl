@@ -16,6 +16,8 @@ Then the final thing you need to do is open up the TopicModelsVB.jl file in the 
 
 and both add `include("HMTM.jl")` to the collection of other files at the bottom, and then add `HMTM` to the list of models on the first export line.
 
+Also included in this HMTM folder are doc, lex and title files for a ~12k document dataset of articles from *PC Today Magazine* 2004 - 2011.  The order of words is preserved in this dataset, and stopwords have *not* been removed.  Remember you can read the articles with the function `showdocs`.
+
 Now you can run the algorithm on a corpus as is, however the `updatePhi!` function you'll notice is empty, since this is the coordinate I was unable to optimize (see the HMTMVB pdf).
 
 I suspect that the only way to efficiently update `phi` is to lower-bound the portions of the objective function which contain `phi` with a function that can be optimized analytically, however finding this lower bound is going to be challenging.
