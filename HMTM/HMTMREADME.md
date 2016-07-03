@@ -6,6 +6,8 @@ The original paper (which uses Gibbs sampling), can be found here: http://www.mj
 
 I designed a variational Bayes algorithm for HMTM, but was unable to update one of the coordinates, a detailed description of the algorithm and precisely where I became stuck is included in the HMTMVB pdf.
 
+Note that the HMTMVB pdf was originally written-up as supplementary notes for the author of the original paper.
+
 In order to manually integrate the HMTM.jl file into the TopicModelsVB package, so that you can try to complete this algorithm yourself, all you need to do is first put the HMTM.jl file in the path:
 
 **~/.julia/v0.4/topicmodelsvb/src/HMTM.jl**
