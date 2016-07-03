@@ -1,6 +1,6 @@
 # Hidden Markov Topic Model
 
-The hidden markov topic model (HMTM), is a topic model which takes word order into account.
+The hidden markov topic model (HMTM) is a topic model which takes word order into account.
 
 The original paper (which uses Gibbs sampling), can be found here: http://www.mjandrews.net/papers/andrews.cogsci.2009.pdf
 
