@@ -20,10 +20,10 @@ and add both `include("HMTM.jl")` to the collection of other files at the bottom
 
 Also included in this HMTM folder are doc, lex and title files for a ~12k document dataset of articles from *PC Today Magazine* 2004 - 2012.  In this dataset word order has been maintained and stopwords have *not* been removed.  Remember you can read the docs with the function `showdocs`.
 
-You can run the algorithm right away on the PC corpus as is, however you'll notice that the `updatePhi!` function empty, as this was the coordinate I was unable to optimize (see the HMTMVB pdf).
+You can run the algorithm right away on the PC corpus as is, however you'll notice that the `updatePhi!` function is empty, as this was the coordinate I was unable to optimize (see the HMTMVB pdf).
 
 I suspect that the only way to efficiently update `phi` is to lower-bound the portions of the objective function which contain `phi` with a function that can be optimized analytically, however finding this lower bound is going to be challenging.
 
-Also the `updateLambda!` function could probably have its performance improved.
+Also, the `updateLambda!` function could probably have its performance improved.
 
 Good luck!
