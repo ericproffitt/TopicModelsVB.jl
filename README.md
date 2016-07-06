@@ -31,6 +31,12 @@ Included in TopicModelsVB.jl are three datasets:
   * 75011 documents
   * 15113 lexicon
 
+4. Full Computer Magazine Archive Collection 1975 - 2014:
+  * 330577 documents
+  * 16020 lexicon
+
+To use the Full Computer Magazine dataset, you will need to unzip the two document files and then stack the data from both in a single file (cmagdocs1.txt on top).
+
 ## Corpus
 Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
 
