@@ -757,7 +757,7 @@ train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=150, tol::Real=1.0, niter=1
 train!(dtm::DTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/dtm.K^2, cgiter::Int=10, cgtol::Real=1/dtm.T^2, chkelbo::Int=1)
 # Train DTM.
 # 'cgiter' - maximum number of iterations for the Polak-Ribière conjugate gradient method.
-# 'cgtol'  - tolerance for change in function value as a stopping criterion for Polak-Ribière conjugate gradient method.
+# 'cgtol'  - tolerance for change in function value as a stopping criterion for the Polak-Ribière conjugate gradient method.
 
 train!(ctpf::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/ctpf.K^2, chkelbo::Int=1)
 # Train CTPF.
