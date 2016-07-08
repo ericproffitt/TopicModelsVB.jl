@@ -393,8 +393,9 @@ function readcorp(corpsym::Symbol)
 	elseif corpsym == :cmag
 		try 
 		docfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/cmag/cmagdocs.txt"
-		lexfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/mac/cmaglex.txt"
-		titlefile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/mac/cmagtitles.txt"
+		lexfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/cmag/cmaglex.txt"
+		titlefile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/cmag/cmagtitles.txt"
+		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, stamps=true)
 
 		catch 
 		info("To load the Full Computer Magazine dataset, follow these instructions:")
@@ -403,6 +404,7 @@ function readcorp(corpsym::Symbol)
 		println("3. Stack the data in these two files into a single plaintext file (no empty lines, cmagdocs1.txt on top).")
 		println("4. Name this file: cmagdocs.txt")
 		println("5. That's it!")
+		corp = nothing
 		end
 
 	else
