@@ -54,11 +54,11 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 
 * `terms`: A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).
 
-* `counts`: A line of delimited positive integers equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to `ones(length(terms))`).
+* `counts`: A line of delimited positive integers, equal in length to the term line, corresponding to the number of times a particular term appears in a document (defaults to `ones(length(terms))`).
 
 * `readers`: A line of delimited positive integers corresponding to those users which have read the document.
 
-* `ratings`: A line of delimited positive integers equal in length to the `readers` line, corresponding to the rating each reader gave the document (defaults to `ones(length(readers))`).
+* `ratings`: A line of delimited positive integers, equal in length to the `readers` line, corresponding to the rating each reader gave the document (defaults to `ones(length(readers))`).
 
 * `stamp`: A numerical value in the range `[-inf, inf]` denoting the timestamp of the document.
 
@@ -101,7 +101,7 @@ The order of these titles correspond to the order of document blocks in the asso
 To read a corpus into TopicModelsVB.jl, use the following function:
 
 ```julia
-readcorp(;docfile="", lexfile="", userfile="", titlefil="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
+readcorp(;docfile="", lexfile="", userfile="", titlefile="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
 ```
 
 The ```file``` keyword arguments indicate the path where the respective file is located.
