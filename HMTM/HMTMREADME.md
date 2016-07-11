@@ -14,7 +14,7 @@ In order to manually integrate the HMTM.jl file into the TopicModelsVB package, 
 
 then you need to open up the TopicModelsVB.jl file in the path:
 
-`~/.julia/v0.4/topicmodelsvb/src/TopicModelsVB.jl`
+**`~/.julia/v0.4/topicmodelsvb/src/TopicModelsVB.jl`**
 
 and add both `include("HMTM.jl")` to the collection of other files at the bottom, and then add `HMTM` to the list of models on the first export line.
 
