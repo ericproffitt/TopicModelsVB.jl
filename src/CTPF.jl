@@ -43,7 +43,7 @@ type CTPF <: TopicModel
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
-		R = [length(corp[d].readers) for d in 1:M]
+		R = [length(doc.readers) for doc in corp]
 
 		@assert isequal(collect(1:U), sort(collect(keys(corp.users))))
 		libs = [Int[] for _ in 1:U]
