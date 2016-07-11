@@ -4,7 +4,7 @@ The hidden markov topic model (HMTM) is a topic model which takes word order int
 
 The original paper (which uses Gibbs sampling), can be found here: http://www.mjandrews.net/papers/andrews.cogsci.2009.pdf
 
-I designed a variational Bayes algorithm for HMTM, but was unable to update one of the coordinates, a detailed description of the algorithm and precisely where I became stuck is included in the HMTMVB pdf.
+I designed a variational Bayes algorithm for HMTM, but was unable to update one of the coordinates, a detailed description of the algorithm and precisely where I became stuck is included in the [HMTMVB.pdf pdf](https://github.com/esproff/TopicModelsVB.jl/blob/master/HMTM/HMTMVB.pdf).
 
 Note that the HMTMVB pdf was originally written-up as supplementary notes for the author of the original paper.
 
