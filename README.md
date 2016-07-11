@@ -502,7 +502,7 @@ end
 
 After training, we will evaluate model quality by measuring our model's success at imputing the correct user back into each of the document libraries.
 
-It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers.
+It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers:
 
 ```julia
 sum([isempty(doc.readers) for doc in corp]) # = 158
