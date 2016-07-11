@@ -508,7 +508,7 @@ It's also worth noting that after removing a single reader from each document, 1
 sum([isempty(doc.readers) for doc in corp]) # = 158
 ```
 
-Fortunately, since CTPF can, if need be, depend entirely on thematic structure when making recommendations, this poses no problem for the model.
+Fortunately, since CTPF can if need be depend entirely on thematic structure when making recommendations, this poses no problem for the model.
 
 Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=5).
 
