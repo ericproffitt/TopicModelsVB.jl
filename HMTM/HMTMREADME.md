@@ -10,7 +10,7 @@ Note that the HMTMVB pdf was originally written-up as supplementary notes for th
 
 In order to manually integrate the HMTM.jl file into the TopicModelsVB package, so that you can try to complete this algorithm yourself, all you need to do is first put the HMTM.jl file in the path:
 
-`~/.julia/v0.4/topicmodelsvb/src/HMTM.jl`
+**`~/.julia/v0.4/topicmodelsvb/src/HMTM.jl`**
 
 then you need to open up the TopicModelsVB.jl file in the path:
 
