@@ -89,7 +89,7 @@ type DTM <: TopicModel
 			phi = [pmodel.phi[d] for d in 1:M]
 		end
 
-		topics = [[collect(1:V) for _ in 1:K] for _ in 1:T]
+		topics = [pmodel.topics for _ in 1:T]
 
 		model = new(K, M, V, N, C, T, S, copy(corp), topics, sigmasq, alpha, gamma, phi, m0, v0, m, v, bsq, betahat, mbeta0, vbeta0, mbeta, vbeta, Eexpbeta, a, rEexpbeta, lzeta, delta)
 		updateVbeta!(model)
