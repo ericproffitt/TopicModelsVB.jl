@@ -67,7 +67,7 @@ type CTPF <: TopicModel
 		phi = [rand(Dirichlet(K, 1.0), N[d]) for d in 1:M]
 		xi = [rand(Dirichlet(2K, 1.0), R[d]) for d in 1:M]
 
-		topics = [collect(1:V) for _ in 1:K]
+		topics = pmodel.topics
 
 		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, alefbet, gimel, dalet, he, vav, hevav, zayin, het, phi, xi)
 		updateELBO!(model)
