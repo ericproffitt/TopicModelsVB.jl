@@ -46,7 +46,7 @@ readcorp(:cmag)
 INFO: To load the Full Computer Magazine dataset, follow these instructions:
 1. Open up the directory ~/.julia/v0.4/TopicModelsVB/datasets/cmag
 2. Unzip the two files: cmagdocs1.zip & cmagdocs2.zip
-3. Stack the data in these two files into a single plaintext file (no empty lines, cmagdocs1.txt on top).
+3. Stack the data in these two files into a single plaintext file.
 4. Name this file: cmagdocs.txt
 5. That's it!
 ```
