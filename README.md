@@ -171,8 +171,8 @@ using TopicModelsVB
 
 srand(1)
 
-nsfcorp = readcorp(:nsf) # Note: these short-cuts to the pre-packaged corpora may not work on Windows OS.  Instead you
-                         # may need to call the paths to the datasets directly from the readcorp function.
+nsfcorp = readcorp(:nsf) 
+
 nsfcorp.docs = nsfcorp[1:5000]
 fixcorp!(nsfcorp)
 
