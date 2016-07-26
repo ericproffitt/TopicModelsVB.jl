@@ -20,9 +20,9 @@ Pkg.clone("git://github.com/esproff/TopicModelsVB.jl.git")
 ## Datasets
 Included in TopicModelsVB.jl are four datasets:
 
-1. National Science Foundation Abstracts 1989 - 2001:
-  * 30000 documents
-  * 20323 lexicon
+1. National Science Foundation Abstracts 1989 - 2003:
+  * 128804 documents
+  * 25319 lexicon
 
 2. CiteULike Science Article Database:
   * 16980 documents
@@ -140,6 +140,7 @@ Whenever you load a corpus into a model, a copy of that corpus is made, such tha
 ## Models
 The available models are as follows:
 
+### Primary Models
 ```julia
 LDA(corp, K)
 # Latent Dirichlet Allocation model with K topics.
@@ -158,6 +159,27 @@ DTM(corp, K, delta, pmodel)
 
 CTPF(corp, K, pmodel)
 # Collaborative topic Poisson factorization model with K topics.
+```
+
+### Low Memory Models
+```julia
+memLDA(corp, K)
+# Low memory latent Dirichlet allocation model with K topics.
+
+memfLDA(corp, K)
+# Low memory filtered latent Dirichlet allocation model with K topics.
+
+memCTM(corp, K)
+# Low memory correlated topic model with K topics.
+
+memfCTM(corp, K)
+# Low memory filtered correlated topic model with K topics.
+```
+
+### GPU Accelerated Models
+```julia
+gpuLDA(corp, K)
+# GPU accelerated latent Dirichlet allocation model with K topics.
 ```
 
 Notice that both `DTM` and `CTPF` have a `pmodel` argument.  It is **highly advisable** that you prime these final two models with a pretrained model from one of the first four, otherwise learning may take a prohibitively long time.
