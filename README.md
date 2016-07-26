@@ -640,7 +640,34 @@ showlibs(citeuctpf, 216)
 10. Systems Biology: A Brief Overview
 ```
 
-## GPGPU Support
+## Low Memory
+Low memory models require significantly less RAM at the cost of losing some posterior distribution information concerning some of the variational parameters.
+
+There's no need to instantiate the more complicated models directly if you don't wish.  Instead you can use the `@mem` macro to turn a supported model into a low memory model:
+
+```julia
+corp = readcorp(:nsf)
+
+lnsflda = @mem LDA(corp, 9)
+```
+
+Let's compare the RAM consumption of this low memory model to a full memory LDA model:
+
+```julia
+nsflda = LDA(corp, 9)
+
+whos()
+```
+
+```
+...
+lnsflda 190801 KB     TopicModelsVB.memLDA
+ nsflda 943648 KB     TopicModelsVB.LDA
+```
+
+The low memory version of LDA uses only 20% of the RAM that the full memory LDA model uses.
+
+## GPU Acceleration
 
 Hopefully coming soon...
 
