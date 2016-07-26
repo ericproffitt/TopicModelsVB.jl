@@ -683,9 +683,9 @@ nsflda = LDA(nsfcorp, 16)
 # On a 2.5 GHz Intel Core i5 2012 Macbook Pro with 4GB of RAM and an Intel HD Graphics 4000 1536 MB GPU.
 ```
 
-This algorithm just crunched through a 16 topic 129,000 document topic model at *under* 5 minutes.
+This algorithm just crunched through a 16 topic 129,000 document topic model in *under* 5 minutes.
 
-**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently as checking the ELBO requires a lot of expensive memory transfers between the GPU VRAM and CPU RAM.
+**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive memory transfers between GPU and CPU memory.
 
 **Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are in the works and should be uploaded within the next few weeks.
 
