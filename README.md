@@ -641,20 +641,20 @@ showlibs(citeuctpf, 216)
 ```
 
 ## Low Memory
-Low memory models require significantly less RAM at the cost of losing some posterior distribution information concerning some of the variational parameters.
+Low memory models require significantly less RAM at the cost of losing posterior distribution information concerning some of the variational parameters.
 
 There's no need to instantiate the more complicated models directly if you don't wish.  Instead you can use the `@mem` macro to turn a supported model into a low memory model:
 
 ```julia
-corp = readcorp(:nsf)
+nsfcorp = readcorp(:nsf)
 
-lnsflda = @mem LDA(corp, 9)
+lnsflda = @mem LDA(nsfcorp, 9)
 ```
 
 Let's compare the RAM consumption of this low memory model to a full memory LDA model:
 
 ```julia
-nsflda = LDA(corp, 9)
+nsflda = LDA(nsfcorp, 9)
 
 whos()
 ```
@@ -663,13 +663,33 @@ whos()
 ...
 lnsflda 190801 KB     TopicModelsVB.memLDA
  nsflda 943648 KB     TopicModelsVB.LDA
+...
 ```
 
-The low memory version of LDA uses only 20% of the RAM that the full memory LDA model uses.
+In this case we see that the low memory version of LDA uses only 20% of the RAM that the full memory LDA model uses.
 
 ## GPU Acceleration
+GPU accelerating your model runs its performance bottlenecks on your GPU rather than on your CPU.  Currently only the standard LDA model is supported, however GPU accelerated versions of CTPF and DTM are in the works.  Just like with the low memory models, there's no reason to instantiate the more GPU models directly.  Instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU rather than on the CPU:
 
-Hopefully coming soon...
+```julia
+nsfcorp = readcorp(:nsf)
+
+nsflda = LDA(nsfcorp, 16)
+@time @gpu train!(nsflda, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark. 
+
+# training...
+
+# 288.591214 seconds (231.83 M allocations: 26.454 GB, 12.13% gc time)
+# On a 2.5 GHz Intel Core i5 2012 Macbook Pro with 4GB of RAM and an Intel HD Graphics 4000 1536 MB GPU.
+```
+
+This algorithm just crunched through a 16 topic 129,000 document topic model at *under* 5 minutes.
+
+**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently as checking the ELBO requires a lot of expensive memory transfers between the GPU VRAM and CPU RAM.
+
+**Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are in the works and should be uploaded within the next few weeks.
+
+Here is the bench mark of our above model against the equivalent 16 topic NSF topic model run on the CPU:
 
 ## Types
 
