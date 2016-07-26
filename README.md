@@ -669,7 +669,9 @@ lnsflda 190801 KB     TopicModelsVB.memLDA
 In this case we see that the low memory version of LDA uses only 20% of the RAM that the full memory LDA model uses.
 
 ## GPU Acceleration
-GPU accelerating your model runs its performance bottlenecks on your GPU rather than on your CPU.  Currently only the standard LDA model is supported, however GPU accelerated versions of CTPF and DTM are in the works.  Just like with the low memory models, there's no reason to instantiate the more GPU models directly.  Instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU rather than on the CPU:
+GPU accelerating your model runs its performance bottlenecks on your GPU rather than your CPU.
+
+Currently only the standard LDA model is supported, however GPU accelerated versions of CTPF and DTM are in the works.  Just like with the low memory models, there's no reason to instantiate the more GPU models directly.  Instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
 
 ```julia
 nsfcorp = readcorp(:nsf)
