@@ -879,6 +879,18 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); co
 # If a document has no title, the documents index in the corpus will be shown instead.
 ```
 
+### Macros
+
+```julia
+@mem model
+# Run the model under low memory constraints.
+# Supported models: LDA, fLDA, CTM, fCTM.
+
+@gpu train!(model; kwargs...)
+# Train the model on the GPU.
+# Supported models: LDA.
+```
+
 ## Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
 2. Filtered Latent Dirichlet Allocation: Variational Bayes Algorithm (2016); Proffitt. [pdf](https://github.com/esproff/TopicModelsVB.jl/blob/master/fLDAVB.pdf)
