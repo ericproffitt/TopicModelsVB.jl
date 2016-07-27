@@ -693,6 +693,7 @@ This algorithm just crunched through a 16 topic 129,000 document topic model in 
 **Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are in the works and should be uploaded within the next few weeks.
 
 Here is the bench mark of our above model against the equivalent NSF LDA model run on the CPU:
+![alt tag](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
 
 ## Types
 
