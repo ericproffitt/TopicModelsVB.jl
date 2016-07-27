@@ -183,6 +183,11 @@ macro gpu(expr::Expr)
 		model.gamma = gpumodel.gamma
 		model.phi = gpumodel.phi
 		model.topics = gpumodel.topics
+
+		model.beta ./= sum(model.beta, 2)
+		for d in 1:model.M
+			model.phi[d] ./= sum(model.phi[d], 1)
+		end
 		nothing
 
 	else
