@@ -386,17 +386,17 @@ Based on the top 20 terms in each topic, we might tentatively assign the followi
 Now let's take a look at the topic-covariance matrix:
 
 ```julia
-model.sigma
+nsffctm.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 9.315
-model.sigma[3,6] # 6.522
-model.sigma[2,9] # 5.148
+nsffctm.sigma[4,8] # 9.315
+nsffctm.sigma[3,6] # 6.522
+nsffctm.sigma[2,9] # 5.148
 
 # Top 3 negative entries, sorted in ascending order:
-model.sigma[7,9] # -13.212
-model.sigma[1,8] # -13.134
-model.sigma[3,8] # -11.429
+nsffctm.sigma[7,9] # -13.212
+nsffctm.sigma[1,8] # -13.134
+nsffctm.sigma[3,8] # -11.429
 ```
 
 According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Chemistry*.
@@ -406,7 +406,7 @@ As for the most unlikely topic pairings, first are topics 7 and 9, corresponding
 Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
 
 ```julia
-sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
+sum(abs(nsffctm.sigma[:,5])) - nsffctm.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
 ```
 
 **Note:** Both CTM and fCTM will sometimes have to numerically invert ill-conditioned matrices, thus don't be alarmed if the ```∆elbo``` periodically goes negative for stretches, it should always right itself in fairly short order.
