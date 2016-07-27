@@ -1,0 +1,1 @@
+GPUTopicModel = Union{gpuLDA}

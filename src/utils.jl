@@ -1,27 +1,11 @@
 const epsln = eps(1e-14)
+const epslnf = eps(1f-14)
 
 typealias VectorList{T} Vector{Vector{T}}
 typealias MatrixList{T} Vector{Matrix{T}}
 
 bold(str::AbstractString) = print_with_color(:bold, str)
 yellow(str::AbstractString) = print_with_color(:yellow, str)
-
-macro juliadots(stringexpr::Expr)
-	stringexpr = :(print_with_color(:red, " ●");
-					print_with_color(:green, "●");
-					print_with_color(:blue, "● ");
-					print_with_color(:bold, $stringexpr))
-	return stringexpr
-end
-
-macro buffer(expr::Expr)
-	if expr.head == :.
-		expr = :($expr += epsln)
-	elseif expr.head == :(=)
-		expr = :($(expr.args[1]) = epsln + $(expr.args[2]))
-	end
-	return expr
-end
 
 isnegative(x::Real) = x < 0
 ispositive(x::Real) = x > 0
@@ -56,9 +40,10 @@ function addlogistic{T<:Real}(xs::Matrix{T}, region::Int)
 	return xs
 end
 
-Distributions.isprobvec(P::Matrix{Float64}) = isprobvec(vcat(P...))
+Distributions.isprobvec(p::Vector{Float32}) = isapprox(sum(p), 1.0f0)
+Distributions.isprobvec{T<:Real}(P::Matrix{T}) = isprobvec(vcat(P...))
 
-function Distributions.isprobvec(P::Matrix{Float64}, region::Int)
+function Distributions.isprobvec{T<:Real}(P::Matrix{T}, region::Int)
 	@assert (isequal(region, 1) | isequal(region, 2))
 
 	if region == 1
@@ -67,6 +52,12 @@ function Distributions.isprobvec(P::Matrix{Float64}, region::Int)
 		x = all([isprobvec(vec(P[i,:])) for i in 1:size(P, 1)])
 	end
 	return x
+end
+
+function Distributions.Categorical(p::Vector{Float32})
+	p = map(Float64, p)
+	p /= sum(p)
+	return Distributions.Categorical(p)
 end
 
 function partition{T<:Any}(xs::Vector{T}, n::Int)
@@ -83,8 +74,35 @@ end
 
 partition{T<:Real}(xs::UnitRange{T}, n::Int) = partition(collect(xs), n)
 
+const digammacpp =
+"""
+inline float
+digamma(float x)
+		
+	{
+	float p = 0.0f;
 
-
-
-
-
+	if (x < 7)
+	{
+		int n = 7 - floor(x);		
+		for (int v=1; v < n; v++)
+			p -= 1 / (x + v);
+	        
+		p -= 1 / x;
+		x += n;
+	}
+	    
+	float t = 1 / x;
+	p += log(x) - 0.5f * t;
+	t *= t;
+	p -= t * 0.08333333333333333f
+			- 0.008333333333333333f * t
+			+ 0.003968253968253968f * t*t
+			- 0.004166666666666667f * t*t*t
+			+ 0.007575757575757576f * t*t*t*t
+			- 0.021092796092796094f * t*t*t*t*t
+			+ 0.08333333333333333f * t*t*t*t*t*t
+			- 0.4432598039215686f * t*t*t*t*t*t*t;
+	return p;
+	}
+	"""

@@ -1,3 +1,9 @@
+#################
+#				#
+# Document Type #
+#				#
+#################
+
 type Document
 	terms::Vector{Int}
 	counts::Vector{Int}
@@ -32,8 +38,16 @@ function checkdoc(doc::Document)
 	@assert all(ispositive(doc.ratings))
 	@assert isequal(length(doc.readers), length(doc.readers))
 	@assert is(length(doc.stamp), 1)
-	nothing	
+	return true	
 end
+
+
+
+###############
+#			  #
+# Corpus Type #
+#			  #
+###############
 
 type Corpus
 	docs::Vector{Document}
@@ -77,6 +91,7 @@ Base.findin(corp::Corpus, doc::Document) = findin(corp, [doc])
 Base.length(corp::Corpus) = length(corp.docs)
 Base.size(corp::Corpus) = (length(corp), length(corp.lex), length(corp.users))
 Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), lex=copy(corp.lex), users=copy(corp.users))
+Base.endof(corp::Corpus) = length(corp)
 
 function checkcorp(corp::Corpus)
 	for doc in corp
@@ -84,8 +99,16 @@ function checkcorp(corp::Corpus)
 	end
 	@assert all(ispositive(collect(keys(corp.lex))))
 	@assert all(ispositive(collect(keys(corp.users))))
-	nothing
+	return true
 end
+
+
+
+#############################################
+#											#
+# Functions for Reading and Writing Corpora #
+#											#
+#############################################
 
 function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)	
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
@@ -98,7 +121,7 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		dockwargs = [:counts, :readers, :ratings, :stamp]	
 		for (d, docblock) in enumerate(partition(readlines(docs), counts + readers + ratings + stamp + 1))
 			try
-			doclines = [vec(readdlm(IOBuffer(line), delim, Float64)) for line in docblock]
+			doclines = Vector{Float64}[[parse(Float64, p) for p in split(line, delim)] for line in docblock]			
 			docinput = zip(dockwargs[[counts, readers, ratings, stamp]], doclines[2:end])
 			push!(corp, Document(doclines[1]; docinput...))
 			catch error("Document $d beginning on line $((d - 1) * (counts + readers + ratings + stamp) + d) failed to load.")
@@ -165,6 +188,14 @@ function writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractSt
 	end
 	nothing
 end
+
+
+
+###################
+#				  #
+# corp! Functions #
+#				  #
+###################
 
 function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1)
 	if stop
@@ -240,11 +271,11 @@ function trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=t
 	nothing
 end
 
-function compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabet::Bool=true)	
+function compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetize::Bool=true)	
 	if lex
 		lkeys = sort(collect(keys(corp.lex)))
 		lkeymap = zip(lkeys, 1:length(corp.lex))
-		if alphabet
+		if alphabetize
 			alphabetdict = [j => lkey for (j, lkey) in zip(sortperm([corp.lex[lkey] for lkey in lkeys]), 1:length(corp.lex))]
 			lkeydict = [lkey => alphabetdict[j] for (lkey, j) in lkeymap]	
 		else
@@ -261,7 +292,7 @@ function compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabet::
 	if users
 		ukeys = sort(collect(keys(corp.users)))
 		ukeymap = zip(ukeys, 1:length(corp.users))
-		if alphabet
+		if alphabetize
 			alphabetdict = [r => ukey for (r, ukey) in zip(sortperm([corp.users[ukey] for ukey in ukeys]), 1:length(corp.users))]
 			ukeydict = [ukey => alphabetdict[r] for (ukey, r) in ukeymap]
 		else
@@ -336,13 +367,21 @@ function cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Int=1)
 	nothing
 end
 
-function fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabet::Bool=true)
+function fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabetize::Bool=true)
 	println("Abridging corpus..."); abridgecorp!(corp, stop=stop, order=order, b=b)
 	println("Trimming corpus..."); trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
 	println("Culling corpus..."); cullcorp!(corp, len=len)	
-	println("Compacting corpus..."); compactcorp!(corp, lex=lex, users=users, alphabet=alphabet)
+	println("Compacting corpus..."); compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
 	nothing
 end
+
+
+
+#########################################
+#										#
+# Document and Corpus Display Functions #
+#										#
+#########################################
 
 function showdocs(corp::Corpus, ds::Vector{Int})
 	@assert checkbounds(Bool, length(corp), ds) "Some document indices outside docs range."
@@ -369,40 +408,50 @@ showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
 getlex(corp::Corpus) = sort(collect(values(corp.lex)))
 getusers(corp::Corpus) = sort(collect(values(corp.users)))
 
+
+
+##################################
+#								 #
+# Pre-packaged Dataset Shortcuts # 
+#								 #
+##################################
+
 function readcorp(corpsym::Symbol)
+	v = "v$(VERSION.major).$(VERSION.minor)"
+
 	if corpsym == :nsf
-		docfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/nsf/nsfdocs.txt"
-		lexfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/nsf/nsflex.txt"
-		titlefile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/nsf/nsftitles.txt"
+		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsfdocs.txt"
+		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsflex.txt"
+		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsftitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	elseif corpsym == :citeu
-		docfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/citeu/citeudocs.txt"
-		lexfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/citeu/citeulex.txt"
-		userfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/citeu/citeuusers.txt"
-		titlefile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/citeu/citeutitles.txt"
+		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeudocs.txt"
+		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeulex.txt"
+		userfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeuusers.txt"
+		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeutitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 		padcorp!(corp)
 
 	elseif corpsym == :mac
-		docfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/mac/macdocs.txt"
-		lexfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/mac/maclex.txt"
-		titlefile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/mac/mactitles.txt"
+		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/macdocs.txt"
+		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/maclex.txt"
+		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/mactitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	elseif corpsym == :cmag
 		try 
-		docfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/cmag/cmagdocs.txt"
-		lexfile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/cmag/cmaglex.txt"
-		titlefile = pwd() * "/.julia/v0.4/topicmodelsvb/datasets/cmag/cmagtitles.txt"
+		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/cmag/cmagdocs.txt"
+		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/cmag/cmaglex.txt"
+		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/cmag/cmagtitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, stamps=true)
 
 		catch 
 		info("To load the Full Computer Magazine dataset, follow these instructions:")
-		println("1. Open up the directory ~/.julia/v0.4/topicmodelsvb/datasets/cmag")
-		println("2. Unzip the two files: cmagdocs1.zip & cmagdocs2.zip")
-		println("3. Stack the data in these two files into a single plaintext file (no empty lines, cmagdocs1.txt on top).")
-		println("4. Name this file: cmagdocs.txt")
+		println("1. Open up the directory $(homedir())/.julia/$v/TopicModelsVB/datasets/cmag.")
+		println("2. Unzip the two files: cmagdocs1.zip & cmagdocs2.zip.")
+		println("3. Stack the data in these two files into a single plaintext file.")
+		println("4. Name this file: cmagdocs.txt.")
 		println("5. That's it!")
 		corp = nothing
 		end

@@ -10,37 +10,39 @@ type LDA <: TopicModel
 	beta::Matrix{Float64}
 	gamma::VectorList{Float64}
 	phi::MatrixList{Float64}
+	Elogtheta::VectorList{Float64}
 	elbo::Float64
 
-	function LDA(corp::Corpus, K::Int)
+	function LDA(corp::Corpus, K::Integer)
 		@assert ispositive(K)
 		checkcorp(corp)
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
+		
+		topics = [collect(1:V) for _ in 1:K]
 
 		alpha = ones(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		gamma = [ones(K) for _ in 1:M]
 		phi = [ones(K, N[d]) / K for d in 1:M]
+		Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
 
-		topics = [collect(1:V) for _ in 1:K]
-
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, gamma, phi)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, gamma, phi, Elogtheta)
 		updateELBO!(model)
 		return model
 	end
 end
 
 function Elogptheta(model::LDA, d::Int)
-	x = lgamma(sum(model.alpha)) - sum(lgamma(model.alpha)) + dot(model.alpha - 1, digamma(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	x = lgamma(sum(model.alpha)) - sum(lgamma(model.alpha)) + dot(model.alpha - 1, model.Elogtheta[d])
 	return x
 end
 
 function Elogpz(model::LDA, d::Int)
 	counts = model.corp[d].counts
-	x = dot(model.phi[d] * counts, digamma(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	x = dot(model.phi[d] * counts, model.Elogtheta[d])
 	return x
 end
 
@@ -73,27 +75,27 @@ function updateELBO!(model::LDA)
 	return model.elbo
 end
 
-function updateAlpha!(model::LDA, niter::Int, ntol::Real)
+function updateAlpha!(model::LDA, niter::Integer, ntol::Real)
 	"Interior-point Newton method with log-barrier and back-tracking line search."
 
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphagrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) + sum([digamma(model.gamma[d][i]) - digamma(sum(model.gamma[d])) for d in 1:model.M]) for i in 1:model.K]
-		alphahessdiag = -(model.M * trigamma(model.alpha) + (nu ./ model.alpha.^2))
-		p = (alphagrad - sum(alphagrad ./ alphahessdiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(1 ./ alphahessdiag))) ./ alphahessdiag
+		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + sum(model.Elogtheta)
+		alphaHessDiag = -(model.M * trigamma(model.alpha) + (nu ./ model.alpha.^2))
+		p = (alphaGrad - sum(alphaGrad ./ alphaHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(1 ./ alphaHessDiag))) ./ alphaHessDiag
 		
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
 		end	
 		model.alpha -= rho * p
 		
-		if (norm(alphagrad) < ntol) & ((nu / model.K) < ntol)
+		if (norm(alphaGrad) < ntol) & ((nu / model.K) < ntol)
 			break
 		end
 		nu *= 0.5
 	end
-	@buffer model.alpha
+	@bumper model.alpha
 end
 
 function updateBeta!(model::LDA)	
@@ -107,25 +109,30 @@ end
 
 function updateGamma!(model::LDA, d::Int)
 	counts = model.corp[d].counts
-	@buffer model.gamma[d] = model.alpha + model.phi[d] * counts
+	@bumper model.gamma[d] = model.alpha + model.phi[d] * counts
 end
 
 function updatePhi!(model::LDA, d::Int)
 	terms = model.corp[d].terms
-	model.phi[d] = model.beta[:,terms] .* exp(digamma(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	model.phi[d] = model.beta[:,terms] .* exp(model.Elogtheta[d])
 	model.phi[d] ./= sum(model.phi[d], 1)
 end
 
-function train!(model::LDA; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
+function updateElogtheta!(model::LDA, d::Int)
+	model.Elogtheta[d] = digamma(model.gamma[d]) - digamma(sum(model.gamma[d]))
+end
+
+function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
-	checkmodel(model)
+	fixmodel!(model)
 	
 	for k in 1:iter
 		for d in 1:model.M		
 			for _ in 1:viter
 				oldgamma = model.gamma[d]
 				updateGamma!(model, d)
+				updateElogtheta!(model, d)
 				updatePhi!(model, d)
 				if norm(oldgamma - model.gamma[d]) < vtol
 					break

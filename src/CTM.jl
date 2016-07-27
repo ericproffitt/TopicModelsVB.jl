@@ -16,13 +16,15 @@ type CTM <: TopicModel
 	phi::MatrixList{Float64}
 	elbo::Float64
 
-	function CTM(corp::Corpus, K::Int)
+	function CTM(corp::Corpus, K::Integer)
 		@assert ispositive(K)
 		checkcorp(corp)
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
-		C = [size(doc) for doc in corp]
+		C = [size(doc) for doc in corp]	
+		
+		topics = [collect(1:V) for _ in 1:K]
 
 		mu = zeros(K)
 		sigma = eye(K)
@@ -33,7 +35,6 @@ type CTM <: TopicModel
 		lzeta = zeros(M)
 		phi = [ones(K, N[d]) / K for d in 1:M]
 
-		topics = [collect(1:V) for _ in 1:K]
 
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, lambda, vsq, lzeta, phi)
 		updateELBO!(model)
@@ -100,7 +101,7 @@ function updateBeta!(model::CTM)
 	model.beta ./= sum(model.beta, 2)
 end
 
-function updateLambda!(model::CTM, d::Int, niter::Int, ntol::Real)
+function updateLambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	"Newton's method."
 
 	counts = model.corp[d].counts
@@ -115,7 +116,7 @@ function updateLambda!(model::CTM, d::Int, niter::Int, ntol::Real)
 
 end
 
-function updateVsq!(model::CTM, d::Int, niter::Int, ntol::Real)
+function updateVsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	"Newton's method."
 
 	for _ in 1:niter
@@ -133,7 +134,7 @@ function updateVsq!(model::CTM, d::Int, niter::Int, ntol::Real)
 			break
 		end
 	end
-	@buffer model.vsq[d]
+	@bumper model.vsq[d]
 end
 
 function updateLzeta!(model::CTM, d::Int)
@@ -145,15 +146,15 @@ function updatePhi!(model::CTM, d::Int)
 	model.phi[d] = addlogistic(log(model.beta[:,terms]) .+ model.lambda[d], 1)
 end
 
-function train!(model::CTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
+function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
-	checkmodel(model)	
+	fixmodel!(model)	
 	
 	for k in 1:iter
 		for d in 1:model.M
 			for _ in 1:viter
-				oldlambda = model.lambda[d]
+				oldlambda = model.lambda[d]				
 				updateLambda!(model, d, niter, ntol)
 				updateVsq!(model, d, niter, ntol)
 				updateLzeta!(model, d)

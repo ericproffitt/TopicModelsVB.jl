@@ -8,10 +8,12 @@ type DTM <: TopicModel
 	S::VectorList{Int}
 	corp::Corpus
 	topics::Vector{VectorList{Int}}
+	delta::Float64
 	sigmasq::Float64
 	alpha::VectorList{Float64}
 	gamma::VectorList{Float64}
 	phi::MatrixList{Float64}
+	Elogtheta::VectorList{Float64}
 	m0::Matrix{Float64}
 	v0::Matrix{Float64}
 	m::MatrixList{Float64}
@@ -22,32 +24,34 @@ type DTM <: TopicModel
 	vbeta0::Matrix{Float64}
 	mbeta::MatrixList{Float64}
 	vbeta::MatrixList{Float64}
+	lzeta::Vector{Float64}
 	Eexpbeta::MatrixList{Float64}
 	a::Vector{Float64}
 	rEexpbeta::MatrixList{Float64}
-	lzeta::Vector{Float64}
-	delta::Float64
 	elbo::Float64
 
-	function DTM(corp::Corpus, K::Int, delta::Real, pmodel::Union{LDA, fLDA, CTM, fCTM}=(lda = LDA(corp, K); train!(lda, iter=100, chkelbo=101); lda))
+	function DTM(corp::Corpus, K::Integer, delta::Real, pmodel::BaseTopicModel=(lda = LDA(corp, K); train!(lda, iter=150, chkelbo=151); lda))
 		@assert ispositive(K)
 		@assert isequal(pmodel.K, K)
 		@assert isfinite(delta)
 		@assert ispositive(delta)
 		checkcorp(corp)
-		checkmodel(pmodel)
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
+
 		dchrono = sortperm([doc.stamp for doc in corp])
 		t0, tM = corp[dchrono[1]].stamp, corp[dchrono[end]].stamp
 		T = convert(Int, ceil((tM - t0) / delta))
 		S = [Int[] for _ in 1:T]
 		t = 1
+		# turn S into unit ranges instead of vectors.
 		for d in dchrono
 			corp[d].stamp <= t0 + t * delta ? push!(S[t], d) : (t += 1; push!(S[t], d))
 		end
+
+		topics = [pmodel.topics for _ in 1:T]
 
 		sigmasq = 1.0
 		v0 = ones(K, V)
@@ -59,41 +63,71 @@ type DTM <: TopicModel
 		vbeta = [ones(K, V) for _ in 1:T]
 		mbeta0 = zeros(K, V)
 		mbeta = [zeros(K, V) for _ in 1:T]
-		Eexpbeta = [ones(K, V) for _ in 1:T]
-		a = ones(T)
-		rEexpbeta = [ones(K, V) for _ in 1:T]
 		lzeta = ones(M)
 
-		if isa(pmodel, LDA)
+		fixmodel!(pmodel)
+		if isa(pmodel, Union{LDA, gpuLDA})
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [pmodel.gamma[d] for d in 1:M]
 			phi = [pmodel.phi[d] for d in 1:M]
+			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
+
+		elseif isa(pmodel, memLDA)
+			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
+			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
+			gamma = [ones(K) for _ in 1:M]
+			phi = [ones(K, N[d]) / K for d in 1:M]
+			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)			
 
 		elseif isa(pmodel, fLDA)
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [pmodel.gamma[d] for d in 1:M]
 			phi = [pmodel.phi[d] for d in 1:M]
+			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
+
+		elseif isa(pmodel, memfLDA)
+			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
+			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
+			gamma = [ones(K) for _ in 1:M]
+			phi = [ones(K, N[d]) / K for d in 1:M]
+			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)	
 
 		elseif isa(pmodel, CTM)
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [exp(pmodel.lambda[d]) / sum(exp(pmodel.lambda[d])) for d in 1:M]
+			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
 			phi = [pmodel.phi[d] for d in 1:M]
+			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
+
+		elseif isa(pmodel, memCTM)
+			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
+			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
+			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
+			phi = [pmodel.phi[d] for d in 1:M]
+			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]	
 
 		elseif isa(pmodel, fCTM)
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [exp(pmodel.lambda[d]) / sum(exp(pmodel.lambda[d])) for d in 1:M]
+			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
 			phi = [pmodel.phi[d] for d in 1:M]
+			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
+		
+		elseif isa(pmodel, memfCTM)
+			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
+			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
+			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
+			phi = [ones(K, N[d]) / K for d in 1:M]
+			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)	
 		end
 
-		topics = [pmodel.topics for _ in 1:T]
+		Eexpbeta = [fill(exp(0.5), K, V) for t in 1:T]
+		a = fill(0.5, T)
+		rEexpbeta = [ones(K, V) for _ in 1:T]
 
-		model = new(K, M, V, N, C, T, S, copy(corp), topics, sigmasq, alpha, gamma, phi, m0, v0, m, v, bsq, betahat, mbeta0, vbeta0, mbeta, vbeta, Eexpbeta, a, rEexpbeta, lzeta, delta)
-		updateVbeta!(model)
-		updateMbeta!(model)	
+		model = new(K, M, V, N, C, T, S, copy(corp), topics, delta, sigmasq, alpha, gamma, phi, Elogtheta, m0, v0, m, v, bsq, betahat, mbeta0, vbeta0, mbeta, vbeta, lzeta, Eexpbeta, a, rEexpbeta)
 		updateELBO!(model)
 		return model
 	end
@@ -109,21 +143,19 @@ function Elogpbeta(model::DTM, t::Int)
 end
 
 function Elogptheta(model::DTM, t::Int, d::Int)
-	x = lgamma(sum(model.alpha[t])) - sum(lgamma(model.alpha[t])) + dot(model.alpha[t] - 1, digamma(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	x = lgamma(sum(model.alpha[t])) - sum(lgamma(model.alpha[t])) + dot(model.alpha[t] - 1, model.Elogtheta[d])
 	return x
 end
 
 function Elogpz(model::DTM, d::Int)
 	counts = model.corp[d].counts
-	x = dot(model.phi[d] * counts, digamma(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	x = dot(model.phi[d] * counts, model.Elogtheta[d])
 	return x
 end
 
 function Elogpw(model::DTM, t::Int, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[d] .* model.mbeta[t][:,terms] * counts) - sum(counts .* model.phi[d]' * sum(exp(model.mbeta[t] + 0.5 * model.vbeta[t] - model.lzeta[d]), 2)) - model.lzeta[d] + 1
-
-	#x = sum(model.phi[d] .* model.mbeta[t][:,terms] * counts) - sum(exp(model.a[t] - model.lzeta[d]) * counts .* model.phi[d]' * sum(model.rEexpbeta[t], 2)) - model.lzeta[d] + 1
 	return x
 end
 
@@ -158,13 +190,13 @@ function updateELBO!(model::DTM)
 	return model.elbo
 end
 
-function updateAlpha!(model::DTM, t::Int, niter::Int, ntol::Real)
+function updateAlpha!(model::DTM, t::Int, niter::Integer, ntol::Real)
 	"Interior-point Newton method with log-barrier and back-tracking line search."
 
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphagrad = [(nu / model.alpha[t][i]) + length(model.S[t]) * (digamma(sum(model.alpha[t])) - digamma(model.alpha[t][i])) + sum([digamma(model.gamma[d][i]) - digamma(sum(model.gamma[d])) for d in model.S[t]]) for i in 1:model.K]
+		alphagrad = [(nu / model.alpha[t][i]) + model.M * (digamma(sum(model.alpha[t])) - digamma(model.alpha[t][i])) for i in 1:model.K] + sum(model.Elogtheta[model.S[t]])
 		alphahessdiag = -(length(model.S[t]) * trigamma(model.alpha[t]) + (nu ./ model.alpha[t].^2))
 		p = (alphagrad - sum(alphagrad ./ alphahessdiag) / (1 / (length(model.S[t]) * trigamma(sum(model.alpha[t]))) + sum(1./alphahessdiag))) ./ alphahessdiag
 		
@@ -177,20 +209,18 @@ function updateAlpha!(model::DTM, t::Int, niter::Int, ntol::Real)
 			break
 		end
 		nu *= 0.5
-		@buffer model.alpha[t]
+		@bumper model.alpha[t]
 	end	
 end
 
 function updateGamma!(model::DTM, t::Int, d::Int)
 	counts = model.corp[d].counts
-	@buffer model.gamma[d] = model.alpha[t] + model.phi[d] * counts
+	@bumper model.gamma[d] = model.alpha[t] + model.phi[d] * counts
 end
 
 function updatePhi!(model::DTM, t::Int, d::Int)
 	terms = model.corp[d].terms
-	#model.phi[d] = addlogistic(model.mbeta[t][:,terms] .- sum(exp(model.mbeta[t] + 0.5 * model.vbeta[t] - model.lzeta[d]), 2) .+ digamma(model.gamma[d]) - digamma(sum(model.gamma[d])))
-
-	model.phi[d] = addlogistic(model.mbeta[t][:,terms] .- exp(model.a[t] - model.lzeta[d]) * sum(model.rEexpbeta[t], 2) .+ (digamma(model.gamma[d]) - digamma(sum(model.gamma[d]))), 1)
+	model.phi[d] = addlogistic(model.mbeta[t][:,terms] .- exp(model.a[t] - model.lzeta[d]) * sum(model.rEexpbeta[t], 2) .+ model.Elogtheta[d], 1)
 end
 
 function updateMbeta!(model::DTM)
@@ -216,19 +246,19 @@ function updateMbeta!(model::DTM)
 end
 
 function updateVbeta!(model::DTM)
-	@buffer model.v[1] = (model.bsq[1] ./ (model.v0 + model.sigmasq + model.bsq[1])) .* (model.v0 + model.sigmasq)
+	@bumper model.v[1] = (model.bsq[1] ./ (model.v0 + model.sigmasq + model.bsq[1])) .* (model.v0 + model.sigmasq)
 	for t in 2:model.T
-		@buffer model.v[t] = (model.bsq[t] ./ (model.v[t-1] + model.sigmasq + model.bsq[t])) .* (model.v[t-1] + model.sigmasq)
+		@bumper model.v[t] = (model.bsq[t] ./ (model.v[t-1] + model.sigmasq + model.bsq[t])) .* (model.v[t-1] + model.sigmasq)
 	end
 
-	@buffer model.vbeta[model.T] = model.v[model.T]
+	@bumper model.vbeta[model.T] = model.v[model.T]
 	for t in model.T:-1:2
-		@buffer model.vbeta[t-1] = model.v[t-1] + (model.v[t-1] ./ (model.v[t-1] + model.sigmasq)).^2 .* (model.vbeta[t] - model.v[t-1] - model.sigmasq)
+		@bumper model.vbeta[t-1] = model.v[t-1] + (model.v[t-1] ./ (model.v[t-1] + model.sigmasq)).^2 .* (model.vbeta[t] - model.v[t-1] - model.sigmasq)
 	end
-	@buffer model.vbeta0 = model.v0 + (model.v0 ./ (model.v0 + model.sigmasq)).^2 .* (model.vbeta[1] - model.v0 - model.sigmasq)
+	@bumper model.vbeta0 = model.v0 + (model.v0 ./ (model.v0 + model.sigmasq)).^2 .* (model.vbeta[1] - model.v0 - model.sigmasq)
 end
 
-function updateBetahat!(model::DTM, cgiter::Int, cgtol::Real)
+function updateBetahat!(model::DTM, cgiter::Integer, cgtol::Real)
 	"Nonlinear conjugate gradient (Polak–Ribière) with adaptive back-tracking line search."
 
 	mgrad = [[zeros(model.K, model.V) for _ in 1:model.T] for _ in 1:model.T]
@@ -295,10 +325,10 @@ function updateLzeta!(model::DTM, t::Int, d::Int)
 	model.lzeta[d] = model.a[t] + log(sum(counts .* model.phi[d]' * sum(model.rEexpbeta[t], 2)) + epsln)
 end
 
-function train!(model::DTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, cgiter::Int=20, cgtol::Real=1/model.T^2, chkelbo::Int=1)
+function train!(model::DTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, cgiter::Integer=20, cgtol::Real=1/model.T^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol, cgtol]))
 	@assert all(ispositive([iter, niter, viter, cgiter, chkelbo]))	
-	checkmodel(model)
+	fixmodel!(model)
 
 	for k in 1:iter
 		for t in 1:model.T
