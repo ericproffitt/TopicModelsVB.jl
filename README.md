@@ -663,11 +663,12 @@ whos()
 ```
 ...
 lnsflda 190801 KB     TopicModelsVB.memLDA
+nsfcorp 182430 KB     TopicModelsVB.Corpus
  nsflda 943648 KB     TopicModelsVB.LDA
 ...
 ```
 
-In this case we see that the low memory version of LDA uses only 20% of the RAM that the full memory LDA model uses.
+Subtracting the memory used by the shared corpus attached to each model, we see in this case that the low memory version of LDA uses only 1% of the RAM that the full memory LDA model uses.
 
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
