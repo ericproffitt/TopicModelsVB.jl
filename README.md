@@ -670,7 +670,7 @@ lnsflda 190801 KB     TopicModelsVB.memLDA
 In this case we see that the low memory version of LDA uses only 20% of the RAM that the full memory LDA model uses.
 
 ## GPU Acceleration
-GPU accelerating your model runs its performance bottlenecks on your GPU rather than your CPU.
+GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
 
 Currently only the standard LDA model is supported, however GPU accelerated versions of CTPF and DTM are in the works.  Just like with the low memory models, there's no reason to instantiate the GPU models directly.  Instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
 
@@ -695,7 +695,7 @@ This algorithm just crunched through a 16 topic 129,000 document topic model in 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
 ![alt tag](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
 
-As we can see, the GPU LDA model is nearly 1.5 orders of magnitude faster than the CPU LDA model.
+As we can see, the GPU LDA model is nearly 1.5 orders of magnitude faster than the equivalent CPU LDA model.
 
 ## Types
 
@@ -835,7 +835,7 @@ getusers(corp::Corpus)
 showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
 
 fixmodel!(model::TopicModel)
-# Verify that all model fields have legal values and align any auxiliary parameters with their associated primary parameters.
+# Verify that all model fields have legal values and align any auxiliary parameters with their associated parent parameters.
 
 train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
