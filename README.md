@@ -8,7 +8,8 @@ Topic Modeling is concerned with discovering the latent low-dimensional thematic
 ## Dependencies
 
 ```julia
-Pkg.add("Distributions.jl")
+Pkg.add("Distributions")
+Pkg.add("OpenCL")
 ```
 
 ## Install
@@ -691,7 +692,7 @@ This algorithm just crunched through a 16 topic 129,000 document topic model in 
 
 **Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are in the works and should be uploaded within the next few weeks.
 
-Here is the bench mark of our above model against the equivalent 16 topic NSF topic model run on the CPU:
+Here is the bench mark of our above model against the equivalent NSF LDA model run on the CPU:
 
 ## Types
 
