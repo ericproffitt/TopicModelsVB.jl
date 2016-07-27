@@ -883,7 +883,7 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); co
 
 ```julia
 @mem model
-# Run the model under low memory constraints.
+# Instantiate the model under low memory constraints.
 # Supported models: LDA, fLDA, CTM, fCTM.
 
 @gpu train!(model; kwargs...)
