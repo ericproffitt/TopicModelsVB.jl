@@ -538,7 +538,7 @@ After training, we will evaluate model quality by measuring our model's success 
 It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers:
 
 ```julia
-sum([isempty(doc.readers) for doc in corp]) # = 158
+sum([isempty(doc.readers) for doc in citeucorp]) # = 158
 ```
 
 Fortunately, since CTPF can if need be depend entirely on thematic structure when making recommendations, this poses no problem for the model.
