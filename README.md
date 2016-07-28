@@ -835,7 +835,8 @@ getusers(corp::Corpus)
 showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
 
 fixmodel!(model::TopicModel)
-# Verify that all model fields have legal values and align any auxiliary parameters with their associated parent parameters.
+# Verify that all model fields have legal values
+# Align any auxiliary parameters with their associated parent parameters.
 
 train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
