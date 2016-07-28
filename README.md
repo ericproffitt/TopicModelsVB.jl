@@ -649,26 +649,26 @@ There's no need to instantiate the more complicated models directly if you don't
 ```julia
 nsfcorp = readcorp(:nsf)
 
-lnsflda = @mem LDA(nsfcorp, 9)
+lnsflda = @mem LDA(nsfcorp, 16)
 ```
 
 Let's compare the RAM consumption of this low memory model to a full memory LDA model:
 
 ```julia
-nsflda = LDA(nsfcorp, 9)
+nsflda = LDA(nsfcorp, 16)
 
 whos()
 ```
 
 ```
 ...
-lnsflda 190801 KB     TopicModelsVB.memLDA
+lnsflda 194963 KB     TopicModelsVB.memLDA
 nsfcorp 182430 KB     TopicModelsVB.Corpus
- nsflda 943648 KB     TopicModelsVB.LDA
+ nsflda 1531793 KB     TopicModelsVB.LDA
 ...
 ```
 
-Subtracting the memory used by the shared corpus attached to each model, we see in this case that the low memory version of LDA uses only 1% of the RAM that the full memory LDA model uses.
+Subtracting the memory used by the shared corpus attached to each model, we see in this case that the low memory version of LDA uses only 0.9% of the RAM that the full memory LDA model uses.
 
 Here are the relative memory consumption benchmarks for all supported models:
 ![Memory Benchmarks](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb.png)
