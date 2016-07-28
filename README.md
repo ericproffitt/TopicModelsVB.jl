@@ -671,7 +671,7 @@ nsfcorp 182430 KB     TopicModelsVB.Corpus
 Subtracting the memory used by the shared corpus attached to each model, we see in this case that the low memory version of LDA uses only 1% of the RAM that the full memory LDA model uses.
 
 Here are the relative memory consumption benchmarks for all supported models:
-![ Memory Benchmarks](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb.png)
+![Memory Benchmarks](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb2.png)
 
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
@@ -697,7 +697,7 @@ This algorithm just crunched through a 16 topic 129,000 document topic model in 
 **Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are in the works and should be uploaded within the next few weeks.
 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
-![alt tag](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
+![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
 
 As we can see, the GPU LDA model is approximatey 1.4 orders of magnitude faster than the equivalent CPU LDA model.
 
