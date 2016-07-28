@@ -788,7 +788,6 @@ readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::Abst
 # readcorp(:citeu) - CiteULike corpus.
 # readcorp(:mac) - Macintosh Magazine corpus.
 # readcorp(:cmag) - Full Computer Magazine corpus.
-# Note that these short-cuts to the pre-packaged datasets may not work on Windows OS.
 
 writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Write corpus to plaintext files.
