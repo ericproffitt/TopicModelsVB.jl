@@ -443,7 +443,7 @@ train!(macdtm, iter=10) # This will likely take about an hour on a personal comp
 We can look at a particular topic slice by writing:
 
 ```julia
-showtopics(model, topics=4, cols=6)
+showtopics(macdtm, topics=4, cols=6)
 ```
 
 ```
@@ -486,7 +486,7 @@ powerbook      performance    device         pci          port
 or a particular time slice, by writing:
 
 ```julia
-showtopics(model, times=11, cols=9)
+showtopics(macdtm, times=11, cols=9)
 ```
 
 ```
@@ -578,7 +578,7 @@ Let's also take a look at the top recommendations for a particular document(s):
 testukeys[1] # = 216
 acc[1] # = 0.973
 
-showdrecs(model, 1, 152, cols=1)
+showdrecs(citeuctpf, 1, 152, cols=1)
 ```
 ```
  ●●● Doc: 1
@@ -593,7 +593,7 @@ showdrecs(model, 1, 152, cols=1)
 as well as those for a particular user(s):
 
 ```julia
-showurecs(model, 216, 426)
+showurecs(citeuctpf, 216, 426)
 ```
 ```
  ●●● User: 216
