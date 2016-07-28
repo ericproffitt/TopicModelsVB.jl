@@ -759,7 +759,6 @@ function showurecs(model::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, m
 	@assert checkbounds(Bool, model.U, users)
 	@assert checkbounds(Bool, model.M, M)
 	@assert ispositive(cols)
-	checkmodel(model)
 	isa(users, Vector) || (users = [users])
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
 
