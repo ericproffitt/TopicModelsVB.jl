@@ -668,7 +668,9 @@ nsfcorp 182430 KB     TopicModelsVB.Corpus
 ...
 ```
 
-Subtracting the memory used by the shared corpus attached to each model, we see in this case that the low memory version of LDA uses only 1% of the RAM that the full memory LDA model uses.  Here are the relative memory consumption benchmarks for all supported models:
+Subtracting the memory used by the shared corpus attached to each model, we see in this case that the low memory version of LDA uses only 1% of the RAM that the full memory LDA model uses.
+
+Here are the relative memory consumption benchmarks for all supported models:
 ![alt tag](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb.png)
 
 ## GPU Acceleration
