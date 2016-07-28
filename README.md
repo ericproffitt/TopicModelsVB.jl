@@ -672,7 +672,7 @@ Subtracting the memory used by the shared corpus attached to each model, we see 
 
 Here are the relative memory consumption benchmarks for all supported models:
 <br>
-<img height="700" scr=https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb.png />
+<img scr=https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb.png></img>
 <br>
 
 
