@@ -152,6 +152,9 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 			rho *= 0.5
 		end	
 		model.alpha -= rho * p
+
+		# Bizarre error when large number of topics alphgrad is of type Union{Float32, Float64} which BLAS LAPACK nrm2 can't handle.
+		alphagrad = map(Float32, alphagrad)
 		
 		if (norm(alphagrad) < ntol) & ((nu / model.K) < ntol)
 			break
