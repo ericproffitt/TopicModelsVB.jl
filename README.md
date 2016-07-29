@@ -809,9 +809,9 @@ abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1)
 trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
 # Those values which appear in the indicated fields of documents, yet don't appear in the corpus dictionaries, are removed.
 
-compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabet::Bool=true)
+compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetize::Bool=true)
 # Compact a corpus by relabeling lex and/or userkeys so that they form a unit range.
-# If alphabet=true the lex and/or user dictionaries are alphabetized.
+# If alphabetize=true the lex and/or user dictionaries are alphabetized.
 
 padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
 # Pad a corpus by entering generic values for lex and/or userkeys which appear in documents but not in the lex/user dictionaries.
@@ -820,12 +820,12 @@ cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Int=1)
 # Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields yet don't appear in the corpus dictionaries.
 # All documents of length < len are removed.
 
-fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabet::Bool=true)
+fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabetize::Bool=true)
 # Fixes a corp by running the following four functions in order:
 # abridgecorp!(corp, stop=stop, order=order, b=b)
 # trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
 # cullcorp!(corp, len=len)	
-# compactcorp!(corp, lex=lex, users=users, alphabet=alphabet)
+# compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
 
 showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
 # Display the text and title of a document(s).
