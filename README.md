@@ -886,7 +886,7 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); co
 # If a document has no title, the documents index in the corpus will be shown instead.
 ```
 
-### Macros
+## Macros
 
 ```julia
 @mem model
