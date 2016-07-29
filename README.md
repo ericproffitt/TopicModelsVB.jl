@@ -699,7 +699,7 @@ This algorithm just crunched through a 16 topic 129,000 document topic model in 
 
 **Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are coming and should be uploaded within the next few weeks.
 
-**Important:** OpenCL, being open-source software, is not without its quirks, bugs, and rough edges.  If for some reason not all memory is read back into the CPU when checking the ELBO and this results in a domain error, then simply set `chkelbo > iter`.  In addition, OpenCL does not allow for empty buffers, so empty corpora will cause the GPU models to return an error.  Finally, expect your computer to lag when running models on your GPU, since you're effectively siphoning off its rendering resources to train your model.
+**Important:** OpenCL, being open-source software, is not without its quirks, bugs, and rough edges.  If for some reason not all memory is read back into the CPU when checking the ELBO and this results in a domain error, then set `chkelbo > iter`.  In addition, OpenCL does not allow for empty buffers, so empty corpora will cause the GPU models to return an error.  Finally, expect your computer to lag when running models on your GPU, since you're effectively siphoning off its rendering resources to train your model.
 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
