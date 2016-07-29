@@ -181,6 +181,9 @@ memfCTM(corp, K)
 ```julia
 gpuLDA(corp, K)
 # GPU accelerated latent Dirichlet allocation model with K topics.
+
+gpuCTPF(corp, K, pmodel)
+# GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
 Notice that both `DTM` and `CTPF` have a `pmodel` argument.  It is **highly advisable** that you prime these final two models with a pretrained model from one of the first four, otherwise learning may take a prohibitively long time.
