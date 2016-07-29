@@ -36,15 +36,6 @@ Included in TopicModelsVB.jl are three datasets:
   * 330577 documents
   * 16020 lexicon
 
-```
-INFO: To load the Full Computer Magazine dataset, follow these instructions:
-1. Open up the directory ~/.julia/v0.4/TopicModelsVB/datasets/cmag.
-2. Unzip the two files: cmagdocs1.zip & cmagdocs2.zip.
-3. Stack the data in these two files into a single plaintext file.
-4. Name this file: cmagdocs.txt.
-5. That's it!
-```
-
 ## Corpus
 Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be molded and modified to meet the user's needs.
 
