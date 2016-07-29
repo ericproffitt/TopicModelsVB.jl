@@ -671,7 +671,7 @@ nsfcorp 182430 KB     TopicModelsVB.Corpus
 ...
 ```
 
-Subtracting the memory used by the shared corpus attached to each model, we see in this case that the low memory version of LDA uses only 0.9% of the RAM that the full memory LDA model uses.
+Subtracting the memory used by the shared corpus attached to each model, we see that in this case the low memory version of LDA uses only 0.9% of the RAM that the full memory model uses.
 
 Here are the relative memory consumption benchmarks for all supported models:
 ![Memory Benchmarks](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb.png)
@@ -679,7 +679,7 @@ Here are the relative memory consumption benchmarks for all supported models:
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
 
-Currently only the standard LDA model is supported, however GPU accelerated versions of CTPF and DTM are in the works.  Just like with the low memory models, there's no reason to instantiate the GPU models directly.  Instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
+Currently only the standard LDA and CTPF models are supported, however a GPU accelerated version of the dynamic topic model is in the works.  Just like with the low memory models, there's no reason to instantiate the GPU models directly.  Instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
 
 ```julia
 nsfcorp = readcorp(:nsf)
@@ -697,7 +697,7 @@ This algorithm just crunched through a 16 topic 129,000 document topic model in 
 
 **Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive memory transfers between GPU and CPU memory.
 
-**Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are in the works and should be uploaded within the next few weeks.
+**Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are coming and should be uploaded within the next few weeks.
 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
@@ -895,7 +895,7 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); co
 
 @gpu train!(model; kwargs...)
 # Train the model on the GPU.
-# Supported models: LDA.
+# Supported models: LDA, CTPF.
 ```
 
 ## Bibliography
