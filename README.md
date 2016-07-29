@@ -17,7 +17,7 @@ Pkg.clone("git://github.com/esproff/TopicModelsVB.jl.git")
 ```
 
 ## Datasets
-Included in TopicModelsVB.jl are four datasets:
+Included in TopicModelsVB.jl are three datasets:
 
 1. National Science Foundation Abstracts 1989 - 2003:
   * 128804 documents
@@ -35,11 +35,6 @@ Included in TopicModelsVB.jl are four datasets:
 4. Full Computer Magazine Archive Collection 1975 - 2014:
   * 330577 documents
   * 16020 lexicon
-
-**Note:** Get the instructions on how to use the Full Computer Magazine dataset by typing:
-```julia
-readcorp(:cmag)
-```
 
 ```
 INFO: To load the Full Computer Magazine dataset, follow these instructions:
