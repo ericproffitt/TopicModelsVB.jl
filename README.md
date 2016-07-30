@@ -524,16 +524,11 @@ sum([isempty(doc.readers) for doc in citeucorp]) # = 158
 
 Fortunately, since CTPF can if need be depend entirely on thematic structure when making recommendations, this poses no problem for the model.
 
-Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=5).
+Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=20).
 
 ```julia
-pmodel = LDA(citeucorp, 30)
-train!(pmodel, iter=150, chkelbo=15) # This will likely take 10 - 15 minutes on a personal computer.
-
-# training...
-
-citeuctpf = CTPF(citeucorp, 30, pmodel) # Note: If no 'pmodel' is entered then parameters will be randomly initialized.
-train!(citeuctpf, iter=5)
+citeuctpf = CTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
+train!(citeuctpf, iter=20)
 
 # training...
 ```
@@ -548,10 +543,40 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 0.913
+@show mean(acc) # mean(acc) = 0.908
 ```
 
-We can see that, on average, our model ranks the true hidden reader in the top 9% of all non-readers for each document.
+Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model:
+
+
+```julia
+srand(1)
+
+pmodel = LDA(citeucorp, 30)
+train!(pmodel, iter=100, chkelbo=20)
+
+# training...
+
+citeuctpf = CTPF(citeucorp, 30, pmodel)
+train!(citeuctpf, iter=20)
+
+# training...
+```
+
+Again we evaluate the accuracy of our model against the test set:
+
+```julia
+acc = Float64[]
+for (d, u) in enumerate(testukeys)
+    rank = findin(citeuctpf.drecs[d], u)[1]
+    nrlen = length(citeuctpf.drecs[d])
+    push!(acc, (nrlen - rank) / (nrlen - 1))
+end
+
+@show mean(acc) # mean(acc) = 0.920
+```
+
+We can see that, on average, our model ranks the true hidden reader in the top 8% of all non-readers for each document.
 
 Let's also take a look at the top recommendations for a particular document(s):
 
