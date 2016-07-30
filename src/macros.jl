@@ -108,15 +108,15 @@ macro gpu(expr::Expr)
 		gpumodel.beta = model.beta
 		gpumodel.phi = model.phi
 		gpumodel.elbo = model.elbo
-		gpumodel.topics = model.topics
 		train!(gpumodel; kwargs...)
-
+		
+		model.topics = gpumodel.topics
 		model.alpha = gpumodel.alpha
 		model.beta = gpumodel.beta
 		model.gamma = gpumodel.gamma
 		model.phi = gpumodel.phi
+		model.Elogtheta = gpumodel.Elogtheta
 		model.elbo = gpumodel.elbo
-		model.topics = gpumodel.topics
 
 		model.beta ./= sum(model.beta, 2)
 		for d in 1:model.M
@@ -125,8 +125,16 @@ macro gpu(expr::Expr)
 		nothing
 
 	elseif isa(model, CTPF)
-		gpumodel = gpuCTPF(model.corp, model.K, LDA(Corpus(lex=["1"]), model.K))
+		gpumodel = gpuCTPF(model.corp, model.K)
 
+		gpumodel.a = model.a
+		gpumodel.b = model.b
+		gpumodel.c = model.c
+		gpumodel.d = model.d
+		gpumodel.e = model.e
+		gpumodel.f = model.f
+		gpumodel.g = model.g
+		gpumodel.h = model.h
 		gpumodel.alef = model.alef
 		gpumodel.bet = model.bet
 		gpumodel.gimel = model.gimel
@@ -137,10 +145,13 @@ macro gpu(expr::Expr)
 		gpumodel.het = model.het
 		gpumodel.phi = model.phi
 		gpumodel.xi = model.xi
-		gpumodel.topics = model.topics
 		gpumodel.elbo = model.elbo
 		train!(gpumodel; kwargs...)
 
+		model.topics = gpumodel.topics
+		model.scores = gpumodel.scores
+		model.drecs = gpumodel.drecs
+		model.urecs = gpumodel.urecs
 		model.alef = gpumodel.alef
 		model.bet = gpumodel.bet
 		model.gimel = gpumodel.gimel
@@ -151,7 +162,6 @@ macro gpu(expr::Expr)
 		model.het = gpumodel.het
 		model.phi = gpumodel.phi
 		model.xi = gpumodel.xi
-		model.topics = gpumodel.topics
 		model.elbo = gpumodel.elbo
 
 		for d in 1:model.M

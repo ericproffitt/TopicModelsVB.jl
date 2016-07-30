@@ -684,7 +684,6 @@ function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vto
 		if checkELBO!(model, k, chkelbo, tol)
 			break
 		end
-		println(k)
 	end
 	updateHost!(model)
 	Ebeta = model.alef ./ model.bet
