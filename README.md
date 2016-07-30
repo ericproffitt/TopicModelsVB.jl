@@ -910,11 +910,11 @@ showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); co
 
 ```julia
 @mem model
-# Instantiate the model under low memory constraints.
+# Instantiate model under low memory constraints.
 # Supported models: LDA, fLDA, CTM, fCTM.
 
 @gpu train!(model; kwargs...)
-# Train the model on the GPU.
+# Train model on GPU.
 # Supported models: LDA, CTPF.
 ```
 
