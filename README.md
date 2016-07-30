@@ -617,51 +617,63 @@ We can also take a more holistic and informal approach to evaluating model quali
 
 Since large heterogenous libraries make qualitative assessment of recommendation quality difficult, let's search for a user with a small relatively focused library: 
 ```julia
-showlibs(citeuctpf, 2817)
+showlibs(citeuctpf, 1714)
 ```
 
 ```
- ●●● User: 2817
- • EDUTELLA: A P2P Networking Infrastructure Based on RDF
- • Semantic blogging and decentralized knowledge management
- • Case-based, problem-based learning - Information literacy for the real world
- • Blogs and Wikis Are Valuable Software Tools for Communication Within Research Groups
- • The promise of multimedia learning: using the same instructional design methods across different media
- • Semantic integration: a survey of ontology-based approaches
- • Studying Cooperation and Conflict between Authors
- • Mining the Web: Discovering Knowledge from Hypertext Data
- • Blended learning: Uncovering its transformative potential in higher education
- • Social Bookmarking Tools (I): A General Review
- • Communities in cyberspace
- • The Structure of Collaborative Tagging Systems
- • Automated use of a Wiki for collaborative lecture notes
+ ●●● User: 1741
+ • Region-Based Memory Management
+ • A Syntactic Approach to Type Soundness
+ • Imperative Functional Programming
+ • The essence of functional programming
+ • Representing monads
+ • The marriage of effects and monads
+ • A Taste of Linear Logic
+ • Monad transformers and modular interpreters
+ • Comprehending Monads
+ • Monads for functional programming
+ • Building interpreters by composing monads
+ • Typed memory management via static capabilities
+ • Computational Lambda-Calculus and Monads
+ • Why functional programming matters
+ • Tackling the Awkward Squad: monadic input/output, concurrency, exceptions, and foreign-language calls in Haskell
+ • Notions of Computation and Monads
+ • Recursion schemes from comonads
+ • There and back again: arrows for invertible programming
+ • Composing monads using coproducts
+ • An Introduction to Category Theory, Category Theory Monads, and Their Relationship to Functional Programming
 ```
  
- user 2817 appears to be interested in both online education and collaborative tagging/folksonomy/social metadata.  
+ The 20 articles in user 1741's library suggest that user 1741 is interested in the interplay of foundational areas of mathematics with functional programming (an interesting area no doubt!).  
  
- Now compare this with the top 15 recommendations made by our model:
+ Now compare this with the top 20 recommendations made by our model:
  
 ```julia
-showurecs(citeuctpf, 216, 15)
+showurecs(citeuctpf, 1741, 20)
 ```
 
 ```
- ●●● User: 2817
-1.  Folksonomy as a Complex Network
-2.  Collaborative tagging as a tripartite network
-3.  Usage patterns of collaborative tagging systems
-4.  The Semantic Web
-5.  Confronting the Challenges of Participatory Culture: Media Education for the 21st Century
-6.  {Maximum likelihood from incomplete data via the EM algorithm}
-7.  Beyond Edutainment Exploring the Educational Potential of Computer Games
-8.  From presentation to interaction: new goals for online learning technologies
-9.  Electronic mail in a working context
-10. Hamlet on the Holodeck: The Future of Narrative in Cyberspace
-11. Modernity at large : cultural dimensions of globalization
-12. Machine Learning
-13. Wikis, blogs and podcasts: a new generation of Web-based tools for virtual collaborative clinical practice and education
-14. What Is Web 2.0: Design Patterns and Business Models for the Next Generation of Software
-15. Becoming an Online Teacher: Adapting to a Changed Environment for Teaching and Learning in Higher Education
+ ●●● User: 1741
+1.  Sets for Mathematics
+2.  On Understanding Types, Data Abstraction, and Polymorphism
+3.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
+4.  Dynamic Logic
+5.  Principles of programming with complex objects and collection types
+6.  Functional programming with bananas, lenses, envelopes and barbed wire
+7.  Haskell's overlooked object system
+8.  Abstract interpretation: a unified lattice model for static analysis of programs by construction or approximation of fixpoints
+9.  Lectures on the Curry-Howard isomorphism
+10. Parsing expression grammars: a recognition-based syntactic foundation
+11. Type Classes with Functional Dependencies
+12. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
+13. Types, abstraction and parametric polymorphism
+14. Functional pearl: implicit configurations--or, type classes reflect the values of types
+15. The Zipper
+16. Monadic Parsing in Haskell
+17. Ownership types for safe programming: preventing data races and deadlocks
+18. Monadic Parser Combinators
+19. The essence of compiling with continuations
+20. The {Calculus of Constructions}
 ```
 
 ## Low Memory
