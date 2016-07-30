@@ -137,7 +137,7 @@ type DTM <: TopicModel
 		else
 			topics = [[collect(1:V) for _ in 1:K] for _ in 1:T]
 			alpha = [ones(K) for _ in 1:T]
-			beta = [rand(Dirichlet(V, 1.0), K)' for _ in 1:T]
+			betahat = [rand(Dirichlet(V, 1.0), K)' for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
 			phi = [ones(K, N[d]) / K for d in 1:M]
 			Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
