@@ -613,7 +613,9 @@ showurecs(citeuctpf, 216, 1745)
 1745. The metabolic world of Escherichia coli is not small
 ```
 
-We can also take a more holistic and informal approach to evaluating model quality.  Since large heterogenous libraries make qualitative assessment of recommendation quality difficult, let's search for a user with a small relatively focused library: 
+We can also take a more holistic and informal approach to evaluating model quality.
+
+Since large heterogenous libraries make qualitative assessment of recommendation quality difficult, let's search for a user with a small relatively focused library: 
 ```julia
 showlibs(citeuctpf, 2817)
 ```
