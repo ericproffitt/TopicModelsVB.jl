@@ -637,7 +637,9 @@ showlibs(citeuctpf, 2817)
  • Automated use of a Wiki for collaborative lecture notes
 ```
  
- user 2817 appears to be interested in the use of the internet for the purposes of education and knowledge dissemination.  Now compare this with the top 15 recommendations made by our model,
+ user 2817 appears to be interested in the use of the internet for the purposes of education and knowledge dissemination.  
+ 
+ Now compare this with the top 15 recommendations made by our model:
  
 ```julia
 showurecs(citeuctpf, 216, 15)
