@@ -32,7 +32,6 @@ type DTM <: TopicModel
 
 	function DTM(corp::Corpus, K::Integer, delta::Real, pmodel::Union{Void, BaseTopicModel}=nothing)
 		@assert ispositive(K)
-		@assert isequal(pmodel.K, K)
 		@assert isfinite(delta)
 		@assert ispositive(delta)
 		checkcorp(corp)
@@ -65,8 +64,8 @@ type DTM <: TopicModel
 		mbeta = [zeros(K, V) for _ in 1:T]
 		lzeta = ones(M)
 
-		fixmodel!(pmodel)
 		if isa(pmodel, Union{LDA, gpuLDA})
+			fixmodel!(pmodel)
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [pmodel.gamma[d] for d in 1:M]
@@ -74,6 +73,7 @@ type DTM <: TopicModel
 			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
 
 		elseif isa(pmodel, memLDA)
+			fixmodel!(pmodel)
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
@@ -81,6 +81,7 @@ type DTM <: TopicModel
 			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)			
 
 		elseif isa(pmodel, fLDA)
+			fixmodel!(pmodel)
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [pmodel.gamma[d] for d in 1:M]
@@ -88,6 +89,7 @@ type DTM <: TopicModel
 			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
 
 		elseif isa(pmodel, memfLDA)
+			fixmodel!(pmodel)
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
@@ -95,6 +97,7 @@ type DTM <: TopicModel
 			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)	
 
 		elseif isa(pmodel, CTM)
+			fixmodel!(pmodel)
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
@@ -102,6 +105,7 @@ type DTM <: TopicModel
 			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
 
 		elseif isa(pmodel, memCTM)
+			fixmodel!(pmodel)
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
@@ -109,6 +113,7 @@ type DTM <: TopicModel
 			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]	
 
 		elseif isa(pmodel, fCTM)
+			fixmodel!(pmodel)
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
@@ -116,6 +121,7 @@ type DTM <: TopicModel
 			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
 		
 		elseif isa(pmodel, memfCTM)
+			fixmodel!(pmodel)
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
