@@ -293,22 +293,22 @@ showtopics(nsfflda, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4           topic 5          topic 6       topic 7          topic 8         topic 9
-earthquake      theoretical     species          algorithms        university       cell          economic         theory          chemistry
-ocean           physics         plant            parallel          students         protein       social           equations       reactions
-water           flow            genetic          performance       program          cells         theory           geometry        chemical
-measurements    phase           populations      computer          science          plant         policy           mathematical    metal
-program         quantum         evolutionary     processing        scientists       proteins      human            differential    program
-soil            particle        plants           applications      sciences         gene          change           algebraic       molecular
-climate         temperature     population       network           scientific       genes         political        groups          organic
-seismic         phenomena       patterns         networks          conference       molecular     public           solutions       surface
-global          energy          variation        software          national         function      science          mathematics     compounds
-sea             measurements    dna              computational     projects         expression    decision         finite          molecules
-response        laser           ecology          efficient         engineering      regulation    people           dimensional     electron
-earth           particles       food             distributed       year             plants        labor            spaces          university
-solar           numerical       test             program           workshop         dna           market           functions       reaction
-pacific         liquid          ecological       power             months           mechanisms    scientific       manifolds       synthesis
-damage          fluid           host             programming       mathematical     membrane      factors          professor       spectroscopy
+topic 1         topic 2         topic 3          topic 4          topic 5        topic 6       topic 7      topic 8         topic 9
+earthquake      flow            species          design           university     cell          economic     theory          chemistry
+ocean           theoretical     plant            algorithms       support        protein       social       equations       reactions
+water           phase           populations      computer         students       cells         theory       geometry        metal
+measurements    physics         genetic          performance      program        proteins      policy       algebraic       chemical
+program         quantum         plants           parallel         science        gene          human        differential    program
+soil            properties      evolutionary     processing       award          plant         change       mathematical    organic
+seismic         temperature     population       applications     scientists     genes         political    groups          molecular
+climate         effects         patterns         networks         scientific     molecular     public       space           compounds
+effects         phenomena       variation        network          sciences       function      examine      mathematics     surface
+global          numerical       effects          software         conference     dna           science      finite          properties
+sea             laser           food             computational    national       regulation    decision     solutions       molecules
+surface         measurements    ecology          efficient        projects       expression    people       spaces          university
+response        experiments     environmental    program          engineering    plants        labor        dimensional     reaction
+solar           award           test             distributed      year           mechanisms    effects      functions       synthesis
+earth           liquid          ecological       power            workshop       membrane      market       questions       complexes
 ```
 
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
