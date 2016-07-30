@@ -617,7 +617,7 @@ We can also take a more holistic and informal approach to evaluating model quali
 
 Since large heterogenous libraries make qualitative assessment of recommendation quality difficult, let's search for a user with a small relatively focused library: 
 ```julia
-showlibs(citeuctpf, 1714)
+showlibs(citeuctpf, 1741)
 ```
 
 ```
