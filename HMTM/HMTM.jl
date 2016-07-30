@@ -13,7 +13,6 @@ type HMTM <: TopicModel
 	gamma::MatrixList{Float64}
 	lambda::VectorList{Float64}
 	phi::MatrixList{Float64}
-	a::Float64
 	elbo::Float64
 
 	function HMTM(corp::Corpus, K::Int)
@@ -34,7 +33,7 @@ type HMTM <: TopicModel
 
 		topics = [collect(1:V) for _ in 1:K]
 
-		model = new(K, M, V, N, C, copy(corp), topics, eta, alpha, beta, tau, gamma, lambda, phi, 0)
+		model = new(K, M, V, N, C, copy(corp), topics, eta, alpha, beta, tau, gamma, lambda, phi)
 		updateELBO!(model)
 		return model
 	end
