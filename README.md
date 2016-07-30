@@ -767,6 +767,12 @@ Corpus(;docs=Document[], lex=[], users=[])
 TopicModel
 # abstract type
 
+BaseTopicModel
+# Union{LDA, fLDA, CTM, fCTM, memLDA, memfLDA, memCTM, memfCTM, gpuLDA}
+
+GPUTopicModel
+# Union{gpuLDA, gpuCTPF}
+
 LDA(corp, K) <: TopicModel
 # Latent Dirichlet allocation
 # 'K' - number of topics.
@@ -787,6 +793,24 @@ DTM(corp, K, delta, pmodel) <: TopicModel
 
 CTPF(corp, K, pmodel) <: TopicModel
 # Collaborative topic Poisson factorization
+
+memLDA(corp, K) <: TopicModel
+# Low memory latent Dirichlet Allocation
+
+memfLDA(corp, K) <: TopicModel
+# Low memory filtered latent Dirichlet Allocation
+
+memCTM(corp, K) <: TopicModel
+# Low memory correlated topic model
+
+memfCTM(corp, K) <: TopicModel
+# Low memory filtered correlated topic model
+
+gpuLDA(corp, K) <: TopicModel
+# GPU accelerated latent Dirichlet allocation
+
+gpuCTPF(corp, K) <: TopicModel
+# GPU accelerated collaborative topic Poission factorization
 ```
 
 
