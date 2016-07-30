@@ -613,51 +613,51 @@ showurecs(citeuctpf, 216, 1745)
 1745. The metabolic world of Escherichia coli is not small
 ```
 
-We can also take a more holistic and informal approach to evaluating model quality.  Let's take a look at the first few documents in user 216's library,
-
+We can also take a more holistic and informal approach to evaluating model quality.  Since large heterogenous libraries make qualitative assessment of recommendation quality difficult, let's search for a user with a small relatively focused library: 
 ```julia
-showlibs(citeuctpf, 216)
+showlibs(citeuctpf, 2817)
 ```
 
 ```
- ●●● User: 216
- • Network motifs: simple building blocks of complex networks.
- • The large-scale organization of metabolic networks.
- • Here is the evidence, now what is the hypothesis? The complementary roles of inductive and hypothesis-driven science in the post-genomic era
- • Classification and Regression Trees
- • {Evolutionary rate in the protein interaction network}
- ...
+ ●●● User: 2817
+ • EDUTELLA: A P2P Networking Infrastructure Based on RDF
+ • Semantic blogging and decentralized knowledge management
+ • Case-based, problem-based learning - Information literacy for the real world
+ • Blogs and Wikis Are Valuable Software Tools for Communication Within Research Groups
+ • The promise of multimedia learning: using the same instructional design methods across different media
+ • Semantic integration: a survey of ontology-based approaches
+ • Studying Cooperation and Conflict between Authors
+ • Mining the Web: Discovering Knowledge from Hypertext Data
+ • Blended learning: Uncovering its transformative potential in higher education
+ • Social Bookmarking Tools (I): A General Review
+ • Communities in cyberspace
+ • The Structure of Collaborative Tagging Systems
+ • Automated use of a Wiki for collaborative lecture notes
 ```
  
- user 216 appears to be interested in subjects at the intersection of network theory and biology.  Now compare this with the top 10 recommendations made by our model,
+ user 2817 appears to be interested in the use of the internet for the purposes of education and knowledge dissemination.  Now compare this with the top 15 recommendations made by our model,
  
 ```julia
-showurecs(citeuctpf, 216, 20)
+showurecs(citeuctpf, 216, 15)
 ```
- 
+
 ```
- ●●● User: 216
- ●●● User: 216
-1.  The structure and function of complex networks
-2.  Collective dynamics of 'small-world' networks.
-3.  Emergence of scaling in random networks
-4.  Horizontal Gene Transfer of the Secretome Drives the Evolution of Bacterial Cooperation and Virulence
-5.  Is Proteomics the New Genomics?
-6.  The PageRank Citation Ranking: Bringing Order to the Web
-7.  The hallmarks of cancer.
-8.  A Universal Framework for Regulatory Element Discovery across All Genomes and Data Types
-9.  Finding and evaluating community structure in networks
-10. Statistical mechanics of complex networks
-11. Power-law distributions in empirical data
-12. Binding of Small-Molecule Ligands to Proteins: â€œWhat You Seeâ€ Is Not Always â€œWhat You Getâ€
-13. The Small-World Phenomenon: An Algorithmic Perspective
-14. Social networks, incentives, and search
-15. Community structure in social and biological networks
-16. Evolution of the social network of scientific collaborations
-17. Hierarchical structure and the prediction of missing links in networks.
-18. Comparative study of gene set enrichment methods.
-19. Geometric interpretation of gene coexpression network analysis.
-20. Power laws, Pareto distributions and Zipf's law
+ ●●● User: 2817
+1.  Folksonomy as a Complex Network
+2.  Collaborative tagging as a tripartite network
+3.  Usage patterns of collaborative tagging systems
+4.  The Semantic Web
+5.  Confronting the Challenges of Participatory Culture: Media Education for the 21st Century
+6.  {Maximum likelihood from incomplete data via the EM algorithm}
+7.  Beyond Edutainment Exploring the Educational Potential of Computer Games
+8.  From presentation to interaction: new goals for online learning technologies
+9.  Electronic mail in a working context
+10. Hamlet on the Holodeck: The Future of Narrative in Cyberspace
+11. Modernity at large : cultural dimensions of globalization
+12. Machine Learning
+13. Wikis, blogs and podcasts: a new generation of Web-based tools for virtual collaborative clinical practice and education
+14. What Is Web 2.0: Design Patterns and Business Models for the Next Generation of Software
+15. Becoming an Online Teacher: Adapting to a Changed Environment for Teaching and Learning in Higher Education
 ```
 
 ## Low Memory
