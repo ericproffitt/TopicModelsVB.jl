@@ -166,8 +166,6 @@ gpuCTPF(corp, K, pmodel)
 # GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
-Notice that both `DTM` and `CTPF` have a `pmodel` argument.  It is **highly advisable** that you prime these final two models with a pretrained model from one of the first four, otherwise learning may take a prohibitively long time.
-
 ## Tutorial
 ### LDA
 Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 9 topics, trained on the first 5000 documents from the NSF corpus.
