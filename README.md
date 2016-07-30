@@ -637,7 +637,7 @@ showlibs(citeuctpf, 2817)
  • Automated use of a Wiki for collaborative lecture notes
 ```
  
- user 2817 appears to be interested in the use of the internet for the purposes of education and knowledge dissemination.  
+ user 2817 appears to be interested in both online education and collaborative tagging/folksonomy/social metadata.  
  
  Now compare this with the top 15 recommendations made by our model:
  
