@@ -527,6 +527,8 @@ Fortunately, since CTPF can if need be depend entirely on thematic structure whe
 Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=20).
 
 ```julia
+srand(1)
+
 citeuctpf = CTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
 train!(citeuctpf, iter=20)
 
@@ -582,33 +584,33 @@ Let's also take a look at the top recommendations for a particular document(s):
 
 ```julia
 testukeys[1] # = 216
-acc[1] # = 0.973
+acc[1] # = 0.945
 
-showdrecs(citeuctpf, 1, 152, cols=1)
+showdrecs(citeuctpf, 1, 307, cols=1)
 ```
 ```
  ●●● Doc: 1
  ●●● The metabolic world of Escherichia coli is not small
 ...
-148. #user4157
-149. #user1543
-150. #user817
-151. #user1642
-152. #user216
+303. #user5159
+304. #user5486
+305. #user261
+306. #user4999
+307. #user216
 ```
 as well as those for a particular user(s):
 
 ```julia
-showurecs(citeuctpf, 216, 426)
+showurecs(citeuctpf, 216, 1745)
 ```
 ```
  ●●● User: 216
 ...
-422. Improving loss resilience with multi-radio diversity in wireless networks
-423. Stochastic protein expression in individual cells at the single molecule level
-424. Dynamical and correlation properties of the Internet
-425. Multifractal Network Generator
-426. The metabolic world of Escherichia coli is not small
+1741. {Characterizing gene sets with FuncAssociate}
+1742. Network Data and Measurement
+1743. Analysis of genomic context: prediction of functional associations from conserved bidirectionally transcribed gene pairs.
+1744. The public road to high-quality curated biological pathways
+1745. The metabolic world of Escherichia coli is not small
 ```
 
 We can also take a more holistic and informal approach to evaluating model quality.  Let's take a look at the first few documents in user 216's library,
@@ -627,24 +629,35 @@ showlibs(citeuctpf, 216)
  ...
 ```
  
- user 216 appears to be interested in subjects at the intersection of network theory and microbiology.  Now compare this with the top 10 recommendations made by our model,
+ user 216 appears to be interested in subjects at the intersection of network theory and biology.  Now compare this with the top 10 recommendations made by our model,
  
 ```julia
- showurecs(citeuctpf, 216, 10)
+showurecs(citeuctpf, 216, 20)
 ```
  
 ```
  ●●● User: 216
-1.  The hallmarks of cancer.
-2.  The structure and function of complex networks
-3.  Collective dynamics of 'small-world' networks.
-4.  Emergence of scaling in random networks
-5.  Statistical mechanics of complex networks
-6.  MicroRNA Control in the Immune System: Basic Principles
-7.  Power laws, Pareto distributions and Zipf's law
-8.  Exploring complex networks
-9.  Network biology: understanding the cell's functional organization.
-10. Systems Biology: A Brief Overview
+ ●●● User: 216
+1.  The structure and function of complex networks
+2.  Collective dynamics of 'small-world' networks.
+3.  Emergence of scaling in random networks
+4.  Horizontal Gene Transfer of the Secretome Drives the Evolution of Bacterial Cooperation and Virulence
+5.  Is Proteomics the New Genomics?
+6.  The PageRank Citation Ranking: Bringing Order to the Web
+7.  The hallmarks of cancer.
+8.  A Universal Framework for Regulatory Element Discovery across All Genomes and Data Types
+9.  Finding and evaluating community structure in networks
+10. Statistical mechanics of complex networks
+11. Power-law distributions in empirical data
+12. Binding of Small-Molecule Ligands to Proteins: â€œWhat You Seeâ€ Is Not Always â€œWhat You Getâ€
+13. The Small-World Phenomenon: An Algorithmic Perspective
+14. Social networks, incentives, and search
+15. Community structure in social and biological networks
+16. Evolution of the social network of scientific collaborations
+17. Hierarchical structure and the prediction of missing links in networks.
+18. Comparative study of gene set enrichment methods.
+19. Geometric interpretation of gene coexpression network analysis.
+20. Power laws, Pareto distributions and Zipf's law
 ```
 
 ## Low Memory
