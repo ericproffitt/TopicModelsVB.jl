@@ -17,7 +17,7 @@ fixcorp!(nsfcorp)
 # Notice that the post-fix lexicon is smaller after removing all but the first 5000 docs.
 
 nsflda = LDA(nsfcorp, 9)
-train!(nsflda, iter=150, tol=0.0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
+train!(nsflda, iter=10, tol=0.0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
                                   # If you don't want to watch the ∆elbo, set chkelbo=151.
 # training...
 
@@ -143,11 +143,11 @@ for doc in citeucorp
     deleteat!(doc.ratings, index)
 end
 
-sum([isempty(doc.readers) for doc in corp]) # = 158
+sum([isempty(doc.readers) for doc in citeucorp])
 
-citeuctpf = CTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
-train!(citeuctpf, iter=5)       # Instantiation and training will likely take 30 - 40 minutes on a personal computer.
-                                # All optimizations in CTPF are analytic, often allowing for very fast convergence.
+citeuctpf = gpuCTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
+train!(citeuctpf, iter=20, chkelbo=21)
+
 # training...
 
 acc = Float64[]
@@ -157,18 +157,37 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 0.913
+@show mean(acc) # mean(acc) = 0.908
+
+srand(1)
+
+pmodel = gpuLDA(citeucorp, 30)
+train!(pmodel, iter=100, chkelbo=101)
+
+# training...
+
+citeuctpf = gpuCTPF(citeucorp, 30, pmodel)
+train!(citeuctpf, iter=20, chkelbo=21)
+
+acc = Float64[]
+for (d, u) in enumerate(testukeys)
+    rank = findin(citeuctpf.drecs[d], u)[1]
+    nrlen = length(citeuctpf.drecs[d])
+    push!(acc, (nrlen - rank) / (nrlen - 1))
+end
+
+@show mean(acc) # mean(acc) = 0.920
 
 testukeys[1] # = 216
-acc[1] # = 0.973
+acc[1] # = 0.945
 
-showdrecs(model, 1, 152, cols=1)
+showdrecs(citeuctpf, 1, 307, cols=1)
 
-showurecs(model, 216, 426)
+showurecs(citeuctpf, 216, 1745)
 
-showlibs(citeuctpf, 216)
+showlibs(citeuctpf, 1741)
 
-showurecs(citeuctpf, 216, 10)
+showurecs(citeuctpf, 1741, 20)
 
 
 
