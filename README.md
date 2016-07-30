@@ -789,10 +789,11 @@ fCTM(corp, K) <: TopicModel
 DTM(corp, K, delta, pmodel) <: TopicModel
 # Dynamic topic model
 # 'delta'  - time-interval size.
-# 'pmodel' - pre-trained model of type Union{LDA, fLDA, CTM, fCTM}.
+# 'pmodel' - pre-trained model of type BaseTopicModel (optional).
 
 CTPF(corp, K, pmodel) <: TopicModel
 # Collaborative topic Poisson factorization
+# 'pmodel' - pre-trained model of type BaseTopicModel (optional).
 
 memLDA(corp, K) <: TopicModel
 # Low memory latent Dirichlet Allocation
@@ -811,6 +812,7 @@ gpuLDA(corp, K) <: TopicModel
 
 gpuCTPF(corp, K) <: TopicModel
 # GPU accelerated collaborative topic Poission factorization
+# 'pmodel' - pre-trained model of type BaseTopicModel (optional).
 ```
 
 
