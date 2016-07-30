@@ -50,8 +50,6 @@ type DTM <: TopicModel
 			corp[d].stamp <= t0 + t * delta ? push!(S[t], d) : (t += 1; push!(S[t], d))
 		end
 
-		topics = [pmodel.topics for _ in 1:T]
-
 		sigmasq = 1.0
 		v0 = ones(K, V)
 		v = [ones(K, V) for _ in 1:T]
