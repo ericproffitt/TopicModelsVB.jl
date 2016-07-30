@@ -727,7 +727,7 @@ nsflda = LDA(nsfcorp, 16)
 
 This algorithm just crunched through a 16 topic 129,000 document topic model in *under* 5 minutes.
 
-**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive memory transfers between GPU and CPU memory.
+**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
 **Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are coming and should be uploaded within the next few weeks.
 
