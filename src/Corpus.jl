@@ -135,6 +135,7 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		lkeys = lex[:,1]
 		terms = [string(j) for j in lex[:,2]]
 		corp.lex = Dict{Int, UTF8String}(zip(lkeys, terms))
+		@assert all(ispositive(collect(keys(corp.lex))))
 	end
 
 	if !isempty(userfile)
@@ -142,6 +143,7 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		ukeys = users[:,1]
 		users = [string(u) for u in users[:,2]]
 		corp.users = Dict{Int, UTF8String}(zip(ukeys, users))
+		@assert all(ispositive(collect(keys(corp.users))))
 	end
 
 	if !isempty(titlefile)
@@ -439,25 +441,8 @@ function readcorp(corpsym::Symbol)
 		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/mactitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
-	elseif corpsym == :cmag
-		try 
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/cmag/cmagdocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/cmag/cmaglex.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/cmag/cmagtitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, stamps=true)
-
-		catch 
-		info("To load the Full Computer Magazine dataset, follow these instructions:")
-		println("1. Open up the directory $(homedir())/.julia/$v/TopicModelsVB/datasets/cmag.")
-		println("2. Unzip the two files: cmagdocs1.zip & cmagdocs2.zip.")
-		println("3. Stack the data in these two files into a single plaintext file.")
-		println("4. Name this file: cmagdocs.txt.")
-		println("5. That's it!")
-		corp = nothing
-		end
-
 	else
-		println("Included corpora:\n:nsf\n:citeu\n:mac\n:cmag")
+		println("Included corpora:\n:nsf\n:citeu\n:mac")
 		corp = nothing
 	end
 

@@ -183,6 +183,7 @@ function train!(model::memCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		if checkELBO!(model, k, chkelbo, tol)
 			break
 		end
+		println(k)
 	end
 	model.lzeta = 0.0
 	model.phi = ones(model.K, model.N[1]) / model.K

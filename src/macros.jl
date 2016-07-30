@@ -24,43 +24,11 @@ macro buf(expr::Expr)
 		end
 		end
 
-	elseif expr.args[2] == :(:beta)
+	elseif expr.args[2] == :(:sumElogtheta)
 		quoteblock = 
 		quote
 		if isa($(esc(expr.args[1])), gpuLDA)
-			model.betabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
-		end
-		end
-
-	elseif expr.args[2] == :(:gamma)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			model.gammabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gamma...))
-		end
-		end
-
-	elseif expr.args[2] == :(:phi)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			model.phibuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.phi...))
-		end
-		end
-	
-	elseif expr.args[2] == :(:Elogtheta)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			model.Elogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta...))
-		end
-		end
-
-	elseif expr.args[2] == :(:SUMElogtheta)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			model.SUMElogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.SUMElogtheta)
+			model.sumElogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sumElogtheta)
 		end
 		end
 	end
@@ -76,47 +44,11 @@ macro host(expr::Expr)
 		end
 		end
 
-	elseif expr.args[2] == :(:betabuf)
+	elseif expr.args[2] == :(:sumElogthetabuf)
 		quoteblock = 
 		quote
 		if isa($(esc(expr.args[1])), gpuLDA)
-			model.beta = reshape(OpenCL.read(model.queue, model.betabuf), model.K, model.V)
-		end
-		end
-
-	elseif expr.args[2] == :(:gammabuf)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			hostgamma = reshape(OpenCL.read(model.queue, model.gammabuf), model.K, model.M)
-			model.gamma = [hostgamma[:,d] for d in 1:model.M]
-		end
-		end
-
-	elseif expr.args[2] == :(:phibuf)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			Npsums = OpenCL.read(model.queue, model.Npsums)
-			hostphi = reshape(OpenCL.read(model.queue, model.phibuf), model.K, sum(model.N))
-			model.phi = [hostphi[:,Npsums[d]+1:Npsums[d+1]] for d in 1:model.M]	
-		end
-		end
-	
-	elseif expr.args[2] == :(:Elogthetabuf)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			hostElogtheta = reshape(OpenCL.read(model.queue, model.Elogthetabuf), model.K, model.M)
-			model.Elogtheta = [hostElogtheta[:,d] for d in 1:model.M]	
-		end
-		end
-	
-	elseif expr.args[2] == :(:SUMElogthetabuf)
-		quoteblock = 
-		quote
-		if isa($(esc(expr.args[1])), gpuLDA)
-			model.SUMElogtheta = OpenCL.read(model.queue, model.SUMElogthetabuf)
+			model.sumElogtheta = OpenCL.read(model.queue, model.sumElogthetabuf)
 		end
 		end
 	end
@@ -170,11 +102,12 @@ macro gpu(expr::Expr)
 	local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[3:end]))]
 	
 	if isa(model, LDA)
-		local gpumodel = gpuLDA(model.corp, model.K)
+		gpumodel = gpuLDA(model.corp, model.K)
 
 		gpumodel.alpha = model.alpha
 		gpumodel.beta = model.beta
 		gpumodel.phi = model.phi
+		gpumodel.elbo = model.elbo
 		gpumodel.topics = model.topics
 		train!(gpumodel; kwargs...)
 
@@ -182,11 +115,48 @@ macro gpu(expr::Expr)
 		model.beta = gpumodel.beta
 		model.gamma = gpumodel.gamma
 		model.phi = gpumodel.phi
+		model.elbo = gpumodel.elbo
 		model.topics = gpumodel.topics
 
 		model.beta ./= sum(model.beta, 2)
 		for d in 1:model.M
 			model.phi[d] ./= sum(model.phi[d], 1)
+		end
+		nothing
+
+	elseif isa(model, CTPF)
+		gpumodel = gpuCTPF(model.corp, model.K, LDA(Corpus(lex=["1"]), model.K))
+
+		gpumodel.alef = model.alef
+		gpumodel.bet = model.bet
+		gpumodel.gimel = model.gimel
+		gpumodel.dalet = model.dalet
+		gpumodel.he = model.he
+		gpumodel.vav = model.vav
+		gpumodel.zayin = model.zayin
+		gpumodel.het = model.het
+		gpumodel.phi = model.phi
+		gpumodel.xi = model.xi
+		gpumodel.topics = model.topics
+		gpumodel.elbo = model.elbo
+		train!(gpumodel; kwargs...)
+
+		model.alef = gpumodel.alef
+		model.bet = gpumodel.bet
+		model.gimel = gpumodel.gimel
+		model.dalet = gpumodel.dalet
+		model.he = gpumodel.he
+		model.vav = gpumodel.vav
+		model.zayin = gpumodel.zayin
+		model.het = gpumodel.het
+		model.phi = gpumodel.phi
+		model.xi = gpumodel.xi
+		model.topics = gpumodel.topics
+		model.elbo = gpumodel.elbo
+
+		for d in 1:model.M
+			model.phi[d] ./= sum(model.phi[d], 1)
+			model.xi[d] ./= sum(model.xi[d], 1)
 		end
 		nothing
 

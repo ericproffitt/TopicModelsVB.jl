@@ -30,11 +30,9 @@ type CTPF <: TopicModel
 	het::Vector{Float64}
 	phi::MatrixList{Float64}
 	xi::MatrixList{Float64}
-	alefbet::Vector{Float64}
-	hevav::Vector{Float64}
 	elbo::Float64
 
-	function CTPF(corp::Corpus, K::Integer, pmodel::BaseTopicModel=(lda = LDA(corp, K); train!(lda, iter=150, chkelbo=151); lda))
+	function CTPF(corp::Corpus, K::Integer, pmodel::Union{Void, BaseTopicModel}=nothing)
 		@assert ispositive(K)		
 		@assert isequal(pmodel.K, K)
 		checkcorp(corp)
@@ -42,7 +40,7 @@ type CTPF <: TopicModel
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
-		R = [length(corp[d].readers) for d in 1:M]
+		R = [length(doc.readers) for doc in corp]
 
 		topics = pmodel.topics
 
@@ -54,34 +52,19 @@ type CTPF <: TopicModel
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
-		fixmodel!(pmodel)
-		if isa(pmodel, Union{LDA, gpuLDA})
-			alef = exp(pmodel.beta - 0.5)
-			gimel = deepcopy(pmodel.gamma)
-
-		elseif isa(pmodel, memLDA)
-			alef = exp(pmodel.beta - 0.5)
-			gimel = [ones(K) for _ in 1:M]
-
-		elseif isa(pmodel, fLDA)
+		if isa(pmodel, Union{LDA, CTM, memLDA, memCTM, gpuLDA})
+			@assert isequal(size(pmodel.beta), (K, V))
+			alef = exp(pmodel.beta - 0.5)		
+		elseif isa(pmodel, Union{fLDA, fCTM, memfLDA, memfCTM, gpuLDA})
+			@assert isequal(size(pmodel.fbeta), (K, V))
 			alef = exp(pmodel.fbeta - 0.5)
-			gimel = deepcopy(pmodel.gamma)
-
-		elseif isa(pmodel, memfLDA)
-			alef = exp(pmodel.fbeta - 0.5)
-			gimel = [ones(K) for _ in 1:M]
-
-		elseif isa(pmodel, Union{CTM, memCTM})
-			alef = exp(pmodel.beta - 0.5)
-			gimel = [exp(pmodel.lambda[d]) for d in 1:M]
-
-		elseif isa(pmodel, Union{fCTM, memfCTM})
-			alef = exp(pmodel.fbeta - 0.5)
-			gimel = [exp(pmodel.lambda[d]) for d in 1:M]
+		else
+			alef = exp(rand(Dirichlet(V, 1.0), K)' - 0.5)
 		end
+		
 		bet = ones(K)
+		gimel = [ones(K) for _ in 1:M]
 		dalet = ones(K)	
-
 		he = ones(K, U)
 		vav = ones(K)
 		zayin = [ones(K) for _ in 1:M]
@@ -89,10 +72,7 @@ type CTPF <: TopicModel
 		phi = [rand(Dirichlet(K, 1.0), N[d]) for d in 1:M]
 		xi = [rand(Dirichlet(2K, 1.0), R[d]) for d in 1:M]
 
-		alefbet = vec(sum(alef, 2))
-		hevav = vec(sum(he, 2))
-
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, gimel, dalet, he, vav, zayin, het, phi, xi, alefbet, hevav)
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, gimel, dalet, he, vav, zayin, het, phi, xi)
 		updateELBO!(model)
 		return model
 	end
@@ -237,7 +217,6 @@ end
 
 function updateBet!(model::CTPF)
 	model.bet = model.b + sum(model.gimel) ./ model.dalet
-	model.alefbet = vec(sum(model.alef ./ model.bet, 2))
 end
 
 function updateGimel!(model::CTPF, d::Int)	
@@ -246,7 +225,7 @@ function updateGimel!(model::CTPF, d::Int)
 end
 
 function updateDalet!(model::CTPF)
-	model.dalet = model.d + model.alefbet + model.hevav
+	model.dalet = model.d + vec(sum(model.alef, 2)) ./ model.bet + vec(sum(model.he, 2)) ./ model.vav
 end
 
 function updateHe!(model::CTPF)
@@ -259,7 +238,6 @@ end
 
 function updateVav!(model::CTPF)
 	model.vav = model.f + sum(model.gimel) ./ model.dalet + sum(model.zayin) ./ model.het
-	model.hevav = vec(sum(model.he ./ model.vav, 2))
 end
 
 function updateZayin!(model::CTPF, d::Int)
@@ -268,19 +246,19 @@ function updateZayin!(model::CTPF, d::Int)
 end
 
 function updateHet!(model::CTPF)
-	model.het = model.h + model.hevav
+	model.het = model.h + vec(sum(model.he, 2)) ./ model.vav
 end
 
 function updatePhi!(model::CTPF, d::Int)
 	terms = model.corp[d].terms
-	model.phi[d] = exp(digamma(model.gimel[d]) - log(model.dalet) .+ (digamma(model.alef[:,terms]) .- log(model.bet)))
+	model.phi[d] = exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.bet) .+ digamma(model.alef[:,terms]))
 	model.phi[d] ./= sum(model.phi[d], 1)
 end
 
 function updateXi!(model::CTPF, d::Int)
 	readers = model.corp[d].readers
-	model.xi[d][1:model.K,:] = exp(digamma(model.gimel[d]) - log(model.dalet) .+ (digamma(model.he[:,readers]) .- log(model.vav)))
-	model.xi[d][model.K+1:end,:] = exp(digamma(model.zayin[d]) - log(model.het) .+ (digamma(model.he[:,readers]) .- log(model.vav)))
+	model.xi[d][1:model.K,:] = exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.vav) .+ digamma(model.he[:,readers]))
+	model.xi[d][model.K+1:end,:] = exp(digamma(model.zayin[d]) - log(model.het) - log(model.vav) .+ digamma(model.he[:,readers]))	
 	model.xi[d] ./= sum(model.xi[d], 1)
 end
 

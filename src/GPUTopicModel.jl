@@ -1,1 +1,1 @@
-GPUTopicModel = Union{gpuLDA}
+GPUTopicModel = Union{gpuLDA, gpuCTPF}

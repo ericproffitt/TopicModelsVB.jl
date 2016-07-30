@@ -26,6 +26,7 @@ Base.show(io::IO, model::memCTM) = print(io, "Low memory correlated topic model 
 Base.show(io::IO, model::memfCTM) = print(io, "Low memory filtered correlated topic model with $(model.K) topics.")
 
 Base.show(io::IO, model::gpuLDA) = print(io, "GPU accelerated latent Dirichlet allocation model with $(model.K) topics.")
+Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 
 
@@ -264,9 +265,6 @@ function fixmodel!(model::CTPF)
 	@assert all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in 1:model.M])
 	@assert all(Bool[isprobvec(model.xi[d], 1) for d in 1:model.M])	
 	@assert isfinite(model.elbo)
-
-	model.alefbet = vec(sum(model.alef ./ model.bet, 2))
-	model.hevav = vec(sum(model.he ./ model.vav, 2))
 	nothing	
 end
 
@@ -426,26 +424,33 @@ function fixmodel!(model::gpuLDA)
 	@assert isfinite(model.elbo)
 
 	model.Elogtheta = [digamma(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M]
-	model.SUMElogtheta = sum(model.Elogtheta)
+	model.sumElogtheta = sum(model.Elogtheta)
 	
 	model.device, model.context, model.queue = OpenCL.create_compute_context()		
 
-	terms = vcat([doc.terms for doc in model.corp]...)
-	words = collect(0:sum(model.N)-1)[sortperm(terms)]
-	J = zeros(Int, model.V)
-	for j in terms
-		J[j] += 1
-	end
+	terms = vcat([doc.terms for doc in model.corp]...) - 1
+	counts = vcat([doc.counts for doc in model.corp]...)
+	words = sortperm(terms) - 1
 
-	Npsums = Int[0]
+	Npsums = zeros(Int, model.M + 1)
 	for d in 1:model.M
-		push!(Npsums, Npsums[d] + model.N[d])
+		Npsums[d+1] = Npsums[d] + model.N[d]
 	end
 		
-	model.terms = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=terms - 1)	
-	model.counts = OpenCL.Buffer(Float32, model.context, (:r, :copy), hostbuf=map(Float32, vcat([doc.counts for doc in model.corp]...)))		
+	J = zeros(Int, model.V)
+	for j in terms
+		J[j+1] += 1
+	end
+
+	Jpsums = zeros(Int, model.V + 1)
+	for j in 1:model.V
+		Jpsums[j+1] = Jpsums[j] + J[j]
+	end
+
 	model.Npsums = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=Npsums)
-	model.Jpsums = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=[sum(J[1:j]) for j in 0:model.V])
+	model.Jpsums = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=Jpsums)
+	model.terms = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)	
+	model.counts = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)		
 	model.words = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=words)		
 
 	betaprog = OpenCL.Program(model.context, source=LDAbetacpp) |> OpenCL.build!
@@ -454,17 +459,144 @@ function fixmodel!(model::gpuLDA)
 	phiprog = OpenCL.Program(model.context, source=LDAphicpp) |> OpenCL.build!
 	phinormprog = OpenCL.Program(model.context, source=LDAphinormcpp) |> OpenCL.build!
 	Elogthetaprog = OpenCL.Program(model.context, source=LDAElogthetacpp) |> OpenCL.build!
-	SUMElogthetaprog = OpenCL.Program(model.context, source=LDASUMElogthetacpp) |> OpenCL.build!
+	sumElogthetaprog = OpenCL.Program(model.context, source=LDAsumElogthetacpp) |> OpenCL.build!
 
 	model.betakern = OpenCL.Kernel(betaprog, "updateBeta")
-	model.betanormkern = OpenCL.Kernel(betanormprog, "normalizeBeta")	
+	model.betanormkern = OpenCL.Kernel(betanormprog, "normalizeBeta")
 	model.gammakern = OpenCL.Kernel(gammaprog, "updateGamma")
 	model.phikern = OpenCL.Kernel(phiprog, "updatePhi")
 	model.phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
 	model.Elogthetakern = OpenCL.Kernel(Elogthetaprog, "updateElogtheta")
-	model.SUMElogthetakern = OpenCL.Kernel(SUMElogthetaprog, "updateSUMElogtheta")
-	
+	model.sumElogthetakern = OpenCL.Kernel(sumElogthetaprog, "updatesumElogtheta")
 	updateBuf!(model)	
+	nothing
+end
+
+function fixmodel!(model::gpuCTPF)
+	checkcorp(model.corp)
+	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
+	@assert isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))
+	@assert isequal(model.M, length(model.corp))
+	@assert isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])
+	@assert isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])
+	@assert isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])
+	@assert ispositive(model.a)
+	@assert ispositive(model.b)
+	@assert ispositive(model.c)
+	@assert ispositive(model.d)
+	@assert ispositive(model.e)
+	@assert ispositive(model.f)
+	@assert ispositive(model.g)
+	@assert ispositive(model.h)	
+	@assert isequal(size(model.alef), (model.K, model.V))
+	@assert all(isfinite(model.alef))
+	@assert all(ispositive(model.alef))
+	@assert isequal(length(model.bet), model.K)
+	@assert all(isfinite(model.bet))
+	@assert all(ispositive(model.bet))
+	@assert isequal(length(model.gimel), model.M)
+	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
+	@assert all(Bool[all(isfinite(model.gimel[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive(model.gimel[d])) for d in 1:model.M])
+	@assert isequal(length(model.dalet), model.K)
+	@assert all(isfinite(model.dalet))
+	@assert all(ispositive(model.dalet))
+	@assert isequal(size(model.he), (model.K, model.U))	
+	@assert all(isfinite(model.he))
+	@assert all(ispositive(model.he))
+	@assert isequal(length(model.vav), model.K)
+	@assert all(isfinite(model.vav))
+	@assert all(ispositive(model.vav))
+	@assert isequal(length(model.zayin), model.M)
+	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
+	@assert all(Bool[all(isfinite(model.zayin[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive(model.zayin[d])) for d in 1:model.M])
+	@assert isequal(length(model.het), model.K)
+	@assert all(isfinite(model.het))
+	@assert all(ispositive(model.het))
+	@assert isequal(length(model.phi), model.M)
+	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])
+	@assert all(Bool[isprobvec(model.phi[d], 1) for d in 1:model.M])
+	@assert isequal(length(model.xi), model.M)
+	@assert all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in 1:model.M])
+	@assert all(Bool[isprobvec(model.xi[d], 1) for d in 1:model.M])	
+	@assert isfinite(model.elbo)
+		
+	model.device, model.context, model.queue = OpenCL.create_compute_context()		
+
+	terms = vcat([doc.terms for doc in model.corp]...) - 1
+	counts = vcat([doc.counts for doc in model.corp]...)
+	words = sortperm(terms) - 1
+
+	readers = vcat([doc.readers for doc in model.corp]...) - 1
+	ratings = vcat([doc.ratings for doc in model.corp]...)
+	views = sortperm(readers) - 1
+
+	Npsums = zeros(Int, model.M + 1)
+	Rpsums = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		Npsums[d+1] = Npsums[d] + model.N[d]
+		Rpsums[d+1] = Rpsums[d] + model.R[d]
+	end
+
+	J = zeros(Int, model.V)
+	for j in terms
+		J[j+1] += 1
+	end
+
+	Jpsums = zeros(Int, model.V + 1)
+	for j in 1:model.V
+		Jpsums[j+1] = Jpsums[j] + J[j]
+	end
+
+	Y = zeros(Int, model.U)
+	for r in readers
+		Y[r+1] += 1
+	end
+
+	Ypsums = zeros(Int, model.U + 1)
+	for u in 1:model.U
+		Ypsums[u+1] = Ypsums[u] + Y[u]
+	end
+
+	model.Npsums = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=Npsums)
+	model.Jpsums = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=Jpsums)
+	model.terms = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
+	model.counts = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
+	model.words = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=words)
+
+	model.Rpsums = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=Rpsums)
+	model.Ypsums = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=Ypsums)
+	model.readers = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=readers)
+	model.ratings = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings)
+	model.views = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=views)
+
+	alefprog = OpenCL.Program(model.context, source=CTPFalefcpp) |> OpenCL.build!
+	betprog = OpenCL.Program(model.context, source=CTPFbetcpp) |> OpenCL.build!
+	gimelprog = OpenCL.Program(model.context, source=CTPFgimelcpp) |> OpenCL.build!
+	daletprog = OpenCL.Program(model.context, source=CTPFdaletcpp) |> OpenCL.build!
+	heprog = OpenCL.Program(model.context, source=CTPFhecpp) |> OpenCL.build!
+	vavprog = OpenCL.Program(model.context, source=CTPFvavcpp) |> OpenCL.build!
+	zayinprog = OpenCL.Program(model.context, source=CTPFzayincpp) |> OpenCL.build!
+	hetprog = OpenCL.Program(model.context, source=CTPFhetcpp) |> OpenCL.build!
+	phiprog = OpenCL.Program(model.context, source=CTPFphicpp) |> OpenCL.build!
+	phinormprog = OpenCL.Program(model.context, source=CTPFphinormcpp) |> OpenCL.build!
+	xiprog = OpenCL.Program(model.context, source=CTPFxicpp) |> OpenCL.build!
+	xinormprog = OpenCL.Program(model.context, source=CTPFxinormcpp) |> OpenCL.build!
+
+	model.alefkern = OpenCL.Kernel(alefprog, "updateAlef")
+	model.betkern = OpenCL.Kernel(betprog, "updateBet")
+	model.gimelkern = OpenCL.Kernel(gimelprog, "updateGimel")
+	model.daletkern = OpenCL.Kernel(daletprog, "updateDalet")
+	model.hekern = OpenCL.Kernel(heprog, "updateHe")
+	model.vavkern = OpenCL.Kernel(vavprog, "updateVav")
+	model.zayinkern = OpenCL.Kernel(zayinprog, "updateZayin")
+	model.hetkern = OpenCL.Kernel(hetprog, "updateHet")
+	model.phikern = OpenCL.Kernel(phiprog, "updatePhi")
+	model.phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
+	model.xikern = OpenCL.Kernel(xiprog, "updateXi")
+	model.xinormkern = OpenCL.Kernel(xinormprog, "normalizeXi")
+	updateBuf!(model)
 	nothing
 end
 
@@ -512,21 +644,57 @@ end
 ##############################################################
 
 function updateBuf!(model::gpuLDA)
-	@buf model.alpha
-	@buf model.beta
-	@buf model.gamma
-	@buf model.phi
-	@buf model.Elogtheta
-	@buf model.SUMElogtheta
+	model.alphabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha)
+	model.betabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
+	model.gammabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gamma...))
+	model.phibuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.phi...))
+	model.Elogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta...))
+	model.sumElogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sumElogtheta)
+end
+
+function updateBuf!(model::gpuCTPF)
+	model.alefbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alef)
+	model.betbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.bet)
+	model.gimelbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel...))
+	model.daletbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet)
+	model.hebuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
+	model.vavbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
+	model.zayinbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin...))
+	model.hetbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het)
+	model.phibuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.phi...))
+	model.xibuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.xi...))
 end
 
 function updateHost!(model::gpuLDA)
-	@host model.alphabuf
-	@host model.betabuf
-	@host model.gammabuf
-	@host model.phibuf
-	@host model.Elogthetabuf
-	@host model.SUMElogthetabuf
+	model.alpha = OpenCL.read(model.queue, model.alphabuf)
+	model.beta = reshape(OpenCL.read(model.queue, model.betabuf), model.K, model.V)
+	hostgamma = reshape(OpenCL.read(model.queue, model.gammabuf), model.K, model.M)
+	@bumper model.gamma = [hostgamma[:,d] for d in 1:model.M]
+	hostphi = reshape(OpenCL.read(model.queue, model.phibuf), model.K, sum(model.N))
+	Npsums = OpenCL.read(model.queue, model.Npsums)
+	model.phi = [hostphi[:,Npsums[d]+1:Npsums[d+1]] for d in 1:model.M]
+	hostElogtheta = reshape(OpenCL.read(model.queue, model.Elogthetabuf), model.K, model.M)
+	model.Elogtheta = [hostElogtheta[:,d] for d in 1:model.M]
+	model.sumElogtheta = OpenCL.read(model.queue, model.sumElogthetabuf)
+end
+
+function updateHost!(model::gpuCTPF)
+	model.alef = reshape(OpenCL.read(model.queue, model.alefbuf), model.K, model.V)
+	model.bet = OpenCL.read(model.queue, model.betbuf)
+	hostgimel = reshape(OpenCL.read(model.queue, model.gimelbuf), model.K, model.M)
+	model.gimel = [hostgimel[:,d] for d in 1:model.M]
+	model.dalet = OpenCL.read(model.queue, model.daletbuf)
+	model.he = reshape(OpenCL.read(model.queue, model.hebuf), model.K, model.U)
+	model.vav = OpenCL.read(model.queue, model.vavbuf)
+	hostzayin = reshape(OpenCL.read(model.queue, model.zayinbuf), model.K, model.M)
+	model.zayin = [hostzayin[:,d] for d in 1:model.M]
+	model.het = OpenCL.read(model.queue, model.hetbuf)
+	Npsums = OpenCL.read(model.queue, model.Npsums)	
+	hostphi = reshape(OpenCL.read(model.queue, model.phibuf), model.K, sum(model.N))
+	model.phi = [hostphi[:,Npsums[d]+1:Npsums[d+1]] for d in 1:model.M]
+	Rpsums = OpenCL.read(model.queue, model.Rpsums)
+	hostxi = reshape(OpenCL.read(model.queue, model.xibuf), 2model.K, sum(model.R))
+	model.xi = [hostxi[:,Rpsums[d]+1:Rpsums[d+1]] for d in 1:model.M]
 end
 
 
@@ -703,7 +871,7 @@ function showtopics(model::DTM, N::Int=min(15, model.V); topics::Union{Int, Vect
 	end
 end
 
-function showlibs(model::CTPF, users::Vector{Int})
+function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{Int})
 	@assert checkbounds(Bool, model.U, users)
 	
 	for u in users
@@ -722,9 +890,9 @@ function showlibs(model::CTPF, users::Vector{Int})
 	end
 end
 
-showlibs(model::CTPF, user::Int) = showlibs(model, [user])
+showlibs(model::Union{CTPF, gpuCTPF}, user::Int) = showlibs(model, [user])
 
-function showdrecs(model::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, model.U); cols::Int=4)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Int, Vector{Int}}, U::Int=min(16, model.U); cols::Int=4)
 	@assert checkbounds(Bool, model.M, docs)	
 	@assert checkbounds(Bool, model.U, U)
 	@assert ispositive(cols)
@@ -755,7 +923,7 @@ function showdrecs(model::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, mo
 	end
 end
 
-function showurecs(model::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, model.M); cols::Int=1)
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Int, Vector{Int}}, M::Int=min(10, model.M); cols::Int=1)
 	@assert checkbounds(Bool, model.U, users)
 	@assert checkbounds(Bool, model.M, M)
 	@assert ispositive(cols)

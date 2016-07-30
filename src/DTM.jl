@@ -30,7 +30,7 @@ type DTM <: TopicModel
 	rEexpbeta::MatrixList{Float64}
 	elbo::Float64
 
-	function DTM(corp::Corpus, K::Integer, delta::Real, pmodel::BaseTopicModel=(lda = LDA(corp, K); train!(lda, iter=150, chkelbo=151); lda))
+	function DTM(corp::Corpus, K::Integer, delta::Real, pmodel::Union{Void, BaseTopicModel}=nothing)
 		@assert ispositive(K)
 		@assert isequal(pmodel.K, K)
 		@assert isfinite(delta)
@@ -121,6 +121,13 @@ type DTM <: TopicModel
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
 			phi = [ones(K, N[d]) / K for d in 1:M]
 			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)	
+		
+		else
+			alpha = [ones(K) for _ in 1:T]
+			beta = [rand(Dirichlet(V, 1.0), K)' for _ in 1:T]
+			gamma = [ones(K) for _ in 1:M]
+			phi = [ones(K, N[d]) / K for d in 1:M]
+			Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
 		end
 
 		Eexpbeta = [fill(exp(0.5), K, V) for t in 1:T]

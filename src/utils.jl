@@ -1,5 +1,4 @@
 const epsln = eps(1e-14)
-const epslnf = eps(1f-14)
 
 typealias VectorList{T} Vector{Vector{T}}
 typealias MatrixList{T} Vector{Matrix{T}}
@@ -55,9 +54,17 @@ function Distributions.isprobvec{T<:Real}(P::Matrix{T}, region::Int)
 end
 
 function Distributions.Categorical(p::Vector{Float32})
+	@assert isapprox(sum(p), 1)
 	p = map(Float64, p)
 	p /= sum(p)
-	return Distributions.Categorical(p)
+	return Categorical(p)
+end
+
+function Distributions.Multinomial(n::Integer, p::Vector{Float32})
+	@assert isapprox(sum(p), 1)
+	p = map(Float64, p)
+	p /= sum(p)
+	return Multinomial(n, p)
 end
 
 function partition{T<:Any}(xs::Vector{T}, n::Int)

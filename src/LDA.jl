@@ -15,6 +15,7 @@ type LDA <: TopicModel
 
 	function LDA(corp::Corpus, K::Integer)
 		@assert ispositive(K)
+		@assert !isempty(corp)
 		checkcorp(corp)
 
 		M, V, U = size(corp)
