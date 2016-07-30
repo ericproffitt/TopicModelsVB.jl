@@ -765,7 +765,7 @@ Corpus(;docs=Document[], lex=[], users=[])
 # users::Dict{Int, UTF8String}
 
 TopicModel
-# abstract type
+# abstract
 
 BaseTopicModel
 # Union{LDA, fLDA, CTM, fCTM, memLDA, memfLDA, memCTM, memfCTM, gpuLDA}
