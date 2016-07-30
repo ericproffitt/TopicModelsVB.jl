@@ -170,3 +170,46 @@ showlibs(citeuctpf, 216)
 
 showurecs(citeuctpf, 216, 10)
 
+
+
+##############
+#            #
+# Low Memory #
+#            #
+##############
+
+nsfcorp = readcorp(:nsf)
+
+lnsflda = @mem LDA(nsfcorp, 16)
+
+nsflda = LDA(nsfcorp, 16)
+
+whos()
+
+
+
+####################
+#                  #
+# GPU Acceleration #
+#                  #
+####################
+
+nsfcorp = readcorp(:nsf)
+
+nsflda = LDA(nsfcorp, 16)
+@time @gpu train!(nsflda, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark.
+
+# training...
+
+
+
+
+
+
+
+
+
+
+
+
+
