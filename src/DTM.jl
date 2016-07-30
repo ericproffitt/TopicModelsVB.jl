@@ -66,6 +66,7 @@ type DTM <: TopicModel
 
 		if isa(pmodel, Union{LDA, gpuLDA})
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [pmodel.gamma[d] for d in 1:M]
@@ -74,6 +75,7 @@ type DTM <: TopicModel
 
 		elseif isa(pmodel, memLDA)
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
@@ -82,6 +84,7 @@ type DTM <: TopicModel
 
 		elseif isa(pmodel, fLDA)
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [pmodel.gamma[d] for d in 1:M]
@@ -90,6 +93,7 @@ type DTM <: TopicModel
 
 		elseif isa(pmodel, memfLDA)
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
@@ -98,6 +102,7 @@ type DTM <: TopicModel
 
 		elseif isa(pmodel, CTM)
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
@@ -106,6 +111,7 @@ type DTM <: TopicModel
 
 		elseif isa(pmodel, memCTM)
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
@@ -114,6 +120,7 @@ type DTM <: TopicModel
 
 		elseif isa(pmodel, fCTM)
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
@@ -122,6 +129,7 @@ type DTM <: TopicModel
 		
 		elseif isa(pmodel, memfCTM)
 			fixmodel!(pmodel)
+			topics = [pmodel.topics for _ in 1:T]
 			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
 			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
@@ -129,6 +137,7 @@ type DTM <: TopicModel
 			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)	
 		
 		else
+			topics = [[collect(1:V) for _ in 1:K] for _ in 1:T]
 			alpha = [ones(K) for _ in 1:T]
 			beta = [rand(Dirichlet(V, 1.0), K)' for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
