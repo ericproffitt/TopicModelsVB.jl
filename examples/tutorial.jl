@@ -106,7 +106,7 @@ maccorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, maccorp.d
 
 fixcorp!(maccorp, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
-pmodel = LDA(corp, 9)
+pmodel = LDA(maccorp, 9)
 train!(pmodel, iter=150, chkelbo=151)
 
 # training...
