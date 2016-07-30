@@ -677,7 +677,7 @@ showurecs(citeuctpf, 1741, 20)
 ```
 
 ## Low Memory
-Low memory models require significantly less RAM at the cost of losing posterior distribution information concerning some of the variational parameters.
+Low memory models require significantly less RAM than the full memory models at the cost of losing posterior distribution information concerning some of the variational parameters.
 
 There's no need to instantiate the more complicated models directly if you don't wish.  Instead you can use the `@mem` macro to turn a supported model into a low memory model:
 
