@@ -41,8 +41,6 @@ type CTPF <: TopicModel
 		C = [size(doc) for doc in corp]
 		R = [length(doc.readers) for doc in corp]
 
-		topics = pmodel.topics
-
 		@assert isequal(collect(1:U), sort(collect(keys(corp.users))))
 		libs = [Int[] for _ in 1:U]
 		for u in 1:U, d in 1:M
@@ -53,12 +51,15 @@ type CTPF <: TopicModel
 
 		if isa(pmodel, Union{LDA, CTM, memLDA, memCTM, gpuLDA})
 			@assert isequal(size(pmodel.beta), (K, V))
-			alef = exp(pmodel.beta - 0.5)		
+			alef = exp(pmodel.beta - 0.5)
+			topics = pmodel.topics		
 		elseif isa(pmodel, Union{fLDA, fCTM, memfLDA, memfCTM, gpuLDA})
 			@assert isequal(size(pmodel.fbeta), (K, V))
 			alef = exp(pmodel.fbeta - 0.5)
+			topics = pmodel.topics
 		else
 			alef = exp(rand(Dirichlet(V, 1.0), K)' - 0.5)
+			topics = [collect(1:V) for _ in 1:K]
 		end
 		
 		bet = ones(K)
