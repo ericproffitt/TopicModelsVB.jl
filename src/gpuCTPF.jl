@@ -69,7 +69,6 @@ type gpuCTPF <: TopicModel
 
 	function gpuCTPF(corp::Corpus, K::Integer, pmodel::Union{Void, BaseTopicModel}=nothing)
 		@assert ispositive(K)		
-		@assert isequal(pmodel.K, K)
 		checkcorp(corp)
 
 		M, V, U = size(corp)

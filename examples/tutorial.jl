@@ -74,17 +74,19 @@ train!(nsffctm, iter=150, tol=0.0)
 
 showtopics(nsffctm, 20, cols=9)
 
-model.sigma
+nsffctm.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 9.315
-model.sigma[3,6] # 6.522
-model.sigma[2,9] # 5.148
+nsffctm.sigma[4,8] # 9.315
+nsffctm.sigma[3,6] # 6.522
+nsffctm.sigma[2,9] # 5.148
 
 # Top 3 negative entries, sorted in ascending order:
-model.sigma[7,9] # -13.212
-model.sigma[1,8] # -13.134
-model.sigma[3,8] # -11.429
+nsffctm.sigma[7,9] # -13.212
+nsffctm.sigma[1,8] # -13.134
+nsffctm.sigma[3,8] # -11.429
+
+sum(abs(nsffctm.sigma[:,5])) - nsffctm.sigma[5,5]
 
 
 
@@ -115,9 +117,9 @@ train!(macdtm, iter=10) # This will likely take several hours on a personal comp
                         # while DTM convergence is linear or at best super-linear.
 # training...
 
-showtopics(model, topics=3, cols=6)
+showtopics(macdtm, topics=4, cols=6)
 
-showtopics(model, times=11, cols=9)
+showtopics(macdtm, times=11, cols=9)
 
 
 
@@ -143,7 +145,7 @@ end
 
 sum([isempty(doc.readers) for doc in corp]) # = 158
 
-citeuctpf = CTPF(citeucorp, 30) # Note: 'pmodel' defaults to a 100 iteration LDA model.
+citeuctpf = CTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
 train!(citeuctpf, iter=5)       # Instantiation and training will likely take 30 - 40 minutes on a personal computer.
                                 # All optimizations in CTPF are analytic, often allowing for very fast convergence.
 # training...
