@@ -910,7 +910,7 @@ fixmodel!(model::TopicModel)
 # Verify that all model fields have legal values.
 # Align any auxiliary parameters with their associated parent parameters.
 
-train!(model::Union{LDA, fLDA, CTM, fCTM}; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
+train!(model::BaseTopicModel; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
 # 'iter'    - maximum number of iterations through the corpus.
 # 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
@@ -925,14 +925,14 @@ train!(dtm::DTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/dtm.K^2,
 # 'cgiter' - maximum number of iterations for the Polak-Ribière conjugate gradient method.
 # 'cgtol'  - tolerance for change in function value as a stopping criterion for the Polak-Ribière conjugate gradient method.
 
-train!(ctpf::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/ctpf.K^2, chkelbo::Int=1)
+train!(ctpf::Union{CTPF, gpuCTPF}; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/ctpf.K^2, chkelbo::Int=1)
 # Train CTPF.
 
-gendoc(model::Union{LDA, fLDA, CTM, fCTM}, a::Real=0.0)
+gendoc(model::BaseTopicModel, a::Real=0.0)
 # Generate a generic document from model parameters by running the associated graphical model as a generative process.
 # 'a' - amount of Laplace smoothing to apply to the topic-term distributions ('a' must be nonnegative).
 
-gencorp(model::Union{LDA, fLDA, CTM, fCTM}, corpsize::Int, a::Real=0.0)
+gencorp(model::BaseTopicModel, corpsize::Int, a::Real=0.0)
 # Generate a generic corpus of size 'corpsize' from model parameters.
 
 showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
@@ -941,13 +941,13 @@ showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector
 showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
 # Display the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
 
-showlibs(ctpf::CTPF, users::Union{Int, Vector{Int}})
+showlibs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Int, Vector{Int}})
 # Show the document(s) in a user's library.
 
-showdrecs(ctpf::CTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
+showdrecs(ctpf::Union{CTPF, gpuCTPF}, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
 # Show the top 'U' user recommendations for a document(s), defaults to 4 columns per line.
 
-showurecs(ctpf::CTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
+showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
 # Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
 # If a document has no title, the documents index in the corpus will be shown instead.
 ```
