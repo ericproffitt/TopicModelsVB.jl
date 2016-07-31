@@ -26,8 +26,8 @@ type DTM <: TopicModel
 	vbeta::MatrixList{Float64}
 	lzeta::Vector{Float64}
 	Eexpbeta::MatrixList{Float64}
-	a::Vector{Float64}
-	rEexpbeta::MatrixList{Float64}
+	maxlEexpbeta::Vector{Float64}
+	ovflEexpbeta::MatrixList{Float64}
 	elbo::Float64
 
 	function DTM(corp::Corpus, K::Integer, delta::Real, pmodel::Union{Void, BaseTopicModel}=nothing)
@@ -45,22 +45,10 @@ type DTM <: TopicModel
 		T = convert(Int, ceil((tM - t0) / delta))
 		S = [Int[] for _ in 1:T]
 		t = 1
-		# turn S into unit ranges instead of vectors.
+		
 		for d in dchrono
 			corp[d].stamp <= t0 + t * delta ? push!(S[t], d) : (t += 1; push!(S[t], d))
 		end
-
-		sigmasq = 1.0
-		v0 = ones(K, V)
-		v = [ones(K, V) for _ in 1:T]
-		m0 = zeros(K, V)
-		m = [zeros(K, V) for _ in 1:T]
-		bsq = ones(T)
-		vbeta0 = ones(K, V)
-		vbeta = [ones(K, V) for _ in 1:T]
-		mbeta0 = zeros(K, V)
-		mbeta = [zeros(K, V) for _ in 1:T]
-		lzeta = ones(M)
 
 		if isa(pmodel, Union{LDA, gpuLDA})
 			fixmodel!(pmodel)
@@ -143,11 +131,24 @@ type DTM <: TopicModel
 			Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
 		end
 
+		sigmasq = 1.0
+		v0 = ones(K, V)
+		v = [ones(K, V) for _ in 1:T]
+		m0 = zeros(K, V)
+		m = [zeros(K, V) for _ in 1:T]
+		bsq = ones(T)
+		vbeta0 = ones(K, V)
+		vbeta = [ones(K, V) for _ in 1:T]
+		mbeta0 = zeros(K, V)
+		mbeta = [zeros(K, V) for _ in 1:T]
+		lzeta = ones(M)		
 		Eexpbeta = [fill(exp(0.5), K, V) for t in 1:T]
-		a = fill(0.5, T)
-		rEexpbeta = [ones(K, V) for _ in 1:T]
+		maxlEexpbeta = fill(0.5, T)
+		ovflEexpbeta = [ones(K, V) for _ in 1:T]
 
-		model = new(K, M, V, N, C, T, S, copy(corp), topics, delta, sigmasq, alpha, gamma, phi, Elogtheta, m0, v0, m, v, bsq, betahat, mbeta0, vbeta0, mbeta, vbeta, lzeta, Eexpbeta, a, rEexpbeta)
+		model = new(K, M, V, N, C, T, S, copy(corp), topics, delta, sigmasq, alpha, gamma, phi, Elogtheta, m0, v0, m, v, bsq, betahat, mbeta0, vbeta0, mbeta, vbeta, lzeta, Eexpbeta, maxlEexpbeta, ovflEexpbeta)
+		updateVbeta!(model)
+		updateMbeta!(model)		
 		updateELBO!(model)
 		return model
 	end
@@ -216,7 +217,7 @@ function updateAlpha!(model::DTM, t::Int, niter::Integer, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphagrad = [(nu / model.alpha[t][i]) + model.M * (digamma(sum(model.alpha[t])) - digamma(model.alpha[t][i])) for i in 1:model.K] + sum(model.Elogtheta[model.S[t]])
+		alphagrad = [(nu / model.alpha[t][i]) + length(model.S[t]) * (digamma(sum(model.alpha[t])) - digamma(model.alpha[t][i])) for i in 1:model.K] + sum(model.Elogtheta[model.S[t]])
 		alphahessdiag = -(length(model.S[t]) * trigamma(model.alpha[t]) + (nu ./ model.alpha[t].^2))
 		p = (alphagrad - sum(alphagrad ./ alphahessdiag) / (1 / (length(model.S[t]) * trigamma(sum(model.alpha[t]))) + sum(1./alphahessdiag))) ./ alphahessdiag
 		
@@ -240,7 +241,7 @@ end
 
 function updatePhi!(model::DTM, t::Int, d::Int)
 	terms = model.corp[d].terms
-	model.phi[d] = addlogistic(model.mbeta[t][:,terms] .- exp(model.a[t] - model.lzeta[d]) * sum(model.rEexpbeta[t], 2) .+ model.Elogtheta[d], 1)
+	model.phi[d] = addlogistic(model.mbeta[t][:,terms] .- exp(model.maxlEexpbeta[t] - model.lzeta[d]) * sum(model.ovflEexpbeta[t], 2) .+ model.Elogtheta[d], 1)
 end
 
 function updateMbeta!(model::DTM)
@@ -261,8 +262,8 @@ function updateMbeta!(model::DTM)
 
 	x = Matrix{Float64}[model.mbeta[t] + 0.5 * model.vbeta[t] for t in 1:model.T]
 	model.Eexpbeta = [exp(x[t]) for t in 1:model.T]	
-	model.a = [maximum(x[t]) for t in 1:model.T]
-	model.rEexpbeta = [exp(x[t] - model.a[t]) for t in 1:model.T]
+	model.maxlEexpbeta = [maximum(x[t]) for t in 1:model.T]
+	model.ovflEexpbeta = [exp(x[t] - model.maxlEexpbeta[t]) for t in 1:model.T]
 end
 
 function updateVbeta!(model::DTM)
@@ -342,7 +343,7 @@ end
 
 function updateLzeta!(model::DTM, t::Int, d::Int)
 	counts = model.corp[d].counts
-	model.lzeta[d] = model.a[t] + log(sum(counts .* model.phi[d]' * sum(model.rEexpbeta[t], 2)) + epsln)
+	model.lzeta[d] = model.maxlEexpbeta[t] + log(sum(counts .* model.phi[d]' * sum(model.ovflEexpbeta[t], 2)) + epsln)
 end
 
 function train!(model::DTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, cgiter::Integer=20, cgtol::Real=1/model.T^2, chkelbo::Integer=1)

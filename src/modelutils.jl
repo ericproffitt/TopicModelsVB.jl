@@ -211,8 +211,8 @@ function fixmodel!(model::DTM)
 	@assert isfinite(model.elbo)
 
 	model.Eexpbeta = [exp(model.mbeta[t] + 0.5 * model.vbeta[t]) for t in 1:model.T]
-	model.a = [maximum(model.Eexpbeta[t]) for t in 1:model.T]
-	model.rEexpbeta = [exp(model.mbeta[t] + 0.5 * model.vbeta[t] - model.a[t]) for t in 1:model.T]
+	model.maxlEexpbeta = [maximum(model.Eexpbeta[t]) for t in 1:model.T]
+	model.ovflEexpbeta = [exp(model.mbeta[t] + 0.5 * model.vbeta[t] - model.maxlEexpbeta[t]) for t in 1:model.T]
 	nothing
 end
 
