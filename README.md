@@ -493,6 +493,8 @@ line       printing     windows     port          marketing      interface    pe
 
 As you may have noticed, the dynamic topic model is *extremely* computationally intensive, hopefully GPGPU support will ameliorate this problem to at least some degree.  However it is likely that running the DTM model on an industry-sized dataset will always require more computational power than can be provided by your standard personal computer.
 
+**Important:** The algorithm which underlys the dynamic topic model is a Bayesian abomination and a freak of nature which probably shouldn't exist in this Universe.  That is to say it's a bit buggy, and this is my excuse.  An overhaul of the algorithm will likely come alongside the GPU accelerated version.
+
 ### CTPF
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be achievable using just the document-user matrix.  This blending of latent thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
