@@ -550,7 +550,7 @@ end
 
 Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model.
 
-In the interest of time, let's use the GPU verions of LDA and CTPF instead:
+In the interest of time, let's use the GPU accelerated verions of LDA and CTPF:
 
 
 ```julia
