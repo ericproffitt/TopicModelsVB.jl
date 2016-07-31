@@ -548,7 +548,9 @@ end
 @show mean(acc) # mean(acc) = 0.908
 ```
 
-Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model.  In the interest of time, let's use the GPU verions of LDA and CTPF instead:
+Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model.
+
+In the interest of time, let's use the GPU verions of LDA and CTPF instead:
 
 
 ```julia
