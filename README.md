@@ -548,19 +548,19 @@ end
 @show mean(acc) # mean(acc) = 0.908
 ```
 
-Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model:
+Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model.  In the interest of time, let's use the GPU verions of LDA and CTPF instead:
 
 
 ```julia
 srand(1)
 
-pmodel = LDA(citeucorp, 30)
-train!(pmodel, iter=100, chkelbo=20)
+pmodel = gpuLDA(citeucorp, 30)
+train!(pmodel, iter=100, chkelbo=101)
 
 # training...
 
-citeuctpf = CTPF(citeucorp, 30, pmodel)
-train!(citeuctpf, iter=20)
+citeuctpf = gpuCTPF(citeucorp, 30, pmodel)
+train!(citeuctpf, iter=20, chkelbo=21)
 
 # training...
 ```
