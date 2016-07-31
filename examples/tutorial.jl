@@ -145,6 +145,8 @@ end
 
 sum([isempty(doc.readers) for doc in citeucorp])
 
+srand(1)
+
 citeuctpf = gpuCTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
 train!(citeuctpf, iter=20, chkelbo=21)
 
