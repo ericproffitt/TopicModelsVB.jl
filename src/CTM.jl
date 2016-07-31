@@ -35,7 +35,6 @@ type CTM <: TopicModel
 		lzeta = zeros(M)
 		phi = [ones(K, N[d]) / K for d in 1:M]
 
-
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, lambda, vsq, lzeta, phi)
 		updateELBO!(model)
 		return model
