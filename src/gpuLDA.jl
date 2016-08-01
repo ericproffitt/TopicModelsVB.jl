@@ -43,6 +43,7 @@ type gpuLDA <: TopicModel
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
+		
 		topics = [collect(1:V) for _ in 1:K]
 
 		alpha = ones(K)
@@ -151,9 +152,9 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphagrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.sumElogtheta
-		alphahessdiag = -(model.M * trigamma(model.alpha) + (nu ./ model.alpha.^2))
-		p = (alphagrad - sum(alphagrad ./ alphahessdiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(1 ./ alphahessdiag))) ./ alphahessdiag
+		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.sumElogtheta
+		alphaHessDiag = -(model.M * trigamma(model.alpha) + (nu ./ model.alpha.^2))
+		p = (alphaGrad - sum(alphaGrad ./ alphaHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(1 ./ alphaHessDiag))) ./ alphaHessDiag
 
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
@@ -161,9 +162,9 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 		model.alpha -= rho * p
 
 		# Bizarre error when large number of topics alphgrad is of type Union{Float32, Float64} which BLAS LAPACK nrm2 can't handle.
-		alphagrad = map(Float32, alphagrad)
+		alphaGrad = map(Float32, alphaGrad)
 		
-		if (norm(alphagrad) < ntol) & ((nu / model.K) < ntol)
+		if (norm(alphaGrad) < ntol) & ((nu / model.K) < ntol)
 			break
 		end
 		nu *= 0.5
