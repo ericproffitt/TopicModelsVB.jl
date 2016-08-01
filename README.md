@@ -311,7 +311,7 @@ solar           award           test             distributed      year          
 earth           liquid          ecological       power            workshop       membrane      market       questions       complexes
 ```
 
-We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are mostly those which tend to cluster within their own, more generic, topic.
+We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are those which tend to cluster within their own, more generic, topic.
 
 ### CTM
 For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).
