@@ -331,17 +331,17 @@ updatesumElogtheta(long K,
 					const global float *Elogtheta,
 					global float *sumElogtheta)
 
-				{
-				long i = get_global_id(0);
+					{
+					long i = get_global_id(0);
 
-				float acc = 0.0f;
+					float acc = 0.0f;
 
-				for (long d=0; d<M; d++)
-					acc += Elogtheta[K * d + i];
+					for (long d=0; d<M; d++)
+						acc += Elogtheta[K * d + i];
 
-				sumElogtheta[i] += acc;	
-				}
-				"""
+					sumElogtheta[i] += acc;	
+					}
+					"""
 
 function updatesumElogtheta!(model::gpuLDA)
 	OpenCL.call(model.queue, model.sumElogthetakern, model.K, nothing, model.K, model.M, model.Elogthetabuf, model.sumElogthetabuf)
