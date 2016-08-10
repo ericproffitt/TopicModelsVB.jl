@@ -740,7 +740,7 @@ GPUTopicModel
 # abstract
 
 BaseTopicModel
-# Union{LDA, fLDA, CTM, fCTM, gpuLDA}
+# Union{LDA, fLDA, CTM, fCTM, gpuLDA, gpufLDA, gpuCTM, gpufCTM}
 
 AbstractLDA
 # Union{LDA, gpuLDA}
