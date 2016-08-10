@@ -690,7 +690,7 @@ nsflda = LDA(nsfcorp, 16)
 
 # training...
 
-# 288.591214 seconds (231.83 M allocations: 26.454 GB, 12.13% gc time)
+# 271.570658 seconds (181.56 M allocations: 14.797 GB, 9.78% gc time)
 # On a 2.5 GHz Intel Core i5 2012 Macbook Pro with 4GB of RAM and an Intel HD Graphics 4000 1536 MB GPU.
 ```
 
