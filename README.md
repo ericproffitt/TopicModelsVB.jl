@@ -368,19 +368,19 @@ Now let's take a look at the topic-covariance matrix:
 nsffctm.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-nsffctm.sigma[4,8] # 9.315
-nsffctm.sigma[3,6] # 6.522
-nsffctm.sigma[2,9] # 5.148
+nsffctm.sigma[4,8] # 9.532
+nsffctm.sigma[3,6] # 7.362
+nsffctm.sigma[2,9] # 4.531
 
 # Top 3 negative entries, sorted in ascending order:
-nsffctm.sigma[7,9] # -13.212
-nsffctm.sigma[1,8] # -13.134
-nsffctm.sigma[3,8] # -11.429
+nsffctm.sigma[7,9] # -14.627
+nsffctm.sigma[3,8] # -12.464
+nsffctm.sigma[1,8] # -11.775
 ```
 
 According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Chemistry*.
 
-As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed closely by topics 1 and 8, corresponding to *Earth Science* and *Mathematics*, and then third are topics 3 and 8, corresponding to *Sociobiology* and *Mathematics*.
+As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed closely by topics 1 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 3 and 8, corresponding to *Earth Science* and *Mathematics*.
 
 Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
 
