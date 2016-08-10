@@ -736,7 +736,7 @@ Corpus(;docs=Document[], lex=[], users=[])
 TopicModel
 # abstract
 
-GPUTopicModel
+GPUTopicModel <: TopicModel
 # abstract
 
 BaseTopicModel
