@@ -680,7 +680,7 @@ showurecs(citeuctpf, 1741, 20)
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
 
-Currently only the standard LDA and CTPF models are supported, however a GPU accelerated version of the dynamic topic model is in the works.  Just like with the low memory models, there's no reason to instantiate the GPU models directly.  Instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
+Currently only the standard LDA and CTPF models are supported, however GPU accelerated versions of the other models are in the works.  There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
 
 ```julia
 nsfcorp = readcorp(:nsf)
