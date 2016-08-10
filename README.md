@@ -786,16 +786,16 @@ gpuLDA(corp, K) <: GPUTopicModel
 # GPU accelerated latent Dirichlet allocation
 
 gpufLDA(corp, K) <: GPUTopicModel
-# Coming soon...
+# GPU accelerated filtered latent Dirichlet allocation
 
 gpuCTM(corp, K) <: GPUTopicModel
-# Coming soon...
+# GPU accelerated correlated topic model
 
 gpufCTM(corp, K) <: GPUTopicModel
-# Coming soon...
+# GPU accelerated filtered correlated topic model
 
 gpuDTM(corp, delta, K, basemodel) <: GPUTopicModel
-# Coming soon...
+# GPU accelerated dynamic topic model
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
 gpuCTPF(corp, K, basemodel) <: GPUTopicModel
