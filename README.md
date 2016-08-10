@@ -813,9 +813,6 @@ isnegative(x::Union{Real, Array{Real}})
 ispositive(x::Union{Real, Array{Real}})
 # Take Real or Array{Real} and return Bool or Array{Bool} (resp.).
 
-tetragamma(.)
-# polygamma(2, .)
-
 logsumexp(x::Array{Real})
 # Overflow safe log(sum(exp(x))).
 
