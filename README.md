@@ -796,6 +796,7 @@ gpufCTM(corp, K) <: GPUTopicModel
 
 gpuDTM(corp, delta, K, basemodel) <: GPUTopicModel
 # GPU accelerated dynamic topic model
+# 'delta'     - time-interval size.
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
 gpuCTPF(corp, K, basemodel) <: GPUTopicModel
