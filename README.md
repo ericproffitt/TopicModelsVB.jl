@@ -135,10 +135,10 @@ CTM(corp, K)
 fCTM(corp, K)
 # Filtered correlated topic model with K topics.
 
-DTM(corp, K, delta, pmodel)
+DTM(corp, K, delta, basemodel)
 # Dynamic topic model with K topics and ∆ = delta.
 
-CTPF(corp, K, pmodel)
+CTPF(corp, K, basemodel)
 # Collaborative topic Poisson factorization model with K topics.
 ```
 
@@ -156,10 +156,10 @@ gpuCTM(corp, K)
 gpufCTM(corp, K)
 # Coming soon...
 
-gpuDTM(corp, K)
+gpuDTM(corp, K, delta, basemodel)
 # Coming soon...
 
-gpuCTPF(corp, K, pmodel)
+gpuCTPF(corp, K, basemodel)
 # GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
@@ -406,8 +406,8 @@ maccorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, maccorp.d
 
 fixcorp!(maccorp, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
-pmodel = LDA(maccorp, 9)
-train!(pmodel, iter=150, chkelbo=151)
+basemodel = LDA(maccorp, 9)
+train!(basemodel, iter=150, chkelbo=151)
 
 # training...
 
@@ -555,12 +555,12 @@ In the interest of time, let's use the GPU accelerated verions of LDA and CTPF:
 ```julia
 srand(1)
 
-pmodel = gpuLDA(citeucorp, 30)
-train!(pmodel, iter=100, chkelbo=101)
+basemodel = gpuLDA(citeucorp, 30)
+train!(basemodel, iter=100, chkelbo=101)
 
 # training...
 
-citeuctpf = gpuCTPF(citeucorp, 30, pmodel)
+citeuctpf = gpuCTPF(citeucorp, 30, basemodel)
 train!(citeuctpf, iter=20, chkelbo=21)
 
 # training...
