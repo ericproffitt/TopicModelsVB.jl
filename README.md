@@ -121,7 +121,7 @@ Whenever you load a corpus into a model, a copy of that corpus is made, such tha
 ## Models
 The available models are as follows:
 
-### Primary Models
+### Models
 ```julia
 LDA(corp, K)
 # Latent Dirichlet Allocation model with K topics.
@@ -142,25 +142,22 @@ CTPF(corp, K, pmodel)
 # Collaborative topic Poisson factorization model with K topics.
 ```
 
-### Low Memory Models
-```julia
-memLDA(corp, K)
-# Low memory latent Dirichlet allocation model with K topics.
-
-memfLDA(corp, K)
-# Low memory filtered latent Dirichlet allocation model with K topics.
-
-memCTM(corp, K)
-# Low memory correlated topic model with K topics.
-
-memfCTM(corp, K)
-# Low memory filtered correlated topic model with K topics.
-```
-
 ### GPU Accelerated Models
 ```julia
 gpuLDA(corp, K)
 # GPU accelerated latent Dirichlet allocation model with K topics.
+
+gpufLDA(corp, K)
+# Coming soon...
+
+gpuCTM(corp, K)
+# Coming soon...
+
+gpufCTM(corp, K)
+# Coming soon...
+
+gpuDTM(corp, K)
+# Coming soon...
 
 gpuCTPF(corp, K, pmodel)
 # GPU accelerated collaborative topic Poisson factorization model with K topics.
@@ -679,38 +676,6 @@ showurecs(citeuctpf, 1741, 20)
 19. The essence of compiling with continuations
 20. The {Calculus of Constructions}
 ```
-
-## Low Memory
-Low memory models require significantly less RAM than their full memory counterparts at the cost of losing posterior distribution information concerning some of their variational parameters.
-
-There's no need to instantiate the low memory models directly if you don't wish.  Instead you can use the `@mem` macro to turn a supported model into a low memory model:
-
-```julia
-nsfcorp = readcorp(:nsf)
-
-lnsflda = @mem LDA(nsfcorp, 16)
-```
-
-Let's compare the RAM consumption of this low memory model to a full memory LDA model:
-
-```julia
-nsflda = LDA(nsfcorp, 16)
-
-whos()
-```
-
-```
-...
-lnsflda 194963 KB     TopicModelsVB.memLDA
-nsfcorp 182430 KB     TopicModelsVB.Corpus
- nsflda 1531793 KB     TopicModelsVB.LDA
-...
-```
-
-Subtracting the memory used by the shared corpus attached to each model, we see that in this case the low memory version of LDA uses only 0.9% of the RAM that the full memory model uses.
-
-Here are the relative memory consumption benchmarks for all supported models:
-![Memory Benchmarks](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/memtmvb.png)
 
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
