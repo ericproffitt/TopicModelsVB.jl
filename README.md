@@ -913,7 +913,6 @@ train!(ctpf::Union{CTPF, gpuCTPF}; iter::Int=150, tol::Real=1.0, viter::Int=10, 
 
 @gpu train!(model; kwargs...)
 # Train model on GPU.
-# Supported models: LDA, CTPF.
 
 gendoc(model::BaseTopicModel, a::Real=0.0)
 # Generate a generic document from model parameters by running the associated graphical model as a generative process.
