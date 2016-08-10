@@ -775,7 +775,7 @@ fCTM(corp, K) <: TopicModel
 
 DTM(corp, K, delta, basemodel) <: TopicModel
 # Dynamic topic model
-# 'delta'  - time-interval size.
+# 'delta'     - time-interval size.
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
 CTPF(corp, K, basemodel) <: GPUTopicModel
@@ -839,10 +839,10 @@ checkcorp(corp::Corpus)
 
 readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Read corpus from plaintext files.
-# readcorp(:nsf) - National Science Foundation corpus.
+# readcorp(:nsf)   - National Science Foundation corpus.
 # readcorp(:citeu) - CiteULike corpus.
-# readcorp(:mac) - Macintosh Magazine corpus.
-# readcorp(:cmag) - Full Computer Magazine corpus.
+# readcorp(:mac)   - Macintosh Magazine corpus.
+# readcorp(:cmag)  - Full Computer Magazine corpus.
 
 writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Write corpus to plaintext files.
