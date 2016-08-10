@@ -817,9 +817,6 @@ ispositive(x::Union{Real, Array{Real}})
 logsumexp(x::Array{Real})
 # Overflow safe log(sum(exp(x))).
 
-logit(x::Real)
-# Logit function.
-
 addlogistic(x::Array{Real}, region::Int)
 # Overflow safe additive logistic function.
 # 'region' is optional, across columns: 'region' = 1, rows: 'region' = 2.
