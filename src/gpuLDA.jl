@@ -1,4 +1,4 @@
-type gpuLDA <: TopicModel
+type gpuLDA <: GPUTopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -11,7 +11,7 @@ type gpuLDA <: TopicModel
 	gamma::VectorList{Float32}
 	phi::MatrixList{Float32}
 	Elogtheta::VectorList{Float32}
-	sumElogtheta::Vector{Float32}
+	Elogthetasum::Vector{Float32}
 	device::OpenCL.Device
 	context::OpenCL.Context
 	queue::OpenCL.CmdQueue
@@ -26,13 +26,13 @@ type gpuLDA <: TopicModel
 	phikern::OpenCL.Kernel
 	phinormkern::OpenCL.Kernel
 	Elogthetakern::OpenCL.Kernel
-	sumElogthetakern::OpenCL.Kernel
+	Elogthetasumkern::OpenCL.Kernel
 	alphabuf::OpenCL.Buffer{Float32}
 	betabuf::OpenCL.Buffer{Float32}
 	gammabuf::OpenCL.Buffer{Float32}
 	phibuf::OpenCL.Buffer{Float32}
 	Elogthetabuf::OpenCL.Buffer{Float32}
-	sumElogthetabuf::OpenCL.Buffer{Float32}
+	Elogthetasumbuf::OpenCL.Buffer{Float32}
 	elbo::Float32
 
 	function gpuLDA(corp::Corpus, K::Integer)
@@ -51,7 +51,7 @@ type gpuLDA <: TopicModel
 		gamma = [ones(K) for _ in 1:M]
 		phi = [ones(K, N[d]) / K for d in 1:M]
 		Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
-		sumElogtheta = zeros(K)			
+		Elogthetasum = zeros(K)			
 
 		device, context, queue = OpenCL.create_compute_context()		
 
@@ -86,7 +86,7 @@ type gpuLDA <: TopicModel
 		phiprog = OpenCL.Program(context, source=LDAphicpp) |> OpenCL.build!
 		phinormprog = OpenCL.Program(context, source=LDAphinormcpp) |> OpenCL.build!
 		Elogthetaprog = OpenCL.Program(context, source=LDAElogthetacpp) |> OpenCL.build!
-		sumElogthetaprog = OpenCL.Program(context, source=LDAsumElogthetacpp) |> OpenCL.build!
+		Elogthetasumprog = OpenCL.Program(context, source=LDAElogthetasumcpp) |> OpenCL.build!
 
 		betakern = OpenCL.Kernel(betaprog, "updateBeta")
 		betanormkern = OpenCL.Kernel(betanormprog, "normalizeBeta")
@@ -94,9 +94,9 @@ type gpuLDA <: TopicModel
 		phikern = OpenCL.Kernel(phiprog, "updatePhi")
 		phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
 		Elogthetakern = OpenCL.Kernel(Elogthetaprog, "updateElogtheta")
-		sumElogthetakern = OpenCL.Kernel(sumElogthetaprog, "updatesumElogtheta")
+		Elogthetasumkern = OpenCL.Kernel(Elogthetasumprog, "updateElogthetasum")
 
-		model = new(K, M, V, C, N, copy(corp), topics, alpha, beta, gamma, phi, Elogtheta, sumElogtheta, device, context, queue, Npsums, Jpsums, terms, counts, words, betakern, betanormkern, gammakern, phikern, phinormkern, Elogthetakern, sumElogthetakern)
+		model = new(K, M, V, C, N, copy(corp), topics, alpha, beta, gamma, phi, Elogtheta, Elogthetasum, device, context, queue, Npsums, Jpsums, terms, counts, words, betakern, betanormkern, gammakern, phikern, phinormkern, Elogthetakern, Elogthetasumkern)
 		updateBuf!(model)
 		updateELBO!(model)
 		return model
@@ -116,7 +116,7 @@ end
 
 function Elogpw(model::gpuLDA, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[d] .* log(model.beta[:,terms] + epsln) * counts)
+	x = sum(model.phi[d] .* log(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -147,14 +147,14 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	"Interior-point Newton method with log-barrier and back-tracking line search."
 
 	@host model.alphabuf
-	@host model.sumElogthetabuf
+	@host model.Elogthetasumbuf
 
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.sumElogtheta
-		alphaHessDiag = -(model.M * trigamma(model.alpha) + (nu ./ model.alpha.^2))
-		p = (alphaGrad - sum(alphaGrad ./ alphaHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(1 ./ alphaHessDiag))) ./ alphaHessDiag
+		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
+		alphaInvHessDiag = -1 ./ (model.M * trigamma(model.alpha) + nu ./ model.alpha.^2)
+		p = (alphaGrad - dot(alphaGrad, alphaInvHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alphaInvHessDiag))) .* alphaInvHessDiag
 
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
@@ -172,8 +172,8 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	@bumper model.alpha
 	@buf model.alpha	
 	
-	model.sumElogtheta = zeros(model.K)
-	@buf model.sumElogtheta
+	model.Elogthetasum = zeros(model.K)
+	@buf model.Elogthetasum
 end
 
 const LDAbetacpp =
@@ -323,28 +323,28 @@ function updateElogtheta!(model::gpuLDA)
 	OpenCL.call(model.queue, model.Elogthetakern, model.M, nothing, model.K, model.gammabuf, model.Elogthetabuf)
 end
 
-const LDAsumElogthetacpp =
+const LDAElogthetasumcpp =
 """
 kernel void
-updatesumElogtheta(long K,
+updateElogthetasum(long K,
 					long M,
 					const global float *Elogtheta,
-					global float *sumElogtheta)
+					global float *Elogthetasum)
 
-					{
-					long i = get_global_id(0);
+				{
+				long i = get_global_id(0);
 
-					float acc = 0.0f;
+				float acc = 0.0f;
 
-					for (long d=0; d<M; d++)
-						acc += Elogtheta[K * d + i];
+				for (long d=0; d<M; d++)
+					acc += Elogtheta[K * d + i];
 
-					sumElogtheta[i] += acc;	
-					}
-					"""
+				Elogthetasum[i] += acc;	
+				}
+				"""
 
-function updatesumElogtheta!(model::gpuLDA)
-	OpenCL.call(model.queue, model.sumElogthetakern, model.K, nothing, model.K, model.M, model.Elogthetabuf, model.sumElogthetabuf)
+function updateElogthetasum!(model::gpuLDA)
+	OpenCL.call(model.queue, model.Elogthetasumkern, model.K, nothing, model.K, model.M, model.Elogthetabuf, model.Elogthetasumbuf)
 end
 
 function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
@@ -353,6 +353,7 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	fixmodel!(model)
 	
 	for k in 1:iter
+		chk = (k % chkelbo == 0)
 		for _ in 1:viter
 			oldgamma = OpenCL.read(model.queue, model.gammabuf)
 			updateGamma!(model)
@@ -362,10 +363,10 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 				break
 			end
 		end
-		updatesumElogtheta!(model)
+		updateElogthetasum!(model)
 		updateAlpha!(model, niter, ntol)
 		updateBeta!(model)
-		if checkELBO!(model, k, chkelbo, tol)
+		if checkELBO!(model, k, chk, tol)
 			break
 		end
 	end

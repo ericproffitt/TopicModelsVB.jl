@@ -20,12 +20,11 @@ Base.show(io::IO, model::fCTM) = print(io, "Filtered correlated topic model with
 Base.show(io::IO, model::DTM) = print(io, "Dynamic topic model with $(model.K) topics and ∆ = $(model.delta).")
 Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")
 
-Base.show(io::IO, model::memLDA) = print(io, "Low memory latent Dirichlet allocation model with $(model.K) topics.")
-Base.show(io::IO, model::memfLDA) = print(io, "Low memory filtered latent Dirichlet allocation model with $(model.K) topics.")
-Base.show(io::IO, model::memCTM) = print(io, "Low memory correlated topic model with $(model.K) topics.")
-Base.show(io::IO, model::memfCTM) = print(io, "Low memory filtered correlated topic model with $(model.K) topics.")
-
 Base.show(io::IO, model::gpuLDA) = print(io, "GPU accelerated latent Dirichlet allocation model with $(model.K) topics.")
+Base.show(io::IO, model::gpufLDA) = print(io, "GPU accelerated filtered latent Dirichlet allocation model with $(model.K) topics.")
+Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic model with $(model.K) topics.")
+Base.show(io::IO, model::gpufCTM) = print(io, "GPU accelerated filtered correlated topic allocation model with $(model.K) topics.")
+Base.show(io::IO, model::gpuDTM) = print(io, "GPU accelerated Dynamic topic model with $(model.K) topics and ∆ = $(model.delta).")
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 
@@ -38,6 +37,7 @@ Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative top
 
 function fixmodel!(model::LDA)
 	checkcorp(model.corp)
+	@assert !isempty(model.corp)
 	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
@@ -46,22 +46,26 @@ function fixmodel!(model::LDA)
 	@assert all(ispositive(model.alpha))
 	@assert isequal(length(model.alpha), model.K)
 	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)	
+	@assert isprobvec(model.beta, 2)
+	@assert isequal(size(model.newbeta), (model.K, model.V))
+	@assert isequal(model.newbeta, zeros(model.K, model.V))
 	@assert isequal(length(model.gamma), model.M)
 	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
 	@assert all(Bool[all(isfinite(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.gamma[d])) for d in 1:model.M])	
-	@assert isequal(length(model.phi), model.M)
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in 1:model.M])	
+	@assert all(Bool[all(ispositive(model.gamma[d])) for d in 1:model.M])
+	@assert isequal(size(model.phi), (model.K, model.N[1]))
+	@assert isprobvec(model.phi, 1)
 	@assert isfinite(model.elbo)
+	@assert isequal(model.newelbo, 0.0)
 
-	model.Elogtheta = [digamma(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M]
+	model.Elogtheta = digamma(model.gamma[1]) - digamma(sum(model.gamma[1]))
+	model.Elogthetasum = zeros(model.K)
 	nothing
 end
 
 function fixmodel!(model::fLDA)
 	checkcorp(model.corp)
+	@assert !isempty(model.corp)
 	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
@@ -71,11 +75,15 @@ function fixmodel!(model::fLDA)
 	@assert all(ispositive(model.alpha))
 	@assert (0 <= model.eta <= 1)	
 	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)	
+	@assert isprobvec(model.beta, 2)
+	@assert isequal(size(model.newbeta), (model.K, model.V))
+	@assert isequal(model.newbeta, zeros(model.K, model.V))
 	@assert isequal(size(model.fbeta), (model.K, model.V))
 	@assert isprobvec(model.fbeta, 2)	
 	@assert isequal(length(model.kappa), model.V)
-	@assert isprobvec(model.kappa)	
+	@assert isprobvec(model.kappa)
+	@assert isequal(length(model.newkappa), model.V)
+	@assert isequal(model.newkappa, zeros(model.V))	
 	@assert isequal(length(model.gamma), model.M)
 	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
 	@assert all(Bool[all(isfinite(model.gamma[d])) for d in 1:model.M])
@@ -83,17 +91,19 @@ function fixmodel!(model::fLDA)
 	@assert isequal(length(model.tau), model.M)
 	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
 	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])	
-	@assert isequal(length(model.phi), model.M)
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in 1:model.M])	
+	@assert isequal(size(model.phi), (model.K, model.N[1]))
+	@assert isprobvec(model.phi, 1)
 	@assert isfinite(model.elbo)
+	@assert isequal(model.newelbo, 0.0)
 
-	model.Elogtheta = [digamma(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M]
+	model.Elogtheta = digamma(model.gamma[1]) - digamma(sum(model.gamma[1]))
+	model.Elogthetasum = zeros(model.K)
 	nothing
 end
 
 function fixmodel!(model::CTM)
 	checkcorp(model.corp)
+	@assert !isempty(model.corp)
 	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
@@ -102,7 +112,9 @@ function fixmodel!(model::CTM)
 	@assert isequal(size(model.sigma), (model.K, model.K))
 	@assert isposdef(model.sigma)
 	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)	
+	@assert isprobvec(model.beta, 2)
+	@assert isequal(size(model.newbeta), (model.K, model.V))
+	@assert isequal(model.newbeta, zeros(model.K, model.V))
 	@assert isequal(length(model.lambda), model.M)
 	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
 	@assert all(Bool[all(isfinite(model.lambda[d])) for d in 1:model.M])	
@@ -110,11 +122,11 @@ function fixmodel!(model::CTM)
 	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
 	@assert all(Bool[all(isfinite(model.vsq[d])) for d in 1:model.M])
 	@assert all(Bool[all(ispositive(model.vsq[d])) for d in 1:model.M])	
-	@assert all(isfinite(model.lzeta))	
-	@assert isequal(length(model.phi), model.M)
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in 1:model.M])	
+	@assert isfinite(model.lzeta)	
+	@assert isequal(size(model.phi), (model.K, model.N[1]))
+	@assert isprobvec(model.phi, 1)
 	@assert isfinite(model.elbo)
+	@assert isequal(model.newelbo, 0.0)
 
 	model.invsigma = inv(model.sigma)
 	nothing
@@ -122,6 +134,7 @@ end
 
 function fixmodel!(model::fCTM)
 	checkcorp(model.corp)
+	@assert !isempty(model.corp)
 	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
@@ -131,11 +144,15 @@ function fixmodel!(model::fCTM)
 	@assert isequal(size(model.sigma), (model.K, model.K))
 	@assert isposdef(model.sigma)
 	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)	
+	@assert isprobvec(model.beta, 2)
+	@assert isequal(size(model.newbeta), (model.K, model.V))
+	@assert isequal(model.newbeta, zeros(model.K, model.V))
 	@assert isequal(size(model.fbeta), (model.K, model.V))
 	@assert isprobvec(model.fbeta, 2)	
 	@assert isequal(length(model.kappa), model.V)
-	@assert isprobvec(model.kappa)	
+	@assert isprobvec(model.kappa)
+	@assert isequal(length(model.newkappa), model.V)
+	@assert isequal(model.newkappa, zeros(model.V))
 	@assert isequal(length(model.lambda), model.M)
 	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
 	@assert all(Bool[all(isfinite(model.lambda[d])) for d in 1:model.M])	
@@ -143,14 +160,14 @@ function fixmodel!(model::fCTM)
 	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])	
 	@assert all(Bool[all(isfinite(model.vsq[d])) for d in 1:model.M])
 	@assert all(Bool[all(ispositive(model.vsq[d])) for d in 1:model.M])	
-	@assert all(isfinite(model.lzeta))	
+	@assert isfinite(model.lzeta)
 	@assert isequal(length(model.tau), model.M)
 	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
 	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])
-	@assert isequal(length(model.phi), model.M)
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in 1:model.M])	
+	@assert isequal(size(model.phi), (model.K, model.N[1]))
+	@assert isprobvec(model.phi, 1)	
 	@assert isfinite(model.elbo)
+	@assert isequal(model.newelbo, 0.0)
 
 	model.invsigma = inv(model.sigma)
 	nothing
@@ -268,140 +285,6 @@ function fixmodel!(model::CTPF)
 	nothing	
 end
 
-function fixmodel!(model::memLDA)
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
-	@assert all(isfinite(model.alpha))
-	@assert all(ispositive(model.alpha))
-	@assert isequal(length(model.alpha), model.K)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.betamem), (model.K, model.V))
-	@assert isequal(model.betamem, zeros(model.K, model.V))
-	@assert isequal(length(model.gamma), model.K)
-	@assert all(isfinite(model.gamma))
-	@assert all(ispositive(model.gamma))
-	@assert isequal(size(model.phi), (model.K, model.N[1])) # what if corpus is empty?
-	@assert isprobvec(model.phi, 1)
-	@assert isfinite(model.elbo)
-	@assert isequal(model.elbomem, 0.0)
-
-	model.Elogtheta = fill(digamma(model.gamma) - digamma(sum(model.gamma)), model.M)
-	nothing
-end
-
-function fixmodel!(model::memfLDA)
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
-	@assert isequal(length(model.alpha), model.K)	
-	@assert all(isfinite(model.alpha))
-	@assert all(ispositive(model.alpha))
-	@assert (0 <= model.eta <= 1)	
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.betamem), (model.K, model.V))
-	@assert isequal(model.betamem, zeros(model.K, model.V))
-	@assert isequal(size(model.fbeta), (model.K, model.V))
-	@assert isprobvec(model.fbeta, 2)	
-	@assert isequal(length(model.kappa), model.V)
-	@assert isprobvec(model.kappa)
-	@assert isequal(length(model.kappamem), model.V)
-	@assert isequal(model.kappamem, zeros(model.V))	
-	@assert isequal(length(model.gamma), model.K)
-	@assert all(isfinite(model.gamma))
-	@assert all(ispositive(model.gamma))
-	@assert isequal(length(model.tau), model.M)
-	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
-	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])	
-	@assert isequal(size(model.phi), (model.K, model.N[1])) # what if corpus is empty?
-	@assert isprobvec(model.phi, 1)
-	@assert isfinite(model.elbo)
-	@assert isequal(model.elbomem, 0.0)
-
-	model.Elogtheta = fill(digamma(model.gamma) - digamma(sum(model.gamma)), model.M)
-	nothing
-end
-
-function fixmodel!(model::memCTM)
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert all(isfinite(model.mu))	
-	@assert isequal(size(model.sigma), (model.K, model.K))
-	@assert isposdef(model.sigma)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.betamem), (model.K, model.V))
-	@assert isequal(model.betamem, zeros(model.K, model.V))
-	@assert isequal(length(model.lambda), model.M)
-	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.lambda[d])) for d in 1:model.M])	
-	@assert isequal(length(model.vsq), model.M)
-	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.vsq[d])) for d in 1:model.M])	
-	@assert isfinite(model.lzeta)	
-	@assert isequal(size(model.phi), (model.K, model.N[1])) # what if corpus is empty?
-	@assert isprobvec(model.phi, 1)
-	@assert isfinite(model.elbo)
-	@assert isequal(model.elbomem, 0.0)
-
-	model.invsigma = inv(model.sigma)
-	nothing
-end
-
-function fixmodel!(model::memfCTM)
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert (0 <= model.eta <= 1)	
-	@assert all(isfinite(model.mu))
-	@assert isequal(size(model.sigma), (model.K, model.K))
-	@assert isposdef(model.sigma)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.betamem), (model.K, model.V))
-	@assert isequal(model.betamem, zeros(model.K, model.V))
-	@assert isequal(size(model.fbeta), (model.K, model.V))
-	@assert isprobvec(model.fbeta, 2)	
-	@assert isequal(length(model.kappa), model.V)
-	@assert isprobvec(model.kappa)
-	@assert isequal(length(model.kappamem), model.V)
-	@assert isequal(model.kappamem, zeros(model.V))
-	@assert isequal(length(model.lambda), model.M)
-	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.lambda[d])) for d in 1:model.M])	
-	@assert isequal(length(model.vsq), model.M)
-	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])	
-	@assert all(Bool[all(isfinite(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.vsq[d])) for d in 1:model.M])	
-	@assert isfinite(model.lzeta)
-	@assert isequal(length(model.tau), model.M)
-	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
-	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])
-	@assert isequal(size(model.phi), (model.K, model.N[1])) # what if corpus is empty?
-	@assert isprobvec(model.phi, 1)	
-	@assert isfinite(model.elbo)
-	@assert isequal(model.elbomem, 0.0)
-
-	model.invsigma = inv(model.sigma)
-	nothing
-end
-
 function fixmodel!(model::gpuLDA)
 	checkcorp(model.corp)
 	@assert !isempty(model.corp)
@@ -424,7 +307,7 @@ function fixmodel!(model::gpuLDA)
 	@assert isfinite(model.elbo)
 
 	model.Elogtheta = [digamma(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M]
-	model.sumElogtheta = sum(model.Elogtheta)
+	model.Elogthetasum = sum(model.Elogtheta)
 	
 	model.device, model.context, model.queue = OpenCL.create_compute_context()		
 
@@ -459,7 +342,7 @@ function fixmodel!(model::gpuLDA)
 	phiprog = OpenCL.Program(model.context, source=LDAphicpp) |> OpenCL.build!
 	phinormprog = OpenCL.Program(model.context, source=LDAphinormcpp) |> OpenCL.build!
 	Elogthetaprog = OpenCL.Program(model.context, source=LDAElogthetacpp) |> OpenCL.build!
-	sumElogthetaprog = OpenCL.Program(model.context, source=LDAsumElogthetacpp) |> OpenCL.build!
+	Elogthetasumprog = OpenCL.Program(model.context, source=LDAElogthetasumcpp) |> OpenCL.build!
 
 	model.betakern = OpenCL.Kernel(betaprog, "updateBeta")
 	model.betanormkern = OpenCL.Kernel(betanormprog, "normalizeBeta")
@@ -467,9 +350,24 @@ function fixmodel!(model::gpuLDA)
 	model.phikern = OpenCL.Kernel(phiprog, "updatePhi")
 	model.phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
 	model.Elogthetakern = OpenCL.Kernel(Elogthetaprog, "updateElogtheta")
-	model.sumElogthetakern = OpenCL.Kernel(sumElogthetaprog, "updatesumElogtheta")
+	model.Elogthetasumkern = OpenCL.Kernel(Elogthetasumprog, "updateElogthetasum")
 	updateBuf!(model)	
 	nothing
+end
+
+function fixmodel!(model::gpufLDA)
+end
+
+function fixmodel!(model::gpuCTM)
+end
+
+function fixmodel!(model::gpufCTM)
+end
+
+function fixmodel!(model::gpuDTM)
+end
+
+function fixmodel!(model::gpuCTPF)
 end
 
 function fixmodel!(model::gpuCTPF)
@@ -608,9 +506,9 @@ end
 #												 #
 ##################################################
 
-function checkELBO!(model::TopicModel, k::Int, chkelbo::Integer, tol::Real)
+function checkELBO!(model::TopicModel, k::Int, chk::Bool, tol::Real)
 	converged = false
-	if k % chkelbo == 0
+	if chk
 		∆elbo = -(model.elbo - updateELBO!(model))
 		println(k, " ∆elbo: ", round(∆elbo, 3))
 		if abs(∆elbo) < tol
@@ -621,9 +519,9 @@ function checkELBO!(model::TopicModel, k::Int, chkelbo::Integer, tol::Real)
 	return converged
 end
 
-function checkELBO!(model::GPUTopicModel, k::Int, chkelbo::Integer, tol::Real)
+function checkELBO!(model::GPUTopicModel, k::Int, chk::Bool, tol::Real)
 	converged = false
-	if k % chkelbo == 0
+	if chk
 		updateHost!(model)
 		∆elbo = -(model.elbo - updateELBO!(model))
 		println(k, " ∆elbo: ", round(∆elbo, 3))
@@ -649,7 +547,7 @@ function updateBuf!(model::gpuLDA)
 	model.gammabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gamma...))
 	model.phibuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.phi...))
 	model.Elogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta...))
-	model.sumElogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sumElogtheta)
+	model.Elogthetasumbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.Elogthetasum)
 end
 
 function updateBuf!(model::gpuCTPF)
@@ -675,7 +573,7 @@ function updateHost!(model::gpuLDA)
 	model.phi = [hostphi[:,Npsums[d]+1:Npsums[d+1]] for d in 1:model.M]
 	hostElogtheta = reshape(OpenCL.read(model.queue, model.Elogthetabuf), model.K, model.M)
 	model.Elogtheta = [hostElogtheta[:,d] for d in 1:model.M]
-	model.sumElogtheta = OpenCL.read(model.queue, model.sumElogthetabuf)
+	model.Elogthetasum = OpenCL.read(model.queue, model.Elogthetasumbuf)
 end
 
 function updateHost!(model::gpuCTPF)
@@ -705,7 +603,7 @@ end
 #															#
 #############################################################
 
-function gendoc(model::Union{LDA, memLDA, gpuLDA}, a::Real=0.0)
+function gendoc(model::AbstractLDA, a::Real=0.0)
 	@assert !isnegative(a)
 	
 	C = rand(Poisson(mean(model.C)))
@@ -724,7 +622,7 @@ function gendoc(model::Union{LDA, memLDA, gpuLDA}, a::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gendoc(model::Union{fLDA, memfLDA}, a::Real=0.0)
+function gendoc(model::AbstractfLDA, a::Real=0.0)
 	@assert !isnegative(a)
 	
 	C = rand(Poisson(mean(model.C)))
@@ -743,7 +641,7 @@ function gendoc(model::Union{fLDA, memfLDA}, a::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gendoc(model::Union{CTM, memCTM}, a::Real=0.0)
+function gendoc(model::AbstractCTM, a::Real=0.0)
 	@assert !isnegative(a)
 	
 	C = rand(Poisson(mean(model.C)))
@@ -763,7 +661,7 @@ function gendoc(model::Union{CTM, memCTM}, a::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gendoc(model::Union{fCTM, memfCTM}, a::Real=0.0)
+function gendoc(model::AbstractfCTM, a::Real=0.0)
 	@assert !isnegative(a)
 	
 	C = rand(Poisson(mean(model.C)))
@@ -828,7 +726,7 @@ function showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{In
 	end
 end
 
-function showtopics(model::DTM, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), times::Union{Int, Vector{Int}}=collect(1:model.T), cols::Int=4)
+function showtopics(model::AbstractDTM, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), times::Union{Int, Vector{Int}}=collect(1:model.T), cols::Int=4)
 	@assert checkbounds(Bool, model.V, N)
 	@assert checkbounds(Bool, model.K, topics)
 	@assert checkbounds(Bool, model.T, times)
@@ -871,7 +769,7 @@ function showtopics(model::DTM, N::Int=min(15, model.V); topics::Union{Int, Vect
 	end
 end
 
-function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{Int})
+function showlibs(model::AbstractCTPF, users::Vector{Int})
 	@assert checkbounds(Bool, model.U, users)
 	
 	for u in users
@@ -890,9 +788,9 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{Int})
 	end
 end
 
-showlibs(model::Union{CTPF, gpuCTPF}, user::Int) = showlibs(model, [user])
+showlibs(model::AbstractCTPF, user::Int) = showlibs(model, [user])
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Int, Vector{Int}}, U::Int=min(16, model.U); cols::Int=4)
+function showdrecs(model::AbstractCTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, model.U); cols::Int=4)
 	@assert checkbounds(Bool, model.M, docs)	
 	@assert checkbounds(Bool, model.U, U)
 	@assert ispositive(cols)
@@ -923,7 +821,7 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Int, Vector{Int}}, U
 	end
 end
 
-function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Int, Vector{Int}}, M::Int=min(10, model.M); cols::Int=1)
+function showurecs(model::AbstractCTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, model.M); cols::Int=1)
 	@assert checkbounds(Bool, model.U, users)
 	@assert checkbounds(Bool, model.M, M)
 	@assert ispositive(cols)

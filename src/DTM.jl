@@ -30,107 +30,61 @@ type DTM <: TopicModel
 	ovflEexpbeta::MatrixList{Float64}
 	elbo::Float64
 
-	function DTM(corp::Corpus, K::Integer, delta::Real, pmodel::Union{Void, BaseTopicModel}=nothing)
+	function DTM(corp::Corpus, K::Integer, delta::Real, basemodel::Union{Void, BaseTopicModel}=nothing)
 		@assert ispositive(K)
 		@assert isfinite(delta)
 		@assert ispositive(delta)
 		checkcorp(corp)
+		fixmodel!(basemodel)
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
 
-		dchrono = sortperm([doc.stamp for doc in corp])
-		t0, tM = corp[dchrono[1]].stamp, corp[dchrono[end]].stamp
+		stamps = [doc.stamp for doc in corp]
+		t0 = minimum(stamps)
+		tM = maximum(stamps)
+
 		T = convert(Int, ceil((tM - t0) / delta))
 		S = [Int[] for _ in 1:T]
+
+		topics = [basemodel.topics for _ in 1:T]
+		
 		t = 1
-		
-		for d in dchrono
-			corp[d].stamp <= t0 + t * delta ? push!(S[t], d) : (t += 1; push!(S[t], d))
+		for d in sortperm(stamps)
+			corp[d].stamp > t0 + t * delta && (t += 1)
+			push!(S[t], d)
 		end
 
-		if isa(pmodel, Union{LDA, gpuLDA})
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
-			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [pmodel.gamma[d] for d in 1:M]
-			phi = [pmodel.phi[d] for d in 1:M]
-			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
+		if isa(basemodel, AbstractLDA)
+			alpha = [basemodel.alpha for _ in 1:T]
+			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			gamma = [basemodel.gamma[d] for d in 1:M]
 
-		elseif isa(pmodel, memLDA)
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
-			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [ones(K) for _ in 1:M]
-			phi = [ones(K, N[d]) / K for d in 1:M]
-			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)			
+		elseif isa(basemodel, AbstractfLDA)
+			alpha = [basemodel.alpha for _ in 1:T]
+			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			gamma = [basemodel.gamma[d] for d in 1:M]
 
-		elseif isa(pmodel, fLDA)
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
-			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [pmodel.gamma[d] for d in 1:M]
-			phi = [pmodel.phi[d] for d in 1:M]
-			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
+		elseif isa(basemodel, AbstractCTM)
+			alpha = [addlogistic(basemodel.mu) for _ in 1:T]
+			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			gamma = [addlogistic(basemodel.lambda[d]) for d in 1:M]
 
-		elseif isa(pmodel, memfLDA)
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [pmodel.alpha + eps(0.0) for _ in 1:T]
-			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [ones(K) for _ in 1:M]
-			phi = [ones(K, N[d]) / K for d in 1:M]
-			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)	
+		elseif isa(basemodel, AbstractfCTM)
+			alpha = [addlogistic(basemodel.mu) for _ in 1:T]
+			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			gamma = [addlogistic(basemodel.lambda[d]) for d in 1:M]
 
-		elseif isa(pmodel, CTM)
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
-			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
-			phi = [pmodel.phi[d] for d in 1:M]
-			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
-
-		elseif isa(pmodel, memCTM)
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
-			betahat = [log(2 * pmodel.beta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
-			phi = [pmodel.phi[d] for d in 1:M]
-			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]	
-
-		elseif isa(pmodel, fCTM)
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
-			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
-			phi = [pmodel.phi[d] for d in 1:M]
-			Elogtheta = [digamma(gamma[d]) - digamma(sum(gamma[d])) for d in 1:M]
-		
-		elseif isa(pmodel, memfCTM)
-			fixmodel!(pmodel)
-			topics = [pmodel.topics for _ in 1:T]
-			alpha = [exp(pmodel.mu) / sum(exp(pmodel.mu)) for _ in 1:T]
-			betahat = [log(2 * pmodel.fbeta + eps(1.0)) + randn(K, V) for _ in 1:T]
-			gamma = [addlogistic(pmodel.lambda[d]) for d in 1:M]
-			phi = [ones(K, N[d]) / K for d in 1:M]
-			Elogtheta = fill(digamma(ones(K)) - digamma(K), M)	
-		
 		else
-			topics = [[collect(1:V) for _ in 1:K] for _ in 1:T]
 			alpha = [ones(K) for _ in 1:T]
-			betahat = [rand(Dirichlet(V, 1.0), K)' for _ in 1:T]
+			betahat = [randn(K, V) for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
-			phi = [ones(K, N[d]) / K for d in 1:M]
-			Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
-		end
+		end			
 
+		phi = [ones(K, N[d]) / K for d in 1:M]
+		Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
+		
 		sigmasq = 1.0
 		v0 = ones(K, V)
 		v = [ones(K, V) for _ in 1:T]
@@ -217,16 +171,16 @@ function updateAlpha!(model::DTM, t::Int, niter::Integer, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphagrad = [(nu / model.alpha[t][i]) + length(model.S[t]) * (digamma(sum(model.alpha[t])) - digamma(model.alpha[t][i])) for i in 1:model.K] + sum(model.Elogtheta[model.S[t]])
-		alphahessdiag = -(length(model.S[t]) * trigamma(model.alpha[t]) + (nu ./ model.alpha[t].^2))
-		p = (alphagrad - sum(alphagrad ./ alphahessdiag) / (1 / (length(model.S[t]) * trigamma(sum(model.alpha[t]))) + sum(1./alphahessdiag))) ./ alphahessdiag
+		alphaGrad = [(nu / model.alpha[t][i]) + length(model.S[t]) * (digamma(sum(model.alpha[t])) - digamma(model.alpha[t][i])) for i in 1:model.K] + sum(model.Elogtheta[model.S[t]])
+		alphaInvHessDiag = -1 ./ (length(model.S[t]) * trigamma(model.alpha[t]) + nu ./ model.alpha[t].^2)
+		p = (alphaGrad - dot(alphaGrad, alphaInvHessDiag) / (1 / (length(model.S[t]) * trigamma(sum(model.alpha[t]))) + sum(alphaInvHessDiag))) .* alphaInvHessDiag
 		
 		while minimum(model.alpha[t] - rho * p) < 0
 			rho *= 0.5
 		end	
 		model.alpha[t] -= rho * p
 		
-		if (norm(alphagrad) < ntol) & ((nu / model.K) < ntol)
+		if (norm(alphaGrad) < ntol) & ((nu / model.K) < ntol)
 			break
 		end
 		nu *= 0.5
@@ -352,6 +306,7 @@ function train!(model::DTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	fixmodel!(model)
 
 	for k in 1:iter
+		chk = (k % chkelbo == 0)
 		for t in 1:model.T
 			for d in model.S[t]
 				for _ in 1:viter
@@ -367,7 +322,7 @@ function train!(model::DTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 			updateAlpha!(model, t, niter, ntol)
 		end
 		updateBetahat!(model, cgiter, cgtol)
-		if checkELBO!(model, k, chkelbo, tol)
+		if checkELBO!(model, k, chk, tol)
 			break
 		end
 	end

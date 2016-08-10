@@ -17,7 +17,7 @@ fixcorp!(nsfcorp)
 # Notice that the post-fix lexicon is smaller after removing all but the first 5000 docs.
 
 nsflda = LDA(nsfcorp, 9)
-train!(nsflda, iter=10, tol=0.0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
+train!(nsflda, iter=150, tol=0.0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
                                   # If you don't want to watch the ∆elbo, set chkelbo=151.
 # training...
 
@@ -77,16 +77,14 @@ showtopics(nsffctm, 20, cols=9)
 nsffctm.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-nsffctm.sigma[4,8] # 9.315
-nsffctm.sigma[3,6] # 6.522
-nsffctm.sigma[2,9] # 5.148
+nsffctm.sigma[4,8] # 9.532
+nsffctm.sigma[3,6] # 7.362
+nsffctm.sigma[2,9] # 4.531
 
 # Top 3 negative entries, sorted in ascending order:
-nsffctm.sigma[7,9] # -13.212
-nsffctm.sigma[1,8] # -13.134
-nsffctm.sigma[3,8] # -11.429
-
-sum(abs(nsffctm.sigma[:,5])) - nsffctm.sigma[5,5]
+nsffctm.sigma[7,9] # -14.627
+nsffctm.sigma[1,8] # -11.775
+nsffctm.sigma[3,8] # -12.464
 
 
 
@@ -117,9 +115,9 @@ train!(macdtm, iter=10) # This will likely take several hours on a personal comp
                         # while DTM convergence is linear or at best super-linear.
 # training...
 
-showtopics(macdtm, topics=4, cols=6)
+showtopics(model, topics=3, cols=6)
 
-showtopics(macdtm, times=11, cols=9)
+showtopics(model, times=11, cols=9)
 
 
 
@@ -147,7 +145,7 @@ sum([isempty(doc.readers) for doc in citeucorp])
 
 srand(1)
 
-citeuctpf = gpuCTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
+citeuctpf = gpuCTPF(citeucorp, 30) # Note: If no 'basemodel' is entered then parameters will be initialized at random.
 train!(citeuctpf, iter=20, chkelbo=21)
 
 # training...
@@ -193,22 +191,6 @@ showurecs(citeuctpf, 1741, 20)
 
 
 
-##############
-#            #
-# Low Memory #
-#            #
-##############
-
-nsfcorp = readcorp(:nsf)
-
-lnsflda = @mem LDA(nsfcorp, 16)
-
-nsflda = LDA(nsfcorp, 16)
-
-whos()
-
-
-
 ####################
 #                  #
 # GPU Acceleration #
@@ -221,16 +203,4 @@ nsflda = LDA(nsfcorp, 16)
 @time @gpu train!(nsflda, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark.
 
 # training...
-
-
-
-
-
-
-
-
-
-
-
-
 

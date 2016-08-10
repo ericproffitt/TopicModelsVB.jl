@@ -1,4 +1,4 @@
-type gpuCTPF <: TopicModel
+type gpuCTPF <: GPUTopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -67,7 +67,7 @@ type gpuCTPF <: TopicModel
 	xibuf::OpenCL.Buffer{Float32}
 	elbo::Float32
 
-	function gpuCTPF(corp::Corpus, K::Integer, pmodel::Union{Void, BaseTopicModel}=nothing)
+	function gpuCTPF(corp::Corpus, K::Integer, basemodel::Union{Void, BaseTopicModel}=nothing)
 		@assert ispositive(K)		
 		checkcorp(corp)
 
@@ -84,14 +84,14 @@ type gpuCTPF <: TopicModel
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
-		if isa(pmodel, Union{LDA, CTM, memLDA, memCTM, gpuLDA})
-			@assert isequal(size(pmodel.beta), (K, V))
-			alef = exp(pmodel.beta - 0.5)
-			topics = pmodel.topics		
-		elseif isa(pmodel, Union{fLDA, fCTM, memfLDA, memfCTM, gpuLDA})
-			@assert isequal(size(pmodel.fbeta), (K, V))
-			alef = exp(pmodel.fbeta - 0.5)
-			topics = pmodel.topics
+		if isa(basemodel, Union{AbstractLDA, AbstractCTM})
+			@assert isequal(size(basemodel.beta), (K, V))
+			alef = exp(basemodel.beta - 0.5)
+			topics = basemodel.topics		
+		elseif isa(basemodel, Union{AbstractfLDA, AbstractfCTM})
+			@assert isequal(size(basemodel.fbeta), (K, V))
+			alef = exp(basemodel.fbeta - 0.5)
+			topics = basemodel.topics
 		else
 			alef = exp(rand(Dirichlet(V, 1.0), K)' - 0.5)
 			topics = [collect(1:V) for _ in 1:K]
@@ -665,6 +665,7 @@ function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vto
 	fixmodel!(model)
 
 	for k in 1:iter
+		chk = (k % chkelbo == 0)
 		for _ in 1:viter
 			oldgimel = OpenCL.read(model.queue, model.gimelbuf)
 			updatePhi!(model)
@@ -681,7 +682,7 @@ function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vto
 		updateBet!(model)
 		updateHe!(model)
 		updateVav!(model)
-		if checkELBO!(model, k, chkelbo, tol)
+		if checkELBO!(model, k, chk, tol)
 			break
 		end
 	end

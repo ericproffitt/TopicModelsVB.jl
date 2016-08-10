@@ -10,19 +10,22 @@ type CTM <: TopicModel
 	sigma::Matrix{Float64}
 	invsigma::Matrix{Float64}
 	beta::Matrix{Float64}
+	newbeta::Matrix{Float64}
 	lambda::VectorList{Float64}
 	vsq::VectorList{Float64}
-	lzeta::Vector{Float64}
-	phi::MatrixList{Float64}
+	lzeta::Float64
+	phi::Matrix{Float64}
 	elbo::Float64
+	newelbo::Float64
 
 	function CTM(corp::Corpus, K::Integer)
 		@assert ispositive(K)
+		@assert !isempty(corp)
 		checkcorp(corp)
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
-		C = [size(doc) for doc in corp]	
+		C = [size(doc) for doc in corp]
 		
 		topics = [collect(1:V) for _ in 1:K]
 
@@ -30,12 +33,18 @@ type CTM <: TopicModel
 		sigma = eye(K)
 		invsigma = eye(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
+		newbeta = zeros(K, V)
 		lambda = [zeros(K) for _ in 1:M]
 		vsq = [ones(K) for _ in 1:M]
-		lzeta = zeros(M)
-		phi = [ones(K, N[d]) / K for d in 1:M]
+		lzeta = 0.5
+		phi = ones(K, N[1]) / K
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, lambda, vsq, lzeta, phi)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, newbeta, lambda, vsq, lzeta, phi, 0, 0)
+		for d in 1:M
+			model.phi = ones(K, N[d]) / K
+			updateNewELBO!(model, d)
+		end
+		model.phi = ones(K, N[1]) / K	
 		updateELBO!(model)
 		return model
 	end
@@ -48,13 +57,13 @@ end
 
 function Elogpz(model::CTM, d::Int)
 	counts = model.corp[d].counts
-	x = dot(model.phi[d]' * model.lambda[d], counts) + model.C[d] * model.lzeta[d]
+	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.lzeta
 	return x
 end
 
 function Elogpw(model::CTM, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[d] .* log(model.beta[:,terms] + epsln) * counts)
+	x = sum(model.phi .* log(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -65,20 +74,22 @@ end
 
 function Elogqz(model::CTM, d::Int)
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
 function updateELBO!(model::CTM)
-	model.elbo = 0
-	for d in 1:model.M
-		model.elbo += (Elogpeta(model, d)
+	model.elbo = model.newelbo
+	model.newelbo = 0
+	return model.elbo
+end
+
+function updateNewELBO!(model::CTM, d::Int)
+	model.newelbo += (Elogpeta(model, d)
 					+ Elogpz(model, d)
 					+ Elogpw(model, d)
 					- Elogqeta(model, d)
 					- Elogqz(model, d))					 
-	end		
-	return model.elbo
 end
 
 function updateMu!(model::CTM)
@@ -92,12 +103,13 @@ function updateSigma!(model::CTM)
 end
 
 function updateBeta!(model::CTM)
-	model.beta = zeros(model.K, model.V)
-	for d in 1:model.M
-		terms, counts = model.corp[d].terms, model.corp[d].counts
-		model.beta[:,terms] += model.phi[d] .* counts'
-	end
-	model.beta ./= sum(model.beta, 2)
+	model.beta = model.newbeta ./ sum(model.newbeta, 2)
+	model.newbeta = zeros(model.K, model.V)
+end
+
+function updateNewBeta!(model::CTM, d::Int)
+	terms, counts = model.corp[d].terms, model.corp[d].counts
+	model.newbeta[:,terms] += model.phi .* counts'
 end
 
 function updateLambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
@@ -105,14 +117,13 @@ function updateLambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambdaGrad = (-model.invsigma * (model.lambda[d] - model.mu) + model.phi[d] * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]))
-		lambdaHessInv = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]))) * model.sigma
-		model.lambda[d] -= lambdaHessInv * lambdaGrad
+		lambdaGrad = (-model.invsigma * (model.lambda[d] - model.mu) + model.phi * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))
+		lambdaInvHess = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))) * model.sigma
+		model.lambda[d] -= lambdaInvHess * lambdaGrad
 		if norm(lambdaGrad) < ntol
 			break
 		end
 	end
-
 end
 
 function updateVsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
@@ -120,9 +131,9 @@ function updateVsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	for _ in 1:niter
 		rho = 1.0
-		vsqGrad = -0.5 * (diag(model.invsigma) + model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]) - 1 ./ model.vsq[d])
-		vsqHessInv = -diagm(1 ./ (0.25 * model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta[d]) + 0.5 ./ model.vsq[d].^2))
-		p = vsqHessInv * vsqGrad
+		vsqGrad = -0.5 * (diag(model.invsigma) + model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) - 1 ./ model.vsq[d])
+		vsqInvHess = -1 ./ (0.25 * model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) + 0.5 ./ model.vsq[d].^2)
+		p = vsqInvHess .* vsqGrad
 		
 		while minimum(model.vsq[d] - rho * p) <= 0
 			rho *= 0.5
@@ -137,39 +148,44 @@ function updateVsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 end
 
 function updateLzeta!(model::CTM, d::Int)
-	model.lzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
+	model.lzeta = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function updatePhi!(model::CTM, d::Int)
 	terms = model.corp[d].terms
-	model.phi[d] = addlogistic(log(model.beta[:,terms]) .+ model.lambda[d], 1)
+	model.phi = addlogistic(log(model.beta[:,terms]) .+ model.lambda[d], 1)
 end
 
 function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
-	fixmodel!(model)	
+	fixmodel!(model)
 	
 	for k in 1:iter
+		chk = (k % chkelbo == 0)
 		for d in 1:model.M
 			for _ in 1:viter
-				oldlambda = model.lambda[d]				
+				oldlambda = model.lambda[d]
+				updatePhi!(model, d)
+				updateLzeta!(model, d)
 				updateLambda!(model, d, niter, ntol)
 				updateVsq!(model, d, niter, ntol)
-				updateLzeta!(model, d)
-				updatePhi!(model, d)
 				if norm(oldlambda - model.lambda[d]) < vtol
 					break
 				end
 			end
+			updateNewBeta!(model, d)
+			chk && updateNewELBO!(model, d)
 		end
 		updateMu!(model)
 		updateSigma!(model)
 		updateBeta!(model)
-		if checkELBO!(model, k, chkelbo, tol)
+		if checkELBO!(model, k, chk, tol)
 			break
 		end
 	end
+	updatePhi!(model, 1)
+	updateLzeta!(model, 1)
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end

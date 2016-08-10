@@ -6,6 +6,11 @@ macro juliadots(expr::Expr)
 	return expr
 end
 
+macro boink(expr::Expr)
+	expr = :($expr + epsln)
+	return expr
+end
+
 macro bumper(expr::Expr)
 	if expr.head == :.
 		expr = :($expr += epsln)
@@ -24,11 +29,11 @@ macro buf(expr::Expr)
 		end
 		end
 
-	elseif expr.args[2] == :(:sumElogtheta)
+	elseif expr.args[2] == :(:Elogthetasum)
 		quoteblock = 
 		quote
 		if isa($(esc(expr.args[1])), gpuLDA)
-			model.sumElogthetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sumElogtheta)
+			model.Elogthetasumbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.Elogthetasum)
 		end
 		end
 	end
@@ -44,52 +49,13 @@ macro host(expr::Expr)
 		end
 		end
 
-	elseif expr.args[2] == :(:sumElogthetabuf)
+	elseif expr.args[2] == :(:Elogthetasumbuf)
 		quoteblock = 
 		quote
 		if isa($(esc(expr.args[1])), gpuLDA)
-			model.sumElogtheta = OpenCL.read(model.queue, model.sumElogthetabuf)
+			model.Elogthetasum = OpenCL.read(model.queue, model.Elogthetasumbuf)
 		end
 		end
-	end
-	return quoteblock
-end
-
-macro mem(expr::Expr)
-	if expr.args[1] == :LDA
-		quoteblock = 
-		quote
-		local corp = $(esc(expr.args[2]))
-		local K = $(esc(expr.args[3]))		
-		memLDA(corp, K)
-		end
-
-	elseif expr.args[1] == :fLDA
-		quoteblock = 
-		quote
-		local corp = $(esc(expr.args[2]))
-		local K = $(esc(expr.args[3]))		
-		memfLDA(corp, K)
-		end
-
-	elseif expr.args[1] == :CTM
-		quoteblock = 
-		quote
-		local corp = $(esc(expr.args[2]))
-		local K = $(esc(expr.args[3]))		
-		memCTM(corp, K)
-		end
-
-	elseif expr.args[1] == :fCTM
-		quoteblock = 
-		quote
-		local corp = $(esc(expr.args[2]))
-		local K = $(esc(expr.args[3]))		
-		memfCTM(corp, K)
-		end
-
-	else
-		error("Model does not have low memory support.")
 	end
 	return quoteblock
 end
@@ -102,11 +68,22 @@ macro gpu(expr::Expr)
 	local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[3:end]))]
 	
 	if isa(model, LDA)
-		gpumodel = gpuLDA(model.corp, model.K)
+		fakecorp = Corpus(docs=[Document([1])], lex=["1"])
+		gpumodel = gpuLDA(fakecorp, 1)
+
+		gpumodel.corp = model.corp
+
+		gpumodel.K = model.K
+		gpumodel.M, gpumodel.V = size(gpumodel.corp)[1:2]
+		gpumodel.N = [length(doc) for doc in gpumodel.corp]
+		gpumodel.C = [size(doc) for doc in gpumodel.corp]
+
+		gpumodel.topics = [collect(1:gpumodel.V) for _ in 1:gpumodel.K]
 
 		gpumodel.alpha = model.alpha
 		gpumodel.beta = model.beta
-		gpumodel.phi = model.phi
+		gpumodel.gamma = model.gamma
+		gpumodel.phi = unshift!([ones(model.K, model.N[d]) / model.K for d in 2:model.M], model.phi)
 		gpumodel.elbo = model.elbo
 		train!(gpumodel; kwargs...)
 		
@@ -114,14 +91,25 @@ macro gpu(expr::Expr)
 		model.alpha = gpumodel.alpha
 		model.beta = gpumodel.beta
 		model.gamma = gpumodel.gamma
-		model.phi = gpumodel.phi
-		model.Elogtheta = gpumodel.Elogtheta
+		model.phi = gpumodel.phi[1]
+		model.Elogtheta = gpumodel.Elogtheta[1]
+		model.Elogthetasum = zeros(gpumodel.K)
 		model.elbo = gpumodel.elbo
 
 		model.beta ./= sum(model.beta, 2)
-		for d in 1:model.M
-			model.phi[d] ./= sum(model.phi[d], 1)
-		end
+		model.phi ./= sum(model.phi, 1)
+		nothing
+
+	elseif isa(model, fLDA)
+		nothing
+
+	elseif isa(model, CTM)
+		nothing
+
+	elseif isa(model, fCTM)
+		nothing
+
+	elseif isa(model, DTM)
 		nothing
 
 	elseif isa(model, CTPF)
@@ -171,7 +159,7 @@ macro gpu(expr::Expr)
 		nothing
 
 	else
-		error("Model does not have GPU support.")
+		nothing
 	end
 	end
 end

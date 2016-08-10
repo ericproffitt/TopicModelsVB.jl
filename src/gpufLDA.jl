@@ -1,0 +1,2 @@
+type gpufLDA <: GPUTopicModel
+end

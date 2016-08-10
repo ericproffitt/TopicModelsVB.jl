@@ -49,11 +49,11 @@ type CTPF <: TopicModel
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
-		if isa(pmodel, Union{LDA, CTM, memLDA, memCTM, gpuLDA})
+		if isa(pmodel, Union{AbstractLDA, AbstractCTM})
 			@assert isequal(size(pmodel.beta), (K, V))
 			alef = exp(pmodel.beta - 0.5)
 			topics = pmodel.topics		
-		elseif isa(pmodel, Union{fLDA, fCTM, memfLDA, memfCTM, gpuLDA})
+		elseif isa(pmodel, Union{AbstractfLDA, AbstractfCTM})
 			@assert isequal(size(pmodel.fbeta), (K, V))
 			alef = exp(pmodel.fbeta - 0.5)
 			topics = pmodel.topics

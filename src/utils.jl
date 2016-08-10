@@ -10,7 +10,6 @@ isnegative(x::Real) = x < 0
 ispositive(x::Real) = x > 0
 isnegative{T<:Real}(xs::Array{T}) = Bool[isnegative(x) for x in xs]
 ispositive{T<:Real}(xs::Array{T}) = Bool[ispositive(x) for x in xs]
-tetragamma(x) = polygamma(2, x)
 
 function logsumexp{T<:Real}(xs::Array{T})
 	maxval = maximum(xs)
@@ -81,6 +80,8 @@ end
 
 partition{T<:Real}(xs::UnitRange{T}, n::Int) = partition(collect(xs), n)
 
+const epsln32 = "0.000000000000000000000000000001f"
+
 const digammacpp =
 """
 inline float
@@ -113,3 +114,7 @@ digamma(float x)
 	return p;
 	}
 	"""
+
+const trigammacpp =
+"""
+"""

@@ -8,17 +8,23 @@ type fLDA <: TopicModel
 	topics::VectorList{Int}
 	alpha::Vector{Float64}
 	eta::Float64
+	neweta::Float64
 	beta::Matrix{Float64}
+	newbeta::Matrix{Float64}
 	fbeta::Matrix{Float64}
 	kappa::Vector{Float64}
+	newkappa::Vector{Float64}
 	gamma::VectorList{Float64}
 	tau::VectorList{Float64}
-	phi::MatrixList{Float64}
-	Elogtheta::VectorList{Float64}
+	phi::Matrix{Float64}
+	Elogtheta::Vector{Float64}
+	Elogthetasum::Vector{Float64}
 	elbo::Float64
+	newelbo::Float64
 
 	function fLDA(corp::Corpus, K::Integer)
 		@assert ispositive(K)
+		@assert !isempty(corp)
 		checkcorp(corp)
 
 		M, V, U = size(corp)
@@ -29,22 +35,31 @@ type fLDA <: TopicModel
 
 		alpha = ones(K)
 		eta = 0.95
+		neweta = 0.0
 		beta = rand(Dirichlet(V, 1.0), K)'
+		newbeta = zeros(K, V)
 		fbeta = copy(beta)
 		kappa = rand(Dirichlet(V, 1.0))
+		newkappa = zeros(V)
 		gamma = [ones(K) for _ in 1:M]
 		tau = [fill(eta, N[d]) for d in 1:M]
-		phi = [ones(K, N[d]) / K for d in 1:M]
-		Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]		
-
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, eta, beta, fbeta, kappa, gamma, tau, phi, Elogtheta)
+		phi = ones(K, N[1]) / K
+		Elogtheta = digamma(ones(K)) - digamma(K)
+		Elogthetasum = zeros(K)
+	
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, eta, neweta, beta, newbeta, fbeta, kappa, newkappa, gamma, tau, phi, Elogtheta, Elogthetasum, 0, 0)
+		for d in 1:M
+			model.phi = ones(K, N[d]) / K
+			updateNewELBO!(model, d)
+		end
+		model.phi = ones(K, N[1]) / K
 		updateELBO!(model)
 		return model
 	end
 end
 
-function Elogptheta(model::fLDA, d::Int)
-	x = lgamma(sum(model.alpha)) - sum(lgamma(model.alpha)) + dot(model.alpha - 1, model.Elogtheta[d])
+function Elogptheta(model::fLDA)
+	x = lgamma(sum(model.alpha)) - sum(lgamma(model.alpha)) + dot(model.alpha - 1, model.Elogtheta)
 	return x
 end
 
@@ -57,13 +72,13 @@ end
 
 function Elogpz(model::fLDA, d::Int)
 	counts = model.corp[d].counts
-	x = dot(model.phi[d] * counts, model.Elogtheta[d])
+	x = dot(model.phi * counts, model.Elogtheta)
 	return x
 end
 
 function Elogpw(model::fLDA, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[d] .* log(model.beta[:,terms] + epsln) * (model.tau[d] .* counts)) + dot(1 - model.tau[d], log(model.kappa[terms] + epsln))
+	x = sum(model.phi .* log(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 - model.tau[d], log(@boink model.kappa[terms]))
 	return x
 end
 
@@ -80,22 +95,24 @@ end
 
 function Elogqz(model::fLDA, d::Int)
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
 function updateELBO!(model::fLDA)
-	model.elbo = 0
-	for d in 1:model.M
-		model.elbo += (Elogptheta(model, d)
+	model.elbo = model.newelbo
+	model.newelbo = 0
+	return model.elbo
+end
+
+function updateNewELBO!(model::fLDA, d::Int)
+	model.newelbo += (Elogptheta(model)
 					+ Elogpc(model, d)
 					+ Elogpz(model, d)
 					+ Elogpw(model, d) 
 					- Elogqtheta(model, d)
 					- Elogqc(model, d)
 					- Elogqz(model, d))
-	end
-	return model.elbo
 end
 
 function updateAlpha!(model::fLDA, niter::Integer, ntol::Real)
@@ -104,9 +121,9 @@ function updateAlpha!(model::fLDA, niter::Integer, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + sum(model.Elogtheta)
-		alphaHessDiag = -(model.M * trigamma(model.alpha) + (nu ./ model.alpha.^2))
-		p = (alphaGrad - sum(alphaGrad ./ alphaHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(1 ./ alphaHessDiag))) ./ alphaHessDiag
+		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
+		alphaInvHessDiag = -1 ./ (model.M * trigamma(model.alpha) + nu ./ model.alpha.^2)
+		p = (alphaGrad - dot(alphaGrad, alphaInvHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alphaInvHessDiag))) .* alphaInvHessDiag
 		
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
@@ -117,7 +134,7 @@ function updateAlpha!(model::fLDA, niter::Integer, ntol::Real)
 			break
 		end
 		nu *= 0.5
-	end	
+	end
 	@bumper model.alpha
 end
 
@@ -126,71 +143,87 @@ function updateEta!(model::fLDA)
 end
 
 function updateBeta!(model::fLDA)	
-	model.beta = zeros(model.K, model.V)
-	for d in 1:model.M
-		terms, counts = model.corp[d].terms, model.corp[d].counts
-		model.beta[:,terms] += model.phi[d] .* (model.tau[d] .* counts)'
-	end
-	model.beta ./= sum(model.beta, 2)
+	model.beta = model.newbeta ./ sum(model.newbeta, 2)
+	model.newbeta = zeros(model.K, model.V)
+end
+
+function updateNewBeta!(model::fLDA, d::Int)	
+	terms, counts = model.corp[d].terms, model.corp[d].counts
+	model.newbeta[:,terms] += model.phi .* (model.tau[d] .* counts)'
 end
 
 function updateKappa!(model::fLDA)
-	model.kappa = zeros(model.V)
-	for d in 1:model.M
-		terms, counts = model.corp[d].terms, model.corp[d].counts
-		model.kappa[terms] += (1 - model.tau[d]) .* counts
-	end
-	model.kappa /= sum(model.kappa)
+	model.kappa = model.newkappa / sum(model.newkappa)
+	model.newkappa = zeros(model.V)
+end
+
+function updateNewKappa!(model::fLDA, d::Int)
+	terms, counts = model.corp[d].terms, model.corp[d].counts
+	model.newkappa[terms] += (1 - model.tau[d]) .* counts
 end
 
 function updateGamma!(model::fLDA, d::Int)
 	counts = model.corp[d].counts
-	@bumper model.gamma[d] = model.alpha + model.phi[d] * counts
-end
-
-function updateElogtheta!(model::fLDA, d::Int)
-	model.Elogtheta[d] = digamma(model.gamma[d]) - digamma(sum(model.gamma[d]))
+	@bumper model.gamma[d] = model.alpha + model.phi * counts	
 end
 
 function updateTau!(model::fLDA, d::Int)
 	terms = model.corp[d].terms
-	model.tau[d] = model.eta ./ (model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi[d], 1))) + epsln)
+	model.tau[d] = model.eta ./ (model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, 1))) + epsln)
 end
 
 function updatePhi!(model::fLDA, d::Int)
 	terms = model.corp[d].terms
-	model.phi[d] = addlogistic(model.tau[d]' .* log(model.beta[:,terms]) .+ model.Elogtheta[d], 1)
+	model.phi = addlogistic(model.tau[d]' .* log(model.beta[:,terms]) .+ model.Elogtheta, 1)
 end
 
-function train!(model::fLDA; iter::Integer=200, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+function updateElogtheta!(model::fLDA, d::Int)
+	model.Elogtheta = digamma(model.gamma[d]) - digamma(sum(model.gamma[d]))
+end
+
+function updateElogthetasum!(model::fLDA)
+	model.Elogthetasum += model.Elogtheta
+end
+
+function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
 	fixmodel!(model)	
-	
+
 	for k in 1:iter
-		for d in 1:model.M		
+		chk = (k % chkelbo == 0)
+		for d in 1:model.M	
 			for _ in 1:viter
 				oldgamma = model.gamma[d]
-				updateGamma!(model, d)
 				updateElogtheta!(model, d)
 				updatePhi!(model, d)
+				updateGamma!(model, d)
 				if norm(oldgamma - model.gamma[d]) < vtol
 					break
 				end
 			end
+			updateElogtheta!(model, d)
+			updateElogthetasum!(model)
 			updateTau!(model, d)
-		end	
+			updateNewBeta!(model, d)
+			updateNewKappa!(model, d)
+			chk && updateNewELBO!(model, d)
+		end
 		updateAlpha!(model, niter, ntol)
-		updateEta!(model)
+		updateEta!(model)	
 		updateBeta!(model)
 		updateKappa!(model)
-		if checkELBO!(model, k, chkelbo, tol)
+		model.Elogthetasum = zeros(model.K)	
+		if checkELBO!(model, k, chk, tol)
 			break
 		end
 	end
+	updatePhi!(model, 1)
+	updateElogtheta!(model, 1)
 	model.fbeta = model.beta .* (model.kappa' .<= 0)
 	model.fbeta ./= sum(model.fbeta, 2)
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing
 end
+
 

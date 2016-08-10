@@ -1,1 +1,1 @@
-GPUTopicModel = Union{gpuLDA, gpuCTPF}
+abstract GPUTopicModel <: TopicModel

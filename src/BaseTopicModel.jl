@@ -1,1 +1,1 @@
-BaseTopicModel = Union{LDA, fLDA, CTM, fCTM, memLDA, memfLDA, memCTM, memfCTM, gpuLDA}
+BaseTopicModel = Union{AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfCTM}
