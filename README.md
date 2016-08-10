@@ -736,11 +736,29 @@ Corpus(;docs=Document[], lex=[], users=[])
 TopicModel
 # abstract
 
-BaseTopicModel
-# Union{LDA, fLDA, CTM, fCTM, memLDA, memfLDA, memCTM, memfCTM, gpuLDA}
-
 GPUTopicModel
-# Union{gpuLDA, gpuCTPF}
+# abstract
+
+BaseTopicModel
+# Union{LDA, fLDA, CTM, fCTM, gpuLDA}
+
+AbstractLDA
+# Union{LDA, gpuLDA}
+
+AbstractfLDA
+# Union{fLDA, gpufLDA}
+
+AbstractCTM
+# Union{CTM, gpuCTM}
+
+AbstractfCTM
+# Union{fCTM, gpufCTM}
+
+AbstractDTM
+# Union{DTM, gpuDTM}
+
+AbstractCTPF
+# Union{CTPF, gpuCTPF}
 
 LDA(corp, K) <: TopicModel
 # Latent Dirichlet allocation
@@ -755,35 +773,35 @@ CTM(corp, K) <: TopicModel
 fCTM(corp, K) <: TopicModel
 # Filtered correlated topic model
 
-DTM(corp, K, delta, pmodel) <: TopicModel
+DTM(corp, K, delta, basemodel) <: TopicModel
 # Dynamic topic model
 # 'delta'  - time-interval size.
-# 'pmodel' - pre-trained model of type BaseTopicModel (optional).
+# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
-CTPF(corp, K, pmodel) <: TopicModel
+CTPF(corp, K, basemodel) <: GPUTopicModel
 # Collaborative topic Poisson factorization
-# 'pmodel' - pre-trained model of type BaseTopicModel (optional).
+# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
-memLDA(corp, K) <: TopicModel
-# Low memory latent Dirichlet Allocation
-
-memfLDA(corp, K) <: TopicModel
-# Low memory filtered latent Dirichlet Allocation
-
-memCTM(corp, K) <: TopicModel
-# Low memory correlated topic model
-
-memfCTM(corp, K) <: TopicModel
-# Low memory filtered correlated topic model
-
-gpuLDA(corp, K) <: TopicModel
+gpuLDA(corp, K) <: GPUTopicModel
 # GPU accelerated latent Dirichlet allocation
 
-gpuCTPF(corp, K) <: TopicModel
-# GPU accelerated collaborative topic Poission factorization
-# 'pmodel' - pre-trained model of type BaseTopicModel (optional).
-```
+gpufLDA(corp, K) <: GPUTopicModel
+# Coming soon...
 
+gpuCTM(corp, K) <: GPUTopicModel
+# Coming soon...
+
+gpufCTM(corp, K) <: GPUTopicModel
+# Coming soon...
+
+gpuDTM(corp, delta, K, basemodel) <: GPUTopicModel
+# Coming soon...
+# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
+
+gpuCTPF(corp, K, basemodel) <: GPUTopicModel
+# GPU accelerated collaborative topic Poission factorization
+# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
+```
 
 ## Functions
 ### Generic Functions
@@ -893,6 +911,10 @@ train!(dtm::DTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/dtm.K^2,
 train!(ctpf::Union{CTPF, gpuCTPF}; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/ctpf.K^2, chkelbo::Int=1)
 # Train CTPF.
 
+@gpu train!(model; kwargs...)
+# Train model on GPU.
+# Supported models: LDA, CTPF.
+
 gendoc(model::BaseTopicModel, a::Real=0.0)
 # Generate a generic document from model parameters by running the associated graphical model as a generative process.
 # 'a' - amount of Laplace smoothing to apply to the topic-term distributions ('a' must be nonnegative).
@@ -915,18 +937,6 @@ showdrecs(ctpf::Union{CTPF, gpuCTPF}, docs::Union{Int, Vector{Int}}, U::Int=min(
 showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
 # Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
 # If a document has no title, the documents index in the corpus will be shown instead.
-```
-
-## Macros
-
-```julia
-@mem model
-# Instantiate model under low memory constraints.
-# Supported models: LDA, fLDA, CTM, fCTM.
-
-@gpu train!(model; kwargs...)
-# Train model on GPU.
-# Supported models: LDA, CTPF.
 ```
 
 ## Bibliography
