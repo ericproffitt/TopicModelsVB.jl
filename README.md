@@ -690,11 +690,11 @@ nsflda = LDA(nsfcorp, 16)
 
 # training...
 
-# 271.570658 seconds (181.56 M allocations: 14.797 GB, 9.78% gc time)
+# 237.117185 seconds (180.46 M allocations: 11.619 GB, 4.39% gc time)
 # On a 2.5 GHz Intel Core i5 2012 Macbook Pro with 4GB of RAM and an Intel HD Graphics 4000 1536 MB GPU.
 ```
 
-This algorithm just crunched through a 16 topic 129,000 document topic model in *under* 5 minutes.
+This algorithm just crunched through a 16 topic 129,000 document topic model in *under* 4 minutes.
 
 **Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
