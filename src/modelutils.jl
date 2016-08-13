@@ -368,9 +368,6 @@ function fixmodel!(model::gpuDTM)
 end
 
 function fixmodel!(model::gpuCTPF)
-end
-
-function fixmodel!(model::gpuCTPF)
 	checkcorp(model.corp)
 	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
 	@assert isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))
