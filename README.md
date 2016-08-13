@@ -493,7 +493,7 @@ As you may have noticed, the dynamic topic model is *extremely* computationally 
 **Important:** Beware that the DTM algorithm is still a bit buggy, an overhaul of the algorithm itself will likely come alongside the GPU accelerated version.
 
 ### CTPF
-For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be achievable using just the document-user matrix.  This blending of latent thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
+For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be achievable using just the document-user matrix.  This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
 import Distributions.sample
@@ -933,7 +933,7 @@ showdrecs(ctpf::Union{CTPF, gpuCTPF}, docs::Union{Int, Vector{Int}}, U::Int=min(
 
 showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
 # Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
-# If a document has no title, the documents index in the corpus will be shown instead.
+# If a document has no title, the document's index in the corpus will be shown instead.
 ```
 
 ## Bibliography
