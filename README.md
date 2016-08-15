@@ -901,7 +901,7 @@ train!(model::BaseTopicModel; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Re
 # 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
 # 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence checking).
 
-train!(dtm::DTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/dtm.K^2, cgiter::Int=10, cgtol::Real=1/dtm.T^2, chkelbo::Int=1)
+train!(dtm::Union{DTM, gpuDTM}; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/dtm.K^2, cgiter::Int=10, cgtol::Real=1/dtm.T^2, chkelbo::Int=1)
 # Train DTM.
 # 'cgiter' - maximum number of iterations for the Polak-Ribière conjugate gradient method.
 # 'cgtol'  - tolerance for change in function value as a stopping criterion for the Polak-Ribière conjugate gradient method.
@@ -922,7 +922,7 @@ gencorp(model::BaseTopicModel, corpsize::Int, a::Real=0.0)
 showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
 # Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
 
-showtopics(dtm::DTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
+showtopics(dtm::Union{DTM, gpuDTM}, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
 # Display the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
 
 showlibs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Int, Vector{Int}})
