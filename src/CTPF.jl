@@ -268,6 +268,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 	fixmodel!(model)
 
 	for k in 1:iter
+		chk = (k % chkelbo == 0)
 		for d in 1:model.M
 			for _ in 1:viter
 				oldgimel = model.gimel[d]
@@ -286,7 +287,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 		updateBet!(model)
 		updateHe!(model)
 		updateVav!(model)
-		if checkELBO!(model, k, chkelbo, tol)
+		if checkELBO!(model, k, chk, tol)
 			break
 		end
 	end
