@@ -147,7 +147,7 @@ CTPF(corp, K, basemodel)
 gpuLDA(corp, K)
 # GPU accelerated latent Dirichlet allocation model with K topics.
 
-gpufLDA(corp, K; batch=length(corp))
+gpufLDA(corp, K)
 # Coming soon...
 
 gpuCTM(corp, K)
