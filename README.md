@@ -727,7 +727,7 @@ Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), re
 # stamp::Float64
 # title::UTF8String
 
-Corpus(;docs::Vector{Document}=Document[], lex::Union{Vector{UTF8String}, Dict{Int, UTF8String}}=[], users::Union{Vector{UTF8String}, Dict{Int, UTF8String}}=[])
+Corpus(;docs::Vector{Document}=Document[], lex::Union{Vector{UTF8String}, Dict{Integer, UTF8String}}=[], users::Union{Vector{UTF8String}, Dict{Integer, UTF8String}}=[])
 # FIELDNAMES:
 # docs::Vector{Document}
 # lex::Dict{Int, UTF8String}
