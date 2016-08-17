@@ -845,11 +845,11 @@ readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::Abst
 writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Write corpus to plaintext files.
 
-abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Integer=1)
+abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
 # Abridge corpus.
 # If stop = true, stop words are removed.
 # If order = false, order is ignored and multiple seperate occurrences of words are stacked and the associated counts increased.
-# All terms which appear < b times are removed from documents.
+# All terms which appear < abr times are removed from documents.
 
 trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
 # Those values which appear in the indicated fields of documents, yet don't appear in the corpus dictionaries, are removed.
@@ -865,9 +865,9 @@ cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Integer=1)
 # Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields yet don't appear in the corpus dictionaries.
 # All documents of length < len are removed.
 
-fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabetize::Bool=true)
+fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, abr::Int=1, len::Int=1, alphabetize::Bool=true)
 # Fixes a corp by running the following four functions in order:
-# abridgecorp!(corp, stop=stop, order=order, b=b)
+# abridgecorp!(corp, stop=stop, order=order, abr=abr)
 # trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
 # cullcorp!(corp, len=len)	
 # compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
