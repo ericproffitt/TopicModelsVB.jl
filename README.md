@@ -817,11 +817,11 @@ ispositive(x::Union{Real, Array{Real}})
 logsumexp(x::Array{Real})
 # Overflow safe log(sum(exp(x))).
 
-addlogistic(x::Array{Real}, region::Int)
+addlogistic(x::Array{Real}, region::Integer)
 # Overflow safe additive logistic function.
 # 'region' is optional, across columns: 'region' = 1, rows: 'region' = 2.
 
-partition(xs::Union{Vector, UnitRange}, n::Int)
+partition(xs::Union{Vector, UnitRange}, n::Integer)
 # 'n' must be positive.
 # Return VectorList containing contiguous portions of xs of length n (includes remainder).
 # e.g. partition([1,-7.1,"HI",5,5], 2) == Vector[[1,-7.1],["HI",5],[5]]
@@ -845,7 +845,7 @@ readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::Abst
 writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Write corpus to plaintext files.
 
-abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1)
+abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Integer=1)
 # Abridge corpus.
 # If stop = true, stop words are removed.
 # If order = false, order is ignored and multiple seperate occurrences of words are stacked and the associated counts increased.
@@ -861,7 +861,7 @@ compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetize::Bool=t
 padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
 # Pad a corpus by entering generic values for lex and/or userkeys which appear in documents but not in the lex/user dictionaries.
 
-cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Int=1)
+cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Integer=1)
 # Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields yet don't appear in the corpus dictionaries.
 # All documents of length < len are removed.
 
@@ -872,7 +872,7 @@ fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, reade
 # cullcorp!(corp, len=len)	
 # compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
 
-showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
+showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Integer, Vector{Integer}, UnitRange{Integer}})
 # Display the text and title of a document(s).
 
 getlex(corp::Corpus)
@@ -891,7 +891,7 @@ fixmodel!(model::TopicModel)
 # Verify that all model fields have legal values.
 # Align any auxiliary parameters with their associated parent parameters.
 
-train!(model::BaseTopicModel; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
+train!(model::BaseTopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 # Train one of the following models: LDA, fLDA, CTM, fCTM.
 # 'iter'    - maximum number of iterations through the corpus.
 # 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
@@ -901,12 +901,12 @@ train!(model::BaseTopicModel; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Re
 # 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
 # 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence checking).
 
-train!(dtm::AbstractDTM; iter::Int=150, tol::Real=1.0, niter=1000, ntol::Real=1/dtm.K^2, cgiter::Int=10, cgtol::Real=1/dtm.T^2, chkelbo::Int=1)
+train!(dtm::AbstractDTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/dtm.K^2, cgiter::Integer=10, cgtol::Real=1/dtm.T^2, chkelbo::Integer=1)
 # Train DTM.
 # 'cgiter' - maximum number of iterations for the Polak-Ribière conjugate gradient method.
 # 'cgtol'  - tolerance for change in function value as a stopping criterion for the Polak-Ribière conjugate gradient method.
 
-train!(ctpf::AbstractCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/ctpf.K^2, chkelbo::Int=1)
+train!(ctpf::AbstractCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/ctpf.K^2, chkelbo::Integer=1)
 # Train CTPF.
 
 @gpu train!(model; kwargs...)
@@ -919,19 +919,19 @@ gendoc(model::BaseTopicModel, a::Real=0.0)
 gencorp(model::BaseTopicModel, corpsize::Int, a::Real=0.0)
 # Generate a generic corpus of size 'corpsize' from model parameters.
 
-showtopics(model::TopicModel, N::Int=min(15, model.V); topics::Union{Int, Vector{Int}}=collect(1:model.K), cols::Int=4)
+showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Union{Integer, Vector{Integer}}=collect(1:model.K), cols::Integer=4)
 # Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
 
-showtopics(dtm::AbstractDTM, N::Int=min(15, dtm.V); topics::Union{Int, Vector{Int}}=collect(1:dtm.K), times::Union{Int, Vector{Int}}=collect(1:dtm.T), cols::Int=4)
+showtopics(dtm::AbstractDTM, N::Integer=min(15, dtm.V); topics::Union{Integer, Vector{Integer}}=collect(1:dtm.K), times::Union{Integer, Vector{Integer}}=collect(1:dtm.T), cols::Integer=4)
 # Display the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
 
-showlibs(ctpf::AbstractCTPF, users::Union{Int, Vector{Int}})
+showlibs(ctpf::AbstractCTPF, users::Union{Integer, Vector{Integer}})
 # Show the document(s) in a user's library.
 
-showdrecs(ctpf::AbstractCTPF, docs::Union{Int, Vector{Int}}, U::Int=min(16, ctpf.U); cols::Int=4)
+showdrecs(ctpf::AbstractCTPF, docs::Union{Integer, Vector{Integer}}, U::Integer=min(16, ctpf.U); cols::Integer=4)
 # Show the top 'U' user recommendations for a document(s), defaults to 4 columns per line.
 
-showurecs(ctpf::AbstractCTPF, users::Union{Int, Vector{Int}}, M::Int=min(10, ctpf.M); cols::Int=1)
+showurecs(ctpf::AbstractCTPF, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M); cols::Integer=1)
 # Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
 # If a document has no title, the document's index in the corpus will be shown instead.
 ```
