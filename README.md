@@ -718,7 +718,7 @@ VectorList{T}
 MatrixList{T}
 # Array{Array{T,2},1}
 
-Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), stamp=-Inf, title="")
+Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), stamp::Real=-Inf, title::UTF8String="")
 # FIELDNAMES:
 # terms::Vector{Int}
 # counts::Vector{Int}
@@ -727,7 +727,7 @@ Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(r
 # stamp::Float64
 # title::UTF8String
 
-Corpus(;docs=Document[], lex=[], users=[])
+Corpus(;docs::Vector{Document}=Document[], lex::Union{Vector{UTF8String}, Dict{Int, UTF8String}}=[], users::Union{Vector{UTF8String}, Dict{Int, UTF8String}}=[])
 # FIELDNAMES:
 # docs::Vector{Document}
 # lex::Dict{Int, UTF8String}
@@ -760,46 +760,46 @@ AbstractDTM
 AbstractCTPF
 # Union{CTPF, gpuCTPF}
 
-LDA(corp, K) <: TopicModel
+LDA(corp::Corpus, K::Integer) <: TopicModel
 # Latent Dirichlet allocation
 # 'K' - number of topics.
 
-fLDA(corp, K) <: TopicModel
+fLDA(corp::Corpus, K::Integer) <: TopicModel
 # Filtered latent Dirichlet allocation
 
-CTM(corp, K) <: TopicModel
+CTM(corp::Corpus, K::Integer) <: TopicModel
 # Correlated topic model
 
-fCTM(corp, K) <: TopicModel
+fCTM(corp::Corpus, K::Integer) <: TopicModel
 # Filtered correlated topic model
 
-DTM(corp, K, delta, basemodel) <: TopicModel
+DTM(corp::Corpus, K::Integer, delta::Real, basemodel::BaseTopicModel) <: TopicModel
 # Dynamic topic model
 # 'delta'     - time-interval size.
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
-CTPF(corp, K, basemodel) <: GPUTopicModel
+CTPF(corp::Corpus, K::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
 # Collaborative topic Poisson factorization
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
-gpuLDA(corp, K) <: GPUTopicModel
+gpuLDA(corp::Corpus, K::Integer) <: GPUTopicModel
 # GPU accelerated latent Dirichlet allocation
 
-gpufLDA(corp, K) <: GPUTopicModel
+gpufLDA(corp::Corpus, K::Integer) <: GPUTopicModel
 # GPU accelerated filtered latent Dirichlet allocation
 
-gpuCTM(corp, K) <: GPUTopicModel
+gpuCTM(corp::Corpus, K::Integer) <: GPUTopicModel
 # GPU accelerated correlated topic model
 
-gpufCTM(corp, K) <: GPUTopicModel
+gpufCTM(corp::Corpus, K::Integer) <: GPUTopicModel
 # GPU accelerated filtered correlated topic model
 
-gpuDTM(corp, delta, K, basemodel) <: GPUTopicModel
+gpuDTM(corp::Corpus, K::Integer, delta::Real, basemodel::BaseTopicModel) <: GPUTopicModel
 # GPU accelerated dynamic topic model
 # 'delta'     - time-interval size.
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
-gpuCTPF(corp, K, basemodel) <: GPUTopicModel
+gpuCTPF(corp::Corpus, K::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
 # GPU accelerated collaborative topic Poission factorization
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 ```
