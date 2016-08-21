@@ -703,7 +703,7 @@ Here is the benchmark of our above model against the equivalent NSF LDA model ru
 
 As we can see, the GPU LDA model is approximatey 1.35 orders of magnitude faster than the equivalent CPU LDA model.
 
-It's often the case that one does not have sufficient VRAM to hold the entire GPU model at one time.  Thus we provide the option of batching the GPU model in order to fit much larger models than would otherwise be possible:
+It's often the case that one does not have sufficient VRAM to hold the entire model in GPU memory at one time.  Thus we provide the option of batching GPU models in order to train much larger models than would otherwise be possible:
 
 ```julia
 citeucorp = readcorp(:citeu)
