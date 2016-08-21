@@ -439,7 +439,7 @@ function fixmodel!(model::gpuLDA; check::Bool=true)
 	end
 
 	model.Elogtheta = [digamma(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in model.batches[1]]
-	model.Elogthetasum = sum(model.Elogtheta)
+	model.Elogthetasum = zeros(model.K)
 	model.newbeta = nothing
 	
 	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]

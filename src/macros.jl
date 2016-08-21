@@ -116,7 +116,7 @@ macro buf(args...)
 		quoteblock =
 		quote
 		batch = model.batches[b]
-		model.phibuf = OpenCL.Buffer(Float32, model.context, :rw, model.K * (sum(model.N[batch]) + 64 - sum(model.N[batch]) % 64))
+		model.phibuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=ones(Float32, model.K, sum(model.N[batch]) + 64 - sum(model.N[batch]) % 64) / model.K)
 		end
 
 	elseif expr.args[2] == :(:Elogtheta)
