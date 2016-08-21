@@ -704,15 +704,12 @@ As we can see, the GPU LDA model is approximatey 1.4 orders of magnitude faster 
 It's often the case that one does not have sufficient VRAM to hold the entire GPU model at one time.  Thus we provide the option of batching the GPU model in order to fit much larger models than would otherwise be possible:
 
 ```julia
-
 citeucorp = readcorp(:citeu)
 
 citeuctm = CTM(citeucorp, 16)
-@gpu 8500 train!(citeuctm, iter=150, chkelbo=15)
+@gpu 8500 train!(citeuctm, iter=150, chkelbo=15) # batchsize = 8500.
 
 # training...
-
-model.batches # = [1:8500, 8501:16980]
 ```
 
 One drawback of running GPU models on batches is that performance decreases approximately linearly with the number of batches:
