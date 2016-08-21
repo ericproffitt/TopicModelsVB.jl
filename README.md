@@ -144,14 +144,14 @@ CTPF(corp, K, basemodel)
 
 ### GPU Accelerated Models
 ```julia
-gpuLDA(corp, K)
+gpuLDA(corp, K, batchsize)
 # GPU accelerated latent Dirichlet allocation model with K topics.
 
 gpufLDA(corp, K)
 # Coming soon...
 
-gpuCTM(corp, K)
-# Coming soon...
+gpuCTM(corp, K, batchsize)
+# GPU accelerated correlated topic model with K topics.
 
 gpufCTM(corp, K)
 # Coming soon...
@@ -159,7 +159,7 @@ gpufCTM(corp, K)
 gpuDTM(corp, K, delta, basemodel)
 # Coming soon...
 
-gpuCTPF(corp, K, basemodel)
+gpuCTPF(corp, K, batchsize, basemodel)
 # GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
