@@ -696,6 +696,8 @@ nsflda = LDA(nsfcorp, 16)
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 4 minutes.
 
+**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
+
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
 
@@ -712,15 +714,13 @@ citeuctm = CTM(citeucorp, 16)
 # training...
 ```
 
-One drawback of running GPU models on batches is that performance decreases approximately linearly with the number of batches:
+It's important to understand that GPGPU is still the wild west of computer programming.  The performance of batched models depends on many architecture dependent factors, including but not limited to the memory, the GPU, the manufacturer, the type of computer, what other applications are running, whether a display is connected, etc.
 
-**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
+While non-batched models will usually be the fasted (for those GPUs which can handle them), it's not necessarily the case that reducing the batch size will result in a degredation in performance.  Thus it's always good to experiment with different batch sizes, to see which sizes work best for your computer.
 
-**Important:** Currently the entire model must fit in your VRAM or you'll get an error, batch algorithms for the GPU models are coming and should be uploaded within the next few weeks.
+**Important:** If Julia crashes or throws an error when trying to run one of your models on the GPU, your best course of action is to reduce the batch size and retrain your model.
 
-**Important:** Because OpenCL is designed to be compatible with a diversity of computer architectures, it's not without its quirks, bugs and rough edges.  If while checking the ELBO your model throws a domain error, then it's possible OpenCL failed to read all of your model data back into CPU memory.  If so, then the best course of action is to set `chkelbo > iter` and retrain your model.
-
-In addition, because OpenCL does not allow for empty buffers, loading empty corpora into GPU models will return an error.  Finally, expect your computer to lag when training on your GPU, since you're effectively siphoning off its rendering resources to fit your model.
+Finally, expect your computer to lag when training on your GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
 ## Types
 
