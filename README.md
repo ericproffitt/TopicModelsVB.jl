@@ -859,16 +859,15 @@ readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::Abst
 # readcorp(:nsf)   - National Science Foundation corpus.
 # readcorp(:citeu) - CiteULike corpus.
 # readcorp(:mac)   - Macintosh Magazine corpus.
-# readcorp(:cmag)  - Full Computer Magazine corpus.
 
 writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Write corpus to plaintext files.
 
 abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
 # Abridge corpus.
-# If stop = true, stop words are removed.
-# If order = false, order is ignored and multiple seperate occurrences of words are stacked and the associated counts increased.
-# All terms which appear < abr times are removed from documents.
+# If 'stop' = true, stop words are removed.
+# If 'order' = false, order is ignored and multiple seperate occurrences of words are stacked and the associated counts increased.
+# All terms which appear < 'abr' times are removed from documents.
 
 trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
 # Those values which appear in the indicated fields of documents, yet don't appear in the corpus dictionaries, are removed.
