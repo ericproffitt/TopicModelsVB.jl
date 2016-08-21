@@ -696,10 +696,14 @@ nsflda = LDA(nsfcorp, 16)
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 4 minutes.
 
+Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
+![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
+
+As we can see, the GPU LDA model is approximatey 1.4 orders of magnitude faster than the equivalent CPU LDA model.
+
 It's often the case that one does not have sufficient VRAM to hold the entire GPU model at one time.  Thus we provide the option of batching the GPU model in order to fit much larger models than would otherwise be possible:
 
-```
-julia
+```julia
 
 citeucorp = readcorp(:citeu)
 
@@ -720,11 +724,6 @@ One drawback of running GPU models on batches is that performance decreases appr
 **Important:** Because OpenCL is designed to be compatible with a diversity of computer architectures, it's not without its quirks, bugs and rough edges.  If while checking the ELBO your model throws a domain error, then it's possible OpenCL failed to read all of your model data back into CPU memory.  If so, then the best course of action is to set `chkelbo > iter` and retrain your model.
 
 In addition, because OpenCL does not allow for empty buffers, loading empty corpora into GPU models will return an error.  Finally, expect your computer to lag when training on your GPU, since you're effectively siphoning off its rendering resources to fit your model.
-
-Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
-![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
-
-As we can see, the GPU LDA model is approximatey 1.4 orders of magnitude faster than the equivalent CPU LDA model.
 
 ## Types
 
