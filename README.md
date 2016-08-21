@@ -690,14 +690,14 @@ nsflda = LDA(nsfcorp, 16)
 
 # training...
 
-# 237.117185 seconds (180.46 M allocations: 11.619 GB, 4.39% gc time)
+# 238.117185 seconds (180.46 M allocations: 11.619 GB, 4.39% gc time)
 # On a 2.5 GHz Intel Core i5 2012 Macbook Pro with 4GB of RAM and an Intel HD Graphics 4000 1536 MB GPU.
 ```
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 4 minutes.
 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
-![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar2.png)
+![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
 
 As we can see, the GPU LDA model is approximatey 1.4 orders of magnitude faster than the equivalent CPU LDA model.
 
