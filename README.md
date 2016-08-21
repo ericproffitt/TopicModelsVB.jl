@@ -699,7 +699,7 @@ This algorithm just crunched through a 16 topic 128,804 document topic model in 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
 
-As we can see, the GPU LDA model is approximatey 1.4 orders of magnitude faster than the equivalent CPU LDA model.
+As we can see, the GPU LDA model is approximatey 1.35 orders of magnitude faster than the equivalent CPU LDA model.
 
 It's often the case that one does not have sufficient VRAM to hold the entire GPU model at one time.  Thus we provide the option of batching the GPU model in order to fit much larger models than would otherwise be possible:
 
