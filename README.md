@@ -147,16 +147,16 @@ CTPF(corp, K, basemodel)
 gpuLDA(corp, K, batchsize)
 # GPU accelerated latent Dirichlet allocation model with K topics.
 
-gpufLDA(corp, K)
+gpufLDA(corp, K, batchsize)
 # Coming soon...
 
 gpuCTM(corp, K, batchsize)
 # GPU accelerated correlated topic model with K topics.
 
-gpufCTM(corp, K)
+gpufCTM(corp, K, batchsize)
 # Coming soon...
 
-gpuDTM(corp, K, delta, basemodel)
+gpuDTM(corp, K, delta, batchsize, basemodel)
 # Coming soon...
 
 gpuCTPF(corp, K, batchsize, basemodel)
@@ -680,7 +680,7 @@ showurecs(citeuctpf, 1741, 20)
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
 
-Currently only the standard LDA and CTPF models are supported, however GPU accelerated versions of the other models are in the works.  There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
+Currently the LDA, CTM and CTPF models are supported, however GPU accelerated versions of the remaining three models are in the works.  There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
 
 ```julia
 nsfcorp = readcorp(:nsf)
@@ -695,6 +695,23 @@ nsflda = LDA(nsfcorp, 16)
 ```
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 4 minutes.
+
+It's often the case that one does not have sufficient VRAM to hold the entire GPU model at one time.  Thus we provide the option of batching the GPU model in order to fit much larger models than would otherwise be possible:
+
+```
+julia
+
+citeucorp = readcorp(:citeu)
+
+citeuctm = CTM(citeucorp, 16)
+@gpu 8500 train!(citeuctm, iter=150, chkelbo=15)
+
+# training...
+
+model.batches # = [1:8500, 8501:16980]
+```
+
+One drawback of running GPU models on batches is that performance decreases approximately linearly with the number of batches:
 
 **Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
@@ -782,25 +799,31 @@ CTPF(corp::Corpus, K::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
 # Collaborative topic Poisson factorization
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
-gpuLDA(corp::Corpus, K::Integer) <: GPUTopicModel
+gpuLDA(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
 # GPU accelerated latent Dirichlet allocation
+# 'batchsize' defaults to 'length(corp)'.
 
-gpufLDA(corp::Corpus, K::Integer) <: GPUTopicModel
+gpufLDA(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
 # GPU accelerated filtered latent Dirichlet allocation
+# 'batchsize' defaults to 'length(corp)'.
 
-gpuCTM(corp::Corpus, K::Integer) <: GPUTopicModel
+gpuCTM(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
 # GPU accelerated correlated topic model
+# 'batchsize' defaults to 'length(corp)'.
 
-gpufCTM(corp::Corpus, K::Integer) <: GPUTopicModel
+gpufCTM(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
 # GPU accelerated filtered correlated topic model
+# 'batchsize' defaults to 'length(corp)'.
 
-gpuDTM(corp::Corpus, K::Integer, delta::Real, basemodel::BaseTopicModel) <: GPUTopicModel
+gpuDTM(corp::Corpus, K::Integer, delta::Real, batchsize::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
 # GPU accelerated dynamic topic model
 # 'delta'     - time-interval size.
+# 'batchsize' defaults to 'length(corp)'.
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
-gpuCTPF(corp::Corpus, K::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
+gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
 # GPU accelerated collaborative topic Poission factorization
+# 'batchsize' defaults to 'length(corp)'.
 # 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 ```
 
@@ -887,8 +910,8 @@ getusers(corp::Corpus)
 ```julia
 showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
 
-fixmodel!(model::TopicModel)
-# Verify that all model fields have legal values.
+fixmodel!(model::TopicModel; check::Bool=true)
+# If 'check == true', verify model's primary data has legal values.
 # Align any auxiliary parameters with their associated parent parameters.
 
 train!(model::BaseTopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
