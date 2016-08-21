@@ -907,7 +907,7 @@ getusers(corp::Corpus)
 showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
 
 fixmodel!(model::TopicModel; check::Bool=true)
-# If 'check == true', verify model's primary data has legal values.
+# If 'check == true', verify the legality of the model's primary data.
 # Align any auxiliary parameters with their associated parent parameters.
 
 train!(model::BaseTopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
