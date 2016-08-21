@@ -102,14 +102,14 @@ maccorp = readcorp(:mac)
 
 maccorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, maccorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(maccorp, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
+fixcorp!(maccorp, abr=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
-pmodel = LDA(maccorp, 9)
-train!(pmodel, iter=150, chkelbo=151)
+basemodel = LDA(maccorp, 9)
+train!(basemodel, iter=150, chkelbo=151)
 
 # training...
 
-macdtm = DTM(maccorp, 9, 200, pmodel)
+macdtm = DTM(maccorp, 9, 200, basemodel)
 train!(macdtm, iter=10) # This will likely take several hours on a personal computer.
                         # Convergence for all other models is worst-case quadratic,
                         # while DTM convergence is linear or at best super-linear.
@@ -161,12 +161,12 @@ end
 
 srand(1)
 
-pmodel = gpuLDA(citeucorp, 30)
-train!(pmodel, iter=100, chkelbo=101)
+basemodel = gpuLDA(citeucorp, 30)
+train!(basemodel, iter=100, chkelbo=101)
 
 # training...
 
-citeuctpf = gpuCTPF(citeucorp, 30, pmodel)
+citeuctpf = gpuCTPF(citeucorp, 30, basemodel)
 train!(citeuctpf, iter=20, chkelbo=21)
 
 acc = Float64[]
