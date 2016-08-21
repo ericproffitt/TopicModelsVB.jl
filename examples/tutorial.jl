@@ -204,3 +204,10 @@ nsflda = LDA(nsfcorp, 16)
 
 # training...
 
+citeucorp = readcorp(:citeu)
+
+citeuctm = CTM(citeucorp, 7)
+@gpu 4250 train!(citeuctm, iter=150, chkelbo=25) # batchsize = 4250 documents.
+
+# training...
+
