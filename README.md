@@ -697,7 +697,7 @@ nsflda = LDA(nsfcorp, 16)
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 4 minutes.
 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
-![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
+![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar2.png)
 
 As we can see, the GPU LDA model is approximatey 1.4 orders of magnitude faster than the equivalent CPU LDA model.
 
