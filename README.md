@@ -708,7 +708,7 @@ It's often the case that one does not have sufficient VRAM to hold the entire GP
 ```julia
 citeucorp = readcorp(:citeu)
 
-citeuctm = CTM(citeucorp, 16)
+citeuctm = CTM(citeucorp, 7)
 @gpu 4250 train!(citeuctm, iter=150, chkelbo=25) # batchsize = 4250 documents.
 
 # training...
