@@ -720,7 +720,7 @@ While non-batched models will usually be the fasted (for those GPUs which can ha
 
 **Important:** If Julia crashes or throws an error when trying to run one of your models on the GPU, your best course of action is to reduce the batch size and retrain your model.
 
-Finally, expect your computer to lag when training on your GPU, since you're effectively siphoning off its rendering resources to fit your model.
+Finally, expect your computer to lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
 ## Types
 
