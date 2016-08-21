@@ -1,1 +1,1 @@
-AbstractfCTM = Union{fCTM, gpufCTM}
+AbstractfCTM = Union{fCTM}

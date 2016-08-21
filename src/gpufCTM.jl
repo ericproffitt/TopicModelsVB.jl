@@ -1,2 +1,0 @@
-type gpufCTM <: GPUTopicModel
-end

@@ -181,9 +181,9 @@ end
 testukeys[1] # = 216
 acc[1] # = 0.945
 
-showdrecs(citeuctpf, 1, 307, cols=1)
+showdrecs(citeuctpf, 1, 272, cols=1)
 
-showurecs(citeuctpf, 216, 1745)
+showurecs(citeuctpf, 216, 1382)
 
 showlibs(citeuctpf, 1741)
 

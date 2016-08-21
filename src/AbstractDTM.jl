@@ -1,1 +1,1 @@
-AbstractDTM = Union{DTM, gpuDTM}
+AbstractDTM = Union{DTM}

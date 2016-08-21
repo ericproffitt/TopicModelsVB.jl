@@ -217,24 +217,24 @@ const CTM_NEWBETA_cpp =
 """
 kernel void
 updateNewbeta(long K,
-				const global long *Jpsums,
-				const global long *counts,
-				const global long *words,
-				const global float *phi,
-				global float *newbeta)
+			const global long *Jpsums,
+			const global long *counts,
+			const global long *words,
+			const global float *phi,
+			global float *newbeta)
 							
-				{
-				long i = get_global_id(0);
-				long j = get_global_id(1);	
+			{
+			long i = get_global_id(0);
+			long j = get_global_id(1);	
 
-				float acc = 0.0f;
+			float acc = 0.0f;
 
-				for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
-					acc += counts[words[w]] * phi[K * words[w] + i];
+			for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
+				acc += counts[words[w]] * phi[K * words[w] + i];
 
-				newbeta[K * j + i] += acc;
-				}
-				"""
+			newbeta[K * j + i] += acc;
+			}
+			"""
 
 function updateNewbeta!(model::gpuCTM)
 	OpenCL.call(model.queue, model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)

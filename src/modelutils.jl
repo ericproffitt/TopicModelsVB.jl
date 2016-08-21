@@ -21,10 +21,7 @@ Base.show(io::IO, model::DTM) = print(io, "Dynamic topic model with $(model.K) t
 Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")
 
 Base.show(io::IO, model::gpuLDA) = print(io, "GPU accelerated latent Dirichlet allocation model with $(model.K) topics.")
-Base.show(io::IO, model::gpufLDA) = print(io, "GPU accelerated filtered latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic model with $(model.K) topics.")
-Base.show(io::IO, model::gpufCTM) = print(io, "GPU accelerated filtered correlated topic allocation model with $(model.K) topics.")
-Base.show(io::IO, model::gpuDTM) = print(io, "GPU accelerated Dynamic topic model with $(model.K) topics and ∆ = $(model.delta).")
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 
@@ -48,9 +45,6 @@ function updateBuf!(model::gpuLDA, b::Int)
 	@buf b model.Elogtheta
 end
 
-function updateBuf!(model::gpufLDA)
-end
-
 function updateBuf!(model::gpuCTM, b::Int)
 	b = b % model.B + 1
 
@@ -66,12 +60,6 @@ function updateBuf!(model::gpuCTM, b::Int)
 	@buf b model.newtoninvhess
 
 	@buf b model.phi
-end
-
-function updateBuf!(model::gpufCTM)
-end
-
-function updateBuf!(model::gpuDTM)
 end
 
 function updateBuf!(model::gpuCTPF, b::Int)
@@ -101,9 +89,6 @@ function updateHost!(model::gpuLDA, b::Int)
 	@host b model.Elogthetasumbuf
 end
 
-function updateHost!(model::gpufLDA)
-end
-
 function updateHost!(model::gpuCTM, b::Int)
 	@host model.mubuf
 	@host model.sigmabuf
@@ -113,12 +98,6 @@ function updateHost!(model::gpuCTM, b::Int)
 	@host model.vsqbuf
 	@host model.lzetabuf
 	@host b model.phibuf
-end
-
-function updateHost!(model::gpufCTM)
-end
-
-function updateHost!(model::gpuDTM)
 end
 
 function updateHost!(model::gpuCTPF, b::Int)
@@ -498,9 +477,6 @@ function fixmodel!(model::gpuLDA; check::Bool=true)
 	nothing
 end
 
-function fixmodel!(model::gpufLDA; check::Bool=true)
-end
-
 function fixmodel!(model::gpuCTM; check::Bool=true)
 	if check
 	checkcorp(model.corp)
@@ -590,12 +566,6 @@ function fixmodel!(model::gpuCTM; check::Bool=true)
 
 	model.newelbo = 0
 	nothing
-end
-
-function fixmodel!(model::gpufCTM; check::Bool=true)
-end
-
-function fixmodel!(model::gpuDTM; check::Bool=true)
 end
 
 function fixmodel!(model::gpuCTPF; check::Bool=true)

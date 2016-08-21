@@ -34,22 +34,27 @@ type DTM <: TopicModel
 		@assert ispositive(K)
 		@assert isfinite(delta)
 		@assert ispositive(delta)
-		@assert !isempty(basemodel.corp)
+		@assert !isempty(corp)
 		checkcorp(corp)
-		fixmodel!(basemodel)
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
 
-		stamps = [doc.stamp for doc in corp]
+		if isa(basemodel, BaseTopicModel)
+			fixmodel!(basemodel)
+			@assert basemodel.K = K
+			@assert basemodel.M = M
+			@assert basemodel.V = V 
+		end
+
+		stamps = Float64[doc.stamp for doc in corp]
+		@assert all(isfinite(stamps))
 		t0 = minimum(stamps)
 		tM = maximum(stamps)
 
 		T = convert(Int, ceil((tM - t0) / delta))
 		S = [Int[] for _ in 1:T]
-
-		topics = [basemodel.topics for _ in 1:T]
 		
 		t = 1
 		for d in sortperm(stamps)
@@ -58,26 +63,31 @@ type DTM <: TopicModel
 		end
 
 		if isa(basemodel, AbstractLDA)
+			topics = [basemodel.topics for _ in 1:T]
 			alpha = [basemodel.alpha for _ in 1:T]
 			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [basemodel.gamma[d] for d in 1:M]
 
 		elseif isa(basemodel, AbstractfLDA)
+			topics = [basemodel.topics for _ in 1:T]
 			alpha = [basemodel.alpha for _ in 1:T]
 			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [basemodel.gamma[d] for d in 1:M]
 
 		elseif isa(basemodel, AbstractCTM)
+			topics = [basemodel.topics for _ in 1:T]
 			alpha = [addlogistic(basemodel.mu) for _ in 1:T]
 			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(basemodel.lambda[d]) for d in 1:M]
 
 		elseif isa(basemodel, AbstractfCTM)
+			topics = [basemodel.topics for _ in 1:T]
 			alpha = [addlogistic(basemodel.mu) for _ in 1:T]
 			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(basemodel.lambda[d]) for d in 1:M]
 
 		else
+			topics = [[collect(1:V) for _ in 1:K] for _ in 1:T]
 			alpha = [ones(K) for _ in 1:T]
 			betahat = [randn(K, V) for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]

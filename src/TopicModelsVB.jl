@@ -8,7 +8,7 @@ export Document, Corpus
 export TopicModel, GPUTopicModel, BaseTopicModel
 export AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfCTM, AbstractDTM, AbstractCTPF
 export LDA, fLDA, CTM, fCTM, CTPF, DTM
-export gpuLDA, gpufLDA, gpuCTM, gpufCTM, gpuDTM, gpuCTPF
+export gpuLDA, gpuCTM, gpuCTPF
 export isnegative, ispositive, logsumexp, addlogistic, partition
 export checkdoc, checkcorp, readcorp, writecorp, abridgecorp!, trimcorp!, compactcorp!, padcorp!, cullcorp!, fixcorp!, showdocs, getlex, getusers
 export train!, @gpu
@@ -26,7 +26,6 @@ include("gpuLDA.jl")
 include("AbstractLDA.jl")
 
 include("fLDA.jl")
-include("gpufLDA.jl")
 include("AbstractfLDA.jl")
 
 include("CTM.jl")
@@ -34,13 +33,11 @@ include("gpuCTM.jl")
 include("AbstractCTM.jl")
 
 include("fCTM.jl")
-include("gpufCTM.jl")
 include("AbstractfCTM.jl")
 
 include("BaseTopicModel.jl")
 
 include("DTM.jl")
-include("gpuDTM.jl")
 include("AbstractDTM.jl")
 
 include("CTPF.jl")

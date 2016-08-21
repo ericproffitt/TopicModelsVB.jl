@@ -1,1 +1,1 @@
-AbstractfLDA = Union{fLDA, gpufLDA}
+AbstractfLDA = Union{fLDA}

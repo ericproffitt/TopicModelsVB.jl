@@ -99,6 +99,7 @@ type gpuCTPF <: GPUTopicModel
 		batches = partition(1:M, batchsize)
 		B = length(batches)
 
+		@assert ispositive(U)
 		@assert isequal(collect(1:U), sort(collect(keys(corp.users))))
 		libs = [Int[] for _ in 1:U]
 		for u in 1:U, d in 1:M

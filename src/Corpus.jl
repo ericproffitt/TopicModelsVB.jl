@@ -30,15 +30,15 @@ Base.length(doc::Document) = length(doc.terms)
 Base.size(doc::Document) = sum(doc.counts)
 
 function checkdoc(doc::Document)
-	@assert !isempty(doc.terms)
-	@assert all(ispositive(doc.terms))
-	@assert all(ispositive(doc.counts))
-	@assert isequal(length(doc.terms), length(doc.counts))
-	@assert all(ispositive(doc.readers))
-	@assert all(ispositive(doc.ratings))
-	@assert isequal(length(doc.readers), length(doc.readers))
-	@assert is(length(doc.stamp), 1)
-	return true	
+	pass =
+	(!isempty(doc.terms)
+	& all(ispositive(doc.terms))
+	& all(ispositive(doc.counts))
+	& isequal(length(doc.terms), length(doc.counts))
+	& all(ispositive(doc.readers))
+	& all(ispositive(doc.ratings))
+	& isequal(length(doc.readers), length(doc.ratings)))
+	return pass	
 end
 
 
@@ -94,12 +94,13 @@ Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), lex=copy(corp.lex), users
 Base.endof(corp::Corpus) = length(corp)
 
 function checkcorp(corp::Corpus)
-	for doc in corp
-		checkdoc(doc)
+	pass = true
+	for (d, doc) in enumerate(corp)
+		checkdoc(doc) || (println("Document $d failed check."); pass=false)
 	end
 	@assert all(ispositive(collect(keys(corp.lex))))
 	@assert all(ispositive(collect(keys(corp.users))))
-	return true
+	return pass
 end
 
 

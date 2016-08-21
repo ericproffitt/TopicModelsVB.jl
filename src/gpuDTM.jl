@@ -1,2 +1,0 @@
-type gpuDTM <: GPUTopicModel
-end
