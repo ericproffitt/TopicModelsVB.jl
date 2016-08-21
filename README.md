@@ -716,7 +716,7 @@ citeuctm = CTM(citeucorp, 16)
 
 It's important to understand that GPGPU is still the wild west of computer programming.  The performance of batched models depends on many architecture dependent factors, including but not limited to the memory, the GPU, the manufacturer, the type of computer, what other applications are running, whether a display is connected, etc.
 
-While non-batched models will usually be the fasted (for those GPUs which can handle them), it's not necessarily the case that reducing the batch size will result in a degredation in performance.  Thus it's always good to experiment with different batch sizes, to see which sizes work best for your computer.
+While non-batched models will usually be the fasted (for those GPUs which can handle them), it's not necessarily the case that reducing the batch size will result in a degredation in performance.  Thus it's always a good idea to experiment with different batch sizes, to see which sizes work best for your computer.
 
 **Important:** If Julia crashes or throws an error when trying to run one of your models on the GPU, your best course of action is to reduce the batch size and retrain your model.
 
