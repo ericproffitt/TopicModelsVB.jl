@@ -8,17 +8,16 @@ type fLDA <: TopicModel
 	topics::VectorList{Int}
 	alpha::Vector{Float64}
 	eta::Float64
-	neweta::Float64
 	beta::Matrix{Float64}
-	newbeta::Matrix{Float64}
 	fbeta::Matrix{Float64}
 	kappa::Vector{Float64}
-	newkappa::Vector{Float64}
 	gamma::VectorList{Float64}
 	tau::VectorList{Float64}
 	phi::Matrix{Float64}
 	Elogtheta::Vector{Float64}
 	Elogthetasum::Vector{Float64}
+	newbeta::Matrix{Float64}
+	newkappa::Vector{Float64}
 	elbo::Float64
 	newelbo::Float64
 
@@ -35,19 +34,17 @@ type fLDA <: TopicModel
 
 		alpha = ones(K)
 		eta = 0.95
-		neweta = 0.0
 		beta = rand(Dirichlet(V, 1.0), K)'
-		newbeta = zeros(K, V)
 		fbeta = copy(beta)
 		kappa = rand(Dirichlet(V, 1.0))
-		newkappa = zeros(V)
 		gamma = [ones(K) for _ in 1:M]
 		tau = [fill(eta, N[d]) for d in 1:M]
 		phi = ones(K, N[1]) / K
-		Elogtheta = digamma(ones(K)) - digamma(K)
-		Elogthetasum = zeros(K)
 	
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, eta, neweta, beta, newbeta, fbeta, kappa, newkappa, gamma, tau, phi, Elogtheta, Elogthetasum, 0, 0)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, eta, beta, fbeta, kappa, gamma, tau, phi)
+		fixmodel!(model, check=false)
+		
+		model.newelbo = 0
 		for d in 1:M
 			model.phi = ones(K, N[d]) / K
 			updateNewELBO!(model, d)
@@ -66,7 +63,7 @@ end
 function Elogpc(model::fLDA, d::Int)
 	counts = model.corp[d].counts
 	y = dot(model.tau[d], counts)
-	x = log(model.eta^y * (1 - model.eta)^(model.C[d] - y) + epsln)
+	x = log(@boink model.eta^y * (1 - model.eta)^(model.C[d] - y))
 	return x
 end
 
@@ -121,7 +118,7 @@ function updateAlpha!(model::fLDA, niter::Integer, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
+		alphaGrad = [nu / model.alpha[i] + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
 		alphaInvHessDiag = -1 ./ (model.M * trigamma(model.alpha) + nu ./ model.alpha.^2)
 		p = (alphaGrad - dot(alphaGrad, alphaInvHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alphaInvHessDiag))) .* alphaInvHessDiag
 		
@@ -136,6 +133,7 @@ function updateAlpha!(model::fLDA, niter::Integer, ntol::Real)
 		nu *= 0.5
 	end
 	@bumper model.alpha
+	model.Elogthetasum = zeros(model.K)	
 end
 
 function updateEta!(model::fLDA)
@@ -169,7 +167,7 @@ end
 
 function updateTau!(model::fLDA, d::Int)
 	terms = model.corp[d].terms
-	model.tau[d] = model.eta ./ (model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, 1))) + epsln)
+	model.tau[d] = model.eta ./ (@boink model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, 1))))
 end
 
 function updatePhi!(model::fLDA, d::Int)
@@ -188,7 +186,6 @@ end
 function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
-	fixmodel!(model)	
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)
@@ -213,14 +210,13 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		updateEta!(model)	
 		updateBeta!(model)
 		updateKappa!(model)
-		model.Elogthetasum = zeros(model.K)	
 		if checkELBO!(model, k, chk, tol)
 			break
 		end
 	end
 	updatePhi!(model, 1)
 	updateElogtheta!(model, 1)
-	model.fbeta = model.beta .* (model.kappa' .<= 0)
+	@bumper model.fbeta = model.beta .* (model.kappa' .<= 0)
 	model.fbeta ./= sum(model.fbeta, 2)
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing

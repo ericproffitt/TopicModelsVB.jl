@@ -28,12 +28,16 @@ type CTPF <: TopicModel
 	vav::Vector{Float64}
 	zayin::VectorList{Float64}
 	het::Vector{Float64}
-	phi::MatrixList{Float64}
-	xi::MatrixList{Float64}
+	phi::Matrix{Float64}
+	xi::Matrix{Float64}
+	newalef::Matrix{Float64}
+	newhe::Matrix{Float64}
 	elbo::Float64
+	newelbo::Float64
 
 	function CTPF(corp::Corpus, K::Integer, pmodel::Union{Void, BaseTopicModel}=nothing)
-		@assert ispositive(K)		
+		@assert ispositive(K)
+		@assert !isempty(corp)	
 		checkcorp(corp)
 
 		M, V, U = size(corp)
@@ -51,11 +55,11 @@ type CTPF <: TopicModel
 
 		if isa(pmodel, Union{AbstractLDA, AbstractCTM})
 			@assert isequal(size(pmodel.beta), (K, V))
-			alef = exp(pmodel.beta - 0.5)
+			alef = exp(pmodel.beta)
 			topics = pmodel.topics		
 		elseif isa(pmodel, Union{AbstractfLDA, AbstractfCTM})
 			@assert isequal(size(pmodel.fbeta), (K, V))
-			alef = exp(pmodel.fbeta - 0.5)
+			alef = exp(pmodel.fbeta)
 			topics = pmodel.topics
 		else
 			alef = exp(rand(Dirichlet(V, 1.0), K)' - 0.5)
@@ -69,10 +73,19 @@ type CTPF <: TopicModel
 		vav = ones(K)
 		zayin = [ones(K) for _ in 1:M]
 		het = ones(K)
-		phi = [rand(Dirichlet(K, 1.0), N[d]) for d in 1:M]
-		xi = [rand(Dirichlet(2K, 1.0), R[d]) for d in 1:M]
+		phi = ones(K, N[1]) / K
+		xi = ones(2K, R[1]) / 2K
 
 		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, gimel, dalet, he, vav, zayin, het, phi, xi)
+		fixmodel!(model, check=false)
+
+		for d in 1:M
+			model.phi = ones(K, N[d]) / K
+			model.xi = ones(2K, R[d]) / 2K
+			updateNewELBO!(model, d)
+		end
+		model.phi = ones(K, N[1]) / K
+		model.xi = ones(2K, R[1]) / 2K
 		updateELBO!(model)
 		return model
 	end
@@ -82,8 +95,8 @@ function Elogpya(model::CTPF, d::Int)
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[d][i,u])
-		x += (ra * model.xi[d][i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
+		binom = Binomial(ra, model.xi[i,u])
+		x += (ra * model.xi[i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
 				- (model.gimel[d][i] / model.dalet[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * lgamma(y + 1) for y in 0:ra]))
 	end
 	return x
@@ -93,8 +106,8 @@ function Elogpyb(model::CTPF, d::Int)
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[d][model.K+i,u])
-		x += (ra * model.xi[d][model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
+		binom = Binomial(ra, model.xi[model.K+i,u])
+		x += (ra * model.xi[model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
 				- (model.zayin[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * lgamma(y + 1) for y in 0:ra]))
 	end
 	return x
@@ -104,8 +117,8 @@ function Elogpz(model::CTPF, d::Int)
 	x = 0
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
-		binom = Binomial(c, model.phi[d][i,n])
-		x += (c * model.phi[d][i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i]))
+		binom = Binomial(c, model.phi[i,n])
+		x += (c * model.phi[i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i]))
 				- (model.gimel[d][i] / model.dalet[i]) * (model.alef[i,j] / model.bet[i]) - sum([pdf(binom, z) * lgamma(z + 1) for z in 0:c]))
 	end
 	return x
@@ -146,7 +159,7 @@ end
 function Elogqy(model::CTPF, d::Int)
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
-		x -= entropy(Multinomial(ra, model.xi[d][:,u]))
+		x -= entropy(Multinomial(ra, model.xi[:,u]))
 	end
 	return x
 end
@@ -154,7 +167,7 @@ end
 function Elogqz(model::CTPF, d::Int)
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
-		x -= entropy(Multinomial(c, model.phi[d][:,n]))
+		x -= entropy(Multinomial(c, model.phi[:,n]))
 	end
 	return x
 end
@@ -192,9 +205,13 @@ function Elogqepsilon(model::CTPF, d::Int)
 end
 
 function updateELBO!(model::CTPF)
-	model.elbo = Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
-	for d in 1:model.M
-		model.elbo += (Elogpya(model, d)
+	model.elbo = model.newelbo + Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
+	model.newelbo = 0
+	return model.elbo
+end
+
+function updateNewELBO!(model::CTPF, d::Int)
+	model.newelbo += (Elogpya(model, d)
 					+ Elogpyb(model, d)
 					+ Elogpz(model, d)
 					+ Elogptheta(model, d)
@@ -203,16 +220,16 @@ function updateELBO!(model::CTPF)
 					- Elogqz(model, d) 
 					- Elogqtheta(model, d)
 					- Elogqepsilon(model, d))
-	end
-	return model.elbo
 end
 
 function updateAlef!(model::CTPF)
-	model.alef = fill(model.a, model.K, model.V)
-	for d in 1:model.M
-		terms, counts = model.corp[d].terms, model.corp[d].counts
-		model.alef[:,terms] += model.phi[d] .* counts'
-	end
+	model.alef = copy(model.newalef)
+	model.newalef = fill(model.a, model.K, model.V)
+end
+
+function updateNewAlef!(model::CTPF, d::Int)
+	terms, counts = model.corp[d].terms, model.corp[d].counts
+	model.newalef[:,terms] += model.phi .* counts'
 end
 
 function updateBet!(model::CTPF)
@@ -221,7 +238,7 @@ end
 
 function updateGimel!(model::CTPF, d::Int)	
 	counts, ratings = model.corp[d].counts, model.corp[d].ratings
-	model.gimel[d] = model.c + model.phi[d] * counts + model.xi[d][1:model.K,:] * ratings
+	model.gimel[d] = model.c + model.phi * counts + model.xi[1:model.K,:] * ratings
 end
 
 function updateDalet!(model::CTPF)
@@ -229,11 +246,13 @@ function updateDalet!(model::CTPF)
 end
 
 function updateHe!(model::CTPF)
-	model.he = fill(model.e, model.K, model.U)
-	for d in 1:model.M
-		readers, ratings = model.corp[d].readers, model.corp[d].ratings
-		model.he[:,readers] += (model.xi[d][1:model.K,:] + model.xi[d][model.K+1:end,:]) .* ratings'
-	end
+	model.he = copy(model.newhe)
+	model.newhe = fill(model.e, model.K, model.U)
+end
+
+function updateNewHe!(model::CTPF, d::Int)
+	readers, ratings = model.corp[d].readers, model.corp[d].ratings
+	model.newhe[:,readers] += (model.xi[1:model.K,:] + model.xi[model.K+1:end,:]) .* ratings'
 end
 
 function updateVav!(model::CTPF)
@@ -242,7 +261,7 @@ end
 
 function updateZayin!(model::CTPF, d::Int)
 	ratings = model.corp[d].ratings
-	model.zayin[d] = model.g + model.xi[d][model.K+1:end,:] * ratings
+	model.zayin[d] = model.g + model.xi[model.K+1:end,:] * ratings
 end
 
 function updateHet!(model::CTPF)
@@ -251,21 +270,20 @@ end
 
 function updatePhi!(model::CTPF, d::Int)
 	terms = model.corp[d].terms
-	model.phi[d] = exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.bet) .+ digamma(model.alef[:,terms]))
-	model.phi[d] ./= sum(model.phi[d], 1)
+	model.phi = exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.bet) .+ digamma(model.alef[:,terms]))
+	model.phi ./= sum(model.phi, 1)
 end
 
 function updateXi!(model::CTPF, d::Int)
 	readers = model.corp[d].readers
-	model.xi[d][1:model.K,:] = exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.vav) .+ digamma(model.he[:,readers]))
-	model.xi[d][model.K+1:end,:] = exp(digamma(model.zayin[d]) - log(model.het) - log(model.vav) .+ digamma(model.he[:,readers]))	
-	model.xi[d] ./= sum(model.xi[d], 1)
+	model.xi = vcat(exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.vav) .+ digamma(model.he[:,readers])), 
+					exp(digamma(model.zayin[d]) - log(model.het) - log(model.vav) .+ digamma(model.he[:,readers])))
+	model.xi ./= sum(model.xi, 1)
 end
 
 function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
 	@assert all(!isnegative([tol, vtol]))
 	@assert all(ispositive([iter, viter, chkelbo]))
-	fixmodel!(model)
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)
@@ -280,6 +298,18 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 					break
 				end
 			end
+			updateNewAlef!(model, d)
+			updateNewHe!(model, d)
+			chk && updateNewELBO!(model, d)
+		end
+		if checkELBO!(model, k, chk, tol)
+			updateDalet!(model)
+			updateHet!(model)
+			updateAlef!(model)
+			updateBet!(model)
+			updateHe!(model)
+			updateVav!(model)
+			break
 		end
 		updateDalet!(model)
 		updateHet!(model)
@@ -287,10 +317,10 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 		updateBet!(model)
 		updateHe!(model)
 		updateVav!(model)
-		if checkELBO!(model, k, chk, tol)
-			break
-		end
 	end
+	updatePhi!(model, 1)
+	updateXi!(model, 1)
+	
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]
 

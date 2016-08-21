@@ -13,7 +13,6 @@ type DTM <: TopicModel
 	alpha::VectorList{Float64}
 	gamma::VectorList{Float64}
 	phi::MatrixList{Float64}
-	Elogtheta::VectorList{Float64}
 	m0::Matrix{Float64}
 	v0::Matrix{Float64}
 	m::MatrixList{Float64}
@@ -25,6 +24,7 @@ type DTM <: TopicModel
 	mbeta::MatrixList{Float64}
 	vbeta::MatrixList{Float64}
 	lzeta::Vector{Float64}
+	Elogtheta::VectorList{Float64}
 	Eexpbeta::MatrixList{Float64}
 	maxlEexpbeta::Vector{Float64}
 	ovflEexpbeta::MatrixList{Float64}
@@ -34,6 +34,7 @@ type DTM <: TopicModel
 		@assert ispositive(K)
 		@assert isfinite(delta)
 		@assert ispositive(delta)
+		@assert !isempty(basemodel.corp)
 		checkcorp(corp)
 		fixmodel!(basemodel)
 
@@ -81,9 +82,7 @@ type DTM <: TopicModel
 			betahat = [randn(K, V) for _ in 1:T]
 			gamma = [ones(K) for _ in 1:M]
 		end			
-
 		phi = [ones(K, N[d]) / K for d in 1:M]
-		Elogtheta = [digamma(ones(K)) - digamma(K) for d in 1:M]
 		
 		sigmasq = 1.0
 		v0 = ones(K, V)
@@ -96,11 +95,10 @@ type DTM <: TopicModel
 		mbeta0 = zeros(K, V)
 		mbeta = [zeros(K, V) for _ in 1:T]
 		lzeta = ones(M)		
-		Eexpbeta = [fill(exp(0.5), K, V) for t in 1:T]
-		maxlEexpbeta = fill(0.5, T)
-		ovflEexpbeta = [ones(K, V) for _ in 1:T]
 
-		model = new(K, M, V, N, C, T, S, copy(corp), topics, delta, sigmasq, alpha, gamma, phi, Elogtheta, m0, v0, m, v, bsq, betahat, mbeta0, vbeta0, mbeta, vbeta, lzeta, Eexpbeta, maxlEexpbeta, ovflEexpbeta)
+		model = new(K, M, V, N, C, T, S, copy(corp), topics, delta, sigmasq, alpha, gamma, phi, m0, v0, m, v, bsq, betahat, mbeta0, vbeta0, mbeta, vbeta, lzeta)
+		fixmodel!(model, check=false)
+
 		updateVbeta!(model)
 		updateMbeta!(model)		
 		updateELBO!(model)
@@ -297,13 +295,12 @@ end
 
 function updateLzeta!(model::DTM, t::Int, d::Int)
 	counts = model.corp[d].counts
-	model.lzeta[d] = model.maxlEexpbeta[t] + log(sum(counts .* model.phi[d]' * sum(model.ovflEexpbeta[t], 2)) + epsln)
+	model.lzeta[d] = model.maxlEexpbeta[t] + log(@boink sum(counts .* model.phi[d]' * sum(model.ovflEexpbeta[t], 2)))
 end
 
 function train!(model::DTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, cgiter::Integer=20, cgtol::Real=1/model.T^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol, cgtol]))
 	@assert all(ispositive([iter, niter, viter, cgiter, chkelbo]))	
-	fixmodel!(model)
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)

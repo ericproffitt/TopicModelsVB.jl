@@ -8,11 +8,11 @@ type LDA <: TopicModel
 	topics::VectorList{Int}
 	alpha::Vector{Float64}
 	beta::Matrix{Float64}
-	newbeta::Matrix{Float64}
 	gamma::VectorList{Float64}
 	phi::Matrix{Float64}
 	Elogtheta::Vector{Float64}
 	Elogthetasum::Vector{Float64}
+	newbeta::Matrix{Float64}
 	elbo::Float64
 	newelbo::Float64
 
@@ -29,13 +29,13 @@ type LDA <: TopicModel
 
 		alpha = ones(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
-		newbeta = zeros(K, V)
 		gamma = [ones(K) for _ in 1:M]
 		phi = ones(K, N[1]) / K
-		Elogtheta = digamma(ones(K)) - digamma(K)
-		Elogthetasum = zeros(K)
 	
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, newbeta, gamma, phi, Elogtheta, Elogthetasum, 0, 0)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, gamma, phi)
+		fixmodel!(model, check=false)
+
+		model.newelbo = 0
 		for d in 1:M
 			model.phi = ones(K, N[d]) / K
 			updateNewELBO!(model, d)
@@ -94,7 +94,7 @@ function updateAlpha!(model::LDA, niter::Integer, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alphaGrad = [(nu / model.alpha[i]) + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
+		alphaGrad = [nu / model.alpha[i] + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
 		alphaInvHessDiag = -1 ./ (model.M * trigamma(model.alpha) + nu ./ model.alpha.^2)
 		p = (alphaGrad - dot(alphaGrad, alphaInvHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alphaInvHessDiag))) .* alphaInvHessDiag
 		
@@ -109,6 +109,7 @@ function updateAlpha!(model::LDA, niter::Integer, ntol::Real)
 		nu *= 0.5
 	end
 	@bumper model.alpha
+	model.Elogthetasum = zeros(model.K)	
 end
 
 function updateBeta!(model::LDA)
@@ -143,7 +144,6 @@ end
 function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
-	fixmodel!(model)	
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)
@@ -164,7 +164,6 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		end
 		updateAlpha!(model, niter, ntol)
 		updateBeta!(model)
-		model.Elogthetasum = zeros(model.K)	
 		if checkELBO!(model, k, chk, tol)
 			break
 		end

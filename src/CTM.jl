@@ -8,13 +8,13 @@ type CTM <: TopicModel
 	topics::VectorList{Int}
 	mu::Vector{Float64}
 	sigma::Matrix{Float64}
-	invsigma::Matrix{Float64}
 	beta::Matrix{Float64}
-	newbeta::Matrix{Float64}
 	lambda::VectorList{Float64}
 	vsq::VectorList{Float64}
 	lzeta::Float64
 	phi::Matrix{Float64}
+	invsigma::Matrix{Float64}
+	newbeta::Matrix{Float64}
 	elbo::Float64
 	newelbo::Float64
 
@@ -31,15 +31,15 @@ type CTM <: TopicModel
 
 		mu = zeros(K)
 		sigma = eye(K)
-		invsigma = eye(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
-		newbeta = zeros(K, V)
 		lambda = [zeros(K) for _ in 1:M]
 		vsq = [ones(K) for _ in 1:M]
 		lzeta = 0.5
 		phi = ones(K, N[1]) / K
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, newbeta, lambda, vsq, lzeta, phi, 0, 0)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, beta, lambda, vsq, lzeta, phi)
+		fixmodel!(model, check=false)
+
 		for d in 1:M
 			model.phi = ones(K, N[d]) / K
 			updateNewELBO!(model, d)
@@ -117,7 +117,7 @@ function updateLambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambdaGrad = (-model.invsigma * (model.lambda[d] - model.mu) + model.phi * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))
+		lambdaGrad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta)
 		lambdaInvHess = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))) * model.sigma
 		model.lambda[d] -= lambdaInvHess * lambdaGrad
 		if norm(lambdaGrad) < ntol
@@ -159,7 +159,6 @@ end
 function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
-	fixmodel!(model)
 	
 	for k in 1:iter
 		chk = (k % chkelbo == 0)

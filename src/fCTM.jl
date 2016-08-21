@@ -8,18 +8,18 @@ type fCTM <: TopicModel
 	topics::VectorList{Int}
 	mu::Vector{Float64}
 	sigma::Matrix{Float64}
-	invsigma::Matrix{Float64}
 	eta::Float64
 	beta::Matrix{Float64}
-	newbeta::Matrix{Float64}
 	fbeta::Matrix{Float64}
 	kappa::Vector{Float64}
-	newkappa::Vector{Float64}
 	lambda::VectorList{Float64}
 	vsq::VectorList{Float64}
 	lzeta::Float64
 	tau::VectorList{Float64}
 	phi::Matrix{Float64}
+	invsigma::Matrix{Float64}
+	newbeta::Matrix{Float64}
+	newkappa::Vector{Float64}
 	elbo::Float64
 	newelbo::Float64
 
@@ -50,7 +50,9 @@ type fCTM <: TopicModel
 		tau = [fill(eta, N[d]) for d in 1:M]
 		phi = ones(K, N[1]) / K
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, eta, beta, newbeta, fbeta, kappa, newkappa, lambda, vsq, lzeta, tau, phi, 0, 0)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, eta, beta, fbeta, kappa, lambda, vsq, lzeta, tau, phi)
+		fixmodel!(model, check=false)
+
 		for d in 1:M
 			model.phi = ones(K, N[d]) / K
 			updateNewELBO!(model, d)
@@ -69,7 +71,7 @@ end
 function Elogpc(model::fCTM, d::Int)
 	counts = model.corp[d].counts
 	y = dot(model.tau[d], counts)
-	x = log(model.eta^y * (1 - model.eta)^(model.C[d] - y))
+	x = log(@boink model.eta^y * (1 - model.eta)^(model.C[d] - y))
 	return x
 end
 
@@ -157,7 +159,7 @@ function updateLambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambdaGrad = (-model.invsigma * (model.lambda[d] - model.mu) + model.phi * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))
+		lambdaGrad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta)
 		lambdaInvHess = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))) * model.sigma
 		model.lambda[d] -= lambdaInvHess * lambdaGrad
 		if norm(lambdaGrad) < ntol
@@ -193,7 +195,7 @@ end
 
 function updateTau!(model::fCTM, d::Int)
 	terms = model.corp[d].terms
-	model.tau[d] = model.eta ./ (model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, 1))) + epsln)
+	model.tau[d] = model.eta ./ (@boink model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, 1))))
 end
 
 function updatePhi!(model::fCTM, d::Int)
@@ -204,7 +206,6 @@ end
 function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	@assert all(!isnegative([tol, ntol, vtol]))
 	@assert all(ispositive([iter, niter, viter, chkelbo]))
-	fixmodel!(model)
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)
@@ -235,7 +236,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 	end
 	updatePhi!(model, 1)
 	updateLzeta!(model, 1)
-	model.fbeta = model.beta .* (model.kappa' .<= 0)
+	@bumper model.fbeta = model.beta .* (model.kappa' .<= 0)
 	model.fbeta ./= sum(model.fbeta, 2)
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing

@@ -6,7 +6,9 @@ type gpuCTPF <: GPUTopicModel
 	N::Vector{Int}
 	C::Vector{Int}
 	R::Vector{Int}
+	B::Int
 	corp::Corpus
+	batches::Vector{UnitRange{Int}}
 	topics::VectorList{Int}
 	scores::Matrix{Float32}
 	libs::VectorList{Int}
@@ -30,24 +32,38 @@ type gpuCTPF <: GPUTopicModel
 	het::Vector{Float32}
 	phi::MatrixList{Float32}
 	xi::MatrixList{Float32}
+	newalef::Void
+	newhe::Void
+	Npsums::VectorList{Int}
+	Jpsums::VectorList{Int}
+	Rpsums::VectorList{Int}
+	Ypsums::VectorList{Int}
+	terms::VectorList{Int}
+	counts::VectorList{Int}
+	words::VectorList{Int}
+	readers::VectorList{Int}
+	ratings::VectorList{Int}
+	views::VectorList{Int}
 	device::OpenCL.Device
 	context::OpenCL.Context
 	queue::OpenCL.CmdQueue
-	Npsums::OpenCL.Buffer{Int}
-	Jpsums::OpenCL.Buffer{Int}
-	Rpsums::OpenCL.Buffer{Int}
-	Ypsums::OpenCL.Buffer{Int}
-	terms::OpenCL.Buffer{Int}
-	counts::OpenCL.Buffer{Int}
-	words::OpenCL.Buffer{Int}
-	readers::OpenCL.Buffer{Int}
-	ratings::OpenCL.Buffer{Int}
-	views::OpenCL.Buffer{Int}
+	Npsumsbuf::OpenCL.Buffer{Int}
+	Jpsumsbuf::OpenCL.Buffer{Int}
+	Rpsumsbuf::OpenCL.Buffer{Int}
+	Ypsumsbuf::OpenCL.Buffer{Int}
+	termsbuf::OpenCL.Buffer{Int}
+	countsbuf::OpenCL.Buffer{Int}
+	wordsbuf::OpenCL.Buffer{Int}
+	readersbuf::OpenCL.Buffer{Int}
+	ratingsbuf::OpenCL.Buffer{Int}
+	viewsbuf::OpenCL.Buffer{Int}
 	alefkern::OpenCL.Kernel
+	newalefkern::OpenCL.Kernel
 	betkern::OpenCL.Kernel
 	gimelkern::OpenCL.Kernel
 	daletkern::OpenCL.Kernel
 	hekern::OpenCL.Kernel
+	newhekern::OpenCL.Kernel
 	vavkern::OpenCL.Kernel
 	zayinkern::OpenCL.Kernel
 	hetkern::OpenCL.Kernel
@@ -56,25 +72,32 @@ type gpuCTPF <: GPUTopicModel
 	xikern::OpenCL.Kernel
 	xinormkern::OpenCL.Kernel
 	alefbuf::OpenCL.Buffer{Float32}
+	newalefbuf::OpenCL.Buffer{Float32}
 	betbuf::OpenCL.Buffer{Float32}
 	gimelbuf::OpenCL.Buffer{Float32}
 	daletbuf::OpenCL.Buffer{Float32}
 	hebuf::OpenCL.Buffer{Float32}
+	newhebuf::OpenCL.Buffer{Float32}
 	vavbuf::OpenCL.Buffer{Float32}
 	zayinbuf::OpenCL.Buffer{Float32}
 	hetbuf::OpenCL.Buffer{Float32}
 	phibuf::OpenCL.Buffer{Float32}
 	xibuf::OpenCL.Buffer{Float32}
 	elbo::Float32
+	newelbo::Float32
 
-	function gpuCTPF(corp::Corpus, K::Integer, basemodel::Union{Void, BaseTopicModel}=nothing)
-		@assert ispositive(K)		
+	function gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer=length(corp), basemodel::Union{Void, BaseTopicModel}=nothing)
+		@assert !isempty(corp)		
+		@assert all(ispositive([K, batchsize]))
 		checkcorp(corp)
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
 		R = [length(doc.readers) for doc in corp]
+
+		batches = partition(1:M, batchsize)
+		B = length(batches)
 
 		@assert isequal(collect(1:U), sort(collect(keys(corp.users))))
 		libs = [Int[] for _ in 1:U]
@@ -86,11 +109,11 @@ type gpuCTPF <: GPUTopicModel
 
 		if isa(basemodel, Union{AbstractLDA, AbstractCTM})
 			@assert isequal(size(basemodel.beta), (K, V))
-			alef = exp(basemodel.beta - 0.5)
+			alef = exp(basemodel.beta)
 			topics = basemodel.topics		
 		elseif isa(basemodel, Union{AbstractfLDA, AbstractfCTM})
 			@assert isequal(size(basemodel.fbeta), (K, V))
-			alef = exp(basemodel.fbeta - 0.5)
+			alef = exp(basemodel.fbeta)
 			topics = basemodel.topics
 		else
 			alef = exp(rand(Dirichlet(V, 1.0), K)' - 0.5)
@@ -104,119 +127,54 @@ type gpuCTPF <: GPUTopicModel
 		vav = ones(K)
 		zayin = [ones(K) for _ in 1:M]
 		het = ones(K)
-		phi = [rand(Dirichlet(K, 1.0), N[d]) for d in 1:M]
-		xi = [rand(Dirichlet(2K, 1.0), R[d]) for d in 1:M]
+		phi = [ones(K, N[d]) / K for d in batches[1]]
+		xi = [ones(2K, R[d]) / 2K for d in batches[1]]
 
-		device, context, queue = OpenCL.create_compute_context()		
+		model = new(K, M, V, U, N, C, R, B, copy(corp), batches, topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, gimel, dalet, he, vav, zayin, het, phi, xi)
+		fixmodel!(model, check=false)
 
-		terms = vcat([doc.terms for doc in corp]...) - 1
-		counts = vcat([doc.counts for doc in corp]...)
-		words = sortperm(terms) - 1
-
-		readers = vcat([doc.readers for doc in corp]...) - 1
-		ratings = vcat([doc.ratings for doc in corp]...)
-		views = sortperm(readers) - 1
-
-		Npsums = zeros(Int, M + 1)
-		Rpsums = zeros(Int, M + 1)
-		for d in 1:M
-			Npsums[d+1] = Npsums[d] + N[d]
-			Rpsums[d+1] = Rpsums[d] + R[d]
+		for (b, batch) in enumerate(batches)
+			model.phi = [ones(K, N[d]) / K for d in batch]
+			model.xi = [ones(2K, R[d]) / 2K for d in batch]
+			updateNewELBO!(model, b)
 		end
-
-		J = zeros(Int, V)
-		for j in terms
-			J[j+1] += 1
-		end
-
-		Jpsums = zeros(Int, V + 1)
-		for j in 1:V
-			Jpsums[j+1] = Jpsums[j] + J[j]
-		end
-
-		Y = zeros(Int, U)
-		for r in readers
-			Y[r+1] += 1
-		end
-
-		Ypsums = zeros(Int, U + 1)
-		for u in 1:U
-			Ypsums[u+1] = Ypsums[u] + Y[u]
-		end
-
-		Npsums = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=Npsums)
-		Jpsums = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=Jpsums)
-		terms = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=terms)
-		counts = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=counts)
-		words = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=words)
-
-		Rpsums = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=Rpsums)
-		Ypsums = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=Ypsums)
-		readers = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=readers)
-		ratings = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=ratings)
-		views = OpenCL.Buffer(Int, context, (:r, :copy), hostbuf=views)
-
-		alefprog = OpenCL.Program(context, source=CTPFalefcpp) |> OpenCL.build!
-		betprog = OpenCL.Program(context, source=CTPFbetcpp) |> OpenCL.build!
-		gimelprog = OpenCL.Program(context, source=CTPFgimelcpp) |> OpenCL.build!
-		daletprog = OpenCL.Program(context, source=CTPFdaletcpp) |> OpenCL.build!
-		heprog = OpenCL.Program(context, source=CTPFhecpp) |> OpenCL.build!
-		vavprog = OpenCL.Program(context, source=CTPFvavcpp) |> OpenCL.build!
-		zayinprog = OpenCL.Program(context, source=CTPFzayincpp) |> OpenCL.build!
-		hetprog = OpenCL.Program(context, source=CTPFhetcpp) |> OpenCL.build!
-		phiprog = OpenCL.Program(context, source=CTPFphicpp) |> OpenCL.build!
-		phinormprog = OpenCL.Program(context, source=CTPFphinormcpp) |> OpenCL.build!
-		xiprog = OpenCL.Program(context, source=CTPFxicpp) |> OpenCL.build!
-		xinormprog = OpenCL.Program(context, source=CTPFxinormcpp) |> OpenCL.build!
-
-		alefkern = OpenCL.Kernel(alefprog, "updateAlef")
-		betkern = OpenCL.Kernel(betprog, "updateBet")
-		gimelkern = OpenCL.Kernel(gimelprog, "updateGimel")
-		daletkern = OpenCL.Kernel(daletprog, "updateDalet")
-		hekern = OpenCL.Kernel(heprog, "updateHe")
-		vavkern = OpenCL.Kernel(vavprog, "updateVav")
-		zayinkern = OpenCL.Kernel(zayinprog, "updateZayin")
-		hetkern = OpenCL.Kernel(hetprog, "updateHet")
-		phikern = OpenCL.Kernel(phiprog, "updatePhi")
-		phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
-		xikern = OpenCL.Kernel(xiprog, "updateXi")
-		xinormkern = OpenCL.Kernel(xinormprog, "normalizeXi")
-
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, gimel, dalet, he, vav, zayin, het, phi, xi, device, context, queue, Npsums, Jpsums, Rpsums, Ypsums, terms, counts, words, readers, ratings, views, alefkern, betkern, gimelkern, daletkern, hekern, vavkern, zayinkern, hetkern, phikern, phinormkern, xikern, xinormkern)
-		updateBuf!(model)
+		model.phi = [ones(K, N[d]) / K for d in batches[1]]
+		model.xi = [ones(2K, R[d]) / 2K for d in batches[1]]
 		updateELBO!(model)
 		return model
 	end
 end
 
-function Elogpya(model::gpuCTPF, d::Int)
+gpuCTPF(corp::Corpus, K::Int, basemodel::Union{Void, BaseTopicModel}) = gpuCTPF(corp, K, length(corp), basemodel)
+
+function Elogpya(model::gpuCTPF, d::Int, m::Int)
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[d][i,u])
-		x += (ra * model.xi[d][i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
+		binom = Binomial(ra, model.xi[m][i,u])
+		x += (ra * model.xi[m][i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
 				- (model.gimel[d][i] / model.dalet[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * lgamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
 
-function Elogpyb(model::gpuCTPF, d::Int)
+function Elogpyb(model::gpuCTPF, d::Int, m::Int)
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[d][model.K+i,u])
-		x += (ra * model.xi[d][model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
+		binom = Binomial(ra, model.xi[m][model.K+i,u])
+		x += (ra * model.xi[m][model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
 				- (model.zayin[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * lgamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
 
-function Elogpz(model::gpuCTPF, d::Int)
+function Elogpz(model::gpuCTPF, d::Int, m::Int)
 	x = 0
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
-		binom = Binomial(c, model.phi[d][i,n])
-		x += (c * model.phi[d][i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i]))
+		binom = Binomial(c, model.phi[m][i,n])
+		x += (c * model.phi[m][i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i]))
 				- (model.gimel[d][i] / model.dalet[i]) * (model.alef[i,j] / model.bet[i]) - sum([pdf(binom, z) * lgamma(z + 1) for z in 0:c]))
 	end
 	return x
@@ -254,18 +212,18 @@ function Elogpepsilon(model::gpuCTPF, d::Int)
 	return x
 end
 
-function Elogqy(model::gpuCTPF, d::Int)
+function Elogqy(model::gpuCTPF, d::Int, m::Int)
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
-		x -= entropy(Multinomial(ra, model.xi[d][:,u]))
+		x -= entropy(Multinomial(ra, model.xi[m][:,u]))
 	end
 	return x
 end
 
-function Elogqz(model::gpuCTPF, d::Int)
+function Elogqz(model::gpuCTPF, d::Int, m::Int)
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
-		x -= entropy(Multinomial(c, model.phi[d][:,n]))
+		x -= entropy(Multinomial(c, model.phi[m][:,n]))
 	end
 	return x
 end
@@ -303,50 +261,76 @@ function Elogqepsilon(model::gpuCTPF, d::Int)
 end
 
 function updateELBO!(model::gpuCTPF)
-	model.elbo = Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
-	for d in 1:model.M
-		model.elbo += (Elogpya(model, d)
-					+ Elogpyb(model, d)
-					+ Elogpz(model, d)
-					+ Elogptheta(model, d)
-					+ Elogpepsilon(model, d)
-					- Elogqy(model, d)
-					- Elogqz(model, d) 
-					- Elogqtheta(model, d)
-					- Elogqepsilon(model, d))
-	end
+	model.elbo = model.newelbo + Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
+	model.newelbo = 0
 	return model.elbo
 end
 
-const CTPFalefcpp =
+function updateNewELBO!(model::gpuCTPF, b::Int)
+	batch = model.batches[b]
+	for (m, d) in enumerate(batch)
+		model.newelbo += (Elogpya(model, d, m)
+						+ Elogpyb(model, d, m)
+						+ Elogpz(model, d, m)
+						+ Elogptheta(model, d)
+						+ Elogpepsilon(model, d)
+						- Elogqy(model, d, m)
+						- Elogqz(model, d, m) 
+						- Elogqtheta(model, d)
+						- Elogqepsilon(model, d))
+	end
+end
+
+
+const CTPF_ALEF_cpp =
 """
 kernel void
 updateAlef(long K,
 			float a,
-			const global long *Jpsums,
-			const global long *counts,
-			const global long *words,
-			const global float *phi,
+			global float *newalef,
 			global float *alef)
-							
+
 			{
 			long i = get_global_id(0);
-			long j = get_global_id(1);	
+			long j = get_global_id(1);
 
-			float acc = 0.0f;
-
-			for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
-				acc += counts[words[w]] * phi[K * words[w] + i];
-
-			alef[K * j + i] = a + acc;
+			alef[K * j + i] = newalef[K * j + i];
+			newalef[K * j + i] = a;
 			}
 			"""
 
 function updateAlef!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.alefkern, (model.K, model.V), nothing, model.K, model.a, model.Jpsums, model.counts, model.words, model.phibuf, model.alefbuf)
+	OpenCL.call(model.queue, model.alefkern, (model.K, model.V), nothing, model.K, model.a, model.newalefbuf, model.alefbuf)
 end
 
-const CTPFbetcpp = 
+const CTPF_NEWALEF_cpp =
+"""
+kernel void
+updateNewalef(long K,
+				const global long *Jpsums,
+				const global long *counts,
+				const global long *words,
+				const global float *phi,
+				global float *newalef)
+							
+				{
+				long i = get_global_id(0);
+				long j = get_global_id(1);	
+
+				float acc = 0.0f;
+
+				for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
+					acc += counts[words[w]] * phi[K * words[w] + i];
+
+				newalef[K * j + i] += acc;
+				}
+				"""
+
+function updateNewalef!(model::gpuCTPF)
+	OpenCL.call(model.queue, model.newalefkern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newalefbuf)
+end
+
+const CTPF_BET_cpp = 
 """
 kernel void
 updateBet(long K,
@@ -373,10 +357,11 @@ function updateBet!(model::gpuCTPF)
 	OpenCL.call(model.queue, model.betkern, model.K, nothing, model.K, model.M, model.b, model.alefbuf, model.gimelbuf, model.daletbuf, model.betbuf)
 end
 
-const CTPFgimelcpp = 
+const CTPF_GIMEL_cpp = 
 """
 kernel void
-updateGimel(long K,
+updateGimel(long F,
+			long K,
 			float c,
 			const global long *Npsums,
 			const global long *Rpsums,
@@ -399,15 +384,16 @@ updateGimel(long K,
 			for (long r=Rpsums[d]; r<Rpsums[d+1]; r++)
 				accxi += xi[2 * K * r + i] * ratings[r]; 
 
-			gimel[K * d + i] = c + accphi + accxi;
+			gimel[K * (F + d) + i] = c + accphi + accxi;
 			}
 			"""
 
-function updateGimel!(model::gpuCTPF)	
-	OpenCL.call(model.queue, model.gimelkern, (model.K, model.M), nothing, model.K, model.c, model.Npsums, model.Rpsums, model.counts, model.ratings, model.phibuf, model.xibuf, model.gimelbuf)
+function updateGimel!(model::gpuCTPF, b::Int)
+	batch = model.batches[b]
+	OpenCL.call(model.queue, model.gimelkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.c, model.Npsumsbuf, model.Rpsumsbuf, model.countsbuf, model.ratingsbuf, model.phibuf, model.xibuf, model.gimelbuf)
 end
 
-const CTPFdaletcpp =
+const CTPF_DALET_cpp =
 """
 kernel void
 updateDalet(long K,
@@ -440,16 +426,36 @@ function updateDalet!(model::gpuCTPF)
 	OpenCL.call(model.queue, model.daletkern, model.K, nothing, model.K, model.V, model.U, model.d, model.alefbuf, model.betbuf, model.hebuf, model.vavbuf, model.daletbuf)
 end
 
-const CTPFhecpp =
+const CTPF_HE_cpp =
 """
 kernel void
 updateHe(long K,
 			float e,
+			global float *newhe,
+			global float *he)
+
+			{
+			long i = get_global_id(0);
+			long u = get_global_id(1);
+
+			he[K * u + i] = newhe[K * u + i];
+			newhe[K * u + i] = e;
+			}
+			"""
+
+function updateHe!(model::gpuCTPF)
+	OpenCL.call(model.queue, model.hekern, (model.K, model.U), nothing, model.K, model.e, model.newhebuf, model.hebuf)
+end
+
+const CTPF_NEWHE_cpp =
+"""
+kernel void
+updateNewhe(long K,
 			const global long *Ypsums,
 			const global long *ratings,
 			const global long *views,
 			const global float *xi,
-			global float *he)
+			global float *newhe)
 
 			{
 			long i = get_global_id(0);
@@ -460,15 +466,15 @@ updateHe(long K,
 			for (long r=Ypsums[u]; r<Ypsums[u+1]; r++)
 				acc += ratings[views[r]] * (xi[2 * K * views[r] + i] + xi[K * (2 * views[r] + 1) + i]);
 
-			he[K * u + i] = e + acc;
+			newhe[K * u + i] += acc;
 			}
 			"""
 
-function updateHe!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.hekern, (model.K, model.U), nothing, model.K, model.e, model.Ypsums, model.ratings, model.views, model.xibuf, model.hebuf)
+function updateNewhe!(model::gpuCTPF)
+	OpenCL.call(model.queue, model.newhekern, (model.K, model.U), nothing, model.K, model.Ypsumsbuf, model.ratingsbuf, model.viewsbuf, model.xibuf, model.newhebuf)
 end
 
-const CTPFvavcpp = 
+const CTPF_VAV_cpp = 
 """
 kernel void
 updateVav(long K,
@@ -500,10 +506,11 @@ function updateVav!(model::gpuCTPF)
 	OpenCL.call(model.queue, model.vavkern, model.K, nothing, model.K, model.M, model.f, model.gimelbuf, model.daletbuf, model.zayinbuf, model.hetbuf, model.vavbuf)
 end
 
-const CTPFzayincpp =
+const CTPF_ZAYIN_cpp =
 """
 kernel void
-updateZayin(long K,
+updateZayin(long F,
+			long K,
 			float g,
 			const global long *Rpsums,
 			const global long *ratings,
@@ -519,15 +526,16 @@ updateZayin(long K,
 			for (long r=Rpsums[d]; r<Rpsums[d+1]; r++)
 				acc += xi[K * (2 * r + 1) + i] * ratings[r];
 
-			zayin[K * d + i] = g + acc; 
+			zayin[K * (F + d) + i] = g + acc; 
 			}
 			"""
 
-function updateZayin!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.zayinkern, (model.K, model.M), nothing, model.K, model.g, model.Rpsums, model.ratings, model.xibuf, model.zayinbuf)
+function updateZayin!(model::gpuCTPF, b::Int)
+	batch = model.batches[b]
+	OpenCL.call(model.queue, model.zayinkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.g, model.Rpsumsbuf, model.ratingsbuf, model.xibuf, model.zayinbuf)
 end
 
-const CTPFhetcpp =
+const CTPF_HET_cpp =
 """
 kernel void
 updateHet(long K,
@@ -553,12 +561,13 @@ function updateHet!(model::gpuCTPF)
 	OpenCL.call(model.queue, model.hetkern, model.K, nothing, model.K, model.U, model.h, model.hebuf, model.vavbuf, model.hetbuf)
 end
 
-const CTPFphicpp =
+const CTPF_PHI_cpp =
 """
-$(digammacpp)
+$(DIGAMMA_cpp)
 
 kernel void
-updatePhi(long K,
+updatePhi(long F,
+			long K,
 			const global long *Npsums,
 			const global long *terms,
 			const global float *alef,
@@ -572,14 +581,14 @@ updatePhi(long K,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			float gdb = digamma(gimel[K * d + i]) - log(dalet[i]) - log(bet[i]);
+			float gdb = digamma(gimel[K * (F + d) + i]) - log(dalet[i]) - log(bet[i]);
 
 			for (long n=Npsums[d]; n<Npsums[d+1]; n++)
 				phi[K * n + i] = exp(gdb + digamma(alef[K * terms[n] + i]));
 			}
 			"""
 
-const CTPFphinormcpp =
+const CTPF_PHI_NORM_cpp =
 """
 kernel void
 normalizePhi(long K,
@@ -598,17 +607,19 @@ normalizePhi(long K,
 				}
 				"""
 
-function updatePhi!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.phikern, (model.K, model.M), nothing, model.K, model.Npsums, model.terms, model.alefbuf, model.betbuf, model.gimelbuf, model.daletbuf, model.phibuf)
-	OpenCL.call(model.queue, model.phinormkern, sum(model.N), nothing, model.K, model.phibuf)
+function updatePhi!(model::gpuCTPF, b::Int)
+	batch = model.batches[b]
+	OpenCL.call(model.queue, model.phikern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Npsumsbuf, model.termsbuf, model.alefbuf, model.betbuf, model.gimelbuf, model.daletbuf, model.phibuf)
+	OpenCL.call(model.queue, model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
 end
 
-const CTPFxicpp =
+const CTPF_XI_cpp =
 """
-$(digammacpp)
+$(DIGAMMA_cpp)
 
 kernel void
-updateXi(long K,
+updateXi(long F,
+			long K,
 			const global long *Rpsums,
 			const global long *readers,
 			const global float *bet,
@@ -624,8 +635,8 @@ updateXi(long K,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			float gdv = digamma(gimel[K * d + i]) - log(dalet[i]) - log(bet[i]);
-			float zhv = digamma(zayin[K * d + i]) - log(het[i]) - log(vav[i]);
+			float gdv = digamma(gimel[K * (F + d) + i]) - log(dalet[i]) - log(bet[i]);
+			float zhv = digamma(zayin[K * (F + d) + i]) - log(het[i]) - log(vav[i]);
 
 			for (long r=Rpsums[d]; r<Rpsums[d+1]; r++)
 			{
@@ -635,7 +646,7 @@ updateXi(long K,
 			}
 			"""
 
-const CTPFxinormcpp =
+const CTPF_XI_NORM_cpp =
 """
 kernel void
 normalizeXi(long K,
@@ -654,39 +665,56 @@ normalizeXi(long K,
 				}
 				"""
 
-function updateXi!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.xikern, (model.K, model.M), nothing, model.K, model.Rpsums, model.readers, model.betbuf, model.gimelbuf, model.daletbuf, model.hebuf, model.vavbuf, model.zayinbuf, model.hetbuf, model.xibuf)
-	OpenCL.call(model.queue, model.xinormkern, sum(model.R), nothing, model.K, model.xibuf)
+function updateXi!(model::gpuCTPF, b::Int)
+	batch = model.batches[b]
+	OpenCL.call(model.queue, model.xikern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Rpsumsbuf, model.readersbuf, model.betbuf, model.gimelbuf, model.daletbuf, model.hebuf, model.vavbuf, model.zayinbuf, model.hetbuf, model.xibuf)
+	OpenCL.call(model.queue, model.xinormkern, sum(model.R[batch]), nothing, model.K, model.xibuf)
 end
 
 function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
 	@assert all(!isnegative([tol, vtol]))
 	@assert all(ispositive([iter, viter, chkelbo]))
-	fixmodel!(model)
+	lowVRAM = model.B > 1
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)
-		for _ in 1:viter
-			oldgimel = OpenCL.read(model.queue, model.gimelbuf)
-			updatePhi!(model)
-			updateXi!(model)
-			updateGimel!(model)
-			updateZayin!(model)
-			if norm(oldgimel - OpenCL.read(model.queue, model.gimelbuf)) < model.M * vtol
-				break
+		for b in 1:model.B
+			for _ in 1:viter
+				oldgimel = @host b model.gimelbuf
+				updatePhi!(model, b)
+				updateXi!(model, b)
+				updateGimel!(model, b)
+				updateZayin!(model, b)
+				gimel = @host b model.gimelbuf
+				if sum([norm(diff) for diff in oldgimel - gimel]) < length(model.batches[b]) * vtol
+					break
+				end
 			end
+			updateNewalef!(model)
+			updateNewhe!(model)
+			if chk
+				updateHost!(model, b)
+				updateNewELBO!(model, b)
+			end
+			lowVRAM && updateBuf!(model, b)
+		end
+		if checkELBO!(model, k, chk, tol)
+			updateDalet!(model)
+			updateHet!(model)
+			updateAlef!(model)
+			updateBet!(model)
+			updateHe!(model)
+			updateVav!(model)
+			break
 		end
 		updateDalet!(model)
 		updateHet!(model)
 		updateAlef!(model)
 		updateBet!(model)
 		updateHe!(model)
-		updateVav!(model)
-		if checkELBO!(model, k, chk, tol)
-			break
-		end
+		updateVav!(model)	
 	end
-	updateHost!(model)
+	updateHost!(model, 1)
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]
 

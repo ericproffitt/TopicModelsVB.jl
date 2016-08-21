@@ -199,7 +199,7 @@ end
 #				  #
 ###################
 
-function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1)
+function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
 	if stop
 		stopwords = vec(readdlm(pwd() * "/.julia/v0.4/topicmodelsvb/datasets/stopwords.txt", UTF8String))
 		stopkeys = filter(j -> lowercase(corp.lex[j]) in stopwords, collect(keys(corp.lex)))
@@ -221,7 +221,7 @@ function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1
 		end
 	end
 
-	if b > 1
+	if abr > 1
 		doclkeys = Set(vcat([doc.terms for doc in corp]...))
 		lexcount = [Int(j) => 0 for j in doclkeys]
 		for doc in corp, (j, c) in zip(doc.terms, doc.counts)
@@ -229,7 +229,7 @@ function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, b::Int=1
 		end
 
 		for doc in corp
-			keep = Bool[lexcount[j] >= b for j in doc.terms]
+			keep = Bool[lexcount[j] >= abr for j in doc.terms]
 			doc.terms = doc.terms[keep]
 			doc.counts = doc.counts[keep]
 		end
@@ -331,7 +331,7 @@ function padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
 	nothing
 end
 
-function cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Int=1)
+function cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Integer=1)
 	lexkeys = keys(corp.lex)
 	userkeys = keys(corp.users)
 	bogusdocs = Int[]
@@ -369,8 +369,8 @@ function cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Int=1)
 	nothing
 end
 
-function fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, b::Int=1, len::Int=1, alphabetize::Bool=true)
-	println("Abridging corpus..."); abridgecorp!(corp, stop=stop, order=order, b=b)
+function fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, abr::Integer=1, len::Integer=1, alphabetize::Bool=true)
+	println("Abridging corpus..."); abridgecorp!(corp, stop=stop, order=order, abr=abr)
 	println("Trimming corpus..."); trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
 	println("Culling corpus..."); cullcorp!(corp, len=len)	
 	println("Compacting corpus..."); compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
@@ -385,7 +385,7 @@ end
 #										#
 #########################################
 
-function showdocs(corp::Corpus, ds::Vector{Int})
+function showdocs{T<:Integer}(corp::Corpus, ds::Vector{T})
 	@assert checkbounds(Bool, length(corp), ds) "Some document indices outside docs range."
 	
 	for d in ds
@@ -403,8 +403,8 @@ function showdocs(corp::Corpus, docs::Vector{Document})
 	showdocs(corp, ds)
 end
 
-showdocs(corp::Corpus, ds::UnitRange{Int}) = showdocs(corp, collect(ds))
-showdocs(corp::Corpus, d::Int) = showdocs(corp, [d])
+showdocs{T<:Integer}(corp::Corpus, ds::UnitRange{T}) = showdocs(corp, collect(ds))
+showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
 showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
 
 getlex(corp::Corpus) = sort(collect(values(corp.lex)))
