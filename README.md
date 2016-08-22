@@ -147,17 +147,8 @@ CTPF(corp, K, basemodel)
 gpuLDA(corp, K, batchsize)
 # GPU accelerated latent Dirichlet allocation model with K topics.
 
-gpufLDA(corp, K, batchsize)
-# Coming soon...
-
 gpuCTM(corp, K, batchsize)
 # GPU accelerated correlated topic model with K topics.
-
-gpufCTM(corp, K, batchsize)
-# Coming soon...
-
-gpuDTM(corp, K, delta, batchsize, basemodel)
-# Coming soon...
 
 gpuCTPF(corp, K, batchsize, basemodel)
 # GPU accelerated collaborative topic Poisson factorization model with K topics.
@@ -753,22 +744,22 @@ GPUTopicModel <: TopicModel
 # abstract
 
 BaseTopicModel
-# Union{LDA, fLDA, CTM, fCTM, gpuLDA, gpufLDA, gpuCTM, gpufCTM}
+# Union{LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM}
 
 AbstractLDA
 # Union{LDA, gpuLDA}
 
 AbstractfLDA
-# Union{fLDA, gpufLDA}
+# Union{fLDA}
 
 AbstractCTM
 # Union{CTM, gpuCTM}
 
 AbstractfCTM
-# Union{fCTM, gpufCTM}
+# Union{fCTM}
 
 AbstractDTM
-# Union{DTM, gpuDTM}
+# Union{DTM}
 
 AbstractCTPF
 # Union{CTPF, gpuCTPF}
@@ -799,23 +790,9 @@ gpuLDA(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
 # GPU accelerated latent Dirichlet allocation
 # 'batchsize' defaults to 'length(corp)'.
 
-gpufLDA(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
-# GPU accelerated filtered latent Dirichlet allocation
-# 'batchsize' defaults to 'length(corp)'.
-
 gpuCTM(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
 # GPU accelerated correlated topic model
 # 'batchsize' defaults to 'length(corp)'.
-
-gpufCTM(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
-# GPU accelerated filtered correlated topic model
-# 'batchsize' defaults to 'length(corp)'.
-
-gpuDTM(corp::Corpus, K::Integer, delta::Real, batchsize::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
-# GPU accelerated dynamic topic model
-# 'delta'     - time-interval size.
-# 'batchsize' defaults to 'length(corp)'.
-# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
 
 gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
 # GPU accelerated collaborative topic Poission factorization
