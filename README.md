@@ -517,7 +517,7 @@ Now that we have set up our experiment, we instantiate and train a CTPF model on
 ```julia
 srand(1)
 
-citeuctpf = CTPF(citeucorp, 30) # Note: If no 'pmodel' is entered then parameters will be initialized at random.
+citeuctpf = CTPF(citeucorp, 30) # Note: If no 'basemodel' is entered then parameters will be initialized at random.
 train!(citeuctpf, iter=20)
 
 # training...
