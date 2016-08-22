@@ -479,9 +479,7 @@ press      lens         desktop     speed         california     makes        se
 line       printing     windows     port          marketing      interface    people      shipping      ext
 ```
 
-As you may have noticed, the dynamic topic model is *extremely* computationally intensive, hopefully GPGPU support will ameliorate this problem to at least some degree.  However it is likely that running the DTM model on an industry-sized dataset will always require more computational power than can be provided by your standard personal computer.
-
-**Important:** Beware that the DTM algorithm is still a bit buggy, an overhaul of the algorithm itself will likely come alongside the GPU accelerated version.
+As you may have noticed, the dynamic topic model is *extremely* computationally intensive, it is likely that running the DTM model on an industry-sized dataset will always require more computational power than can be provided by your standard personal computer.
 
 ### CTPF
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be achievable using just the document-user matrix.  This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
@@ -671,7 +669,7 @@ showurecs(citeuctpf, 1741, 20)
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
 
-Currently the LDA, CTM and CTPF models are supported, however GPU accelerated versions of the remaining three models are in the works.  There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
+There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
 
 ```julia
 nsfcorp = readcorp(:nsf)
