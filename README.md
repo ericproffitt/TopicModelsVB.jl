@@ -707,7 +707,7 @@ It's important to understand that GPGPU is still the wild west of computer progr
 
 While non-batched models will usually be the fasted (for those GPUs which can handle them), it's not necessarily the case that reducing the batch size will result in a degredation in performance.  Thus it's always a good idea to experiment with different batch sizes, to see which sizes work best for your computer.
 
-**Important:** If Julia crashes or throws an error when trying to run one of your models on the GPU, your best course of action is to reduce the batch size and retrain your model.
+**Important:** If Julia crashes or throws an error when trying to run one of the models on your GPU, then your best course of action is to reduce the batch size and retrain your model.
 
 Finally, expect your computer to lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
