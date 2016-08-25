@@ -13,7 +13,7 @@ Pkg.add("OpenCL")
 ## Install
 
 ```julia
-Pkg.clone("https://github.com/esproff/TopicModelsVB.jl.git")
+Pkg.add("TopicModelsVB")
 ```
 
 ## Datasets
