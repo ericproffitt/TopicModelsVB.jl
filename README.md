@@ -404,7 +404,7 @@ train!(basemodel, iter=150, chkelbo=151)
 
 # training...
 
-macdtm = DTM(maccorp, 9, 200, pmodel)
+macdtm = DTM(maccorp, 9, 200, basemodel)
 train!(macdtm, iter=10) # This will likely take about an hour on a personal computer.
                         # Convergence for all other models is worst-case quadratic,
                         # while DTM convergence is linear or at best super-linear.
