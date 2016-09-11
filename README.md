@@ -120,7 +120,7 @@ Padding a corpus before fixing it will ensure that any documents which contain l
 
 Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  Therefore:
 
-**1. Using `corp!` functions which modify the documents of a corpus will not result in corpus defects, but will in an identitcal fashion affect those corpora which share any of the modified documents.**
+**1. Using `corp!` functions to modify the documents of a corpus will not result in corpus defects but will cause them to also be changed in all other corpora which contain them.**
 
 **2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`.  It's advised that you don't do this with out a good reason.**
 
