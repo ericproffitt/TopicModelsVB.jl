@@ -5,7 +5,7 @@ document recommendations beyond what would be achievable using just the document
 "This blending of thematic structure with known user preferences not only improves recommendation accuracy,
 but also mitigates the cold-start problem of recommending (to users) never-before-seen documents."
 
-"Based on a state-of-the-art 2014 paper by David Blei (Columbia U)"
+"Based on a state-of-the-art 2014 paper by David Blei (Columbia University)"
 "http://www.cs.columbia.edu/~blei/papers/GopalanCharlinBlei2014.pdf"
 
 type gpuCTPF <: GPUTopicModel
