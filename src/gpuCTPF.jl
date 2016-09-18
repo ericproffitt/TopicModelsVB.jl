@@ -1,13 +1,3 @@
-"gpuCTPF (GPU accelerated collaborative topic Poisson factorization) is a GPU accelerated collaborative
-filtering topic model which uses the latent thematic structure of documents to improve the quality of
-document recommendations beyond what would be achievable using just the document-user matrix."
-
-"This blending of thematic structure with known user preferences not only improves recommendation accuracy,
-but also mitigates the cold-start problem of recommending (to users) never-before-seen documents."
-
-"Based on a state-of-the-art 2014 paper by David Blei (Columbia University)"
-"http://www.cs.columbia.edu/~blei/papers/GopalanCharlinBlei2014.pdf"
-
 type gpuCTPF <: GPUTopicModel
 	K::Int
 	M::Int
