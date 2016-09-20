@@ -3,6 +3,8 @@ module TopicModelsVB
 using Distributions
 using OpenCL
 
+const OpenCL = cl
+
 export VectorList, MatrixList
 export Document, Corpus
 export TopicModel, GPUTopicModel, BaseTopicModel
