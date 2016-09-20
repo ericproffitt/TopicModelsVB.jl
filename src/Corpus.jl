@@ -10,7 +10,7 @@ type Document
 	readers::Vector{Int}
 	ratings::Vector{Int}
 	stamp::Float64
-	title::UTF8String
+	title::String
 
 	function Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), stamp=-Inf, title="")
 		doc = new(terms, counts, readers, ratings, stamp[1], title)
@@ -51,12 +51,12 @@ end
 
 type Corpus
 	docs::Vector{Document}
-	lex::Dict{Int, UTF8String}
-	users::Dict{Int, UTF8String}
+	lex::Dict{Int, String}
+	users::Dict{Int, String}
 
 	function Corpus(;docs=Document[], lex=[], users=[])
-		isa(lex, Dict) || (lex = [lkey => term for (lkey, term) in enumerate(lex)])
-		isa(users, Dict) || (users = [ukey => user for (ukey, user) in enumerate(users)])
+		isa(lex, Dict) || (lex = Dict(lkey => term for (lkey, term) in enumerate(lex)))
+		isa(users, Dict) || (users = Dict(ukey => user for (ukey, user) in enumerate(users)))
 
 		corp = new(docs, lex, users)
 		checkcorp(corp)
@@ -135,7 +135,7 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		lex = readdlm(lexfile, '\t', comments=false)
 		lkeys = lex[:,1]
 		terms = [string(j) for j in lex[:,2]]
-		corp.lex = Dict{Int, UTF8String}(zip(lkeys, terms))
+		corp.lex = Dict{Int, String}(zip(lkeys, terms))
 		@assert all(ispositive(collect(keys(corp.lex))))
 	end
 
@@ -143,12 +143,12 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		users = readdlm(userfile, '\t', comments=false)
 		ukeys = users[:,1]
 		users = [string(u) for u in users[:,2]]
-		corp.users = Dict{Int, UTF8String}(zip(ukeys, users))
+		corp.users = Dict{Int, String}(zip(ukeys, users))
 		@assert all(ispositive(collect(keys(corp.users))))
 	end
 
 	if !isempty(titlefile)
-		titles = readdlm(titlefile, '\t', UTF8String)
+		titles = readdlm(titlefile, '\t', String)
 		for (d, doc) in enumerate(corp)
 			doc.title = titles[d]
 		end
@@ -202,7 +202,7 @@ end
 
 function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
 	if stop
-		stopwords = vec(readdlm(pwd() * "/.julia/v0.4/topicmodelsvb/datasets/stopwords.txt", UTF8String))
+		stopwords = vec(readdlm(pwd() * "/.julia/v0.4/topicmodelsvb/datasets/stopwords.txt", String))
 		stopkeys = filter(j -> lowercase(corp.lex[j]) in stopwords, collect(keys(corp.lex)))
 		for doc in corp
 			keep = Bool[!(j in stopkeys) for j in doc.terms]
@@ -213,7 +213,7 @@ function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Int
 
 	if !order
 		for doc in corp
-			docdict = [Int(j) => 0 for j in doc.terms]
+			docdict = Dict(Int(j) => 0 for j in doc.terms)
 			for (j, c) in zip(doc.terms, doc.counts)
 				docdict[j] += c
 			end
@@ -224,7 +224,7 @@ function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Int
 
 	if abr > 1
 		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		lexcount = [Int(j) => 0 for j in doclkeys]
+		lexcount = Dict(Int(j) => 0 for j in doclkeys)
 		for doc in corp, (j, c) in zip(doc.terms, doc.counts)
 			lexcount[j] += c
 		end
@@ -244,7 +244,7 @@ end
 function trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
 	if lex		
 		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		corp.lex = [lkey => corp.lex[lkey] for lkey in intersect(keys(corp.lex), doclkeys)]
+		corp.lex = Dict(lkey => corp.lex[lkey] for lkey in intersect(keys(corp.lex), doclkeys))
 	end
 
 	if terms
@@ -259,7 +259,7 @@ function trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=t
 	
 	if users
 		docukeys = Set(vcat([doc.readers for doc in corp]...))
-		corp.users = [ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), docukeys)]
+		corp.users = Dict(ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), docukeys))
 	end
 
 	if readers
@@ -279,13 +279,13 @@ function compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetiz
 		lkeys = sort(collect(keys(corp.lex)))
 		lkeymap = zip(lkeys, 1:length(corp.lex))
 		if alphabetize
-			alphabetdict = [j => lkey for (j, lkey) in zip(sortperm([corp.lex[lkey] for lkey in lkeys]), 1:length(corp.lex))]
-			lkeydict = [lkey => alphabetdict[j] for (lkey, j) in lkeymap]	
+			alphabetdict = Dict(j => lkey for (j, lkey) in zip(sortperm([corp.lex[lkey] for lkey in lkeys]), 1:length(corp.lex)))
+			lkeydict = Dict(lkey => alphabetdict[j] for (lkey, j) in lkeymap)
 		else
-			lkeydict = [lkey => j for (lkey, j) in lkeymap]
+			lkeydict = Dict(lkey => j for (lkey, j) in lkeymap)
 		end
 		
-		corp.lex = [lkeydict[lkey] => corp.lex[lkey] for lkey in keys(corp.lex)]	
+		corp.lex = Dict(lkeydict[lkey] => corp.lex[lkey] for lkey in keys(corp.lex))
 		for lkey in keys(corp.lex)
 			try if corp.lex[lkey][1:5] == "#term"; corp.lex[lkey] = "#term$(lkey)"; end
 			end
@@ -296,13 +296,13 @@ function compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetiz
 		ukeys = sort(collect(keys(corp.users)))
 		ukeymap = zip(ukeys, 1:length(corp.users))
 		if alphabetize
-			alphabetdict = [r => ukey for (r, ukey) in zip(sortperm([corp.users[ukey] for ukey in ukeys]), 1:length(corp.users))]
-			ukeydict = [ukey => alphabetdict[r] for (ukey, r) in ukeymap]
+			alphabetdict = Dict(r => ukey for (r, ukey) in zip(sortperm([corp.users[ukey] for ukey in ukeys]), 1:length(corp.users)))
+			ukeydict = Dict(ukey => alphabetdict[r] for (ukey, r) in ukeymap)
 		else
-			ukeydict = [ukey => r for (ukey, r) in ukeymap]
+			ukeydict = Dict(ukey => r for (ukey, r) in ukeymap)
 		end
 
-		corp.users = [ukeydict[ukey] => corp.users[ukey] for ukey in keys(corp.users)]
+		corp.users = Dict(ukeydict[ukey] => corp.users[ukey] for ukey in keys(corp.users))
 		for ukey in keys(corp.users)
 			try if corp.users[ukey][1:5] == "#user"; corp.users[ukey] = "#user$(ukey)"; end
 			end
