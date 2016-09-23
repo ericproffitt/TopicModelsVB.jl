@@ -301,7 +301,7 @@ updateAlef(long K,
 			"""
 
 function updateAlef!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.alefkern, (model.K, model.V), nothing, model.K, model.a, model.newalefbuf, model.alefbuf)
+	model.queue(model.alefkern, (model.K, model.V), nothing, model.K, model.a, model.newalefbuf, model.alefbuf)
 end
 
 const CTPF_NEWALEF_cpp =
@@ -328,7 +328,7 @@ updateNewalef(long K,
 				"""
 
 function updateNewalef!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.newalefkern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newalefbuf)
+	model.queue(model.newalefkern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newalefbuf)
 end
 
 const CTPF_BET_cpp = 
@@ -355,7 +355,7 @@ updateBet(long K,
 			"""
 
 function updateBet!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.betkern, model.K, nothing, model.K, model.M, model.b, model.alefbuf, model.gimelbuf, model.daletbuf, model.betbuf)
+	model.queue(model.betkern, model.K, nothing, model.K, model.M, model.b, model.alefbuf, model.gimelbuf, model.daletbuf, model.betbuf)
 end
 
 const CTPF_GIMEL_cpp = 
@@ -391,7 +391,7 @@ updateGimel(long F,
 
 function updateGimel!(model::gpuCTPF, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.gimelkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.c, model.Npsumsbuf, model.Rpsumsbuf, model.countsbuf, model.ratingsbuf, model.phibuf, model.xibuf, model.gimelbuf)
+	model.queue(model.gimelkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.c, model.Npsumsbuf, model.Rpsumsbuf, model.countsbuf, model.ratingsbuf, model.phibuf, model.xibuf, model.gimelbuf)
 end
 
 const CTPF_DALET_cpp =
@@ -424,7 +424,7 @@ updateDalet(long K,
 			"""
 
 function updateDalet!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.daletkern, model.K, nothing, model.K, model.V, model.U, model.d, model.alefbuf, model.betbuf, model.hebuf, model.vavbuf, model.daletbuf)
+	model.queue(model.daletkern, model.K, nothing, model.K, model.V, model.U, model.d, model.alefbuf, model.betbuf, model.hebuf, model.vavbuf, model.daletbuf)
 end
 
 const CTPF_HE_cpp =
@@ -445,7 +445,7 @@ updateHe(long K,
 			"""
 
 function updateHe!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.hekern, (model.K, model.U), nothing, model.K, model.e, model.newhebuf, model.hebuf)
+	model.queue(model.hekern, (model.K, model.U), nothing, model.K, model.e, model.newhebuf, model.hebuf)
 end
 
 const CTPF_NEWHE_cpp =
@@ -472,7 +472,7 @@ updateNewhe(long K,
 			"""
 
 function updateNewhe!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.newhekern, (model.K, model.U), nothing, model.K, model.Ypsumsbuf, model.ratingsbuf, model.viewsbuf, model.xibuf, model.newhebuf)
+	model.queue(model.newhekern, (model.K, model.U), nothing, model.K, model.Ypsumsbuf, model.ratingsbuf, model.viewsbuf, model.xibuf, model.newhebuf)
 end
 
 const CTPF_VAV_cpp = 
@@ -504,7 +504,7 @@ updateVav(long K,
 			"""
 
 function updateVav!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.vavkern, model.K, nothing, model.K, model.M, model.f, model.gimelbuf, model.daletbuf, model.zayinbuf, model.hetbuf, model.vavbuf)
+	model.queue(model.vavkern, model.K, nothing, model.K, model.M, model.f, model.gimelbuf, model.daletbuf, model.zayinbuf, model.hetbuf, model.vavbuf)
 end
 
 const CTPF_ZAYIN_cpp =
@@ -533,7 +533,7 @@ updateZayin(long F,
 
 function updateZayin!(model::gpuCTPF, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.zayinkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.g, model.Rpsumsbuf, model.ratingsbuf, model.xibuf, model.zayinbuf)
+	model.queue(model.zayinkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.g, model.Rpsumsbuf, model.ratingsbuf, model.xibuf, model.zayinbuf)
 end
 
 const CTPF_HET_cpp =
@@ -559,7 +559,7 @@ updateHet(long K,
 			"""
 
 function updateHet!(model::gpuCTPF)
-	OpenCL.call(model.queue, model.hetkern, model.K, nothing, model.K, model.U, model.h, model.hebuf, model.vavbuf, model.hetbuf)
+	model.queue(model.hetkern, model.K, nothing, model.K, model.U, model.h, model.hebuf, model.vavbuf, model.hetbuf)
 end
 
 const CTPF_PHI_cpp =
@@ -610,8 +610,8 @@ normalizePhi(long K,
 
 function updatePhi!(model::gpuCTPF, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.phikern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Npsumsbuf, model.termsbuf, model.alefbuf, model.betbuf, model.gimelbuf, model.daletbuf, model.phibuf)
-	OpenCL.call(model.queue, model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
+	model.queue(model.phikern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Npsumsbuf, model.termsbuf, model.alefbuf, model.betbuf, model.gimelbuf, model.daletbuf, model.phibuf)
+	model.queue(model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
 end
 
 const CTPF_XI_cpp =
@@ -668,8 +668,8 @@ normalizeXi(long K,
 
 function updateXi!(model::gpuCTPF, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.xikern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Rpsumsbuf, model.readersbuf, model.betbuf, model.gimelbuf, model.daletbuf, model.hebuf, model.vavbuf, model.zayinbuf, model.hetbuf, model.xibuf)
-	OpenCL.call(model.queue, model.xinormkern, sum(model.R[batch]), nothing, model.K, model.xibuf)
+	model.queue(model.xikern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Rpsumsbuf, model.readersbuf, model.betbuf, model.gimelbuf, model.daletbuf, model.hebuf, model.vavbuf, model.zayinbuf, model.hetbuf, model.xibuf)
+	model.queue(model.xinormkern, sum(model.R[batch]), nothing, model.K, model.xibuf)
 end
 
 function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
