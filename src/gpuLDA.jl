@@ -193,8 +193,8 @@ normalizeBeta(long K,
 				"""
 
 function updateBeta!(model::gpuLDA)
-	OpenCL.call(model.queue, model.betakern, (model.K, model.V), nothing, model.K, model.newbetabuf, model.betabuf)
-	OpenCL.call(model.queue, model.betanormkern, model.K, nothing, model.K, model.V, model.betabuf)
+	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.newbetabuf, model.betabuf)
+	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.betabuf)
 end
 
 const LDA_NEWBETA_cpp =
@@ -221,7 +221,7 @@ updateNewbeta(long K,
 				"""
 
 function updateNewBeta!(model::gpuLDA)
-	OpenCL.call(model.queue, model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)
+	model.queue(model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)
 end
 
 const LDA_GAMMA_cpp =
@@ -250,7 +250,7 @@ updateGamma(long F,
 
 function updateGamma!(model::gpuLDA, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.gammakern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Npsumsbuf, model.countsbuf, model.alphabuf, model.phibuf, model.gammabuf)
+	model.queue(model.gammakern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Npsumsbuf, model.countsbuf, model.alphabuf, model.phibuf, model.gammabuf)
 end
 
 const LDA_PHI_cpp =
@@ -293,8 +293,8 @@ normalizePhi(long K,
 
 function updatePhi!(model::gpuLDA, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.phikern, (model.K, length(batch)), nothing, model.K, model.Npsumsbuf, model.termsbuf, model.betabuf, model.Elogthetabuf, model.phibuf)	
-	OpenCL.call(model.queue, model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
+	model.queue(model.phikern, (model.K, length(batch)), nothing, model.K, model.Npsumsbuf, model.termsbuf, model.betabuf, model.Elogthetabuf, model.phibuf)	
+	model.queue(model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
 end
 
 const LDA_ELOGTHETA_cpp =
@@ -324,7 +324,7 @@ updateElogtheta(long F,
 
 function updateElogtheta!(model::gpuLDA, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.Elogthetakern, length(batch), nothing, batch[1] - 1, model.K, model.gammabuf, model.Elogthetabuf)
+	model.queue(model.Elogthetakern, length(batch), nothing, batch[1] - 1, model.K, model.gammabuf, model.Elogthetabuf)
 end
 
 const LDA_ELOGTHETASUM_cpp =
@@ -349,7 +349,7 @@ updateElogthetasum(long K,
 
 function updateElogthetasum!(model::gpuLDA, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.Elogthetasumkern, model.K, nothing, model.K, length(batch), model.Elogthetabuf, model.Elogthetasumbuf)
+	model.queue(model.Elogthetasumkern, model.K, nothing, model.K, length(batch), model.Elogthetabuf, model.Elogthetasumbuf)
 end
 
 function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
