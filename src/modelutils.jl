@@ -843,8 +843,8 @@ end
 ###########################
 
 function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), cols::Integer=4)
-	@assert checkbounds(Bool, model.V, N)
-	@assert checkbounds(Bool, model.K, topics)
+	@assert checkindex(Bool, 1:model.V, N)
+	@assert checkindex(Bool, 1:model.K, topics)
 	@assert ispositive(cols)
 	isa(topics, Vector) || (topics = [topics])
 	cols = min(cols, length(topics))
@@ -870,9 +870,9 @@ function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); 
 end
 
 function showtopics{T<:Integer, S<:Integer}(model::AbstractDTM, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), times::Union{S, Vector{S}}=collect(1:model.T), cols::Integer=4)
-	@assert checkbounds(Bool, model.V, N)
-	@assert checkbounds(Bool, model.K, topics)
-	@assert checkbounds(Bool, model.T, times)
+	@assert checkindex(Bool, 1:model.V, N)
+	@assert checkindex(Bool, 1:model.K, topics)
+	@assert checkindex(Bool, 1:model.T, times)
 	@assert ispositive(cols)
 	isa(times, Vector) || (times = [times])
 	
@@ -913,7 +913,7 @@ function showtopics{T<:Integer, S<:Integer}(model::AbstractDTM, N::Integer=min(1
 end
 
 function showlibs{T<:Integer}(model::AbstractCTPF, users::Vector{T})
-	@assert checkbounds(Bool, model.U, users)
+	@assert checkindex(Bool, 1:model.U, users)
 	
 	for u in users
 		@juliadots "User: $u\n"
@@ -934,8 +934,8 @@ end
 showlibs(model::AbstractCTPF, user::Integer) = showlibs(model, [user])
 
 function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U::Integer=min(16, model.U); cols::Integer=4)
-	@assert checkbounds(Bool, model.M, docs)	
-	@assert checkbounds(Bool, model.U, U)
+	@assert checkindex(Bool, 1:model.M, docs)	
+	@assert checkindex(Bool, 1:model.U, U)
 	@assert ispositive(cols)
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
@@ -965,8 +965,8 @@ function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U
 end
 
 function showurecs{T<:Integer}(model::AbstractCTPF, users::Union{T, Vector{T}}, M::Integer=min(10, model.M); cols::Integer=1)
-	@assert checkbounds(Bool, model.U, users)
-	@assert checkbounds(Bool, model.M, M)
+	@assert checkindex(Bool, model.U, users)
+	@assert checkindex(Bool, model.M, M)
 	@assert ispositive(cols)
 	isa(users, Vector) || (users = [users])
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
