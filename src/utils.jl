@@ -1,3 +1,5 @@
+import Base.covm
+
 const EPSILON = eps(1e-14)
 
 typealias VectorList{T} Vector{Vector{T}}
