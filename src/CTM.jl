@@ -97,7 +97,7 @@ function updateMu!(model::CTM)
 end
 
 function updateSigma!(model::CTM)
-	model.sigma = diagm(sum(model.vsq)) / model.M + cov(hcat(model.lambda...)', mean=model.mu', corrected=false)
+	model.sigma = diagm(sum(model.vsq)) / model.M + covm(hcat(model.lambda...)', model.mu', 1, false)
 	(log(cond(model.sigma)) < 14) || (model.sigma += eye(model.K) * (eigmax(model.sigma) - 14 * eigmin(model.sigma)) / 13)
 	model.invsigma = inv(model.sigma)
 end
