@@ -387,7 +387,7 @@ end
 #########################################
 
 function showdocs{T<:Integer}(corp::Corpus, ds::Vector{T})
-	@assert checkbounds(Bool, length(corp), ds) "Some document indices outside docs range."
+	@assert checkindex(Bool, 1:length(corp), ds) "Some document indices outside docs range."
 	
 	for d in ds
 		doc = corp[d]
