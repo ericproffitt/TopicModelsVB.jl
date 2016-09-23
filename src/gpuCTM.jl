@@ -156,7 +156,7 @@ updateMu(long K,
 			"""
 
 function updateMu!(model::gpuCTM)
-	OpenCL.call(model.queue, model.mukern, model.K, nothing, model.K, model.M, model.lambdabuf, model.mubuf)
+	model.queue(model.mukern, model.K, nothing, model.K, model.M, model.lambdabuf, model.mubuf)
 end
 
 function updateSigma!(model::gpuCTM)
@@ -164,7 +164,7 @@ function updateSigma!(model::gpuCTM)
 	@host model.lambdabuf
 	@host model.vsqbuf
 
-	model.sigma = diagm(sum(model.vsq)) / model.M + cov(hcat(model.lambda...)', mean=model.mu', corrected=false)
+	model.sigma = diagm(sum(model.vsq)) / model.M + covm(hcat(model.lambda...)', model.mu', 1, false)
 	(log(cond(model.sigma)) < 14) || (model.sigma += eye(model.K) * (eigmax(model.sigma) - 14 * eigmin(model.sigma)) / 13)
 	model.invsigma = inv(model.sigma)
 
@@ -209,8 +209,8 @@ normalizeBeta(long K,
 				"""
 
 function updateBeta!(model::gpuCTM)
-	OpenCL.call(model.queue, model.betakern, (model.K, model.V), nothing, model.K, model.newbetabuf, model.betabuf)
-	OpenCL.call(model.queue, model.betanormkern, model.K, nothing, model.K, model.V, model.betabuf)
+	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.newbetabuf, model.betabuf)
+	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.betabuf)
 end
 
 const CTM_NEWBETA_cpp =
@@ -237,7 +237,7 @@ updateNewbeta(long K,
 				"""
 
 function updateNewbeta!(model::gpuCTM)
-	OpenCL.call(model.queue, model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)
+	model.queue(model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)
 end
 
 const CTM_LAMBDA_cpp =
@@ -307,7 +307,7 @@ updateLambda(long niter,
 
 function updateLambda!(model::gpuCTM, b::Int, niter::Int, ntol::Float32)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.lambdakern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.Npsumsbuf, model.countsbuf, model.mubuf, model.sigmabuf, model.invsigmabuf, model.vsqbuf, model.lzetabuf, model.phibuf, model.lambdabuf)
+	model.queue(model.lambdakern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.Npsumsbuf, model.countsbuf, model.mubuf, model.sigmabuf, model.invsigmabuf, model.vsqbuf, model.lzetabuf, model.phibuf, model.lambdabuf)
 end
 
 const CTM_VSQ_cpp =
@@ -361,7 +361,7 @@ updateVsq(long niter,
 
 function updateVsq!(model::gpuCTM, b::Int, niter::Int, ntol::Float32)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.vsqkern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.Cbuf, model.invsigmabuf, model.lambdabuf, model.lzetabuf, model.vsqbuf)
+	model.queue(model.vsqkern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.Cbuf, model.invsigmabuf, model.lambdabuf, model.lzetabuf, model.vsqbuf)
 end
 
 const CTM_LZETA_cpp = 
@@ -396,7 +396,7 @@ updateLzeta(long K,
 
 function updateLzeta!(model::gpuCTM, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.lzetakern, length(batch), nothing, model.K, batch[1] - 1, model.lambdabuf, model.vsqbuf, model.lzetabuf)
+	model.queue(model.lzetakern, length(batch), nothing, model.K, batch[1] - 1, model.lambdabuf, model.vsqbuf, model.lzetabuf)
 end
 
 const CTM_PHI_cpp =
@@ -449,8 +449,8 @@ normalizePhi(long K,
 
 function updatePhi!(model::gpuCTM, b::Int)
 	batch = model.batches[b]
-	OpenCL.call(model.queue, model.phikern, (model.K, length(batch)), nothing, model.K, batch[1] - 1, model.Npsumsbuf, model.termsbuf, model.betabuf, model.lambdabuf, model.phibuf)
-	OpenCL.call(model.queue, model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
+	model.queue(model.phikern, (model.K, length(batch)), nothing, model.K, batch[1] - 1, model.Npsumsbuf, model.termsbuf, model.betabuf, model.lambdabuf, model.phibuf)
+	model.queue(model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
 end
 
 function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
