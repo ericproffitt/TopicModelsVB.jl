@@ -9,7 +9,7 @@ Topic Modeling is concerned with discovering the latent low-dimensional thematic
 
 ```julia
 Pkg.add("Distributions")
-Pkg.add("OpenCL")
+Pkg.clone("https://github.com/JuliaGPU/OpenCL.jl")
 ```
 
 ## Install
