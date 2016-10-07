@@ -423,23 +423,23 @@ function readcorp(corpsym::Symbol)
 	v = "v$(VERSION.major).$(VERSION.minor)"
 
 	if corpsym == :nsf
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsfdocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsflex.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsftitles.txt"
+		docfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/nsf/nsfdocs.txt"
+		lexfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/nsf/nsflex.txt"
+		titlefile = homedir() * "/.julia/$v/TopicModelsVB/datasets/nsf/nsftitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	elseif corpsym == :citeu
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeudocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeulex.txt"
-		userfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeuusers.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeutitles.txt"
+		docfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeudocs.txt"
+		lexfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeulex.txt"
+		userfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeuusers.txt"
+		titlefile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeutitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 		padcorp!(corp)
 
 	elseif corpsym == :mac
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/macdocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/maclex.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/mactitles.txt"
+		docfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/mac/macdocs.txt"
+		lexfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/mac/maclex.txt"
+		titlefile = homedir() * "/.julia/$v/TopicModelsVB/datasets/mac/mactitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	else
