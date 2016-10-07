@@ -204,7 +204,7 @@ function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Int
 	v = "v$(VERSION.major).$(VERSION.minor)"							
 							
 	if stop
-		stopwords = vec(readdlm(pwd() * "/.julia/v0.4/TopicModelsVb/datasets/stopwords.txt", String))
+		stopwords = vec(readdlm(pwd() * "/.julia/$v/TopicModelsVb/datasets/stopwords.txt", String))
 		stopkeys = filter(j -> lowercase(corp.lex[j]) in stopwords, collect(keys(corp.lex)))
 		for doc in corp
 			keep = Bool[!(j in stopkeys) for j in doc.terms]
