@@ -69,7 +69,7 @@ An example of a single doc block from a docfile with all possible lines included
 ...
 ```
 
-The lex and user files are dictionaries mapping positive integers to terms and usernames (resp.).  For example,
+The lex and user files are tab delimited dictionaries mapping positive integers to terms and usernames (resp.).  For example,
 
 ```
 1    this
