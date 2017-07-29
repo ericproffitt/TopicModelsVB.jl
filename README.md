@@ -401,7 +401,7 @@ maccorp = readcorp(:mac)
 
 maccorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, maccorp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(maccorp, b=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
+fixcorp!(maccorp, abr=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
 basemodel = LDA(maccorp, 9)
 train!(basemodel, iter=150, chkelbo=151)
