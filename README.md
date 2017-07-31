@@ -860,7 +860,7 @@ compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetize::Bool=t
 padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
 # Pad a corpus by entering generic values for lex and/or userkeys which appear in documents but not in the lex/user dictionaries.
 
-cullcorp!(corp::Corpus; terms::Bool=false, readers::Bool=false, len::Integer=1)
+cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Integer=1)
 # Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields yet don't appear in the corpus dictionaries.
 # All documents of length < len are removed.
 
