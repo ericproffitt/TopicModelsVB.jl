@@ -282,7 +282,7 @@ One thing we notice so far is that despite producing what are clearly coherent t
 srand(1)
 
 model = fLDA(corp, 9)
-train!(model, iter=150, tol=0.0)
+train!(model, iter=150, tol=0)
 
 # training...
 
