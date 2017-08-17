@@ -8,8 +8,8 @@ Topic models are concerned with discovering the latent low-dimensional thematic 
 ## Dependencies
 
 ```julia
-Pkg.add("Distributions")
-Pkg.clone("https://github.com/JuliaGPU/OpenCL.jl")
+Distributions
+OpenCL
 ```
 
 ## Install
@@ -169,19 +169,19 @@ using TopicModelsVB
 
 srand(1)
 
-nsfcorp = readcorp(:nsf) 
+corp = readcorp(:nsf) 
 
-nsfcorp.docs = nsfcorp[1:5000]
-fixcorp!(nsfcorp)
+corp.docs = corp[1:5000]
+fixcorp!(corp)
 
 # Notice that the post-fix lexicon is smaller after removing all but the first 5000 docs.
 
-nsflda = LDA(nsfcorp, 9)
-train!(nsflda, iter=150, tol=0.0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
-                                  # If you don't want to watch the ∆elbo, set chkelbo=151.
+model = LDA(nsfcorp, 9)
+train!(model, iter=150, tol=0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
+                               # If you don't want to watch the ∆elbo, set chkelbo=151.
 # training...
 
-showtopics(nsflda, cols=9)
+showtopics(model, cols=9)
 ```
 
 ```
@@ -206,12 +206,12 @@ program         dynamics        determine        models         projects      im
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance, document 1 has topic breakdown:
 
 ```julia
-nsflda.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0.025]
+model.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0.025]
 ```
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
 
 ```julia
-showdocs(nsflda, 1) # Could also have done showdocs(nsfcorp, 1).
+showdocs(model, 1) # Could also have done showdocs(corp, 1).
 ```
 
 ```
@@ -225,9 +225,9 @@ differing levels species distributions life history...
 On the other hand, some documents will be a combination of topics.  Consider the topic breakdown for document 25:
 
 ```julia
-nsflda.gamma[25] # = [11.575, 44.889, 0.0204, 0.036, 0.049, 0.022, 0.020, 66.629, 0.025]
+model.gamma[25] # = [11.575, 44.889, 0.0204, 0.036, 0.049, 0.022, 0.020, 66.629, 0.025]
 
-showdocs(nsflda, 25)
+showdocs(model, 25)
 ```
 
 ```
@@ -244,14 +244,14 @@ We see that in this case document 25 appears to be about applications of mathema
 Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.  Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
 
 ```julia
-artifnsfcorp = gencorp(nsflda, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
+artif_corp = gencorp(model, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
 
-artifnsflda = LDA(artifnsfcorp, 9)
-train!(artifnsflda, iter=150, tol=0.0, chkelbo=15)
+artif_model = LDA(artif_corp, 9)
+train!(artif_model, iter=150, tol=0, chkelbo=15)
 
 # training...
 
-showtopics(artifnsflda, cols=9)
+showtopics(artif_model, cols=9)
 ```
 
 ```
@@ -278,12 +278,12 @@ One thing we notice so far is that despite producing what are clearly coherent t
 ```julia
 srand(1)
 
-nsfflda = fLDA(nsfcorp, 9)
-train!(nsfflda, iter=150, tol=0.0)
+model = fLDA(corp, 9)
+train!(model, iter=150, tol=0.0)
 
 # training...
 
-showtopics(nsfflda, cols=9)
+showtopics(model, cols=9)
 ```
 
 ```
