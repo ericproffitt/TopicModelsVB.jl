@@ -365,14 +365,14 @@ Now let's take a look at the topic-covariance matrix:
 model.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-nsffctm.sigma[4,8] # 9.532
-nsffctm.sigma[3,6] # 7.362
-nsffctm.sigma[2,9] # 4.531
+model.sigma[4,8] # 9.532
+model.sigma[3,6] # 7.362
+model.sigma[2,9] # 4.531
 
 # Top 3 negative entries, sorted in ascending order:
-nsffctm.sigma[7,9] # -14.627
-nsffctm.sigma[3,8] # -12.464
-nsffctm.sigma[1,8] # -11.775
+model.sigma[7,9] # -14.627
+model.sigma[3,8] # -12.464
+model.sigma[1,8] # -11.775
 ```
 
 According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Chemistry*.
@@ -397,28 +397,28 @@ import Distributions.sample
 
 srand(1)
 
-maccorp = readcorp(:mac)
+corp = readcorp(:mac)
 
-maccorp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, maccorp.docs), 400, replace=false) for y in 1984:2005]...)
+corp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, corp.docs), 400, replace=false) for y in 1984:2005]...)
 
-fixcorp!(maccorp, abr=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
+fixcorp!(corp, abr=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
 
-basemodel = LDA(maccorp, 9)
+basemodel = LDA(corp, 9)
 train!(basemodel, iter=150, chkelbo=151)
 
 # training...
 
-macdtm = DTM(maccorp, 9, 200, basemodel)
-train!(macdtm, iter=10) # This will likely take about an hour on a personal computer.
-                        # Convergence for all other models is worst-case quadratic,
-                        # while DTM convergence is linear or at best super-linear.
+model = DTM(corp, 9, 200, basemodel)
+train!(model, iter=10) # This will likely take about an hour on a personal computer.
+                       # Convergence for all other models is worst-case quadratic,
+                       # while DTM convergence is linear or at best super-linear.
 # training...
 ```
 
 We can look at a particular topic slice by writing:
 
 ```julia
-showtopics(macdtm, topics=4, cols=6)
+showtopics(model, topics=4, cols=6)
 ```
 
 ```
@@ -461,7 +461,7 @@ powerbook      performance    device         pci          port
 or a particular time slice, by writing:
 
 ```julia
-showtopics(macdtm, times=11, cols=9)
+showtopics(model, times=11, cols=9)
 ```
 
 ```
@@ -495,10 +495,10 @@ import Distributions.sample
 
 srand(1)
 
-citeucorp = readcorp(:citeu)
+corp = readcorp(:citeu)
 
 testukeys = Int[]
-for doc in citeucorp
+for doc in corp
     index = sample(1:length(doc.readers), 1)[1]
     push!(testukeys, doc.readers[index])
     deleteat!(doc.readers, index)
@@ -513,7 +513,7 @@ After training, we will evaluate model quality by measuring our model's success 
 It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers:
 
 ```julia
-sum([isempty(doc.readers) for doc in citeucorp]) # = 158
+sum([isempty(doc.readers) for doc in corp]) # = 158
 ```
 
 Fortunately, since CTPF can if need be depend entirely on thematic structure when making recommendations, this poses no problem for the model.
@@ -523,8 +523,8 @@ Now that we have set up our experiment, we instantiate and train a CTPF model on
 ```julia
 srand(1)
 
-citeuctpf = CTPF(citeucorp, 30) # Note: If no 'basemodel' is entered then parameters will be initialized at random.
-train!(citeuctpf, iter=20)
+model = CTPF(corp, 30) # Note: If no 'basemodel' is entered then parameters will be initialized at random.
+train!(model, iter=20)
 
 # training...
 ```
@@ -534,8 +534,8 @@ Finally, we evaluate the accuracy of our model against the test set, where basel
 ```julia
 acc = Float64[]
 for (d, u) in enumerate(testukeys)
-    rank = findin(citeuctpf.drecs[d], u)[1]
-    nrlen = length(citeuctpf.drecs[d])
+    rank = findin(model.drecs[d], u)[1]
+    nrlen = length(model.drecs[d])
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
@@ -550,13 +550,13 @@ In the interest of time, let's use the GPU accelerated verions of LDA and CTPF:
 ```julia
 srand(1)
 
-basemodel = gpuLDA(citeucorp, 30)
+basemodel = gpuLDA(corp, 30)
 train!(basemodel, iter=100, chkelbo=101)
 
 # training...
 
-citeuctpf = gpuCTPF(citeucorp, 30, basemodel)
-train!(citeuctpf, iter=20, chkelbo=21)
+model = gpuCTPF(corp, 30, basemodel)
+train!(model, iter=20, chkelbo=21)
 
 # training...
 ```
@@ -566,8 +566,8 @@ Again we evaluate the accuracy of our model against the test set:
 ```julia
 acc = Float64[]
 for (d, u) in enumerate(testukeys)
-    rank = findin(citeuctpf.drecs[d], u)[1]
-    nrlen = length(citeuctpf.drecs[d])
+    rank = findin(model.drecs[d], u)[1]
+    nrlen = length(model.drecs[d])
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
@@ -582,7 +582,7 @@ Let's also take a look at the top recommendations for a particular document(s):
 testukeys[1] # = 216
 acc[1] # = 0.945
 
-showdrecs(citeuctpf, 1, 307, cols=1)
+showdrecs(model, 1, 307, cols=1)
 ```
 ```
  ●●● Doc: 1
@@ -597,7 +597,7 @@ showdrecs(citeuctpf, 1, 307, cols=1)
 as well as those for a particular user(s):
 
 ```julia
-showurecs(citeuctpf, 216, 1745)
+showurecs(model, 216, 1745)
 ```
 ```
  ●●● User: 216
@@ -613,7 +613,7 @@ We can also take a more holistic and informal approach to evaluating model quali
 
 Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library: 
 ```julia
-showlibs(citeuctpf, 1741)
+showlibs(model, 1741)
 ```
 
 ```
@@ -645,7 +645,7 @@ showlibs(citeuctpf, 1741)
  Now compare this with the top 20 recommendations made by our model:
  
 ```julia
-showurecs(citeuctpf, 1741, 20)
+showurecs(model, 1741, 20)
 ```
 
 ```
@@ -678,10 +678,10 @@ GPU accelerating your model runs its performance bottlenecks on the GPU rather t
 There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
 
 ```julia
-nsfcorp = readcorp(:nsf)
+corp = readcorp(:nsf)
 
-nsflda = LDA(nsfcorp, 16)
-@time @gpu train!(nsflda, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark. 
+nsflda = LDA(corp, 16)
+@time @gpu train!(model, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark. 
 
 # training...
 
@@ -701,10 +701,10 @@ As we can see, the GPU LDA model is approximatey 1.35 orders of magnitude faster
 It's often the case that one does not have sufficient VRAM to hold the entire model in GPU memory at one time.  Thus we provide the option of batching GPU models in order to train much larger models than would otherwise be possible:
 
 ```julia
-citeucorp = readcorp(:citeu)
+corp = readcorp(:citeu)
 
-citeuctm = CTM(citeucorp, 7)
-@gpu 4250 train!(citeuctm, iter=150, chkelbo=25) # batchsize = 4250 documents.
+citeuctm = CTM(corp, 7)
+@gpu 4250 train!(model, iter=150, chkelbo=25) # batchsize = 4250 documents.
 
 # training...
 ```
