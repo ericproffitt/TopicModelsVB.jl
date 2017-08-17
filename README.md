@@ -1,7 +1,7 @@
 # TopicModelsVB.jl
 A Julia Package for Variational Bayesian Topic Modeling.
 
-Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Topic models, like most probabilistic graphical models, are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC) methods, or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.  The MCMC approach is slower, but consistent.  Given infinite time, MCMC will fit the desired model exactly.  On the other hand, VB methods are faster (often much faster), but inconsistent, since one must approximate distributions in order to ensure tractability.  This package takes the latter approach to topic modeling.
+Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Topic models, like most probabilistic graphical models, are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC) methods, or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.  The MCMC approach is slower, but consistent.  Given infinite time, MCMC will fit the desired model exactly.  Variational Bayesian methods on the other hand are faster, often much faster, but inconsistent, since one must approximate distributions in order to ensure tractability.  This package takes the latter approach to topic modeling.
 
 **Important:** If you find a bug, please don't hesitate to open an issue, I should reply promptly.
 
