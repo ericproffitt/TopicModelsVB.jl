@@ -176,8 +176,8 @@ fixcorp!(corp)
 
 # Notice that the post-fix lexicon is smaller after removing all but the first 5000 docs.
 
-model = LDA(nsfcorp, 9)
-train!(model, iter=150, tol=0) # Setting tol=0.0 will ensure that all 150 iterations are completed.
+model = LDA(corp, 9)
+train!(model, iter=150, tol=0) # Setting tol=0 will ensure that all 150 iterations are completed.
                                # If you don't want to watch the ∆elbo, set chkelbo=151.
 # training...
 
@@ -244,7 +244,7 @@ We see that in this case document 25 appears to be about applications of mathema
 Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.  Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
 
 ```julia
-artif_corp = gencorp(model, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0.0).
+artif_corp = gencorp(model, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0).
 
 artif_model = LDA(artif_corp, 9)
 train!(artif_model, iter=150, tol=0, chkelbo=15)
@@ -313,12 +313,12 @@ For our final example using the NSF corpus, let's upgrade our model to a filtere
 ```julia
 srand(1)
 
-nsffctm = fCTM(nsfcorp, 9)
-train!(nsffctm, iter=150, tol=0.0)
+model = fCTM(corp, 9)
+train!(model, iter=150, tol=0)
 
 # training...
 
-showtopics(nsffctm, 20, cols=9)
+showtopics(model, 20, cols=9)
 ```
 
 ```
@@ -362,7 +362,7 @@ Based on the top 20 terms in each topic, we might tentatively assign the followi
 Now let's take a look at the topic-covariance matrix:
 
 ```julia
-nsffctm.sigma
+model.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
 nsffctm.sigma[4,8] # 9.532
@@ -382,7 +382,7 @@ As for the most unlikely topic pairings, first are topics 7 and 9, corresponding
 Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
 
 ```julia
-sum(abs(nsffctm.sigma[:,5])) - nsffctm.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
+sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
 ```
 
 **Note:** Both CTM and fCTM will sometimes have to numerically invert ill-conditioned matrices, thus don't be alarmed if the ```∆elbo``` periodically goes negative for stretches, it should always right itself in fairly short order.
