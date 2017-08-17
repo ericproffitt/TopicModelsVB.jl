@@ -11,6 +11,7 @@ Topic models are Bayesian hierarchical models designed to discover the latent lo
 ## Dependencies
 
 ```julia
+SpecialFunctions
 Distributions
 OpenCL
 ```
