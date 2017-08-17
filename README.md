@@ -247,14 +247,14 @@ We see that in this case document 25 appears to be about applications of mathema
 Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.  Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
 
 ```julia
-artif_corp = gencorp(model, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0).
+artifcorp = gencorp(model, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0).
 
-artif_model = LDA(artif_corp, 9)
-train!(artif_model, iter=150, tol=0, chkelbo=15)
+artifmodel = LDA(artifcorp, 9)
+train!(artifmodel, iter=150, tol=0, chkelbo=15)
 
 # training...
 
-showtopics(artif_model, cols=9)
+showtopics(artifmodel, cols=9)
 ```
 
 ```
