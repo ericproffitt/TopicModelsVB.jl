@@ -683,7 +683,7 @@ There's no reason to instantiate the GPU models directly, instead you can simply
 ```julia
 corp = readcorp(:nsf)
 
-nsflda = LDA(corp, 16)
+model = LDA(corp, 16)
 @time @gpu train!(model, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark. 
 
 # training...
@@ -706,7 +706,7 @@ It's often the case that one does not have sufficient VRAM to hold the entire mo
 ```julia
 corp = readcorp(:citeu)
 
-citeuctm = CTM(corp, 7)
+model = CTM(corp, 7)
 @gpu 4250 train!(model, iter=150, chkelbo=25) # batchsize = 4250 documents.
 
 # training...
