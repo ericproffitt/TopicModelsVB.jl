@@ -1,4 +1,4 @@
-type gpuCTPF <: GPUTopicModel
+mutable struct gpuCTPF <: GPUTopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -44,51 +44,51 @@ type gpuCTPF <: GPUTopicModel
 	readers::VectorList{Int}
 	ratings::VectorList{Int}
 	views::VectorList{Int}
-	device::OpenCL.Device
-	context::OpenCL.Context
-	queue::OpenCL.CmdQueue
-	Npsumsbuf::OpenCL.Buffer{Int}
-	Jpsumsbuf::OpenCL.Buffer{Int}
-	Rpsumsbuf::OpenCL.Buffer{Int}
-	Ypsumsbuf::OpenCL.Buffer{Int}
-	termsbuf::OpenCL.Buffer{Int}
-	countsbuf::OpenCL.Buffer{Int}
-	wordsbuf::OpenCL.Buffer{Int}
-	readersbuf::OpenCL.Buffer{Int}
-	ratingsbuf::OpenCL.Buffer{Int}
-	viewsbuf::OpenCL.Buffer{Int}
-	alefkern::OpenCL.Kernel
-	newalefkern::OpenCL.Kernel
-	betkern::OpenCL.Kernel
-	gimelkern::OpenCL.Kernel
-	daletkern::OpenCL.Kernel
-	hekern::OpenCL.Kernel
-	newhekern::OpenCL.Kernel
-	vavkern::OpenCL.Kernel
-	zayinkern::OpenCL.Kernel
-	hetkern::OpenCL.Kernel
-	phikern::OpenCL.Kernel
-	phinormkern::OpenCL.Kernel
-	xikern::OpenCL.Kernel
-	xinormkern::OpenCL.Kernel
-	alefbuf::OpenCL.Buffer{Float32}
-	newalefbuf::OpenCL.Buffer{Float32}
-	betbuf::OpenCL.Buffer{Float32}
-	gimelbuf::OpenCL.Buffer{Float32}
-	daletbuf::OpenCL.Buffer{Float32}
-	hebuf::OpenCL.Buffer{Float32}
-	newhebuf::OpenCL.Buffer{Float32}
-	vavbuf::OpenCL.Buffer{Float32}
-	zayinbuf::OpenCL.Buffer{Float32}
-	hetbuf::OpenCL.Buffer{Float32}
-	phibuf::OpenCL.Buffer{Float32}
-	xibuf::OpenCL.Buffer{Float32}
+	device::cl.Device
+	context::cl.Context
+	queue::cl.CmdQueue
+	Npsumsbuf::cl.Buffer{Int}
+	Jpsumsbuf::cl.Buffer{Int}
+	Rpsumsbuf::cl.Buffer{Int}
+	Ypsumsbuf::cl.Buffer{Int}
+	termsbuf::cl.Buffer{Int}
+	countsbuf::cl.Buffer{Int}
+	wordsbuf::cl.Buffer{Int}
+	readersbuf::cl.Buffer{Int}
+	ratingsbuf::cl.Buffer{Int}
+	viewsbuf::cl.Buffer{Int}
+	alefkern::cl.Kernel
+	newalefkern::cl.Kernel
+	betkern::cl.Kernel
+	gimelkern::cl.Kernel
+	daletkern::cl.Kernel
+	hekern::cl.Kernel
+	newhekern::cl.Kernel
+	vavkern::cl.Kernel
+	zayinkern::cl.Kernel
+	hetkern::cl.Kernel
+	phikern::cl.Kernel
+	phinormkern::cl.Kernel
+	xikern::cl.Kernel
+	xinormkern::cl.Kernel
+	alefbuf::cl.Buffer{Float32}
+	newalefbuf::cl.Buffer{Float32}
+	betbuf::cl.Buffer{Float32}
+	gimelbuf::cl.Buffer{Float32}
+	daletbuf::cl.Buffer{Float32}
+	hebuf::cl.Buffer{Float32}
+	newhebuf::cl.Buffer{Float32}
+	vavbuf::cl.Buffer{Float32}
+	zayinbuf::cl.Buffer{Float32}
+	hetbuf::cl.Buffer{Float32}
+	phibuf::cl.Buffer{Float32}
+	xibuf::cl.Buffer{Float32}
 	elbo::Float32
 	newelbo::Float32
 
 	function gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer=length(corp), basemodel::Union{Void, BaseTopicModel}=nothing)
 		@assert !isempty(corp)		
-		@assert all(ispositive([K, batchsize]))
+		@assert all(ispositive.([K, batchsize]))
 		checkcorp(corp)
 
 		M, V, U = size(corp)
@@ -110,14 +110,14 @@ type gpuCTPF <: GPUTopicModel
 
 		if isa(basemodel, Union{AbstractLDA, AbstractCTM})
 			@assert isequal(size(basemodel.beta), (K, V))
-			alef = exp(basemodel.beta)
+			alef = exp.(basemodel.beta)
 			topics = basemodel.topics		
 		elseif isa(basemodel, Union{AbstractfLDA, AbstractfCTM})
 			@assert isequal(size(basemodel.fbeta), (K, V))
-			alef = exp(basemodel.fbeta)
+			alef = exp.(basemodel.fbeta)
 			topics = basemodel.topics
 		else
-			alef = exp(rand(Dirichlet(V, 1.0), K)' - 0.5)
+			alef = exp.(rand(Dirichlet(V, 1.0), K)' - 0.5)
 			topics = [collect(1:V) for _ in 1:K]
 		end
 		
@@ -673,8 +673,8 @@ function updateXi!(model::gpuCTPF, b::Int)
 end
 
 function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
-	@assert all(!isnegative([tol, vtol]))
-	@assert all(ispositive([iter, viter, chkelbo]))
+	@assert all(.!isnegative.([tol, vtol]))
+	@assert all(ispositive.([iter, viter, chkelbo]))
 	lowVRAM = model.B > 1
 
 	for k in 1:iter

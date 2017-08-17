@@ -1,4 +1,4 @@
-type CTM <: TopicModel
+mutable struct CTM <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -63,7 +63,7 @@ end
 
 function Elogpw(model::CTM, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -97,7 +97,7 @@ function updateMu!(model::CTM)
 end
 
 function updateSigma!(model::CTM)
-	model.sigma = diagm(sum(model.vsq)) / model.M + covm(hcat(model.lambda...)', model.mu', 1, false)
+	model.sigma = diagm(sum(model.vsq)) / model.M + Base.covm(hcat(model.lambda...), model.mu, 2, false)
 	(log(cond(model.sigma)) < 14) || (model.sigma += eye(model.K) * (eigmax(model.sigma) - 14 * eigmin(model.sigma)) / 13)
 	model.invsigma = inv(model.sigma)
 end
@@ -117,8 +117,8 @@ function updateLambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambdaGrad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta)
-		lambdaInvHess = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))) * model.sigma
+		lambdaGrad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta)
+		lambdaInvHess = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))) * model.sigma
 		model.lambda[d] -= lambdaInvHess * lambdaGrad
 		if norm(lambdaGrad) < ntol
 			break
@@ -131,8 +131,8 @@ function updateVsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	for _ in 1:niter
 		rho = 1.0
-		vsqGrad = -0.5 * (diag(model.invsigma) + model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) - 1 ./ model.vsq[d])
-		vsqInvHess = -1 ./ (0.25 * model.C[d] * exp(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) + 0.5 ./ model.vsq[d].^2)
+		vsqGrad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) - 1 ./ model.vsq[d])
+		vsqInvHess = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) + 0.5 ./ model.vsq[d].^2)
 		p = vsqInvHess .* vsqGrad
 		
 		while minimum(model.vsq[d] - rho * p) <= 0
@@ -153,12 +153,12 @@ end
 
 function updatePhi!(model::CTM, d::Int)
 	terms = model.corp[d].terms
-	model.phi = addlogistic(log(model.beta[:,terms]) .+ model.lambda[d], 1)
+	model.phi = addlogistic(log.(model.beta[:,terms]) .+ model.lambda[d], 1)
 end
 
 function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
-	@assert all(!isnegative([tol, ntol, vtol]))
-	@assert all(ispositive([iter, niter, viter, chkelbo]))
+	@assert all(.!isnegative.([tol, ntol, vtol]))
+	@assert all(ispositive.([iter, niter, viter, chkelbo]))
 	
 	for k in 1:iter
 		chk = (k % chkelbo == 0)

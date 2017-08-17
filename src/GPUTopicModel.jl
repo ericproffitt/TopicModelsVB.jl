@@ -1,1 +1,1 @@
-abstract GPUTopicModel <: TopicModel
+abstract type GPUTopicModel <: TopicModel end

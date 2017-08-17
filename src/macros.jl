@@ -2,20 +2,24 @@ macro juliadots(expr::Expr)
 	expr = :(print_with_color(:red, " ●");
 				print_with_color(:green, "●");
 				print_with_color(:blue, "● ");
-				print_with_color(:bold, $expr))
+				print_with_color(:bold, :($($expr))))
 	return expr
 end
 
 macro boink(expr::Expr)
-	expr = :($expr + EPSILON)
+	expr = :(:($($expr)) + EPSILON)
 	return expr
 end
 
+type Foo
+	x::Int
+end
+
 macro bumper(expr::Expr)
-	if expr.head == :.
-		expr = :($expr += EPSILON)
+	if (expr.head == :.) || (expr.head == :ref)
+		expr = :(:($($expr)) += EPSILON)
 	elseif expr.head == :(=)
-		expr = :($(expr.args[1]) = EPSILON + $(expr.args[2]))
+		expr = :(:($($(expr.args[1]))) = EPSILON + :($($(expr.args[2]))))
 	end
 	return expr
 end
@@ -28,239 +32,241 @@ macro buf(args...)
 		expr = args[2]
 	end
 
+	model = expr.args[1]
+
 	if expr.args[2] == :(:Npsums)
 		quoteblock =
 		quote
-		model.Npsumsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.Npsums[b])
+		$(esc(model)).Npsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Npsums[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:Jpsums)
 		quoteblock =
 		quote
-		model.Jpsumsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.Jpsums[b])
+		$(esc(model)).Jpsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Jpsums[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:Rpsums)
 		quoteblock =
 		quote
-		model.Rpsumsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.Rpsums[b])
+		$(esc(model)).Rpsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Rpsums[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:Ypsums)
 		quoteblock =
 		quote
-		model.Ypsumsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.Ypsums[b])
+		$(esc(model)).Ypsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Ypsums[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:terms)
 		quoteblock =
 		quote
-		model.termsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.terms[b])
+		$(esc(model)).termsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).terms[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:counts)
 		quoteblock =
 		quote
-		model.countsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.counts[b])
+		$(esc(model)).countsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).counts[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:words)
 		quoteblock =
 		quote
-		model.wordsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.words[b])
+		$(esc(model)).wordsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).words[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:readers)
 		quoteblock =
 		quote
-		model.readersbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.readers[b])
+		$(esc(model)).readersbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).readers[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:ratings)
 		quoteblock =
 		quote
-		model.ratingsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.ratings[b])
+		$(esc(model)).ratingsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).ratings[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:views)
 		quoteblock =
 		quote
-		model.viewsbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.views[b])
+		$(esc(model)).viewsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views[$(esc(b))])
 		end
 
 	elseif expr.args[2] == :(:alpha)
 		quoteblock =
 		quote
-		model.alphabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha)
+		$(esc(model)).alphabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha)
 		end
 
 	elseif expr.args[2] == :(:beta)
 		quoteblock =
 		quote
-		model.betabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
+		$(esc(model)).betabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).beta)
 		end
 
 	elseif expr.args[2] == :(:newbeta)
 		quoteblock =
 		quote
-		model.newbetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.K, model.V))
+		$(esc(model)).newbetabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=zeros(Float32, $(esc(model)).K, $(esc(model)).V))
 		end
 
 	elseif expr.args[2] == :(:gamma)
 		quoteblock =
 		quote
-		model.gammabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gamma..., zeros(Float32, model.K, 64 - model.M % 64)))
+		$(esc(model)).gammabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gamma..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
 		end
 
 	elseif expr.args[2] == :(:phi)
 		quoteblock =
 		quote
-		batch = model.batches[b]
-		model.phibuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=ones(Float32, model.K, sum(model.N[batch]) + 64 - sum(model.N[batch]) % 64) / model.K)
+		batch = $(esc(model)).batches[$(esc(b))]
+		$(esc(model)).phibuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=ones(Float32, $(esc(model)).K, sum($(esc(model)).N[batch]) + 64 - sum($(esc(model)).N[batch]) % 64) / $(esc(model)).K)
 		end
 
 	elseif expr.args[2] == :(:Elogtheta)
 		quoteblock = 
 		quote
-		batch = model.batches[b]
-		model.Elogthetabuf = OpenCL.Buffer(Float32, model.context, :rw, model.K * (length(batch) + 64 - length(batch) % 64))
+		batch = $(esc(model)).batches[$(esc(b))]
+		$(esc(model)).Elogthetabuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * (length(batch) + 64 - length(batch) % 64))
 		end
 
 	elseif expr.args[2] == :(:Elogthetasum)
 		quoteblock =
 		quote
-		model.Elogthetasumbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.Elogthetasum)
+		$(esc(model)).Elogthetasumbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).Elogthetasum)
 		end
 
 	elseif expr.args[2] == :(:C)
 		quoteblock =
 		quote
-		batch = model.batches[b]
-		model.Cbuf = OpenCL.Buffer(Int, model.context, (:r, :copy), hostbuf=model.C[batch])
+		batch = $(esc(model)).batches[$(esc(b))]
+		$(esc(model)).Cbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).C[batch])
 		end
 
 	elseif expr.args[2] == :(:newtontemp)
 		quoteblock =
 		quote
-		batch = model.batches[b]
-		model.newtontempbuf = OpenCL.Buffer(Float32, model.context, :rw, model.K^2 * (length(batch) + 64 - length(batch) % 64))
+		batch = $(esc(model)).batches[$(esc(b))]
+		$(esc(model)).newtontempbuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64))
 		end
 
 	elseif expr.args[2] == :(:newtongrad)
 		quoteblock =
 		quote
-		batch = model.batches[b]
-		model.newtongradbuf = OpenCL.Buffer(Float32, model.context, :rw, model.K * (length(batch) + 64 - length(batch) % 64))
+		batch = $(esc(model)).batches[$(esc(b))]
+		$(esc(model)).newtongradbuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * (length(batch) + 64 - length(batch) % 64))
 		end
 
 	elseif expr.args[2] == :(:newtoninvhess)
 		quoteblock =
 		quote
-		batch = model.batches[b]
-		model.newtoninvhessbuf = OpenCL.Buffer(Float32, model.context, :rw, model.K^2 * (length(batch) + 64 - length(batch) % 64))	
+		batch = $(esc(model)).batches[$(esc(b))]
+		$(esc(model)).newtoninvhessbuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64))	
 		end
 
 	elseif expr.args[2] == :(:mu)
 		quoteblock =
 		quote
-		model.mubuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.mu)
+		$(esc(model)).mubuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).mu)
 		end
 
 	elseif expr.args[2] == :(:sigma)
 		quoteblock =
 		quote
-		model.sigmabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sigma)
+		$(esc(model)).sigmabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).sigma)
 		end
 
 	elseif expr.args[2] == :(:invsigma)
 		quoteblock =
 		quote
-		model.invsigmabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.invsigma)
+		$(esc(model)).invsigmabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma)
 		end
 
 	elseif expr.args[2] == :(:lambda)
 		quoteblock =
 		quote
-		model.lambdabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64)))
+		$(esc(model)).lambdabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).lambda..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
 		end
 
 	elseif expr.args[2] == :(:vsq)
 		quoteblock =
 		quote
-		model.vsqbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
+		$(esc(model)).vsqbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).vsq..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
 		end
 
 	elseif expr.args[2] == :(:lzeta)
 		quoteblock =
 		quote
-		model.lzetabuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.lzeta)
+		$(esc(model)).lzetabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).lzeta)
 		end
 
 	elseif expr.args[2] == :(:alef)
 		quoteblock = 
 		quote
-		model.alefbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alef)
+		$(esc(model)).alefbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alef)
 		end
 
 	elseif expr.args[2] == :(:newalef)
 		quoteblock = 
 		quote
-		model.newalefbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=fill(model.a, model.K, model.V))
+		$(esc(model)).newalefbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=fill($(esc(model)).a, $(esc(model)).K, $(esc(model)).V))
 		end
 
 	elseif expr.args[2] == :(:bet)
 		quoteblock =
 		quote
-		model.betbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.bet)
+		$(esc(model)).betbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).bet)
 		end
 
 	elseif expr.args[2] == :(:gimel)
 		quoteblock =
 		quote
-		model.gimelbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel..., zeros(Float32, model.K, 64 - model.M % 64)))
+		$(esc(model)).gimelbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gimel..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
 		end
 
 	elseif expr.args[2] == :(:dalet)
 		quoteblock =
 		quote
-		model.daletbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet)
+		$(esc(model)).daletbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).dalet)
 		end
 
 	elseif expr.args[2] == :(:he)
 		quoteblock = 
 		quote
-		model.hebuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
+		$(esc(model)).hebuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).he)
 		end
 
 	elseif expr.args[2] == :(:newhe)
 		quoteblock = 
 		quote
-		model.newhebuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=fill(model.e, model.K, model.U))
+		$(esc(model)).newhebuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=fill($(esc(model)).e, $(esc(model)).K, $(esc(model)).U))
 		end
 
 	elseif expr.args[2] == :(:vav)
 		quoteblock =
 		quote
-		model.vavbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
+		$(esc(model)).vavbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).vav)
 		end
 
 	elseif expr.args[2] == :(:zayin)
 		quoteblock =
 		quote
-		model.zayinbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin..., zeros(Float32, model.K, 64 - model.M % 64)))
+		$(esc(model)).zayinbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).zayin..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
 		end
 
 	elseif expr.args[2] == :(:het)
 		quoteblock =
 		quote
-		model.hetbuf = OpenCL.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het)
+		$(esc(model)).hetbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).het)
 		end
 
 	elseif expr.args[2] == :(:xi)
 		quoteblock =
 		quote
-		batch = model.batches[b]
-		model.xibuf = OpenCL.Buffer(Float32, model.context, :rw, 2model.K * (sum(model.R[batch]) + 64 - sum(model.R[batch]) % 64))
+		batch = $(esc(model)).batches[$(esc(b))]
+		$(esc(model)).xibuf = cl.Buffer(Float32, $(esc(model)).context, :rw, 2 * $(esc(model)).K * (sum($(esc(model)).R[batch]) + 64 - sum($(esc(model)).R[batch]) % 64))
 		end
 	end
 	return quoteblock
@@ -274,143 +280,145 @@ macro host(args...)
 		expr = args[2]
 	end
 
+	model = expr.args[1]
+
 	if expr.args[2] == :(:alphabuf)
 		quoteblock =
 		quote
-		model.alpha = OpenCL.read(model.queue, model.alphabuf)
+		$(esc(model)).alpha = cl.read($(esc(model)).queue, $(esc(model)).alphabuf)
 		end
 
 	elseif expr.args[2] == :(:betabuf)
 		quoteblock = 
 		quote
-		model.beta = reshape(OpenCL.read(model.queue, model.betabuf), model.K, model.V)
+		$(esc(model)).beta = reshape(cl.read($(esc(model)).queue, $(esc(model)).betabuf), $(esc(model)).K, $(esc(model)).V)
 		end
 
 	elseif expr.args[2] == :(:gammabuf)
 		quoteblock = 
 		quote
-		hostgamma = reshape(OpenCL.read(model.queue, model.gammabuf), model.K, model.M + 64 - model.M % 64)
-		model.gamma = [hostgamma[:,d] for d in 1:model.M]
+		hostgamma = reshape(cl.read($(esc(model)).queue, $(esc(model)).gammabuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).gamma = [hostgamma[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:phibuf)
 		quoteblock = 
 		quote
-		batch = model.batches[b]
-		Npsums = model.Npsums[b]
-		hostphi = reshape(OpenCL.read(model.queue, model.phibuf), model.K, sum(model.N[batch]) + 64 - sum(model.N[batch]) % 64)
-		model.phi = [hostphi[:,Npsums[d]+1:Npsums[d+1]] for d in 1:length(batch)]
+		batch = $(esc(model)).batches[$(esc(b))]
+		Npsums = $(esc(model)).Npsums[$(esc(b))]
+		hostphi = reshape(cl.read($(esc(model)).queue, $(esc(model)).phibuf), $(esc(model)).K, sum($(esc(model)).N[batch]) + 64 - sum($(esc(model)).N[batch]) % 64)
+		$(esc(model)).phi = [hostphi[:,Npsums[d]+1:Npsums[d+1]] for d in 1:length(batch)]
 		end
 
 	elseif expr.args[2] == :(:Elogthetabuf)
 		quoteblock = 
 		quote
-		batch = model.batches[b]
-		hostElogtheta = reshape(OpenCL.read(model.queue, model.Elogthetabuf), model.K, length(batch) + 64 - length(batch) % 64)
-		model.Elogtheta = [hostElogtheta[:,d] for d in 1:length(batch)]
+		batch = $(esc(model)).batches[$(esc(b))]
+		hostElogtheta = reshape(cl.read($(esc(model)).queue, $(esc(model)).Elogthetabuf), $(esc(model)).K, length(batch) + 64 - length(batch) % 64)
+		$(esc(model)).Elogtheta = [hostElogtheta[:,d] for d in 1:length(batch)]
 		end
 
 	elseif expr.args[2] == :(:Elogthetasumbuf)
 		quoteblock = 
 		quote
-		model.Elogthetasum = OpenCL.read(model.queue, model.Elogthetasumbuf)
+		$(esc(model)).Elogthetasum = cl.read($(esc(model)).queue, $(esc(model)).Elogthetasumbuf)
 		end
 
 	elseif expr.args[2] == :(:mubuf)
 		quoteblock =
 		quote
-		model.mu = OpenCL.read(model.queue, model.mubuf)
+		$(esc(model)).mu = cl.read($(esc(model)).queue, $(esc(model)).mubuf)
 		end
 
 	elseif expr.args[2] == :(:sigmabuf)
 		quoteblock =
 		quote
-		model.sigma = reshape(OpenCL.read(model.queue, model.sigmabuf), model.K, model.K)
+		$(esc(model)).sigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).sigmabuf), $(esc(model)).K, $(esc(model)).K)
 		end
 
 	elseif expr.args[2] == :(:invsigmabuf)
 		quoteblock =
 		quote
-		model.invsigma = reshape(OpenCL.read(model.queue, model.invsigmabuf), model.K, model.K)
+		$(esc(model)).invsigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).invsigmabuf), $(esc(model)).K, $(esc(model)).K)
 		end
 
 	elseif expr.args[2] == :(:lambdabuf)
 		quoteblock = 
 		quote
-		hostlambda = reshape(OpenCL.read(model.queue, model.lambdabuf), model.K, model.M + 64 - model.M % 64)
-		model.lambda = [hostlambda[:,d] for d in 1:model.M]
+		hostlambda = reshape(cl.read($(esc(model)).queue, $(esc(model)).lambdabuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).lambda = [hostlambda[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:vsqbuf)
 		quoteblock = 
 		quote
-		hostvsq = reshape(OpenCL.read(model.queue, model.vsqbuf), model.K, model.M + 64 - model.M % 64)
-		model.vsq = [hostvsq[:,d] for d in 1:model.M]
+		hostvsq = reshape(cl.read($(esc(model)).queue, $(esc(model)).vsqbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).vsq = [hostvsq[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:lzetabuf)
 		quoteblock = 
 		quote
-		model.lzeta = OpenCL.read(model.queue, model.lzetabuf)
+		$(esc(model)).lzeta = cl.read($(esc(model)).queue, $(esc(model)).lzetabuf)
 		end
 
 	elseif expr.args[2] == :(:alefbuf)
 		quoteblock = 
 		quote
-		model.alef = reshape(OpenCL.read(model.queue, model.alefbuf), model.K, model.V)
+		$(esc(model)).alef = reshape(cl.read($(esc(model)).queue, $(esc(model)).alefbuf), $(esc(model)).K, $(esc(model)).V)
 		end
 
 	elseif expr.args[2] == :(:betbuf)
 		quoteblock = 
 		quote
-		model.bet = OpenCL.read(model.queue, model.betbuf)
+		$(esc(model)).bet = cl.read($(esc(model)).queue, $(esc(model)).betbuf)
 		end
 
 	elseif expr.args[2] == :(:gimelbuf)
 		quoteblock = 
 		quote
-		hostgimel = reshape(OpenCL.read(model.queue, model.gimelbuf), model.K, model.M + 64 - model.M % 64)
-		model.gimel = [hostgimel[:,d] for d in 1:model.M]
+		hostgimel = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimelbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).gimel = [hostgimel[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:daletbuf)
 		quoteblock = 
 		quote
-		model.dalet = OpenCL.read(model.queue, model.daletbuf)
+		$(esc(model)).dalet = cl.read($(esc(model)).queue, $(esc(model)).daletbuf)
 		end
 
 	elseif expr.args[2] == :(:hebuf)
 		quoteblock = 
 		quote
-		model.he = reshape(OpenCL.read(model.queue, model.hebuf), model.K, model.U)
+		$(esc(model)).he = reshape(cl.read($(esc(model)).queue, $(esc(model)).hebuf), $(esc(model)).K, $(esc(model)).U)
 		end
 
 	elseif expr.args[2] == :(:vavbuf)
 		quoteblock = 
 		quote
-		model.vav = OpenCL.read(model.queue, model.vavbuf)
+		$(esc(model)).vav = cl.read($(esc(model)).queue, $(esc(model)).vavbuf)
 		end
 
 	elseif expr.args[2] == :(:zayinbuf)
 		quoteblock = 
 		quote
-		hostzayin = reshape(OpenCL.read(model.queue, model.zayinbuf), model.K, model.M + 64 - model.M % 64)
-		model.zayin = [hostzayin[:,d] for d in 1:model.M]
+		hostzayin = reshape(cl.read($(esc(model)).queue, $(esc(model)).zayinbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).zayin = [hostzayin[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:hetbuf)
 		quoteblock = 
 		quote
-		model.het = OpenCL.read(model.queue, model.hetbuf)
+		$(esc(model)).het = cl.read($(esc(model)).queue, $(esc(model)).hetbuf)
 		end
 
 	elseif expr.args[2] == :(:xibuf)
 		quoteblock = 
 		quote
-		batch = model.batches[b]
-		Rpsums = model.Rpsums[b]
-		hostxi = reshape(OpenCL.read(model.queue, model.xibuf), 2model.K, sum(model.R[batch]) + 64 - sum(model.R[batch]) % 64)
-		model.xi = [hostxi[:,Rpsums[m]+1:Rpsums[m+1]] for m in 1:length(batch)]
+		batch = $(esc(model)).batches[$(esc(b))]
+		Rpsums = $(esc(model)).Rpsums[$(esc(b))]
+		hostxi = reshape(cl.read($(esc(model)).queue, $(esc(model)).xibuf), 2 * $(esc(model)).K, sum($(esc(model)).R[batch]) + 64 - sum($(esc(model)).R[batch]) % 64)
+		$(esc(model)).xi = [hostxi[:,Rpsums[m]+1:Rpsums[m+1]] for m in 1:length(batch)]
 		end
 	end
 	return quoteblock
@@ -602,3 +610,4 @@ macro gpu(args...)
 	end
 	end
 end
+

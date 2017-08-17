@@ -1,27 +1,23 @@
-import Base.covm
-
 const EPSILON = eps(1e-14)
 
-typealias VectorList{T} Vector{Vector{T}}
-typealias MatrixList{T} Vector{Matrix{T}}
+VectorList{T} = Vector{Vector{T}}
+MatrixList{T} = Vector{Matrix{T}}
 
-bold(str::AbstractString) = print_with_color(:bold, str)
-yellow(str::AbstractString) = print_with_color(:yellow, str)
+bold(str::AbstractString) = print_with_color(:bold, bold=true, str)
+yellow(str::AbstractString) = print_with_color(:yellow, bold=true, str)
 
 isnegative(x::Real) = x < 0
 ispositive(x::Real) = x > 0
-isnegative{T<:Real}(xs::Array{T}) = Bool[isnegative(x) for x in xs]
-ispositive{T<:Real}(xs::Array{T}) = Bool[ispositive(x) for x in xs]
 
 function logsumexp{T<:Real}(xs::Array{T})
 	maxval = maximum(xs)
-	return maxval + log(sum(exp(xs - maxval)))
+	return maxval + log(sum(exp.(xs - maxval)))
 end
 
 function addlogistic{T<:Real}(xs::Array{T})
 	maxval = maximum(xs)
 	xs -= maxval
-	xs = exp(xs) / sum(exp(xs))
+	xs = exp.(xs) / sum(exp.(xs))
 	return xs
 end
 
@@ -29,11 +25,11 @@ function addlogistic{T<:Real}(xs::Matrix{T}, region::Integer)
 	if region == 1
 		maxvals = [maximum(xs[:,j]) for j in 1:size(xs, 2)]
 		xs .-= maxvals'
-		xs = exp(xs) ./ sum(exp(xs), 1)
+		xs = exp.(xs) ./ sum(exp.(xs), 1)
 	elseif region == 2
 		maxvals = [maximum(xs[i,:]) for i in 1:size(xs, 1)]
 		xs .-= maxvals
-		xs = exp(xs) ./ sum(exp(xs), 2)
+		xs = exp.(xs) ./ sum(exp.(xs), 2)
 	else
 		xs = addlogistic(xs)
 	end

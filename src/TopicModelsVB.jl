@@ -1,9 +1,8 @@
 module TopicModelsVB
 
+using SpecialFunctions
 using Distributions
 using OpenCL
-
-const OpenCL = cl
 
 export VectorList, MatrixList
 export Document, Corpus

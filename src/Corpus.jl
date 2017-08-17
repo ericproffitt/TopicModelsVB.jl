@@ -4,7 +4,7 @@
 #				#
 #################
 
-type Document
+mutable struct Document
 	terms::Vector{Int}
 	counts::Vector{Int}
 	readers::Vector{Int}
@@ -32,11 +32,11 @@ Base.size(doc::Document) = sum(doc.counts)
 function checkdoc(doc::Document)
 	pass =
 	(!isempty(doc.terms)
-	& all(ispositive(doc.terms))
-	& all(ispositive(doc.counts))
+	& all(ispositive.(doc.terms))
+	& all(ispositive.(doc.counts))
 	& isequal(length(doc.terms), length(doc.counts))
-	& all(ispositive(doc.readers))
-	& all(ispositive(doc.ratings))
+	& all(ispositive.(doc.readers))
+	& all(ispositive.(doc.ratings))
 	& isequal(length(doc.readers), length(doc.ratings)))
 	return pass	
 end
@@ -49,7 +49,7 @@ end
 #			  #
 ###############
 
-type Corpus
+mutable struct Corpus
 	docs::Vector{Document}
 	lex::Dict{Int, String}
 	users::Dict{Int, String}
@@ -98,8 +98,8 @@ function checkcorp(corp::Corpus)
 	for (d, doc) in enumerate(corp)
 		checkdoc(doc) || (println("Document $d failed check."); pass=false)
 	end
-	@assert all(ispositive(collect(keys(corp.lex))))
-	@assert all(ispositive(collect(keys(corp.users))))
+	@assert all(ispositive.(collect(keys(corp.lex))))
+	@assert all(ispositive.(collect(keys(corp.users))))
 	return pass
 end
 
@@ -136,7 +136,7 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		lkeys = lex[:,1]
 		terms = [string(j) for j in lex[:,2]]
 		corp.lex = Dict{Int, String}(zip(lkeys, terms))
-		@assert all(ispositive(collect(keys(corp.lex))))
+		@assert all(ispositive.(collect(keys(corp.lex))))
 	end
 
 	if !isempty(userfile)
@@ -144,11 +144,11 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		ukeys = users[:,1]
 		users = [string(u) for u in users[:,2]]
 		corp.users = Dict{Int, String}(zip(ukeys, users))
-		@assert all(ispositive(collect(keys(corp.users))))
+		@assert all(ispositive.(collect(keys(corp.users))))
 	end
 
 	if !isempty(titlefile)
-		titles = readdlm(titlefile, '\t', String)
+		titles = readdlm(titlefile, '\n', String)
 		for (d, doc) in enumerate(corp)
 			doc.title = titles[d]
 		end
@@ -201,10 +201,8 @@ end
 ###################
 
 function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
-	v = "v$(VERSION.major).$(VERSION.minor)"							
-							
 	if stop
-		stopwords = vec(readdlm(pwd() * "/.julia/$v/TopicModelsVB/datasets/stopwords.txt", String))
+		stopwords = vec(readdlm(pwd() * "/.julia/v0.4/topicmodelsvb/datasets/stopwords.txt", String))
 		stopkeys = filter(j -> lowercase(corp.lex[j]) in stopwords, collect(keys(corp.lex)))
 		for doc in corp
 			keep = Bool[!(j in stopkeys) for j in doc.terms]
@@ -389,7 +387,7 @@ end
 #########################################
 
 function showdocs{T<:Integer}(corp::Corpus, ds::Vector{T})
-	@assert checkindex(Bool, 1:length(corp), ds) "Some document indices outside docs range."
+	@assert checkbounds(Bool, 1:length(corp), ds) "Some document indices outside docs range."
 	
 	for d in ds
 		doc = corp[d]
@@ -425,23 +423,23 @@ function readcorp(corpsym::Symbol)
 	v = "v$(VERSION.major).$(VERSION.minor)"
 
 	if corpsym == :nsf
-		docfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/nsf/nsfdocs.txt"
-		lexfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/nsf/nsflex.txt"
-		titlefile = homedir() * "/.julia/$v/TopicModelsVB/datasets/nsf/nsftitles.txt"
+		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsfdocs.txt"
+		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsflex.txt"
+		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsftitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	elseif corpsym == :citeu
-		docfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeudocs.txt"
-		lexfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeulex.txt"
-		userfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeuusers.txt"
-		titlefile = homedir() * "/.julia/$v/TopicModelsVB/datasets/citeu/citeutitles.txt"
+		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeudocs.txt"
+		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeulex.txt"
+		userfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeuusers.txt"
+		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeutitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 		padcorp!(corp)
 
 	elseif corpsym == :mac
-		docfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/mac/macdocs.txt"
-		lexfile = homedir() * "/.julia/$v/TopicModelsVB/datasets/mac/maclex.txt"
-		titlefile = homedir() * "/.julia/$v/TopicModelsVB/datasets/mac/mactitles.txt"
+		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/macdocs.txt"
+		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/maclex.txt"
+		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/mactitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
 	else

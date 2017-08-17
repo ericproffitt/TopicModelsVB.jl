@@ -1,4 +1,4 @@
-type DTM <: TopicModel
+mutable struct DTM <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -43,13 +43,13 @@ type DTM <: TopicModel
 
 		if isa(basemodel, BaseTopicModel)
 			fixmodel!(basemodel)
-			@assert basemodel.K = K
-			@assert basemodel.M = M
-			@assert basemodel.V = V 
+			@assert basemodel.K == K
+			@assert basemodel.M == M
+			@assert basemodel.V == V 
 		end
 
 		stamps = Float64[doc.stamp for doc in corp]
-		@assert all(isfinite(stamps))
+		@assert all(isfinite.(stamps))
 		t0 = minimum(stamps)
 		tM = maximum(stamps)
 
@@ -65,25 +65,25 @@ type DTM <: TopicModel
 		if isa(basemodel, AbstractLDA)
 			topics = [basemodel.topics for _ in 1:T]
 			alpha = [basemodel.alpha for _ in 1:T]
-			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			betahat = [log.(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [basemodel.gamma[d] for d in 1:M]
 
 		elseif isa(basemodel, AbstractfLDA)
 			topics = [basemodel.topics for _ in 1:T]
 			alpha = [basemodel.alpha for _ in 1:T]
-			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			betahat = [log.(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [basemodel.gamma[d] for d in 1:M]
 
 		elseif isa(basemodel, AbstractCTM)
 			topics = [basemodel.topics for _ in 1:T]
 			alpha = [addlogistic(basemodel.mu) for _ in 1:T]
-			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			betahat = [log.(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(basemodel.lambda[d]) for d in 1:M]
 
 		elseif isa(basemodel, AbstractfCTM)
 			topics = [basemodel.topics for _ in 1:T]
 			alpha = [addlogistic(basemodel.mu) for _ in 1:T]
-			betahat = [log(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
+			betahat = [log.(@boink basemodel.beta) + randn(K, V) for _ in 1:T]
 			gamma = [addlogistic(basemodel.lambda[d]) for d in 1:M]
 
 		else
@@ -126,7 +126,7 @@ function Elogpbeta(model::DTM, t::Int)
 end
 
 function Elogptheta(model::DTM, t::Int, d::Int)
-	x = lgamma(sum(model.alpha[t])) - sum(lgamma(model.alpha[t])) + dot(model.alpha[t] - 1, model.Elogtheta[d])
+	x = lgamma(sum(model.alpha[t])) - sum(lgamma.(model.alpha[t])) + dot(model.alpha[t] - 1, model.Elogtheta[d])
 	return x
 end
 
@@ -138,7 +138,7 @@ end
 
 function Elogpw(model::DTM, t::Int, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[d] .* model.mbeta[t][:,terms] * counts) - sum(counts .* model.phi[d]' * sum(exp(model.mbeta[t] + 0.5 * model.vbeta[t] - model.lzeta[d]), 2)) - model.lzeta[d] + 1
+	x = sum(model.phi[d] .* model.mbeta[t][:,terms] * counts) - sum(counts .* model.phi[d]' * sum(exp.(model.mbeta[t] + 0.5 * model.vbeta[t] - model.lzeta[d]), 2)) - model.lzeta[d] + 1
 	return x
 end
 
@@ -180,7 +180,7 @@ function updateAlpha!(model::DTM, t::Int, niter::Integer, ntol::Real)
 	for _ in 1:niter
 		rho = 1.0
 		alphaGrad = [(nu / model.alpha[t][i]) + length(model.S[t]) * (digamma(sum(model.alpha[t])) - digamma(model.alpha[t][i])) for i in 1:model.K] + sum(model.Elogtheta[model.S[t]])
-		alphaInvHessDiag = -1 ./ (length(model.S[t]) * trigamma(model.alpha[t]) + nu ./ model.alpha[t].^2)
+		alphaInvHessDiag = -1 ./ (length(model.S[t]) * trigamma.(model.alpha[t]) + nu ./ model.alpha[t].^2)
 		p = (alphaGrad - dot(alphaGrad, alphaInvHessDiag) / (1 / (length(model.S[t]) * trigamma(sum(model.alpha[t]))) + sum(alphaInvHessDiag))) .* alphaInvHessDiag
 		
 		while minimum(model.alpha[t] - rho * p) < 0
@@ -203,7 +203,7 @@ end
 
 function updatePhi!(model::DTM, t::Int, d::Int)
 	terms = model.corp[d].terms
-	model.phi[d] = addlogistic(model.mbeta[t][:,terms] .- exp(model.maxlEexpbeta[t] - model.lzeta[d]) * sum(model.ovflEexpbeta[t], 2) .+ model.Elogtheta[d], 1)
+	model.phi[d] = addlogistic(model.mbeta[t][:,terms] .- exp.(model.maxlEexpbeta[t] - model.lzeta[d]) * sum(model.ovflEexpbeta[t], 2) .+ model.Elogtheta[d], 1)
 end
 
 function updateMbeta!(model::DTM)
@@ -223,9 +223,9 @@ function updateMbeta!(model::DTM)
 	model.mbeta0 = q .* model.m0 + (1 - q) .* model.mbeta[1]
 
 	x = Matrix{Float64}[model.mbeta[t] + 0.5 * model.vbeta[t] for t in 1:model.T]
-	model.Eexpbeta = [exp(x[t]) for t in 1:model.T]	
+	model.Eexpbeta = [exp.(x[t]) for t in 1:model.T]	
 	model.maxlEexpbeta = [maximum(x[t]) for t in 1:model.T]
-	model.ovflEexpbeta = [exp(x[t] - model.maxlEexpbeta[t]) for t in 1:model.T]
+	model.ovflEexpbeta = [exp.(x[t] - model.maxlEexpbeta[t]) for t in 1:model.T]
 end
 
 function updateVbeta!(model::DTM)
@@ -278,7 +278,7 @@ function updateBetahat!(model::DTM, cgiter::Integer, cgtol::Real)
 				for d in model.S[t]
 					terms, counts = model.corp[d].terms, model.corp[d].counts
 					betahatgrad[s][:,terms] += model.phi[d] .* counts' .* mbetagrad[t][s][:,terms]
-					betahatgrad[s] -= exp(-model.lzeta[d]) * sum(model.phi[d] .* counts', 2) .* x
+					betahatgrad[s] -= exp.(-model.lzeta[d]) * sum(model.phi[d] .* counts', 2) .* x
 				end
 			end
 		end
@@ -309,8 +309,8 @@ function updateLzeta!(model::DTM, t::Int, d::Int)
 end
 
 function train!(model::DTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, cgiter::Integer=20, cgtol::Real=1/model.T^2, chkelbo::Integer=1)
-	@assert all(!isnegative([tol, ntol, vtol, cgtol]))
-	@assert all(ispositive([iter, niter, viter, cgiter, chkelbo]))	
+	@assert all(.!isnegative.([tol, ntol, vtol, cgtol]))
+	@assert all(ispositive.([iter, niter, viter, cgiter, chkelbo]))	
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)

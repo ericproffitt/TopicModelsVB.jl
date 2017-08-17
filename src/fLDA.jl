@@ -1,4 +1,4 @@
-type fLDA <: TopicModel
+mutable struct fLDA <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -56,7 +56,7 @@ type fLDA <: TopicModel
 end
 
 function Elogptheta(model::fLDA)
-	x = lgamma(sum(model.alpha)) - sum(lgamma(model.alpha)) + dot(model.alpha - 1, model.Elogtheta)
+	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, model.Elogtheta)
 	return x
 end
 
@@ -75,7 +75,7 @@ end
 
 function Elogpw(model::fLDA, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 - model.tau[d], log(@boink model.kappa[terms]))
+	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 - model.tau[d], log.(@boink model.kappa[terms]))
 	return x
 end
 
@@ -119,7 +119,7 @@ function updateAlpha!(model::fLDA, niter::Integer, ntol::Real)
 	for _ in 1:niter
 		rho = 1.0
 		alphaGrad = [nu / model.alpha[i] + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
-		alphaInvHessDiag = -1 ./ (model.M * trigamma(model.alpha) + nu ./ model.alpha.^2)
+		alphaInvHessDiag = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
 		p = (alphaGrad - dot(alphaGrad, alphaInvHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alphaInvHessDiag))) .* alphaInvHessDiag
 		
 		while minimum(model.alpha - rho * p) < 0
@@ -172,11 +172,11 @@ end
 
 function updatePhi!(model::fLDA, d::Int)
 	terms = model.corp[d].terms
-	model.phi = addlogistic(model.tau[d]' .* log(model.beta[:,terms]) .+ model.Elogtheta, 1)
+	model.phi = addlogistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.Elogtheta, 1)
 end
 
 function updateElogtheta!(model::fLDA, d::Int)
-	model.Elogtheta = digamma(model.gamma[d]) - digamma(sum(model.gamma[d]))
+	model.Elogtheta = digamma.(model.gamma[d]) - digamma(sum(model.gamma[d]))
 end
 
 function updateElogthetasum!(model::fLDA)
@@ -184,8 +184,8 @@ function updateElogthetasum!(model::fLDA)
 end
 
 function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
-	@assert all(!isnegative([tol, ntol, vtol]))
-	@assert all(ispositive([iter, niter, viter, chkelbo]))
+	@assert all(.!isnegative.([tol, ntol, vtol]))
+	@assert all(ispositive.([iter, niter, viter, chkelbo]))
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)

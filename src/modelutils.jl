@@ -129,8 +129,8 @@ function fixmodel!(model::LDA; check::Bool=true)
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
 	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
-	@assert all(isfinite(model.alpha))
-	@assert all(ispositive(model.alpha))
+	@assert all(isfinite.(model.alpha))
+	@assert all(ispositive.(model.alpha))
 	@assert isequal(length(model.alpha), model.K)
 	@assert isequal(size(model.beta), (model.K, model.V))
 	@assert isprobvec(model.beta, 2)
@@ -138,14 +138,14 @@ function fixmodel!(model::LDA; check::Bool=true)
 	@assert isequal(model.newbeta, zeros(model.K, model.V))
 	@assert isequal(length(model.gamma), model.M)
 	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])
 	@assert isequal(size(model.phi), (model.K, model.N[1]))
 	@assert isprobvec(model.phi, 1)
 	@assert isfinite(model.elbo)
 	end
 
-	model.Elogtheta = digamma(model.gamma[1]) - digamma(sum(model.gamma[1]))
+	model.Elogtheta = digamma.(model.gamma[1]) - digamma(sum(model.gamma[1]))
 	model.Elogthetasum = zeros(model.K)
 	model.newbeta = zeros(model.K, model.V)
 	model.newelbo = 0
@@ -161,8 +161,8 @@ function fixmodel!(model::fLDA; check::Bool=true)
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
 	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
 	@assert isequal(length(model.alpha), model.K)	
-	@assert all(isfinite(model.alpha))
-	@assert all(ispositive(model.alpha))
+	@assert all(isfinite.(model.alpha))
+	@assert all(ispositive.(model.alpha))
 	@assert (0 <= model.eta <= 1)	
 	@assert isequal(size(model.beta), (model.K, model.V))
 	@assert isprobvec(model.beta, 2)
@@ -176,8 +176,8 @@ function fixmodel!(model::fLDA; check::Bool=true)
 	@assert isequal(model.newkappa, zeros(model.V))	
 	@assert isequal(length(model.gamma), model.M)
 	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])
 	@assert isequal(length(model.tau), model.M)
 	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
 	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])	
@@ -186,7 +186,7 @@ function fixmodel!(model::fLDA; check::Bool=true)
 	@assert isfinite(model.elbo)
 	end
 
-	model.Elogtheta = digamma(model.gamma[1]) - digamma(sum(model.gamma[1]))
+	model.Elogtheta = digamma.(model.gamma[1]) - digamma(sum(model.gamma[1]))
 	model.Elogthetasum = zeros(model.K)
 	model.newbeta = zeros(model.K, model.V)
 	model.newkappa = zeros(model.V)
@@ -202,7 +202,7 @@ function fixmodel!(model::CTM; check::Bool=true)
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
 	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert all(isfinite(model.mu))	
+	@assert all(isfinite.(model.mu))	
 	@assert isequal(size(model.sigma), (model.K, model.K))
 	@assert isposdef(model.sigma)
 	@assert isequal(size(model.beta), (model.K, model.V))
@@ -211,11 +211,11 @@ function fixmodel!(model::CTM; check::Bool=true)
 	@assert isequal(model.newbeta, zeros(model.K, model.V))
 	@assert isequal(length(model.lambda), model.M)
 	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.lambda[d])) for d in 1:model.M])	
+	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
 	@assert isequal(length(model.vsq), model.M)
 	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.vsq[d])) for d in 1:model.M])	
+	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
 	@assert isfinite(model.lzeta)	
 	@assert isequal(size(model.phi), (model.K, model.N[1]))
 	@assert isprobvec(model.phi, 1)
@@ -237,7 +237,7 @@ function fixmodel!(model::fCTM; check::Bool=true)
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
 	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
 	@assert (0 <= model.eta <= 1)	
-	@assert all(isfinite(model.mu))
+	@assert all(isfinite.(model.mu))
 	@assert isequal(size(model.sigma), (model.K, model.K))
 	@assert isposdef(model.sigma)
 	@assert isequal(size(model.beta), (model.K, model.V))
@@ -252,11 +252,11 @@ function fixmodel!(model::fCTM; check::Bool=true)
 	@assert isequal(model.newkappa, zeros(model.V))
 	@assert isequal(length(model.lambda), model.M)
 	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.lambda[d])) for d in 1:model.M])	
+	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
 	@assert isequal(length(model.vsq), model.M)
 	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])	
-	@assert all(Bool[all(isfinite(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.vsq[d])) for d in 1:model.M])	
+	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
 	@assert isfinite(model.lzeta)
 	@assert isequal(length(model.tau), model.M)
 	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
@@ -287,53 +287,53 @@ function fixmodel!(model::DTM; check::Bool=true)
 	@assert ispositive(model.sigmasq)	
 	@assert isequal(length(model.alpha), model.T)
 	@assert all(Bool[isequal(length(model.alpha[t]), model.K) for t in 1:model.T])
-	@assert all(Bool[all(isfinite(model.alpha[t])) for t in 1:model.T])
-	@assert all(Bool[all(ispositive(model.alpha[t])) for t in 1:model.T])	
+	@assert all(Bool[all(isfinite.(model.alpha[t])) for t in 1:model.T])
+	@assert all(Bool[all(ispositive.(model.alpha[t])) for t in 1:model.T])	
 	@assert isequal(length(model.gamma), model.M)
 	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])
 	@assert isequal(length(model.phi), model.M)
 	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])
 	@assert all(Bool[isprobvec(model.phi[d], 1) for d in 1:model.M])	
 	@assert isequal(size(model.m0), (model.K, model.V))
-	@assert all(isfinite(model.m0))	
+	@assert all(isfinite.(model.m0))	
 	@assert isequal(size(model.v0), (model.K, model.V))
-	@assert all(isfinite(model.v0))
-	@assert all(ispositive(model.v0))	
+	@assert all(isfinite.(model.v0))
+	@assert all(ispositive.(model.v0))	
 	@assert isequal(length(model.m), model.T)
 	@assert all(Bool[isequal(size(model.m[t]), (model.K, model.V)) for t in 1:model.T])
-	@assert all(Bool[all(isfinite(model.m[t])) for t in 1:model.T])
+	@assert all(Bool[all(isfinite.(model.m[t])) for t in 1:model.T])
 	@assert isequal(length(model.v), model.T)
 	@assert all(Bool[isequal(size(model.v[t]), (model.K, model.V)) for t in 1:model.T])	
-	@assert all(Bool[all(isfinite(model.v[t])) for t in 1:model.T])
-	@assert all(Bool[all(ispositive(model.v[t])) for t in 1:model.T])	
+	@assert all(Bool[all(isfinite.(model.v[t])) for t in 1:model.T])
+	@assert all(Bool[all(ispositive.(model.v[t])) for t in 1:model.T])	
 	@assert isequal(length(model.bsq), model.T)
-	@assert all(isfinite(model.bsq))
+	@assert all(isfinite.(model.bsq))
 	@assert all(ispositive(model.bsq))	
-	@assert all(Bool[all(isfinite(model.betahat[t])) for t in 1:model.T])
+	@assert all(Bool[all(isfinite.(model.betahat[t])) for t in 1:model.T])
 	@assert isequal(size(model.mbeta0), (model.K, model.V))	
-	@assert all(isfinite(model.mbeta0))	
+	@assert all(isfinite.(model.mbeta0))	
 	@assert isequal(size(model.vbeta0), (model.K, model.V))
-	@assert all(isfinite(model.vbeta0))
-	@assert all(ispositive(model.vbeta0))
+	@assert all(isfinite.(model.vbeta0))
+	@assert all(ispositive.(model.vbeta0))
 	@assert isequal(length(model.mbeta), model.T)
 	@assert all(Bool[isequal(size(model.mbeta[t]), (model.K, model.V)) for t in 1:model.T])
-	@assert all(Bool[all(isfinite(model.mbeta[t])) for t in 1:model.T])
+	@assert all(Bool[all(isfinite.(model.mbeta[t])) for t in 1:model.T])
 	@assert isequal(length(model.vbeta), model.T)
 	@assert all(Bool[isequal(size(model.vbeta[t]), (model.K, model.V)) for t in 1:model.T])	
-	@assert all(Bool[all(isfinite(model.vbeta[t])) for t in 1:model.T])
+	@assert all(Bool[all(isfinite.(model.vbeta[t])) for t in 1:model.T])
 	@assert all(Bool[all(ispositive(model.vbeta[t])) for t in 1:model.T])
-	@assert all(isfinite(model.lzeta))	
+	@assert all(isfinite.(model.lzeta))	
 	@assert isfinite(model.delta)
 	@assert ispositive(model.delta)	
 	@assert isfinite(model.elbo)
 	end
 
-	model.Elogtheta = [digamma(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M]
-	model.Eexpbeta = [exp(model.mbeta[t] + 0.5 * model.vbeta[t]) for t in 1:model.T]
+	model.Elogtheta = [digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M]
+	model.Eexpbeta = [exp.(model.mbeta[t] + 0.5 * model.vbeta[t]) for t in 1:model.T]
 	model.maxlEexpbeta = [maximum(model.Eexpbeta[t]) for t in 1:model.T]
-	model.ovflEexpbeta = [exp(model.mbeta[t] + 0.5 * model.vbeta[t] - model.maxlEexpbeta[t]) for t in 1:model.T]
+	model.ovflEexpbeta = [exp.(model.mbeta[t] + 0.5 * model.vbeta[t] - model.maxlEexpbeta[t]) for t in 1:model.T]
 	nothing
 end
 
@@ -356,31 +356,31 @@ function fixmodel!(model::CTPF; check::Bool=true)
 	@assert ispositive(model.g)
 	@assert ispositive(model.h)	
 	@assert isequal(size(model.alef), (model.K, model.V))
-	@assert all(isfinite(model.alef))
-	@assert all(ispositive(model.alef))
+	@assert all(isfinite.(model.alef))
+	@assert all(ispositive.(model.alef))
 	@assert isequal(length(model.bet), model.K)
-	@assert all(isfinite(model.bet))
-	@assert all(ispositive(model.bet))
+	@assert all(isfinite.(model.bet))
+	@assert all(ispositive.(model.bet))
 	@assert isequal(length(model.gimel), model.M)
 	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.gimel[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.gimel[d])) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gimel[d])) for d in 1:model.M])
 	@assert isequal(length(model.dalet), model.K)
-	@assert all(isfinite(model.dalet))
-	@assert all(ispositive(model.dalet))
+	@assert all(isfinite.(model.dalet))
+	@assert all(ispositive.(model.dalet))
 	@assert isequal(size(model.he), (model.K, model.U))	
-	@assert all(isfinite(model.he))
-	@assert all(ispositive(model.he))
+	@assert all(isfinite.(model.he))
+	@assert all(ispositive.(model.he))
 	@assert isequal(length(model.vav), model.K)
-	@assert all(isfinite(model.vav))
-	@assert all(ispositive(model.vav))
+	@assert all(isfinite.(model.vav))
+	@assert all(ispositive.(model.vav))
 	@assert isequal(length(model.zayin), model.M)
 	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.zayin[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.zayin[d])) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.zayin[d])) for d in 1:model.M])
 	@assert isequal(length(model.het), model.K)
-	@assert all(isfinite(model.het))
-	@assert all(ispositive(model.het))
+	@assert all(isfinite.(model.het))
+	@assert all(ispositive.(model.het))
 	@assert isequal(size(model.phi), (model.K, model.N[1]))
 	@assert isprobvec(model.phi, 1)
 	@assert isequal(size(model.xi), (2model.K, model.R[1]))
@@ -403,21 +403,21 @@ function fixmodel!(model::gpuLDA; check::Bool=true)
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
 	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
-	@assert all(isfinite(model.alpha))
-	@assert all(ispositive(model.alpha))
+	@assert all(isfinite.(model.alpha))
+	@assert all(ispositive.(model.alpha))
 	@assert isequal(length(model.alpha), model.K)
 	@assert isequal(size(model.beta), (model.K, model.V))
 	@assert isprobvec(model.beta, 2)	
 	@assert isequal(length(model.gamma), model.M)
 	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.gamma[d])) for d in 1:model.M])	
+	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])	
 	@assert isequal(length(model.phi), length(model.batches[1]))
 	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
 	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
 	end
 
-	model.Elogtheta = [digamma(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in model.batches[1]]
+	model.Elogtheta = [digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in model.batches[1]]
 	model.Elogthetasum = zeros(model.K)
 	model.newbeta = nothing
 	
@@ -446,25 +446,25 @@ function fixmodel!(model::gpuLDA; check::Bool=true)
 		end
 	end
 
-	model.device, model.context, model.queue = OpenCL.create_compute_context()
+	model.device, model.context, model.queue = cl.create_compute_context()
 
-	betaprog = OpenCL.Program(model.context, source=LDA_BETA_cpp) |> OpenCL.build!
-	betanormprog = OpenCL.Program(model.context, source=LDA_BETA_NORM_cpp) |> OpenCL.build!
-	newbetaprog = OpenCL.Program(model.context, source=LDA_NEWBETA_cpp) |> OpenCL.build!
-	gammaprog = OpenCL.Program(model.context, source=LDA_GAMMA_cpp) |> OpenCL.build!
-	phiprog = OpenCL.Program(model.context, source=LDA_PHI_cpp) |> OpenCL.build!
-	phinormprog = OpenCL.Program(model.context, source=LDA_PHI_NORM_cpp) |> OpenCL.build!
-	Elogthetaprog = OpenCL.Program(model.context, source=LDA_ELOGTHETA_cpp) |> OpenCL.build!
-	Elogthetasumprog = OpenCL.Program(model.context, source=LDA_ELOGTHETASUM_cpp) |> OpenCL.build!
+	betaprog = cl.Program(model.context, source=LDA_BETA_cpp) |> cl.build!
+	betanormprog = cl.Program(model.context, source=LDA_BETA_NORM_cpp) |> cl.build!
+	newbetaprog = cl.Program(model.context, source=LDA_NEWBETA_cpp) |> cl.build!
+	gammaprog = cl.Program(model.context, source=LDA_GAMMA_cpp) |> cl.build!
+	phiprog = cl.Program(model.context, source=LDA_PHI_cpp) |> cl.build!
+	phinormprog = cl.Program(model.context, source=LDA_PHI_NORM_cpp) |> cl.build!
+	Elogthetaprog = cl.Program(model.context, source=LDA_ELOGTHETA_cpp) |> cl.build!
+	Elogthetasumprog = cl.Program(model.context, source=LDA_ELOGTHETASUM_cpp) |> cl.build!
 
-	model.betakern = OpenCL.Kernel(betaprog, "updateBeta")
-	model.betanormkern = OpenCL.Kernel(betanormprog, "normalizeBeta")
-	model.newbetakern = OpenCL.Kernel(newbetaprog, "updateNewbeta")
-	model.gammakern = OpenCL.Kernel(gammaprog, "updateGamma")
-	model.phikern = OpenCL.Kernel(phiprog, "updatePhi")
-	model.phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
-	model.Elogthetakern = OpenCL.Kernel(Elogthetaprog, "updateElogtheta")
-	model.Elogthetasumkern = OpenCL.Kernel(Elogthetasumprog, "updateElogthetasum")		
+	model.betakern = cl.Kernel(betaprog, "updateBeta")
+	model.betanormkern = cl.Kernel(betanormprog, "normalizeBeta")
+	model.newbetakern = cl.Kernel(newbetaprog, "updateNewbeta")
+	model.gammakern = cl.Kernel(gammaprog, "updateGamma")
+	model.phikern = cl.Kernel(phiprog, "updatePhi")
+	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
+	model.Elogthetakern = cl.Kernel(Elogthetaprog, "updateElogtheta")
+	model.Elogthetasumkern = cl.Kernel(Elogthetasumprog, "updateElogthetasum")		
 
 	@buf model.alpha
 	@buf model.beta
@@ -486,19 +486,19 @@ function fixmodel!(model::gpuCTM; check::Bool=true)
 	@assert isequal(model.M, length(model.corp))
 	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
 	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert all(isfinite(model.mu))	
+	@assert all(isfinite.(model.mu))	
 	@assert isequal(size(model.sigma), (model.K, model.K))
 	@assert isposdef(model.sigma)
 	@assert isequal(size(model.beta), (model.K, model.V))
 	@assert isprobvec(model.beta, 2)
 	@assert isequal(length(model.lambda), model.M)
 	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.lambda[d])) for d in 1:model.M])	
+	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
 	@assert isequal(length(model.vsq), model.M)
 	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.vsq[d])) for d in 1:model.M])	
-	@assert all(isfinite(model.lzeta))	
+	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
+	@assert all(isfinite.(model.lzeta))	
 	@assert isequal(length(model.phi), length(model.batches[1]))
 	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
 	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
@@ -532,27 +532,27 @@ function fixmodel!(model::gpuCTM; check::Bool=true)
 		end
 	end
 
-	model.device, model.context, model.queue = OpenCL.create_compute_context()
+	model.device, model.context, model.queue = cl.create_compute_context()
 
-	muprog = OpenCL.Program(model.context, source=CTM_MU_cpp) |> OpenCL.build!
-	betaprog = OpenCL.Program(model.context, source=CTM_BETA_cpp) |> OpenCL.build!
-	betanormprog = OpenCL.Program(model.context, source=CTM_BETA_NORM_cpp) |> OpenCL.build!
-	newbetaprog = OpenCL.Program(model.context, source=CTM_NEWBETA_cpp) |> OpenCL.build!
-	lambdaprog = OpenCL.Program(model.context, source=CTM_LAMBDA_cpp) |> OpenCL.build!
-	vsqprog = OpenCL.Program(model.context, source=CTM_VSQ_cpp) |> OpenCL.build!
-	lzetaprog = OpenCL.Program(model.context, source=CTM_LZETA_cpp) |> OpenCL.build!
-	phiprog = OpenCL.Program(model.context, source=CTM_PHI_cpp) |> OpenCL.build!
-	phinormprog = OpenCL.Program(model.context, source=CTM_PHI_NORM_cpp) |> OpenCL.build!
+	muprog = cl.Program(model.context, source=CTM_MU_cpp) |> cl.build!
+	betaprog = cl.Program(model.context, source=CTM_BETA_cpp) |> cl.build!
+	betanormprog = cl.Program(model.context, source=CTM_BETA_NORM_cpp) |> cl.build!
+	newbetaprog = cl.Program(model.context, source=CTM_NEWBETA_cpp) |> cl.build!
+	lambdaprog = cl.Program(model.context, source=CTM_LAMBDA_cpp) |> cl.build!
+	vsqprog = cl.Program(model.context, source=CTM_VSQ_cpp) |> cl.build!
+	lzetaprog = cl.Program(model.context, source=CTM_LZETA_cpp) |> cl.build!
+	phiprog = cl.Program(model.context, source=CTM_PHI_cpp) |> cl.build!
+	phinormprog = cl.Program(model.context, source=CTM_PHI_NORM_cpp) |> cl.build!
 
-	model.mukern = OpenCL.Kernel(muprog, "updateMu")
-	model.betakern = OpenCL.Kernel(betaprog, "updateBeta")
-	model.betanormkern = OpenCL.Kernel(betanormprog, "normalizeBeta")
-	model.newbetakern = OpenCL.Kernel(newbetaprog, "updateNewbeta")
-	model.lambdakern = OpenCL.Kernel(lambdaprog, "updateLambda")
-	model.vsqkern = OpenCL.Kernel(vsqprog, "updateVsq")
-	model.lzetakern = OpenCL.Kernel(lzetaprog, "updateLzeta")
-	model.phikern = OpenCL.Kernel(phiprog, "updatePhi")
-	model.phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
+	model.mukern = cl.Kernel(muprog, "updateMu")
+	model.betakern = cl.Kernel(betaprog, "updateBeta")
+	model.betanormkern = cl.Kernel(betanormprog, "normalizeBeta")
+	model.newbetakern = cl.Kernel(newbetaprog, "updateNewbeta")
+	model.lambdakern = cl.Kernel(lambdaprog, "updateLambda")
+	model.vsqkern = cl.Kernel(vsqprog, "updateVsq")
+	model.lzetakern = cl.Kernel(lzetaprog, "updateLzeta")
+	model.phikern = cl.Kernel(phiprog, "updatePhi")
+	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
 		
 	@buf model.mu
 	@buf model.sigma
@@ -588,31 +588,31 @@ function fixmodel!(model::gpuCTPF; check::Bool=true)
 	@assert ispositive(model.g)
 	@assert ispositive(model.h)	
 	@assert isequal(size(model.alef), (model.K, model.V))
-	@assert all(isfinite(model.alef))
-	@assert all(ispositive(model.alef))
+	@assert all(isfinite.(model.alef))
+	@assert all(ispositive.(model.alef))
 	@assert isequal(length(model.bet), model.K)
-	@assert all(isfinite(model.bet))
-	@assert all(ispositive(model.bet))
+	@assert all(isfinite.(model.bet))
+	@assert all(ispositive.(model.bet))
 	@assert isequal(length(model.gimel), model.M)
 	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.gimel[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.gimel[d])) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gimel[d])) for d in 1:model.M])
 	@assert isequal(length(model.dalet), model.K)
-	@assert all(isfinite(model.dalet))
-	@assert all(ispositive(model.dalet))
+	@assert all(isfinite.(model.dalet))
+	@assert all(ispositive.(model.dalet))
 	@assert isequal(size(model.he), (model.K, model.U))	
-	@assert all(isfinite(model.he))
-	@assert all(ispositive(model.he))
+	@assert all(isfinite.(model.he))
+	@assert all(ispositive.(model.he))
 	@assert isequal(length(model.vav), model.K)
-	@assert all(isfinite(model.vav))
-	@assert all(ispositive(model.vav))
+	@assert all(isfinite.(model.vav))
+	@assert all(ispositive.(model.vav))
 	@assert isequal(length(model.zayin), model.M)
 	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite(model.zayin[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive(model.zayin[d])) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.zayin[d])) for d in 1:model.M])
 	@assert isequal(length(model.het), model.K)
-	@assert all(isfinite(model.het))
-	@assert all(ispositive(model.het))
+	@assert all(isfinite.(model.het))
+	@assert all(ispositive.(model.het))
 	@assert isequal(length(model.phi), length(model.batches[1]))
 	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
 	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
@@ -669,37 +669,37 @@ function fixmodel!(model::gpuCTPF; check::Bool=true)
 		end
 	end
 
-	model.device, model.context, model.queue = OpenCL.create_compute_context()		
+	model.device, model.context, model.queue = cl.create_compute_context()		
 
-	alefprog = OpenCL.Program(model.context, source=CTPF_ALEF_cpp) |> OpenCL.build!
-	newalefprog = OpenCL.Program(model.context, source=CTPF_NEWALEF_cpp) |> OpenCL.build!
-	betprog = OpenCL.Program(model.context, source=CTPF_BET_cpp) |> OpenCL.build!
-	gimelprog = OpenCL.Program(model.context, source=CTPF_GIMEL_cpp) |> OpenCL.build!
-	daletprog = OpenCL.Program(model.context, source=CTPF_DALET_cpp) |> OpenCL.build!
-	heprog = OpenCL.Program(model.context, source=CTPF_HE_cpp) |> OpenCL.build!
-	newheprog = OpenCL.Program(model.context, source=CTPF_NEWHE_cpp) |> OpenCL.build!
-	vavprog = OpenCL.Program(model.context, source=CTPF_VAV_cpp) |> OpenCL.build!
-	zayinprog = OpenCL.Program(model.context, source=CTPF_ZAYIN_cpp) |> OpenCL.build!
-	hetprog = OpenCL.Program(model.context, source=CTPF_HET_cpp) |> OpenCL.build!
-	phiprog = OpenCL.Program(model.context, source=CTPF_PHI_cpp) |> OpenCL.build!
-	phinormprog = OpenCL.Program(model.context, source=CTPF_PHI_NORM_cpp) |> OpenCL.build!
-	xiprog = OpenCL.Program(model.context, source=CTPF_XI_cpp) |> OpenCL.build!
-	xinormprog = OpenCL.Program(model.context, source=CTPF_XI_NORM_cpp) |> OpenCL.build!
+	alefprog = cl.Program(model.context, source=CTPF_ALEF_cpp) |> cl.build!
+	newalefprog = cl.Program(model.context, source=CTPF_NEWALEF_cpp) |> cl.build!
+	betprog = cl.Program(model.context, source=CTPF_BET_cpp) |> cl.build!
+	gimelprog = cl.Program(model.context, source=CTPF_GIMEL_cpp) |> cl.build!
+	daletprog = cl.Program(model.context, source=CTPF_DALET_cpp) |> cl.build!
+	heprog = cl.Program(model.context, source=CTPF_HE_cpp) |> cl.build!
+	newheprog = cl.Program(model.context, source=CTPF_NEWHE_cpp) |> cl.build!
+	vavprog = cl.Program(model.context, source=CTPF_VAV_cpp) |> cl.build!
+	zayinprog = cl.Program(model.context, source=CTPF_ZAYIN_cpp) |> cl.build!
+	hetprog = cl.Program(model.context, source=CTPF_HET_cpp) |> cl.build!
+	phiprog = cl.Program(model.context, source=CTPF_PHI_cpp) |> cl.build!
+	phinormprog = cl.Program(model.context, source=CTPF_PHI_NORM_cpp) |> cl.build!
+	xiprog = cl.Program(model.context, source=CTPF_XI_cpp) |> cl.build!
+	xinormprog = cl.Program(model.context, source=CTPF_XI_NORM_cpp) |> cl.build!
 
-	model.alefkern = OpenCL.Kernel(alefprog, "updateAlef")
-	model.newalefkern = OpenCL.Kernel(newalefprog, "updateNewalef")
-	model.betkern = OpenCL.Kernel(betprog, "updateBet")
-	model.gimelkern = OpenCL.Kernel(gimelprog, "updateGimel")
-	model.daletkern = OpenCL.Kernel(daletprog, "updateDalet")
-	model.hekern = OpenCL.Kernel(heprog, "updateHe")
-	model.newhekern = OpenCL.Kernel(newheprog, "updateNewhe")
-	model.vavkern = OpenCL.Kernel(vavprog, "updateVav")
-	model.zayinkern = OpenCL.Kernel(zayinprog, "updateZayin")
-	model.hetkern = OpenCL.Kernel(hetprog, "updateHet")
-	model.phikern = OpenCL.Kernel(phiprog, "updatePhi")
-	model.phinormkern = OpenCL.Kernel(phinormprog, "normalizePhi")
-	model.xikern = OpenCL.Kernel(xiprog, "updateXi")
-	model.xinormkern = OpenCL.Kernel(xinormprog, "normalizeXi")
+	model.alefkern = cl.Kernel(alefprog, "updateAlef")
+	model.newalefkern = cl.Kernel(newalefprog, "updateNewalef")
+	model.betkern = cl.Kernel(betprog, "updateBet")
+	model.gimelkern = cl.Kernel(gimelprog, "updateGimel")
+	model.daletkern = cl.Kernel(daletprog, "updateDalet")
+	model.hekern = cl.Kernel(heprog, "updateHe")
+	model.newhekern = cl.Kernel(newheprog, "updateNewhe")
+	model.vavkern = cl.Kernel(vavprog, "updateVav")
+	model.zayinkern = cl.Kernel(zayinprog, "updateZayin")
+	model.hetkern = cl.Kernel(hetprog, "updateHet")
+	model.phikern = cl.Kernel(phiprog, "updatePhi")
+	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
+	model.xikern = cl.Kernel(xiprog, "updateXi")
+	model.xinormkern = cl.Kernel(xinormprog, "normalizeXi")
 		
 	@buf model.alef
 	@buf model.bet
@@ -843,8 +843,8 @@ end
 ###########################
 
 function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), cols::Integer=4)
-	@assert checkindex(Bool, 1:model.V, N)
-	@assert checkindex(Bool, 1:model.K, topics)
+	@assert checkbounds(Bool, 1:model.V, N)
+	@assert checkbounds(Bool, 1:model.K, topics)
 	@assert ispositive(cols)
 	isa(topics, Vector) || (topics = [topics])
 	cols = min(cols, length(topics))
@@ -870,18 +870,17 @@ function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); 
 end
 
 function showtopics{T<:Integer, S<:Integer}(model::AbstractDTM, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), times::Union{S, Vector{S}}=collect(1:model.T), cols::Integer=4)
-	@assert checkindex(Bool, 1:model.V, N)
-	@assert checkindex(Bool, 1:model.K, topics)
-	@assert checkindex(Bool, 1:model.T, times)
+	@assert checkbounds(Bool, 1:model.V, N)
+	@assert checkbounds(Bool, 1:model.K, topics)
+	@assert checkbounds(Bool, 1:model.T, times)
 	@assert ispositive(cols)
 	isa(times, Vector) || (times = [times])
 	
 	corp, lex = model.corp, model.corp.lex
 
 	if length(topics) > 1
-		container = LDA(Corpus(), model.K)
+		container = LDA(corp, model.K)
 		for t in times
-			container.corp = corp
 			container.topics = model.topics[t][topics]
 			container.V = model.V
 			@juliadots "Time: $t\n"
@@ -913,7 +912,7 @@ function showtopics{T<:Integer, S<:Integer}(model::AbstractDTM, N::Integer=min(1
 end
 
 function showlibs{T<:Integer}(model::AbstractCTPF, users::Vector{T})
-	@assert checkindex(Bool, 1:model.U, users)
+	@assert checkbounds(Bool, 1:model.U, users)
 	
 	for u in users
 		@juliadots "User: $u\n"
@@ -934,8 +933,8 @@ end
 showlibs(model::AbstractCTPF, user::Integer) = showlibs(model, [user])
 
 function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U::Integer=min(16, model.U); cols::Integer=4)
-	@assert checkindex(Bool, 1:model.M, docs)	
-	@assert checkindex(Bool, 1:model.U, U)
+	@assert checkbounds(Bool, 1:model.M, docs)	
+	@assert checkbounds(Bool, 1:model.U, U)
 	@assert ispositive(cols)
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
@@ -965,8 +964,8 @@ function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U
 end
 
 function showurecs{T<:Integer}(model::AbstractCTPF, users::Union{T, Vector{T}}, M::Integer=min(10, model.M); cols::Integer=1)
-	@assert checkindex(Bool, model.U, users)
-	@assert checkindex(Bool, model.M, M)
+	@assert checkbounds(Bool, 1:model.U, users)
+	@assert checkbounds(Bool, 1:model.M, M)
 	@assert ispositive(cols)
 	isa(users, Vector) || (users = [users])
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs

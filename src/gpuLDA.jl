@@ -1,4 +1,4 @@
-type gpuLDA <: GPUTopicModel
+mutable struct gpuLDA <: GPUTopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -20,35 +20,35 @@ type gpuLDA <: GPUTopicModel
 	terms::VectorList{Int}
 	counts::VectorList{Int}
 	words::VectorList{Int}
-	device::OpenCL.Device
-	context::OpenCL.Context
-	queue::OpenCL.CmdQueue
-	betakern::OpenCL.Kernel
-	betanormkern::OpenCL.Kernel
-	newbetakern::OpenCL.Kernel
-	gammakern::OpenCL.Kernel
-	phikern::OpenCL.Kernel
-	phinormkern::OpenCL.Kernel
-	Elogthetakern::OpenCL.Kernel
-	Elogthetasumkern::OpenCL.Kernel
-	Npsumsbuf::OpenCL.Buffer{Int}
-	Jpsumsbuf::OpenCL.Buffer{Int}
-	termsbuf::OpenCL.Buffer{Int}
-	countsbuf::OpenCL.Buffer{Int}
-	wordsbuf::OpenCL.Buffer{Int}
-	alphabuf::OpenCL.Buffer{Float32}
-	betabuf::OpenCL.Buffer{Float32}
-	newbetabuf::OpenCL.Buffer{Float32}
-	gammabuf::OpenCL.Buffer{Float32}
-	phibuf::OpenCL.Buffer{Float32}
-	Elogthetabuf::OpenCL.Buffer{Float32}
-	Elogthetasumbuf::OpenCL.Buffer{Float32}
+	device::cl.Device
+	context::cl.Context
+	queue::cl.CmdQueue
+	betakern::cl.Kernel
+	betanormkern::cl.Kernel
+	newbetakern::cl.Kernel
+	gammakern::cl.Kernel
+	phikern::cl.Kernel
+	phinormkern::cl.Kernel
+	Elogthetakern::cl.Kernel
+	Elogthetasumkern::cl.Kernel
+	Npsumsbuf::cl.Buffer{Int}
+	Jpsumsbuf::cl.Buffer{Int}
+	termsbuf::cl.Buffer{Int}
+	countsbuf::cl.Buffer{Int}
+	wordsbuf::cl.Buffer{Int}
+	alphabuf::cl.Buffer{Float32}
+	betabuf::cl.Buffer{Float32}
+	newbetabuf::cl.Buffer{Float32}
+	gammabuf::cl.Buffer{Float32}
+	phibuf::cl.Buffer{Float32}
+	Elogthetabuf::cl.Buffer{Float32}
+	Elogthetasumbuf::cl.Buffer{Float32}
 	elbo::Float32
 	newelbo::Float32
 
 	function gpuLDA(corp::Corpus, K::Integer, batchsize::Integer=length(corp))
 		@assert !isempty(corp)		
-		@assert all(ispositive([K, batchsize]))
+		@assert all(ispositive.([K, batchsize]))
 		checkcorp(corp)
 
 		M, V, U = size(corp)
@@ -62,7 +62,7 @@ type gpuLDA <: GPUTopicModel
 
 		alpha = ones(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
-		newbeta = Array(Float32, 0, 0)
+		newbeta = Array{Float32}(0, 0)
 		gamma = [ones(K) for _ in 1:M]
 		phi = [ones(K, N[d]) / K for d in batches[1]]		
 
@@ -71,18 +71,18 @@ type gpuLDA <: GPUTopicModel
 
 		for (b, batch) in enumerate(batches)
 			model.phi = [ones(K, N[d]) / K for d in batch]
-			model.Elogtheta = [digamma(ones(K)) - digamma(K) for _ in batch]
+			model.Elogtheta = [digamma.(ones(K)) - digamma(K) for _ in batch]
 			updateNewELBO!(model, b)
 		end
 		model.phi = [ones(K, N[d]) / K for d in batches[1]]
-		model.Elogtheta = [digamma(ones(K)) - digamma(K) for _ in batches[1]]
+		model.Elogtheta = [digamma.(ones(K)) - digamma(K) for _ in batches[1]]
 		updateELBO!(model)	
 		return model
 	end
 end
 
 function Elogptheta(model::gpuLDA, d::Int, m::Int)
-	x = lgamma(sum(model.alpha)) - sum(lgamma(model.alpha)) + dot(model.alpha - 1, model.Elogtheta[m])
+	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, model.Elogtheta[m])
 	return x
 end
 
@@ -94,7 +94,7 @@ end
 
 function Elogpw(model::gpuLDA, d::Int, m::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[m] .* log(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi[m] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -136,7 +136,7 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	for _ in 1:niter
 		rho = 1.0
 		alphaGrad = Float32[nu / model.alpha[i] + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] + model.Elogthetasum
-		alphaHessDiag = -(model.M * trigamma(model.alpha) + (nu ./ model.alpha.^2))
+		alphaHessDiag = -(model.M * trigamma.(model.alpha) + (nu ./ model.alpha.^2))
 		p = (alphaGrad - sum(alphaGrad ./ alphaHessDiag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(1 ./ alphaHessDiag))) ./ alphaHessDiag
 
 		while minimum(model.alpha - rho * p) < 0
@@ -353,8 +353,8 @@ function updateElogthetasum!(model::gpuLDA, b::Int)
 end
 
 function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
-	@assert all(!isnegative([tol, ntol, vtol]))
-	@assert all(ispositive([iter, niter, viter, chkelbo]))
+	@assert all(.!isnegative.([tol, ntol, vtol]))
+	@assert all(ispositive.([iter, niter, viter, chkelbo]))
 	lowVRAM = model.B > 1
 
 	for k in 1:iter

@@ -1,4 +1,4 @@
-type CTPF <: TopicModel
+mutable struct CTPF <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -56,14 +56,14 @@ type CTPF <: TopicModel
 
 		if isa(pmodel, Union{AbstractLDA, AbstractCTM})
 			@assert isequal(size(pmodel.beta), (K, V))
-			alef = exp(pmodel.beta)
+			alef = exp.(pmodel.beta)
 			topics = pmodel.topics		
 		elseif isa(pmodel, Union{AbstractfLDA, AbstractfCTM})
 			@assert isequal(size(pmodel.fbeta), (K, V))
-			alef = exp(pmodel.fbeta)
+			alef = exp.(pmodel.fbeta)
 			topics = pmodel.topics
 		else
-			alef = exp(rand(Dirichlet(V, 1.0), K)' - 0.5)
+			alef = exp.(rand(Dirichlet(V, 1.0), K)' - 0.5)
 			topics = [collect(1:V) for _ in 1:K]
 		end
 		
@@ -271,20 +271,20 @@ end
 
 function updatePhi!(model::CTPF, d::Int)
 	terms = model.corp[d].terms
-	model.phi = exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.bet) .+ digamma(model.alef[:,terms]))
+	model.phi = exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]))
 	model.phi ./= sum(model.phi, 1)
 end
 
 function updateXi!(model::CTPF, d::Int)
 	readers = model.corp[d].readers
-	model.xi = vcat(exp(digamma(model.gimel[d]) - log(model.dalet) - log(model.vav) .+ digamma(model.he[:,readers])), 
-					exp(digamma(model.zayin[d]) - log(model.het) - log(model.vav) .+ digamma(model.he[:,readers])))
+	model.xi = vcat(exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.vav) .+ digamma.(model.he[:,readers])), 
+					exp.(digamma.(model.zayin[d]) - log.(model.het) - log.(model.vav) .+ digamma.(model.he[:,readers])))
 	model.xi ./= sum(model.xi, 1)
 end
 
 function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
-	@assert all(!isnegative([tol, vtol]))
-	@assert all(ispositive([iter, viter, chkelbo]))
+	@assert all(.!isnegative.([tol, vtol]))
+	@assert all(ispositive.([iter, viter, chkelbo]))
 
 	for k in 1:iter
 		chk = (k % chkelbo == 0)

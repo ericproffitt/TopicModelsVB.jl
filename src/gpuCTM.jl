@@ -1,4 +1,4 @@
-type gpuCTM <: GPUTopicModel
+mutable struct gpuCTM <: GPUTopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -22,42 +22,42 @@ type gpuCTM <: GPUTopicModel
 	terms::VectorList{Int}
 	counts::VectorList{Int}
 	words::VectorList{Int}
-	device::OpenCL.Device
-	context::OpenCL.Context
-	queue::OpenCL.CmdQueue
-	mukern::OpenCL.Kernel
-	betakern::OpenCL.Kernel
-	betanormkern::OpenCL.Kernel
-	newbetakern::OpenCL.Kernel
-	lambdakern::OpenCL.Kernel
-	vsqkern::OpenCL.Kernel
-	lzetakern::OpenCL.Kernel
-	phikern::OpenCL.Kernel
-	phinormkern::OpenCL.Kernel
-	Cbuf::OpenCL.Buffer{Int}
-	Npsumsbuf::OpenCL.Buffer{Int}
-	Jpsumsbuf::OpenCL.Buffer{Int}
-	termsbuf::OpenCL.Buffer{Int}
-	countsbuf::OpenCL.Buffer{Int}
-	wordsbuf::OpenCL.Buffer{Int}
-	newtontempbuf::OpenCL.Buffer{Float32}
-	newtongradbuf::OpenCL.Buffer{Float32}
-	newtoninvhessbuf::OpenCL.Buffer{Float32}
-	mubuf::OpenCL.Buffer{Float32}
-	sigmabuf::OpenCL.Buffer{Float32}
-	invsigmabuf::OpenCL.Buffer{Float32}
-	betabuf::OpenCL.Buffer{Float32}
-	newbetabuf::OpenCL.Buffer{Float32}
-	lambdabuf::OpenCL.Buffer{Float32}
-	vsqbuf::OpenCL.Buffer{Float32}
-	lzetabuf::OpenCL.Buffer{Float32}
-	phibuf::OpenCL.Buffer{Float32}
+	device::cl.Device
+	context::cl.Context
+	queue::cl.CmdQueue
+	mukern::cl.Kernel
+	betakern::cl.Kernel
+	betanormkern::cl.Kernel
+	newbetakern::cl.Kernel
+	lambdakern::cl.Kernel
+	vsqkern::cl.Kernel
+	lzetakern::cl.Kernel
+	phikern::cl.Kernel
+	phinormkern::cl.Kernel
+	Cbuf::cl.Buffer{Int}
+	Npsumsbuf::cl.Buffer{Int}
+	Jpsumsbuf::cl.Buffer{Int}
+	termsbuf::cl.Buffer{Int}
+	countsbuf::cl.Buffer{Int}
+	wordsbuf::cl.Buffer{Int}
+	newtontempbuf::cl.Buffer{Float32}
+	newtongradbuf::cl.Buffer{Float32}
+	newtoninvhessbuf::cl.Buffer{Float32}
+	mubuf::cl.Buffer{Float32}
+	sigmabuf::cl.Buffer{Float32}
+	invsigmabuf::cl.Buffer{Float32}
+	betabuf::cl.Buffer{Float32}
+	newbetabuf::cl.Buffer{Float32}
+	lambdabuf::cl.Buffer{Float32}
+	vsqbuf::cl.Buffer{Float32}
+	lzetabuf::cl.Buffer{Float32}
+	phibuf::cl.Buffer{Float32}
 	elbo::Float32
 	newelbo::Float32
 
 	function gpuCTM(corp::Corpus, K::Integer, batchsize::Integer=length(corp))
 		@assert !isempty(corp)		
-		@assert all(ispositive([K, batchsize]))
+		@assert all(ispositive.([K, batchsize]))
 		checkcorp(corp)
 
 		M, V, U = size(corp)
@@ -103,7 +103,7 @@ end
 
 function Elogpw(model::gpuCTM, d::Int, m::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[m] .* log(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi[m] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -164,7 +164,7 @@ function updateSigma!(model::gpuCTM)
 	@host model.lambdabuf
 	@host model.vsqbuf
 
-	model.sigma = diagm(sum(model.vsq)) / model.M + covm(hcat(model.lambda...)', model.mu', 1, false)
+	model.sigma = diagm(sum(model.vsq)) / model.M + cov(hcat(model.lambda...)', mean=model.mu', corrected=false)
 	(log(cond(model.sigma)) < 14) || (model.sigma += eye(model.K) * (eigmax(model.sigma) - 14 * eigmin(model.sigma)) / 13)
 	model.invsigma = inv(model.sigma)
 
@@ -217,24 +217,24 @@ const CTM_NEWBETA_cpp =
 """
 kernel void
 updateNewbeta(long K,
-				const global long *Jpsums,
-				const global long *counts,
-				const global long *words,
-				const global float *phi,
-				global float *newbeta)
-								
-				{
-				long i = get_global_id(0);
-				long j = get_global_id(1);	
+			const global long *Jpsums,
+			const global long *counts,
+			const global long *words,
+			const global float *phi,
+			global float *newbeta)
+							
+			{
+			long i = get_global_id(0);
+			long j = get_global_id(1);	
 
-				float acc = 0.0f;
+			float acc = 0.0f;
 
-				for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
-					acc += counts[words[w]] * phi[K * words[w] + i];
+			for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
+				acc += counts[words[w]] * phi[K * words[w] + i];
 
-				newbeta[K * j + i] += acc;
-				}
-				"""
+			newbeta[K * j + i] += acc;
+			}
+			"""
 
 function updateNewbeta!(model::gpuCTM)
 	model.queue(model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)
@@ -454,8 +454,8 @@ function updatePhi!(model::gpuCTM, b::Int)
 end
 
 function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
-	@assert all(!isnegative([tol, ntol, vtol]))
-	@assert all(ispositive([iter, niter, viter, chkelbo]))
+	@assert all(.!isnegative.([tol, ntol, vtol]))
+	@assert all(ispositive.([iter, niter, viter, chkelbo]))
 	niter, ntol = Int(niter), Float32(ntol)
 	lowVRAM = model.B > 1	
 	

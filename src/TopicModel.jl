@@ -1,1 +1,1 @@
-abstract TopicModel
+abstract type TopicModel end
