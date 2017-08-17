@@ -1,6 +1,6 @@
 # TopicModelsVB.jl
 
-** v0.6 Compatible **
+**v0.6 compatible**
 
 A Julia Package for Variational Bayesian Topic Modeling.
 
