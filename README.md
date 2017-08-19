@@ -245,7 +245,7 @@ analysis partial differential equations form basis studies primary goals underst
 internal presence vortex rings arise density stratification due salinity temperature...
 ```
 
-We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 2 and 8, with a smaller but not insignificant weight on topic 1.
+We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 1, 2 and 8.
 
 Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.  Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
 
@@ -261,22 +261,22 @@ showtopics(artifmodel, cols=9)
 ```
 
 ```
-topic 1       topic 2          topic 3       topic 4          topic 5         topic 6         topic 7      topic 8         topic 9
-cell          research         research      species          theory          data            chemistry    research        research
-protein       project          university    plant            problems        project         research     study           systems
-cells         study            students      research         study           research        reactions    systems         design
-gene          data             support       study            research        earthquake      metal        phase           system
-proteins      economic         program       evolutionary     equations       study           chemical     experimental    data
-plant         social           science       genetic          work            studies         organic      flow            algorithms
-studies       important        scientists    population       project         water           structure    theoretical     based
-genes         understanding    scientific    plants           investigator    ocean           program      materials       parallel
-research      work             award         populations      principal       measurements    study        high            performance
-molecular     information      sciences      dr               geometry        program         dr           quantum         techniques
-specific      theory           projects      data             differential    important       molecular    physics         computer
-mechanisms    provide          dr            patterns         mathematical    time            synthesis    properties      problems
-system        development      project       relationships    algebraic       models          compounds    temperature     control
-role          human            national      evolution        methods         seismic         surface      dynamics        project
-study         political        provide       variation        analysis        field           studies      proposed        methods
+topic 1       topic 2         topic 3         topic 4          topic 5          topic 6       topic 7         topic 8          topic 9
+research      research        theory          species          cell             research      data            research         chemistry
+systems       study           study           research         protein          university    project         project          research
+system        flow            problems        study            cells            support       research        data             reactions
+design        experimental    research        plant            gene             program       study           study            metal
+data          phase           equations       populations      proteins         students      earthquake      social           chemical
+algorithms    high            work            genetic          genes            science       water           information      structure
+based         theoretical     investigator    population       plant            award         studies         economic         studies
+models        systems         project         evolutionary     studies          scientists    ocean           development      program
+control       quantum         geometry        plants           molecular        project       time            work             study
+problems      physics         principal       data             specific         sciences      measurements    important        molecular
+computer      temperature     space           relationships    system           scientific    provide         analysis         organic
+project       model           differential    understanding    research         dr            program         understanding    dr
+analysis      materials       algebraic       studies          function         national      models          theory           properties
+techniques    phenomena       groups          important        understanding    conference    field           models           compounds
+methods       work            mathematical    patterns         study            provide       analysis        provide          reaction
 ```
 
 One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
