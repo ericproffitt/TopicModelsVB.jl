@@ -173,7 +173,7 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 ```julia
 using TopicModelsVB
 
-srand(1)
+srand(2)
 
 corp = readcorp(:nsf) 
 
@@ -191,28 +191,28 @@ showtopics(model, cols=9)
 ```
 
 ```
-topic 1        topic 2       topic 3         topic 4      topic 5        topic 6         topic 7          topic 8        topic 9
-research       research      theory          species      data           research        research         research       research
-systems        chemistry     problems        plant        project        study           project          students       water
-design         university    research        cell         earthquake     high            study            university     project
-system         dr            study           protein      research       systems         data             program        ocean
-data           support       equations       plants       study          properties      social           science        data
-computer       program       work            cells        provide        experimental    economic         support        study
-project        reactions     project         research     soil           materials       important        scientists     climate
-based          organic       investigator    study        analysis       surface         understanding    award          sea
-information    months        principal       genetic      seismic        phase           models           conference     important
-algorithms     sciences      methods         studies      field          techniques      theory           project        marine
-control        chemical      analysis        gene         studies        theoretical     model            faculty        time
-network        metal         mathematical    dr           damage         temperature     development      engineering    global
-performance    project       geometry        proteins     information    proposed        policy           projects       ice
-problems       compounds     systems         dna          results        energy          information      provide        change
-language       equipment     differential    molecular    large          studies         work             graduate       processes
+topic 1         topic 2         topic 3          topic 4        topic 5       topic 6      topic 7          topic 8         topic 9
+data            research        species          research       research      cell         research         theory          chemistry
+project         study           plant            systems        university    protein      project          problems        research
+research        experimental    research         system         support       cells        data             study           metal
+study           high            study            design         students      proteins     study            research        reactions
+earthquake      theoretical     populations      data           program       gene         economic         equations       chemical
+ocean           systems         genetic          algorithms     science       plant        important        work            study
+water           phase           plants           based          scientists    studies      social           investigator    studies
+studies         flow            evolutionary     control        award         genes        understanding    geometry        program
+measurements    physics         population       project        dr            molecular    information      project         organic
+field           quantum         data             computer       project       research     work             principal       structure
+provide         materials       dr               performance    scientific    specific     development      algebraic       molecular
+time            model           studies          parallel       sciences      function     theory           mathematical    dr
+results         temperature     patterns         techniques     conference    system       provide          differential    compounds
+models          properties      relationships    problems       national      study        analysis         groups          surface
+program         dynamics        important        models         projects      important    policy           space           molecules
 ```
 
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance, document 1 has topic breakdown:
 
 ```julia
-model.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0.025]
+model.gamma[1] # = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
 ```
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
 
@@ -231,7 +231,7 @@ differing levels species distributions life history...
 On the other hand, some documents will be a combination of topics.  Consider the topic breakdown for document 25:
 
 ```julia
-model.gamma[25] # = [11.575, 44.889, 0.0204, 0.036, 0.049, 0.022, 0.020, 66.629, 0.025]
+model.gamma[25] # = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
 
 showdocs(model, 25)
 ```
