@@ -401,7 +401,7 @@ As an example, let's load the Macintosh corpus of articles, drawn from the magaz
 ```julia
 import Distributions.sample
 
-srand(2)
+srand(1)
 
 corp = readcorp(:mac)
 
@@ -482,7 +482,7 @@ For our final model, we take a look at the collaborative topic Poisson factoriza
 ```julia
 import Distributions.sample
 
-srand(1)
+srand(2)
 
 corp = readcorp(:citeu)
 
