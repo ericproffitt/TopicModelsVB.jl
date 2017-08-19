@@ -670,15 +670,15 @@ There's no reason to instantiate the GPU models directly, instead you can simply
 corp = readcorp(:nsf)
 
 model = LDA(corp, 16)
-@time @gpu train!(model, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark. 
+@time @gpu train!(model, iter=150, tol=0, chkelbo=151) # Let's time it as well to get an exact benchmark. 
 
 # training...
 
-# 238.117185 seconds (180.46 M allocations: 11.619 GB, 4.39% gc time)
-# On a 2.5 GHz Intel Core i5 2012 Macbook Pro with 4GB of RAM and an Intel HD Graphics 4000 1536 MB GPU.
+# 156.591258 seconds (231.34 M allocations: 25.416 GiB, 37.82% gc time)
+# On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
 
-This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 4 minutes.
+This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 3 minutes.
 
 **Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
