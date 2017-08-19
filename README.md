@@ -351,7 +351,7 @@ surface         award           experiments      computational    months        
 ice             waves           test             distributed      equipment       binding       factors      group           optical
 ```
 
-Because the topics in the fLDA model were already so well defined, there's only a modest room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
+Because the topics in the fLDA model were already so well defined, there's little room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
@@ -401,7 +401,7 @@ As an example, let's load the Macintosh corpus of articles, drawn from the magaz
 ```julia
 import Distributions.sample
 
-srand(1)
+srand(2)
 
 corp = readcorp(:mac)
 
