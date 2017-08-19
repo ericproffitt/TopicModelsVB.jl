@@ -191,22 +191,22 @@ showtopics(model, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4        topic 5       topic 6      topic 7          topic 8         topic 9
-data            research        species          research       research      cell         research         theory          chemistry
-project         study           research         systems        university    protein      project          problems        research
-research        experimental    plant            system         support       cells        data             study           metal
-study           high            study            design         students      proteins     study            research        reactions
-earthquake      systems         populations      data           program       gene         economic         equations       chemical
-ocean           theoretical     genetic          algorithms     science       plant        important        work            study
-water           phase           plants           based          scientists    genes        social           investigator    studies
-studies         flow            evolutionary     control        award         studies      understanding    geometry        program
-measurements    physics         population       project        dr            molecular    information      project         organic
-field           quantum         data             computer       project       research     work             principal       structure
-provide         materials       dr               performance    scientific    specific     development      algebraic       molecular
-time            properties      studies          parallel       sciences      function     theory           mathematical    dr
-models          temperature     patterns         techniques     conference    system       provide          differential    compounds
-results         model           relationships    problems       national      study        analysis         groups          surface
-program         dynamics        determine        models         projects      important    policy           space           molecules
+topic 1        topic 2       topic 3         topic 4      topic 5        topic 6         topic 7          topic 8        topic 9
+research       research      theory          species      data           research        research         research       research
+systems        chemistry     problems        plant        project        study           project          students       water
+design         university    research        cell         earthquake     high            study            university     project
+system         dr            study           protein      research       systems         data             program        ocean
+data           support       equations       plants       study          properties      social           science        data
+computer       program       work            cells        provide        experimental    economic         support        study
+project        reactions     project         research     soil           materials       important        scientists     climate
+based          organic       investigator    study        analysis       surface         understanding    award          sea
+information    months        principal       genetic      seismic        phase           models           conference     important
+algorithms     sciences      methods         studies      field          techniques      theory           project        marine
+control        chemical      analysis        gene         studies        theoretical     model            faculty        time
+network        metal         mathematical    dr           damage         temperature     development      engineering    global
+performance    project       geometry        proteins     information    proposed        policy           projects       ice
+problems       compounds     systems         dna          results        energy          information      provide        change
+language       equipment     differential    molecular    large          studies         work             graduate       processes
 ```
 
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance, document 1 has topic breakdown:
