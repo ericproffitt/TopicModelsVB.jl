@@ -421,47 +421,30 @@ train!(model, iter=10) # This will likely take about an hour on a personal compu
 # training...
 ```
 
-We can look at a particular topic slice by writing:
+We can look at a particular topic slice, in this case the *Macintosh Hardware* topic, by writing:
 
 ```julia
-showtopics(model, topics=4, cols=6)
+showtopics(model, topics=8, cols=11)
 ```
 
 ```
- ●●● Topic: 4
-time 1       time 2       time 3         time 4       time 5       time 6
-board        macintosh    color          board        board        power
-serial       upgrade      system         video        powerbook    macs
-memory       port         board          ram          color        price
-power        memory       video          upgrade      upgrade      video
-upgrade      board        display        system       display      speed
-port         power        memory         rom          apple        upgrade
-chips        expansion    boards         simms        scsi         performance
-unit         unit         radius         macintosh    video        apple
-ports        digital      upgrade        ethernet     monitor      fast
-chip         connect      power          classic      power        monitors
-expansion    radius       ram            apple        quadra       powerbook
-digital      device       monitor        math         memory       radius
-boards       devices      accelerator    rasterops    designed     small
-plug         boards       device         scsi         processor    cpu
-adapter      chip         supermac       digital      macintosh    faster
-
-time 7         time 8         time 9         time 10      time 11       
-power          g3             usb            g4           ipod          
-ram            usb            firewire       power        mini          
-speed          imac           g4             usb          power         
-processor      ram            ram            firewire     usb           
-standard       apple          apple          apple        apple         
-fast           modem          power          ram          g5            
-drive          upgrade        palm           imac         firewire      
-performance    power          g3             powerbook    g4            
-keyboard       pci            refurbished    drive        ram           
-faster         speed          powerbook      airport      models        
-upgrade        drive          hardware       port         display       
-memory         powerbook      machine        processor    memory        
-apple          internal       port           models       hard_drive    
-slots          serial         imac           memory       speed         
-powerbook      performance    device         pci          port  
+ ●●● Topic: 8
+time 1       time 2       time 3       time 4        time 5         time 6         time 7        time 8         time 9       time 10      time 11
+disk         macintosh    color        drive         mac            power          drive         drive          usb          mac          ipod
+memory       disk         drive        mac           drive          drive          ram           scsi           drive        usb          usb
+hard         drive        disk         drives        powerbook      quadra         memory        g3             ram          firewire     power
+ram          memory       scsi         hard_drive    color          apple          power         ram            firewire     g4           mini
+disks        scsi         drives       simms         board          scsi           hard_drive    drives         scsi         drive        memory
+macintosh    hard         hard         board         drives         drives         processor     power          g4           power        drive
+port         drives       board        meg           scsi           ram            disk          usb            power        ram          ram
+board        ncp          macintosh    removable     ram            video          speed         speed          g3           apple        airport
+power        color        ram          system        power          powerbook      faster        powerbook      memory       memory       firewire
+drives       ram          meg          power         quadra         performance    pci           apple          port         port         performance
+external     port         software     external      memory         data           monitor       memory         hardware     imac         g5
+serial       internal     memory       memory        system         speed          drives        external       faster       drives       mac
+software     software     speed        ram           speed          upgrade        video         performance    processor    powerbook    faster
+speed        external     system       storage       port           modem          macs          processor      drives       storage      models
+internal     power        external     data          accelerator    duo            slots         serial         speed        dual         apple
 ```
 
 or a particular time slice, by writing:
