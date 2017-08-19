@@ -4,7 +4,9 @@
 
 A Julia Package for Variational Bayesian Topic Modeling.
 
-Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Topic models, like most probabilistic graphical models, are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC) methods, or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.  The MCMC approach is slower, but consistent.  Given infinite time, MCMC will fit the desired model exactly.  Variational Bayesian methods on the other hand are faster, often much faster, but inconsistent, since one must approximate distributions in order to ensure tractability.  This package takes the latter approach to topic modeling.
+Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Topic models, like most probabilistic graphical models, are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
+
+Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly.  Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult state unequivocally that MCMC has reached an optimal steady-state.  On the other hand, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability.  However unlike MCMC, variational Bayesian methods, being numerical optimization procedures, come equipped with a gradient, which allows for the objective assessment of convergence to local optima.  This package takes the latter approach to topic modeling.
 
 **Important:** If you find a bug, please don't hesitate to open an issue, I should reply promptly.
 
