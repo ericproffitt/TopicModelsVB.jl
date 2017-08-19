@@ -282,7 +282,7 @@ methods       work            mathematical    patterns         study            
 One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
 
 ```julia
-srand(1)
+srand(2)
 
 model = fLDA(corp, 9)
 train!(model, iter=150, tol=0)
@@ -293,22 +293,22 @@ showtopics(model, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4          topic 5        topic 6       topic 7      topic 8         topic 9
-earthquake      flow            species          design           university     cell          economic     theory          chemistry
-ocean           theoretical     plant            algorithms       support        protein       social       equations       reactions
-water           phase           populations      computer         students       cells         theory       geometry        metal
-measurements    physics         genetic          performance      program        proteins      policy       algebraic       chemical
-program         quantum         plants           parallel         science        gene          human        differential    program
-soil            properties      evolutionary     processing       award          plant         change       mathematical    organic
-seismic         temperature     population       applications     scientists     genes         political    groups          molecular
-climate         effects         patterns         networks         scientific     molecular     public       space           compounds
-effects         phenomena       variation        network          sciences       function      examine      mathematics     surface
-global          numerical       effects          software         conference     dna           science      finite          properties
-sea             laser           food             computational    national       regulation    decision     solutions       molecules
-surface         measurements    ecology          efficient        projects       expression    people       spaces          university
-response        experiments     environmental    program          engineering    plants        labor        dimensional     reaction
-solar           award           test             distributed      year           mechanisms    effects      functions       synthesis
-earth           liquid          ecological       power            workshop       membrane      market       questions       complexes
+topic 1         topic 2         topic 3          topic 4          topic 5        topic 6       topic 7        topic 8         topic 9
+earthquake      theoretical     species          design           university     cell          economic       theory          chemistry
+ocean           flow            plant            algorithms       support        protein       social         equations       metal
+water           phase           populations      computer         students       cells         theory         geometry        reactions
+measurements    physics         genetic          parallel         program        proteins      policy         algebraic       chemical
+program         quantum         plants           performance      science        gene          human          differential    program
+soil            temperature     evolutionary     processing       award          plant         change         mathematical    organic
+seismic         effects         population       applications     scientists     genes         political      groups          molecular
+climate         phenomena       patterns         networks         scientific     molecular     public         space           compounds
+effects         laser           variation        network          sciences       function      science        mathematics     surface
+global          numerical       effects          software         conference     dna           decision       finite          molecules
+sea             measurements    food             computational    national       regulation    people         solutions       university
+surface         experiments     environmental    efficient        projects       expression    effects        spaces          reaction
+response        award           ecology          program          engineering    plants        labor          dimensional     synthesis
+solar           liquid          ecological       distributed      year           mechanisms    market         functions       complexes
+earth           particle        test             power            workshop       membrane      theoretical    questions       professor
 ```
 
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are those which tend to cluster within their own, more generic, topic.
@@ -317,7 +317,7 @@ We can now see that many of the most troublesome corpus-specific stop words have
 For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).
 
 ```julia
-srand(1)
+srand(2)
 
 model = fCTM(corp, 9)
 train!(model, iter=150, tol=0)
@@ -330,37 +330,37 @@ showtopics(model, 20, cols=9)
 ```
 topic 1         topic 2         topic 3          topic 4          topic 5         topic 6       topic 7      topic 8         topic 9
 data            flow            species          system           university      cell          data         theory          chemistry
-earthquake      numerical       plant            design           support         protein       social       problems        chemical
-ocean           theoretical     populations      data             program         cells         economic     geometry        materials
-water           models          genetic          algorithms       students        plant         theory       investigator    reactions
-measurements    model           evolutionary     control          science         proteins      policy       algebraic       properties
-program         physics         plants           problems         dr              gene          human        equations       metal
-climate         theory          population       models           award           molecular     political    groups          surface
-models          nonlinear       data             parallel         scientists      genes         models       differential    electron
-seismic         dynamics        dr               computer         scientific      dna           public       space           program
-soil            experimental    patterns         performance      sciences        system        change       mathematical    molecular
-earth           equations       relationships    model            national        function      model        mathematics     organic
-global          particle        evolution        processing       projects        regulation    science      spaces          dr
-sea             phenomena       variation        applications     engineering     plants        people       functions       university
-response        quantum         group            network          conference      expression    decision     questions       compounds
-damage          heat            ecology          networks         year            mechanisms    issues       manifolds       temperature
-solar           fluid           ecological       approach         researchers     dr            labor        finite          molecules
-pacific         particles       forest           software         workshop        membrane      market       dimensional     laser
-ice             waves           environmental    efficient        mathematical    genetic       case         properties      reaction
-surface         problems        food             computational    months          binding       women        group           optical
-system          award           experiments      distributed      equipment       cellular      factors      operators       measurements
+earthquake      theoretical     plant            design           support         protein       social       problems        chemical
+ocean           model           populations      data             program         cells         economic     equations       reactions
+water           models          genetic          algorithms       students        plant         theory       investigator    metal
+measurements    physics         evolutionary     control          science         proteins      policy       geometry        materials
+program         numerical       plants           problems         dr              gene          human        algebraic       properties
+climate         experimental    population       models           award           molecular     political    groups          surface
+seismic         theory          data             parallel         scientists      genes         models       differential    program
+soil            particle        dr               computer         scientific      dna           public       mathematical    molecular
+models          dynamics        patterns         performance      sciences        system        change       space           electron
+global          nonlinear       evolution        model            projects        function      model        mathematics     organic
+earth           particles       variation        processing       national        regulation    science      spaces          dr
+sea             quantum         group            applications     engineering     plants        people       functions       university
+response        phenomena       ecology          network          conference      expression    decision     questions       molecules
+damage          heat            ecological       networks         year            mechanisms    issues       manifolds       compounds
+pacific         energy          forest           approach         researchers     dr            labor        finite          reaction
+system          fluid           environmental    efficient        workshop        membrane      market       dimensional     laser
+solar           phase           food             software         mathematical    genetic       case         properties      temperature
+surface         award           experiments      computational    months          cellular      women        solutions       synthesis
+ice             waves           test             distributed      equipment       binding       factors      group           optical
 ```
 
-Because the topics in the fLDA model were already so well defined, there's little room to improve topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
+Because the topics in the fLDA model were already so well defined, there's only a modest room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
 * topic 1: *Earth Science*
 * topic 2: *Physics*
-* topic 3: *Sociobiology*
+* topic 3: *Ecology*
 * topic 4: *Computer Science*
 * topic 5: *Academia*
-* topic 6: *Microbiology*
+* topic 6: *Cell Biology*
 * topic 7: *Economics*
 * topic 8: *Mathematics*
 * topic 9: *Chemistry*
@@ -371,24 +371,24 @@ Now let's take a look at the topic-covariance matrix:
 model.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 9.532
-model.sigma[3,6] # 7.362
-model.sigma[2,9] # 4.531
+model.sigma[4,8] # 9.520
+model.sigma[3,6] # 7.369
+model.sigma[1,3] # 5.763
 
 # Top 3 negative entries, sorted in ascending order:
-model.sigma[7,9] # -14.627
-model.sigma[3,8] # -12.464
-model.sigma[1,8] # -11.775
+model.sigma[7,9] # -14.572
+model.sigma[3,8] # -12.472
+model.sigma[1,8] # -11.776
 ```
 
-According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Chemistry*.
+According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Ecology* and *Cell Biology*, and then by 1 and 3, corresponding to *Earth Science* and *Ecology*.
 
-As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed closely by topics 1 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 3 and 8, corresponding to *Earth Science* and *Mathematics*.
+As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed by topics 3 and 8, corresponding to *Ecology* and *Mathematics*, and then third are topics 1 and 8, corresponding to *Earth Science* and *Mathematics*.
 
 Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
 
 ```julia
-sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
+indmin([sum(abs.(model.sigma[:,j])) - model.sigma[j,j] for j in 1:9]) # = 5.
 ```
 
 **Note:** Both CTM and fCTM will sometimes have to numerically invert ill-conditioned matrices, thus don't be alarmed if the ```∆elbo``` periodically goes negative for stretches, it should always right itself in fairly short order.
