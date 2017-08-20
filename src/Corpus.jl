@@ -1,8 +1,6 @@
-#################
-#				#
-# Document Type #
-#				#
-#################
+#######################
+### Document Struct ###
+#######################
 
 mutable struct Document
 	terms::Vector{Int}
@@ -19,35 +17,11 @@ mutable struct Document
 	end
 end
 
-function Base.show(io::IO, doc::Document)
-	print(io, "Document with:\n * $(length(doc.terms)) terms\n * $(length(doc.readers)) readers") 
-	if isfinite(doc.stamp)
-		print(io, "\n * $(doc.stamp) stamp")
-	end
-end
-
-Base.length(doc::Document) = length(doc.terms)
-Base.size(doc::Document) = sum(doc.counts)
-
-function checkdoc(doc::Document)
-	pass =
-	(!isempty(doc.terms)
-	& all(ispositive.(doc.terms))
-	& all(ispositive.(doc.counts))
-	& isequal(length(doc.terms), length(doc.counts))
-	& all(ispositive.(doc.readers))
-	& all(ispositive.(doc.ratings))
-	& isequal(length(doc.readers), length(doc.ratings)))
-	return pass	
-end
 
 
-
-###############
-#			  #
-# Corpus Type #
-#			  #
-###############
+#####################
+### Corpus Struct ###
+#####################
 
 mutable struct Corpus
 	docs::Vector{Document}
@@ -64,52 +38,11 @@ mutable struct Corpus
 	end
 end
 
-Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.lex)) lex\n * $(length(corp.users)) users")
-Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
-Base.start(corp::Corpus) = 1
-Base.next(corp::Corpus, d::Int) = corp.docs[d], d + 1
-Base.done(corp::Corpus, d::Int) = length(corp.docs) == d - 1
-Base.push!(corp::Corpus, doc::Document) = push!(corp.docs, doc)
-Base.pop!(corp::Corpus) = pop!(corp.docs)
-Base.unshift!(corp::Corpus, doc::Document) = unshift!(corp.docs, doc)
-Base.unshift!(corp::Corpus, docs::Vector{Document}) = unshift!(corp.docs, docs)
-Base.shift!(corp::Corpus) = shift!(corp.docs)
-Base.insert!(corp::Corpus, d::Int, doc::Document) = insert!(corp.docs, d, doc)
-Base.deleteat!(corp::Corpus, d::Int) = deleteat!(corp.docs, d)
-Base.deleteat!(corp::Corpus, ds::Vector{Int}) = deleteat!(corp.docs, ds)
-Base.deleteat!(corp::Corpus, ds::UnitRange{Int}) = deleteat!(corp.docs, ds)
-Base.getindex(corp::Corpus, d::Int) = getindex(corp.docs, d)
-Base.getindex(corp::Corpus, ds::Vector{Int}) = getindex(corp.docs, ds)
-Base.getindex(corp::Corpus, ds::UnitRange{Int}) = getindex(corp.docs, ds)
-Base.getindex(corp::Corpus, ds::Vector{Bool}) = getindex(corp.docs, find(ds))
-Base.setindex!(corp::Corpus, doc::Document, d::Int) = setindex!(corp.docs, doc, d)
-Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::Vector{Int}) = setindex!(corp.docs, docs, ds)
-Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::UnitRange{Int}) = setindex!(corp.docs, docs, ds)
-Base.findfirst(corp::Corpus, doc::Document) = findfirst(corp.docs, doc)
-Base.findin(corp::Corpus, docs::Vector{Document}) = findin(corp.docs, docs)
-Base.findin(corp::Corpus, doc::Document) = findin(corp, [doc])
-Base.length(corp::Corpus) = length(corp.docs)
-Base.size(corp::Corpus) = (length(corp), length(corp.lex), length(corp.users))
-Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), lex=copy(corp.lex), users=copy(corp.users))
-Base.endof(corp::Corpus) = length(corp)
-
-function checkcorp(corp::Corpus)
-	pass = true
-	for (d, doc) in enumerate(corp)
-		checkdoc(doc) || (println("Document $d failed check."); pass=false)
-	end
-	@assert all(ispositive.(collect(keys(corp.lex))))
-	@assert all(ispositive.(collect(keys(corp.users))))
-	return pass
-end
 
 
-
-#############################################
-#											#
-# Functions for Reading and Writing Corpora #
-#											#
-#############################################
+#################################################
+### Functions for Reading and Writing Corpora ###
+#################################################
 
 function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)	
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
@@ -194,11 +127,9 @@ end
 
 
 
-###################
-#				  #
-# corp! Functions #
-#				  #
-###################
+#######################
+### corp! Functions ###
+#######################
 
 function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
 	if stop
@@ -380,11 +311,70 @@ end
 
 
 
-#########################################
-#										#
-# Document and Corpus Display Functions #
-#										#
-#########################################
+########################
+### Corpus Utilities ###
+########################
+
+function Base.show(io::IO, doc::Document)
+	print(io, "Document with:\n * $(length(doc.terms)) terms\n * $(length(doc.readers)) readers") 
+	if isfinite(doc.stamp)
+		print(io, "\n * $(doc.stamp) stamp")
+	end
+end
+
+Base.length(doc::Document) = length(doc.terms)
+Base.size(doc::Document) = sum(doc.counts)
+Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
+
+Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.lex)) lex\n * $(length(corp.users)) users")
+Base.start(corp::Corpus) = 1
+Base.next(corp::Corpus, d::Int) = corp.docs[d], d + 1
+Base.done(corp::Corpus, d::Int) = length(corp.docs) == d - 1
+Base.push!(corp::Corpus, doc::Document) = push!(corp.docs, doc)
+Base.pop!(corp::Corpus) = pop!(corp.docs)
+Base.unshift!(corp::Corpus, doc::Document) = unshift!(corp.docs, doc)
+Base.unshift!(corp::Corpus, docs::Vector{Document}) = unshift!(corp.docs, docs)
+Base.shift!(corp::Corpus) = shift!(corp.docs)
+Base.insert!(corp::Corpus, d::Int, doc::Document) = insert!(corp.docs, d, doc)
+Base.deleteat!(corp::Corpus, d::Int) = deleteat!(corp.docs, d)
+Base.deleteat!(corp::Corpus, ds::Vector{Int}) = deleteat!(corp.docs, ds)
+Base.deleteat!(corp::Corpus, ds::UnitRange{Int}) = deleteat!(corp.docs, ds)
+Base.getindex(corp::Corpus, d::Int) = getindex(corp.docs, d)
+Base.getindex(corp::Corpus, ds::Vector{Int}) = getindex(corp.docs, ds)
+Base.getindex(corp::Corpus, ds::UnitRange{Int}) = getindex(corp.docs, ds)
+Base.getindex(corp::Corpus, ds::Vector{Bool}) = getindex(corp.docs, find(ds))
+Base.setindex!(corp::Corpus, doc::Document, d::Int) = setindex!(corp.docs, doc, d)
+Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::Vector{Int}) = setindex!(corp.docs, docs, ds)
+Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::UnitRange{Int}) = setindex!(corp.docs, docs, ds)
+Base.findfirst(corp::Corpus, doc::Document) = findfirst(corp.docs, doc)
+Base.findin(corp::Corpus, docs::Vector{Document}) = findin(corp.docs, docs)
+Base.findin(corp::Corpus, doc::Document) = findin(corp, [doc])
+Base.length(corp::Corpus) = length(corp.docs)
+Base.size(corp::Corpus) = (length(corp), length(corp.lex), length(corp.users))
+Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), lex=copy(corp.lex), users=copy(corp.users))
+Base.endof(corp::Corpus) = length(corp)
+
+function checkdoc(doc::Document)
+	pass =
+	(!isempty(doc.terms)
+	& all(ispositive.(doc.terms))
+	& all(ispositive.(doc.counts))
+	& isequal(length(doc.terms), length(doc.counts))
+	& all(ispositive.(doc.readers))
+	& all(ispositive.(doc.ratings))
+	& isequal(length(doc.readers), length(doc.ratings)))
+	return pass	
+end
+
+function checkcorp(corp::Corpus)
+	pass = true
+	for (d, doc) in enumerate(corp)
+		checkdoc(doc) || (println("Document $d failed check."); pass=false)
+	end
+	@assert all(ispositive.(collect(keys(corp.lex))))
+	@assert all(ispositive.(collect(keys(corp.users))))
+	return pass
+end
 
 function showdocs{T<:Integer}(corp::Corpus, ds::Vector{T})
 	@assert checkbounds(Bool, 1:length(corp), ds) "Some document indices outside docs range."
@@ -413,11 +403,9 @@ getusers(corp::Corpus) = sort(collect(values(corp.users)))
 
 
 
-##################################
-#								 #
-# Pre-packaged Dataset Shortcuts # 
-#								 #
-##################################
+######################################
+### Pre-packaged Dataset Shortcuts ###
+######################################
 
 function readcorp(corpsym::Symbol)
 	v = "v$(VERSION.major).$(VERSION.minor)"
@@ -449,5 +437,3 @@ function readcorp(corpsym::Symbol)
 
 	return corp
 end
-
-
