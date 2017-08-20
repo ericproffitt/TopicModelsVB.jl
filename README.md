@@ -629,7 +629,7 @@ showlibs(model, 1741)
  • An Introduction to Category Theory, Category Theory Monads, and Their Relationship to Functional Programming
 ```
  
- The 20 articles in user 1741's library suggest that he or she is interested in the intersection of programming language theory and foundational mathematics.  
+ The 20 articles in user 1741's library suggest that his or her interests lie at the intersection of programming language theory and foundational mathematics.  
  
  Now compare this with the top 20 recommendations made by our model:
  
