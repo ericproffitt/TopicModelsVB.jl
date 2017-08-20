@@ -6,7 +6,7 @@ A Julia Package for Variational Bayesian Topic Modeling.
 
 Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Topic models, like most probabilistic graphical models, are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
 
-Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly.  Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult know unequivocally that MCMC has reached an optimal steady-state.  On the other hand, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability.  However unlike MCMC, variational Bayesian methods, being numerical optimization procedures, are naturally equipped for the assessment of convergence to local optima.  This package takes the latter approach to topic modeling.
+Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly.  Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult to state unequivocally that MCMC has reached an optimal steady-state.  On the other hand, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability.  However unlike MCMC, variational Bayesian methods, being numerical optimization procedures, are naturally equipped for the assessment of convergence to local optima.  This package takes the latter approach to topic modeling.
 
 **Important:** If you find a bug, please don't hesitate to open an issue, I should reply promptly.
 
@@ -173,7 +173,7 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 ```julia
 using TopicModelsVB
 
-srand(1)
+srand(2)
 
 corp = readcorp(:nsf) 
 
@@ -193,26 +193,26 @@ showtopics(model, cols=9)
 ```
 topic 1         topic 2         topic 3          topic 4        topic 5       topic 6      topic 7          topic 8         topic 9
 data            research        species          research       research      cell         research         theory          chemistry
-project         study           research         systems        university    protein      project          problems        research
-research        experimental    plant            system         support       cells        data             study           metal
+project         study           plant            systems        university    protein      project          problems        research
+research        experimental    research         system         support       cells        data             study           metal
 study           high            study            design         students      proteins     study            research        reactions
-earthquake      systems         populations      data           program       gene         economic         equations       chemical
-ocean           theoretical     genetic          algorithms     science       plant        important        work            study
-water           phase           plants           based          scientists    genes        social           investigator    studies
-studies         flow            evolutionary     control        award         studies      understanding    geometry        program
+earthquake      theoretical     populations      data           program       gene         economic         equations       chemical
+ocean           systems         genetic          algorithms     science       plant        important        work            study
+water           phase           plants           based          scientists    studies      social           investigator    studies
+studies         flow            evolutionary     control        award         genes        understanding    geometry        program
 measurements    physics         population       project        dr            molecular    information      project         organic
 field           quantum         data             computer       project       research     work             principal       structure
 provide         materials       dr               performance    scientific    specific     development      algebraic       molecular
-time            properties      studies          parallel       sciences      function     theory           mathematical    dr
-models          temperature     patterns         techniques     conference    system       provide          differential    compounds
-results         model           relationships    problems       national      study        analysis         groups          surface
-program         dynamics        determine        models         projects      important    policy           space           molecules
+time            model           studies          parallel       sciences      function     theory           mathematical    dr
+results         temperature     patterns         techniques     conference    system       provide          differential    compounds
+models          properties      relationships    problems       national      study        analysis         groups          surface
+program         dynamics        important        models         projects      important    policy           space           molecules
 ```
 
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance, document 1 has topic breakdown:
 
 ```julia
-model.gamma[1] # = [0.036, 0.030, 189.312, 0.036, 0.049, 0.022, 8.728, 0.027, 0.025]
+model.gamma[1] # = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
 ```
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
 
@@ -231,7 +231,7 @@ differing levels species distributions life history...
 On the other hand, some documents will be a combination of topics.  Consider the topic breakdown for document 25:
 
 ```julia
-model.gamma[25] # = [11.575, 44.889, 0.0204, 0.036, 0.049, 0.022, 0.020, 66.629, 0.025]
+model.gamma[25] # = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
 
 showdocs(model, 25)
 ```
@@ -245,7 +245,7 @@ analysis partial differential equations form basis studies primary goals underst
 internal presence vortex rings arise density stratification due salinity temperature...
 ```
 
-We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 2 and 8, with a smaller but not insignificant weight on topic 1.
+We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 1, 2 and 8.
 
 Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.  Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
 
@@ -261,28 +261,28 @@ showtopics(artifmodel, cols=9)
 ```
 
 ```
-topic 1       topic 2          topic 3       topic 4          topic 5         topic 6         topic 7      topic 8         topic 9
-cell          research         research      species          theory          data            chemistry    research        research
-protein       project          university    plant            problems        project         research     study           systems
-cells         study            students      research         study           research        reactions    systems         design
-gene          data             support       study            research        earthquake      metal        phase           system
-proteins      economic         program       evolutionary     equations       study           chemical     experimental    data
-plant         social           science       genetic          work            studies         organic      flow            algorithms
-studies       important        scientists    population       project         water           structure    theoretical     based
-genes         understanding    scientific    plants           investigator    ocean           program      materials       parallel
-research      work             award         populations      principal       measurements    study        high            performance
-molecular     information      sciences      dr               geometry        program         dr           quantum         techniques
-specific      theory           projects      data             differential    important       molecular    physics         computer
-mechanisms    provide          dr            patterns         mathematical    time            synthesis    properties      problems
-system        development      project       relationships    algebraic       models          compounds    temperature     control
-role          human            national      evolution        methods         seismic         surface      dynamics        project
-study         political        provide       variation        analysis        field           studies      proposed        methods
+topic 1       topic 2         topic 3         topic 4          topic 5          topic 6       topic 7         topic 8          topic 9
+research      research        theory          species          cell             research      data            research         chemistry
+systems       study           study           research         protein          university    project         project          research
+system        flow            problems        study            cells            support       research        data             reactions
+design        experimental    research        plant            gene             program       study           study            metal
+data          phase           equations       populations      proteins         students      earthquake      social           chemical
+algorithms    high            work            genetic          genes            science       water           information      structure
+based         theoretical     investigator    population       plant            award         studies         economic         studies
+models        systems         project         evolutionary     studies          scientists    ocean           development      program
+control       quantum         geometry        plants           molecular        project       time            work             study
+problems      physics         principal       data             specific         sciences      measurements    important        molecular
+computer      temperature     space           relationships    system           scientific    provide         analysis         organic
+project       model           differential    understanding    research         dr            program         understanding    dr
+analysis      materials       algebraic       studies          function         national      models          theory           properties
+techniques    phenomena       groups          important        understanding    conference    field           models           compounds
+methods       work            mathematical    patterns         study            provide       analysis        provide          reaction
 ```
 
 One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
 
 ```julia
-srand(1)
+srand(2)
 
 model = fLDA(corp, 9)
 train!(model, iter=150, tol=0)
@@ -293,22 +293,22 @@ showtopics(model, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4          topic 5        topic 6       topic 7      topic 8         topic 9
-earthquake      flow            species          design           university     cell          economic     theory          chemistry
-ocean           theoretical     plant            algorithms       support        protein       social       equations       reactions
-water           phase           populations      computer         students       cells         theory       geometry        metal
-measurements    physics         genetic          performance      program        proteins      policy       algebraic       chemical
-program         quantum         plants           parallel         science        gene          human        differential    program
-soil            properties      evolutionary     processing       award          plant         change       mathematical    organic
-seismic         temperature     population       applications     scientists     genes         political    groups          molecular
-climate         effects         patterns         networks         scientific     molecular     public       space           compounds
-effects         phenomena       variation        network          sciences       function      examine      mathematics     surface
-global          numerical       effects          software         conference     dna           science      finite          properties
-sea             laser           food             computational    national       regulation    decision     solutions       molecules
-surface         measurements    ecology          efficient        projects       expression    people       spaces          university
-response        experiments     environmental    program          engineering    plants        labor        dimensional     reaction
-solar           award           test             distributed      year           mechanisms    effects      functions       synthesis
-earth           liquid          ecological       power            workshop       membrane      market       questions       complexes
+topic 1         topic 2         topic 3          topic 4          topic 5        topic 6       topic 7        topic 8         topic 9
+earthquake      theoretical     species          design           university     cell          economic       theory          chemistry
+ocean           flow            plant            algorithms       support        protein       social         equations       metal
+water           phase           populations      computer         students       cells         theory         geometry        reactions
+measurements    physics         genetic          parallel         program        proteins      policy         algebraic       chemical
+program         quantum         plants           performance      science        gene          human          differential    program
+soil            temperature     evolutionary     processing       award          plant         change         mathematical    organic
+seismic         effects         population       applications     scientists     genes         political      groups          molecular
+climate         phenomena       patterns         networks         scientific     molecular     public         space           compounds
+effects         laser           variation        network          sciences       function      science        mathematics     surface
+global          numerical       effects          software         conference     dna           decision       finite          molecules
+sea             measurements    food             computational    national       regulation    people         solutions       university
+surface         experiments     environmental    efficient        projects       expression    effects        spaces          reaction
+response        award           ecology          program          engineering    plants        labor          dimensional     synthesis
+solar           liquid          ecological       distributed      year           mechanisms    market         functions       complexes
+earth           particle        test             power            workshop       membrane      theoretical    questions       professor
 ```
 
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are those which tend to cluster within their own, more generic, topic.
@@ -317,7 +317,7 @@ We can now see that many of the most troublesome corpus-specific stop words have
 For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).
 
 ```julia
-srand(1)
+srand(2)
 
 model = fCTM(corp, 9)
 train!(model, iter=150, tol=0)
@@ -330,37 +330,37 @@ showtopics(model, 20, cols=9)
 ```
 topic 1         topic 2         topic 3          topic 4          topic 5         topic 6       topic 7      topic 8         topic 9
 data            flow            species          system           university      cell          data         theory          chemistry
-earthquake      numerical       plant            design           support         protein       social       problems        chemical
-ocean           theoretical     populations      data             program         cells         economic     geometry        materials
-water           models          genetic          algorithms       students        plant         theory       investigator    reactions
-measurements    model           evolutionary     control          science         proteins      policy       algebraic       properties
-program         physics         plants           problems         dr              gene          human        equations       metal
-climate         theory          population       models           award           molecular     political    groups          surface
-models          nonlinear       data             parallel         scientists      genes         models       differential    electron
-seismic         dynamics        dr               computer         scientific      dna           public       space           program
-soil            experimental    patterns         performance      sciences        system        change       mathematical    molecular
-earth           equations       relationships    model            national        function      model        mathematics     organic
-global          particle        evolution        processing       projects        regulation    science      spaces          dr
-sea             phenomena       variation        applications     engineering     plants        people       functions       university
-response        quantum         group            network          conference      expression    decision     questions       compounds
-damage          heat            ecology          networks         year            mechanisms    issues       manifolds       temperature
-solar           fluid           ecological       approach         researchers     dr            labor        finite          molecules
-pacific         particles       forest           software         workshop        membrane      market       dimensional     laser
-ice             waves           environmental    efficient        mathematical    genetic       case         properties      reaction
-surface         problems        food             computational    months          binding       women        group           optical
-system          award           experiments      distributed      equipment       cellular      factors      operators       measurements
+earthquake      theoretical     plant            design           support         protein       social       problems        chemical
+ocean           model           populations      data             program         cells         economic     equations       reactions
+water           models          genetic          algorithms       students        plant         theory       investigator    metal
+measurements    physics         evolutionary     control          science         proteins      policy       geometry        materials
+program         numerical       plants           problems         dr              gene          human        algebraic       properties
+climate         experimental    population       models           award           molecular     political    groups          surface
+seismic         theory          data             parallel         scientists      genes         models       differential    program
+soil            particle        dr               computer         scientific      dna           public       mathematical    molecular
+models          dynamics        patterns         performance      sciences        system        change       space           electron
+global          nonlinear       evolution        model            projects        function      model        mathematics     organic
+earth           particles       variation        processing       national        regulation    science      spaces          dr
+sea             quantum         group            applications     engineering     plants        people       functions       university
+response        phenomena       ecology          network          conference      expression    decision     questions       molecules
+damage          heat            ecological       networks         year            mechanisms    issues       manifolds       compounds
+pacific         energy          forest           approach         researchers     dr            labor        finite          reaction
+system          fluid           environmental    efficient        workshop        membrane      market       dimensional     laser
+solar           phase           food             software         mathematical    genetic       case         properties      temperature
+surface         award           experiments      computational    months          cellular      women        solutions       synthesis
+ice             waves           test             distributed      equipment       binding       factors      group           optical
 ```
 
-Because the topics in the fLDA model were already so well defined, there's little room to improve topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
+Because the topics in the fLDA model were already so well defined, there's little room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
 * topic 1: *Earth Science*
 * topic 2: *Physics*
-* topic 3: *Sociobiology*
+* topic 3: *Ecology*
 * topic 4: *Computer Science*
 * topic 5: *Academia*
-* topic 6: *Microbiology*
+* topic 6: *Cell Biology*
 * topic 7: *Economics*
 * topic 8: *Mathematics*
 * topic 9: *Chemistry*
@@ -371,24 +371,24 @@ Now let's take a look at the topic-covariance matrix:
 model.sigma
 
 # Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 9.532
-model.sigma[3,6] # 7.362
-model.sigma[2,9] # 4.531
+model.sigma[4,8] # 9.520
+model.sigma[3,6] # 7.369
+model.sigma[1,3] # 5.763
 
 # Top 3 negative entries, sorted in ascending order:
-model.sigma[7,9] # -14.627
-model.sigma[3,8] # -12.464
-model.sigma[1,8] # -11.775
+model.sigma[7,9] # -14.572
+model.sigma[3,8] # -12.472
+model.sigma[1,8] # -11.776
 ```
 
-According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Sociobiology* and *Microbiology*, and then by 2 and 9, corresponding to *Physics* and *Chemistry*.
+According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Ecology* and *Cell Biology*, and then by 1 and 3, corresponding to *Earth Science* and *Ecology*.
 
-As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed closely by topics 1 and 8, corresponding to *Sociobiology* and *Mathematics*, and then third are topics 3 and 8, corresponding to *Earth Science* and *Mathematics*.
+As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed by topics 3 and 8, corresponding to *Ecology* and *Mathematics*, and then third are topics 1 and 8, corresponding to *Earth Science* and *Mathematics*.
 
 Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
 
 ```julia
-sum(abs(model.sigma[:,5])) - model.sigma[5,5] # Academia topic, absolute off-diagonal covariance 13.403.
+indmin([sum(abs.(model.sigma[:,j])) - model.sigma[j,j] for j in 1:9]) # = 5.
 ```
 
 **Note:** Both CTM and fCTM will sometimes have to numerically invert ill-conditioned matrices, thus don't be alarmed if the ```∆elbo``` periodically goes negative for stretches, it should always right itself in fairly short order.
@@ -421,47 +421,30 @@ train!(model, iter=10) # This will likely take about an hour on a personal compu
 # training...
 ```
 
-We can look at a particular topic slice by writing:
+We can look at a particular topic slice, in this case the *Macintosh Hardware* topic, by writing:
 
 ```julia
-showtopics(model, topics=4, cols=6)
+showtopics(model, topics=8, cols=11)
 ```
 
 ```
- ●●● Topic: 4
-time 1       time 2       time 3         time 4       time 5       time 6
-board        macintosh    color          board        board        power
-serial       upgrade      system         video        powerbook    macs
-memory       port         board          ram          color        price
-power        memory       video          upgrade      upgrade      video
-upgrade      board        display        system       display      speed
-port         power        memory         rom          apple        upgrade
-chips        expansion    boards         simms        scsi         performance
-unit         unit         radius         macintosh    video        apple
-ports        digital      upgrade        ethernet     monitor      fast
-chip         connect      power          classic      power        monitors
-expansion    radius       ram            apple        quadra       powerbook
-digital      device       monitor        math         memory       radius
-boards       devices      accelerator    rasterops    designed     small
-plug         boards       device         scsi         processor    cpu
-adapter      chip         supermac       digital      macintosh    faster
-
-time 7         time 8         time 9         time 10      time 11       
-power          g3             usb            g4           ipod          
-ram            usb            firewire       power        mini          
-speed          imac           g4             usb          power         
-processor      ram            ram            firewire     usb           
-standard       apple          apple          apple        apple         
-fast           modem          power          ram          g5            
-drive          upgrade        palm           imac         firewire      
-performance    power          g3             powerbook    g4            
-keyboard       pci            refurbished    drive        ram           
-faster         speed          powerbook      airport      models        
-upgrade        drive          hardware       port         display       
-memory         powerbook      machine        processor    memory        
-apple          internal       port           models       hard_drive    
-slots          serial         imac           memory       speed         
-powerbook      performance    device         pci          port  
+ ●●● Topic: 8
+time 1       time 2       time 3       time 4        time 5         time 6         time 7        time 8         time 9       time 10      time 11
+disk         macintosh    color        drive         mac            power          drive         drive          usb          mac          ipod
+memory       disk         drive        mac           drive          drive          ram           scsi           drive        usb          usb
+hard         drive        disk         drives        powerbook      quadra         memory        g3             ram          firewire     power
+ram          memory       scsi         hard_drive    color          apple          power         ram            firewire     g4           mini
+disks        scsi         drives       simms         board          scsi           hard_drive    drives         scsi         drive        memory
+macintosh    hard         hard         board         drives         drives         processor     power          g4           power        drive
+port         drives       board        meg           scsi           ram            disk          usb            power        ram          ram
+board        ncp          macintosh    removable     ram            video          speed         speed          g3           apple        airport
+power        color        ram          system        power          powerbook      faster        powerbook      memory       memory       firewire
+drives       ram          meg          power         quadra         performance    pci           apple          port         port         performance
+external     port         software     external      memory         data           monitor       memory         hardware     imac         g5
+serial       internal     memory       memory        system         speed          drives        external       faster       drives       mac
+software     software     speed        ram           speed          upgrade        video         performance    processor    powerbook    faster
+speed        external     system       storage       port           modem          macs          processor      drives       storage      models
+internal     power        external     data          accelerator    duo            slots         serial         speed        dual         apple
 ```
 
 or a particular time slice, by writing:
@@ -499,7 +482,7 @@ For our final model, we take a look at the collaborative topic Poisson factoriza
 ```julia
 import Distributions.sample
 
-srand(1)
+srand(2)
 
 corp = readcorp(:citeu)
 
@@ -687,15 +670,15 @@ There's no reason to instantiate the GPU models directly, instead you can simply
 corp = readcorp(:nsf)
 
 model = LDA(corp, 16)
-@time @gpu train!(model, iter=150, chkelbo=151) # Let's time it as well to get an exact benchmark. 
+@time @gpu train!(model, iter=150, tol=0, chkelbo=151) # Let's time it as well to get an exact benchmark. 
 
 # training...
 
-# 238.117185 seconds (180.46 M allocations: 11.619 GB, 4.39% gc time)
-# On a 2.5 GHz Intel Core i5 2012 Macbook Pro with 4GB of RAM and an Intel HD Graphics 4000 1536 MB GPU.
+# 156.591258 seconds (231.34 M allocations: 25.416 GiB, 37.82% gc time)
+# On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
 
-This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 4 minutes.
+This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 3 minutes.
 
 **Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
