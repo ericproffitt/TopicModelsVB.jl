@@ -569,7 +569,7 @@ Let's also take a look at the top recommendations for a particular document(s):
 
 ```julia
 testukeys[1] # = 997
-acc[1] # = 0.981
+acc[1] # = 0.981 (The removed document from user 997's library was placed in the top 2% of user 997's recommendations.)
 
 showdrecs(model, 1, 106, cols=1)
 ```
@@ -598,9 +598,10 @@ showurecs(model, 997, 578)
 578.  The metabolic world of Escherichia coli is not small
 ```
 
-We can also take a more holistic and informal approach to evaluating model quality.
+We can also take a more holistic approach to evaluating model quality.
 
-Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library: 
+Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library:
+
 ```julia
 showlibs(model, 1741)
 ```
