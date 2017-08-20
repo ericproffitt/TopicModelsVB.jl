@@ -887,7 +887,7 @@ train!(model::BaseTopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1
 # 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods.
 # 'viter'   - maximum number of iterations for optimizing variational parameters (at the document level).
 # 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
-# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence checking).
+# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower bound).
 
 train!(dtm::AbstractDTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/dtm.K^2, cgiter::Integer=10, cgtol::Real=1/dtm.T^2, chkelbo::Integer=1)
 # Train DTM.
