@@ -482,7 +482,7 @@ For our final model, we take a look at the collaborative topic Poisson factoriza
 ```julia
 import Distributions.sample
 
-srand(2)
+srand(1)
 
 corp = readcorp(:citeu)
 
@@ -528,7 +528,7 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 0.908
+@show mean(acc) # mean(acc) = 0.910
 ```
 
 Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model.
@@ -560,42 +560,42 @@ for (d, u) in enumerate(testukeys)
     push!(acc, (nrlen - rank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 0.920
+@show mean(acc) # mean(acc) = 0.916
 ```
 
-We can see that, on average, our model ranks the true hidden reader in the top 8% of all non-readers for each document.
+We can see that, on average, our model ranks the true hidden reader in the top 8.4% of all non-readers for each document.
 
 Let's also take a look at the top recommendations for a particular document(s):
 
 ```julia
-testukeys[1] # = 216
-acc[1] # = 0.945
+testukeys[1] # = 997
+acc[1] # = 0.981
 
-showdrecs(model, 1, 307, cols=1)
+showdrecs(model, 1, 106, cols=1)
 ```
 ```
  ●●● Doc: 1
  ●●● The metabolic world of Escherichia coli is not small
 ...
-303. #user5159
-304. #user5486
-305. #user261
-306. #user4999
-307. #user216
+102. #user1658
+103. #user2725
+104. #user1481
+105. #user5380
+106. #user997
 ```
 as well as those for a particular user(s):
 
 ```julia
-showurecs(model, 216, 1745)
+showurecs(model, 997, 578)
 ```
 ```
  ●●● User: 216
 ...
-1741. {Characterizing gene sets with FuncAssociate}
-1742. Network Data and Measurement
-1743. Analysis of genomic context: prediction of functional associations from conserved bidirectionally transcribed gene pairs.
-1744. The public road to high-quality curated biological pathways
-1745. The metabolic world of Escherichia coli is not small
+574.  Life-history trade-offs favour the evolution of animal personalities
+575.  Coupling and coordination in gene expression processes: a systems biology view.
+576.  Principal components analysis to summarize microarray experiments: application to sporulation time series
+577.  Rich Probabilistic Models for Gene Expression
+578.  The metabolic world of Escherichia coli is not small
 ```
 
 We can also take a more holistic and informal approach to evaluating model quality.
@@ -642,23 +642,23 @@ showurecs(model, 1741, 20)
 1.  Sets for Mathematics
 2.  On Understanding Types, Data Abstraction, and Polymorphism
 3.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-4.  Dynamic Logic
-5.  Principles of programming with complex objects and collection types
-6.  Functional programming with bananas, lenses, envelopes and barbed wire
-7.  Haskell's overlooked object system
-8.  Abstract interpretation: a unified lattice model for static analysis of programs by construction or approximation of fixpoints
-9.  Lectures on the Curry-Howard isomorphism
-10. Parsing expression grammars: a recognition-based syntactic foundation
-11. Type Classes with Functional Dependencies
-12. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
-13. Types, abstraction and parametric polymorphism
-14. Functional pearl: implicit configurations--or, type classes reflect the values of types
-15. The Zipper
-16. Monadic Parsing in Haskell
-17. Ownership types for safe programming: preventing data races and deadlocks
-18. Monadic Parser Combinators
-19. The essence of compiling with continuations
-20. The {Calculus of Constructions}
+4.  Haskell's overlooked object system
+5.  Contracts for higher-order functions
+6.  Principles of programming with complex objects and collection types
+7.  Ownership types for safe programming: preventing data races and deadlocks
+8.  Modern {C}ompiler {I}mplementation in {J}ava
+9.  Functional pearl: implicit configurations--or, type classes reflect the values of types
+10. Featherweight Java: A Minimal Core Calculus for Java and GJ
+11. On the expressive power of programming languages
+12. Typed Memory Management in a Calculus of Capabilities
+13. Dependent Types in Practical Programming
+14. Functional programming with bananas, lenses, envelopes and barbed wire
+15. The essence of compiling with continuations
+16. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
+17. Visual Programming
+18. Dynamic optimization for functional reactive programming using generalized algebraic data types
+19. Why Dependent Types Matter
+20. Types and programming languages
 ```
 
 ## GPU Acceleration
@@ -887,7 +887,7 @@ train!(model::BaseTopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1
 # 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods.
 # 'viter'   - maximum number of iterations for optimizing variational parameters (at the document level).
 # 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
-# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower bound).
+# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
 
 train!(dtm::AbstractDTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/dtm.K^2, cgiter::Integer=10, cgtol::Real=1/dtm.T^2, chkelbo::Integer=1)
 # Train DTM.
