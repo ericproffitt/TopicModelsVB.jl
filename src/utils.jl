@@ -1,3 +1,7 @@
+#############
+### Julia ###
+#############
+
 const EPSILON = eps(1e-14)
 
 VectorList{T} = Vector{Vector{T}}
@@ -36,16 +40,13 @@ function addlogistic{T<:Real}(xs::Matrix{T}, region::Integer)
 	return xs
 end
 
-Distributions.isprobvec(p::Vector{Float32}) = isapprox(sum(p), 1.0f0)
-Distributions.isprobvec{T<:Real}(P::Matrix{T}) = isprobvec(vcat(P...))
-
 function Distributions.isprobvec{T<:Real}(P::Matrix{T}, region::Integer)
-	@assert (isequal(region, 1) | isequal(region, 2))
+	@assert region in [1, 2]
 
 	if region == 1
 		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
-	elseif region == 2
-		x = all([isprobvec(vec(P[i,:])) for i in 1:size(P, 1)])
+	else
+		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
 	end
 	return x
 end
@@ -75,6 +76,12 @@ function partition{T<:Any}(xs::Union{UnitRange{T}, Vector{T}}, n::Integer)
 	end
 	return p
 end
+
+
+
+###########
+### C++ ###
+###########
 
 const EPSILON32 = "0.000000000000000000000000000001f"
 
@@ -114,7 +121,7 @@ digamma(float x)
 const RREF_cpp =
 """
 inline void
-rref(long K,
+rref(	long K,
 		long D,
 		global float *A,
 		global float *B)
@@ -176,7 +183,7 @@ rref(long K,
 const NORM2_cpp =
 """
 inline float
-norm2(long K,
+norm2(	long K,
 		long d,
 		global float *x)
 		
@@ -189,17 +196,3 @@ norm2(long K,
 		return sqrt(acc);
 		}
 		"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-

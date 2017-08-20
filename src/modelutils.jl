@@ -1,8 +1,6 @@
-#############################
-#							#
-# General Display Functions #
-#							#
-#############################
+#################################
+### General Display Functions ###
+#################################
 
 showdocs(model::TopicModel, ds::Vector{Int}) = showdocs(model.corp, ds)
 showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
@@ -19,18 +17,15 @@ Base.show(io::IO, model::CTM) = print(io, "Correlated topic model with $(model.K
 Base.show(io::IO, model::fCTM) = print(io, "Filtered correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::DTM) = print(io, "Dynamic topic model with $(model.K) topics and ∆ = $(model.delta).")
 Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")
-
 Base.show(io::IO, model::gpuLDA) = print(io, "GPU accelerated latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 
 
-##############################################################
-#															 #
-# Host-to-Buffer and Buffer-to-Host Functions for GPU Models #
-#															 #
-##############################################################
+##################################################################
+### Host-to-Buffer and Buffer-to-Host Functions for GPU Models ###
+##################################################################
 
 function updateBuf!(model::gpuLDA, b::Int)
 	b = b % model.B + 1
@@ -115,11 +110,9 @@ end
 
 
 
-######################################################################################################
-#						   																			 #
-# Function for Aligning Auxiliary Data with Primary Data Coupled with Optional Primary Data Checking #
-#						   																			 #
-######################################################################################################
+##########################################################################################################
+### Function for Aligning Auxiliary Data with Primary Data Coupled with Optional Primary Data Checking ###
+##########################################################################################################
 
 function fixmodel!(model::LDA; check::Bool=true)
 	if check
@@ -719,11 +712,9 @@ end
 
 
 
-##################################################
-#												 #
-# Function for Updating the Evidence Lower Bound #
-#												 #
-##################################################
+######################################################
+### Function for Updating the Evidence Lower Bound ###
+######################################################
 
 function checkELBO!(model::TopicModel, k::Int, chk::Bool, tol::Real)
 	converged = false
@@ -740,11 +731,9 @@ end
 
 
 
-#############################################################
-#															#
-# Functions for Generating Artificial Documents and Corpora #
-#															#
-#############################################################
+#################################################################
+### Functions for Generating Artificial Documents and Corpora ###
+#################################################################
 
 function gendoc(model::AbstractLDA, a::Real=0.0)
 	@assert !isnegative(a)
@@ -836,11 +825,9 @@ end
 
 
 
-###########################
-#						  #
-# Topic Display Functions #
-#						  #
-###########################
+###############################
+### Topic Display Functions ###
+###############################
 
 function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), cols::Integer=4)
 	@assert checkbounds(Bool, 1:model.V, N)
