@@ -590,7 +590,7 @@ as well as those for a particular user(s):
 showurecs(model, 997, 578)
 ```
 ```
- ●●● User: 216
+ ●●● User: 997
 ...
 574.  Life-history trade-offs favour the evolution of animal personalities
 575.  Coupling and coordination in gene expression processes: a systems biology view.
