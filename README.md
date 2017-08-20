@@ -629,7 +629,7 @@ showlibs(model, 1741)
  • An Introduction to Category Theory, Category Theory Monads, and Their Relationship to Functional Programming
 ```
  
- The 20 articles in user 1741's library suggest that he or she is interested in the interplay of foundational mathematics and functional programming.  
+ The 20 articles in user 1741's library suggest that he or she is interested in the intersection of programming language theory and foundational mathematics.  
  
  Now compare this with the top 20 recommendations made by our model:
  
@@ -685,7 +685,7 @@ This algorithm just crunched through a 16 topic 128,804 document topic model in 
 Here is the benchmark of our above model against the equivalent NSF LDA model run on the CPU:
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar2.png)
 
-As we can see, the GPU LDA model is approximatey 1.32 orders of magnitude faster than the equivalent CPU LDA model.
+As we can see, running the LDA model on the GPU is approximatey 1.32 orders of magnitude faster than running it on the CPU.
 
 It's often the case that one does not have sufficient VRAM to hold the entire model in GPU memory at one time.  Thus we provide the option of batching GPU models in order to train much larger models than would otherwise be possible:
 
@@ -887,7 +887,7 @@ train!(model::BaseTopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1
 # 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods.
 # 'viter'   - maximum number of iterations for optimizing variational parameters (at the document level).
 # 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
-# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence checking).
+# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower bound).
 
 train!(dtm::AbstractDTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/dtm.K^2, cgiter::Integer=10, cgtol::Real=1/dtm.T^2, chkelbo::Integer=1)
 # Train DTM.
