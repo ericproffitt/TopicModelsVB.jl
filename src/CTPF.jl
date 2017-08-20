@@ -35,7 +35,7 @@ mutable struct CTPF <: TopicModel
 	elbo::Float64
 	newelbo::Float64
 
-	function CTPF(corp::Corpus, K::Integer, pmodel::Union{Void, BaseTopicModel}=nothing)
+	function CTPF(corp::Corpus, K::Integer, basemodel::Union{Void, BaseTopicModel}=nothing)
 		@assert ispositive(K)
 		@assert !isempty(corp)	
 		checkcorp(corp)
@@ -54,14 +54,14 @@ mutable struct CTPF <: TopicModel
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
-		if isa(pmodel, Union{AbstractLDA, AbstractCTM})
-			@assert isequal(size(pmodel.beta), (K, V))
-			alef = exp.(pmodel.beta)
-			topics = pmodel.topics		
-		elseif isa(pmodel, Union{AbstractfLDA, AbstractfCTM})
-			@assert isequal(size(pmodel.fbeta), (K, V))
-			alef = exp.(pmodel.fbeta)
-			topics = pmodel.topics
+		if isa(basemodel, Union{AbstractLDA, AbstractCTM})
+			@assert isequal(size(basemodel.beta), (K, V))
+			alef = exp.(basemodel.beta)
+			topics = basemodel.topics		
+		elseif isa(basemodel, Union{AbstractfLDA, AbstractfCTM})
+			@assert isequal(size(basemodel.fbeta), (K, V))
+			alef = exp.(basemodel.fbeta)
+			topics = basemodel.topics
 		else
 			alef = exp.(rand(Dirichlet(V, 1.0), K)' - 0.5)
 			topics = [collect(1:V) for _ in 1:K]
