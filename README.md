@@ -477,7 +477,7 @@ line       printing     windows     port          marketing      interface    pe
 As you may have noticed, the dynamic topic model is *extremely* computationally intensive, it is likely that running the DTM model on an industry-sized dataset will always require more computational power than can be provided by your standard personal computer.
 
 ### CTPF
-For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be achievable using just the document-user matrix.  This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
+For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone.  This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
 import Distributions.sample
@@ -531,7 +531,7 @@ end
 @show mean(acc) # mean(acc) = 0.910
 ```
 
-Not bad, but let's see if we can't improve our accuracy at least a percentage point or two by priming our CTPF model with a 100 iteration LDA model.
+Not bad, but let's see if we can't improve our accuracy at least a bit by priming our CTPF model with a 100 iteration LDA model.
 
 In the interest of time, let's use the GPU accelerated verions of LDA and CTPF:
 
