@@ -570,7 +570,7 @@ Let's also take a look at the top recommendations for a particular document(s):
 ```julia
 testukeys[1] # = 997
 acc[1] # = 0.981
-# user997's test library document was placed in the top 2% of his or her recommendations.
+# user997's library test document was placed in the top 2% of his or her recommendations.
 
 showdrecs(model, 1, 106, cols=1)
 ```
