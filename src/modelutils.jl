@@ -779,7 +779,7 @@ function gendoc(model::AbstractCTM, a::Real=0.0)
 	C = rand(Poisson(mean(model.C)))
 	termcount = Dict{Int, Int}()
 	theta = rand(MvNormal(model.mu, model.sigma))
-	theta = exp(theta) / sum(exp(theta))
+	theta = exp.(theta) / sum(exp.(theta))
 	topicdist = Categorical(theta)
 	lexdist = [Categorical((vec(model.beta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
 	for _ in 1:C
