@@ -381,7 +381,7 @@ function showdocs{T<:Integer}(corp::Corpus, ds::Vector{T})
 	
 	for d in ds
 		doc = corp[d]
-		@juliadots "Doc: $d\n"
+		@juliadots "doc $d\n"
 		if !isempty(doc.title)
 			@juliadots "$(doc.title)\n"
 		end
