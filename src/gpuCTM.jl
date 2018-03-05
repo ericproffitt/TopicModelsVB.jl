@@ -165,7 +165,6 @@ function updateSigma!(model::gpuCTM)
 	@host model.vsqbuf
 
 	model.sigma = diagm(sum(model.vsq)) / model.M + Base.covm(hcat(model.lambda...), model.mu, 2, false)
-	(log(cond(model.sigma)) < 14) || (model.sigma += eye(model.K) * (eigmax(model.sigma) - 14 * eigmin(model.sigma)) / 13)
 	model.invsigma = inv(model.sigma)
 
 	@buf model.sigma
