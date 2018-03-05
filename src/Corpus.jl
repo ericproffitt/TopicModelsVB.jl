@@ -242,7 +242,7 @@ function compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetiz
 		end
 	end
 
-	for doc in corp
+	for doc in unique(corp)
 		if lex; doc.terms = [lkeydict[lkey] for lkey in doc.terms]; end
 		if users; doc.readers = [ukeydict[ukey] for ukey in doc.readers]; end
 	end
