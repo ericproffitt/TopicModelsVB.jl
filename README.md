@@ -152,7 +152,7 @@ CTPF(corp, K, basemodel)
 # Collaborative topic Poisson factorization model with K topics.
 ```
 
-### GPU Accelerated Models
+### GPU Models
 ```julia
 gpuLDA(corp, K, batchsize)
 # GPU accelerated latent Dirichlet allocation model with K topics.
