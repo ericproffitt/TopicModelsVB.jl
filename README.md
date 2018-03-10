@@ -59,7 +59,7 @@ The docfile should be a plaintext file containing lines of delimited numerical v
  <dt>terms</dt>
  <dd>A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).</dd>
  <dt>counts</dt>
- <dd><small>A line of delimited positive integers, equal in length to the term line, corresponding to the number of times a particular term appears in a document.</small></dd>
+ <dd><font size="6">A line of delimited positive integers, equal in length to the term line, corresponding to the number of times a particular term appears in a document.</font></dd>
  <dt>readers</dt>
  <dd>A line of delimited positive integers corresponding to those users which have read the document.</dd>
  <dt>ratings</dt>
