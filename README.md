@@ -360,7 +360,7 @@ Based on the top 20 terms in each topic, we might tentatively assign the followi
 * topic 3: *Ecology*
 * topic 4: *Computer Science*
 * topic 5: *Academia*
-* topic 6: *Cell Biology*
+* topic 6: *Molecular Biology*
 * topic 7: *Economics*
 * topic 8: *Mathematics*
 * topic 9: *Chemistry*
@@ -381,14 +381,14 @@ model.sigma[3,8] # -12.472
 model.sigma[1,8] # -11.776
 ```
 
-According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Ecology* and *Cell Biology*, and then by 1 and 3, corresponding to *Earth Science* and *Ecology*.
+According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Ecology* and *Molecular Biology*, and then by 1 and 3, corresponding to *Earth Science* and *Ecology*.
 
 As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed by topics 3 and 8, corresponding to *Ecology* and *Mathematics*, and then third are topics 1 and 8, corresponding to *Earth Science* and *Mathematics*.
 
 Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
 
 ```julia
-indmin([sum(abs.(model.sigma[:,j])) - model.sigma[j,j] for j in 1:9]) # = 5.
+indmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
 ```
 
 **Note:** Both CTM and fCTM will sometimes have to numerically invert ill-conditioned matrices, thus don't be alarmed if the ```∆elbo``` periodically goes negative for stretches, it should always right itself in fairly short order.
