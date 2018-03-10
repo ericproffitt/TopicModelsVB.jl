@@ -902,7 +902,7 @@ function showlibs{T<:Integer}(model::AbstractCTPF, users::Vector{T})
 	@assert checkbounds(Bool, 1:model.U, users)
 	
 	for u in users
-		@juliadots "User: $u\n"
+		@juliadots "user $u\n"
 		try if model.corp.users[u][1:5] != "#user"
 				@juliadots model.corp.users[u] * "\n"
 			end
@@ -927,7 +927,7 @@ function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
 	for d in docs
-		@juliadots "Doc: $d\n"
+		@juliadots "doc $d\n"
 		if !isempty(corp[d].title)
 			@juliadots corp[d].title * "\n"
 		end
@@ -958,7 +958,7 @@ function showurecs{T<:Integer}(model::AbstractCTPF, users::Union{T, Vector{T}}, 
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
 
 	for u in users
-		@juliadots "User: $u\n"
+		@juliadots "user $u\n"
 		try if corp.users[u][1:5] != "#user"
 				@juliadots corp.users[u] * "\n"
 			end
