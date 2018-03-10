@@ -911,7 +911,7 @@ function showlibs{T<:Integer}(model::AbstractCTPF, users::Vector{T})
 		
 		for d in model.libs[u]
 			yellow(" • ")
-			isempty(model.corp[d].title) ? bold("Doc: $d\n") : bold("$(model.corp[d].title)\n")
+			isempty(model.corp[d].title) ? bold("doc $d\n") : bold("$(model.corp[d].title)\n")
 		end
 		println()
 	end
