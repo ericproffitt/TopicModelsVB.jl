@@ -131,7 +131,7 @@ Whenever you load a corpus into a model, a copy of that corpus is made, such tha
 ## Models
 The available models are as follows:
 
-### Models
+### CPU Models
 ```julia
 LDA(corp, K)
 # Latent Dirichlet Allocation model with K topics.
