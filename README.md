@@ -58,14 +58,15 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 <dl>
  <dt>terms</dt>
  <dd>A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).</dd>
- <dt>countss</dt>
+ <dt>counts</dt>
  <dd>A line of delimited positive integers, equal in length to the term line, corresponding to the number of times a particular term appears in a document.</dd>
-
-* *readers* - A line of delimited positive integers corresponding to those users which have read the document.
-
-* *ratings* - A line of delimited positive integers, equal in length to the `readers` line, corresponding to the rating each reader gave the document.
-
-* *stamp* - A numerical value in the range `[-Inf, Inf]` denoting the timestamp of the document.
+ <dt>readers</dt>
+ <dd>A line of delimited positive integers corresponding to those users which have read the document.</dd>
+ <dt>ratings</dt>
+ <dd>A line of delimited positive integers, equal in length to the `readers` line, corresponding to the rating each reader gave the document.</dd>
+ <dt>stamp</dt>
+ <dd>A numerical value in the range [-Inf, Inf] denoting the timestamp of the document.</dd>
+</dl>
 
 An example of a single doc block from a docfile with all possible lines included:
 
