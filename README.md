@@ -221,7 +221,7 @@ showdocs(model, 1) # Could also have done showdocs(corp, 1).
 ```
 
 ```
- ●●● Doc: 1
+ ●●● doc 1
  ●●● CRB: Genetic Diversity of Endangered Populations of Mysticete Whales: Mitochondrial DNA and Historical Demography
 commercial exploitation past hundred years great extinction variation sizes
 populations prior minimal population size current permit analyses effects 
@@ -237,7 +237,7 @@ showdocs(model, 25)
 ```
 
 ```
- ●●● Doc: 25
+ ●●● doc 25
  ●●● Mathematical Sciences: Nonlinear Partial Differential Equations from Hydrodynamics
 work project continues mathematical research nonlinear elliptic problems arising perfect
 fluid hydrodynamics emphasis analytical study propagation waves stratified media techniques
@@ -573,7 +573,7 @@ acc[1] # = 0.981
 showdrecs(model, 1, 106, cols=1)
 ```
 ```
- ●●● Doc: 1
+ ●●● doc 1
  ●●● The metabolic world of Escherichia coli is not small
 ...
 102. #user1658
@@ -588,7 +588,7 @@ as well as those for a particular user(s):
 showurecs(model, 997, 578)
 ```
 ```
- ●●● User: 997
+ ●●● user 997
 ...
 574.  Life-history trade-offs favour the evolution of animal personalities
 575.  Coupling and coordination in gene expression processes: a systems biology view.
@@ -606,7 +606,7 @@ showlibs(model, 1741)
 ```
 
 ```
- ●●● User: 1741
+ ●●● user 1741
  • Region-Based Memory Management
  • A Syntactic Approach to Type Soundness
  • Imperative Functional Programming
@@ -638,7 +638,7 @@ showurecs(model, 1741, 20)
 ```
 
 ```
- ●●● User: 1741
+ ●●● user 1741
 1.  Sets for Mathematics
 2.  On Understanding Types, Data Abstraction, and Polymorphism
 3.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
