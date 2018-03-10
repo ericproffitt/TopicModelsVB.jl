@@ -877,6 +877,7 @@ getusers(corp::Corpus)
 
 ```julia
 showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
+# Display the text and title of a document(s).
 
 fixmodel!(model::TopicModel; check::Bool=true)
 # If 'check == true', verify the legality of the model's primary data.
