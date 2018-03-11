@@ -12,8 +12,6 @@ Contrarily, variational Bayesian methods are faster but inconsistent, since one 
 
 This package takes the latter approach to topic modeling.
 
-**Important:** If you find a bug, please don't hesitate to open an issue, I should reply promptly.
-
 ## Dependencies
 
 ```julia
