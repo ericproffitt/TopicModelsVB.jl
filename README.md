@@ -8,7 +8,9 @@ Topic models are Bayesian hierarchical models designed to discover the latent lo
 
 Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly.  Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability.  Furthermore, variational Bayesian methods, being numerical optimization procedures, are naturally equipped for the assessment of convergence to local optima.  This package takes the latter approach to topic modeling.
+Contrarily, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability.  Furthermore, variational Bayesian methods, being numerical optimization procedures, are naturally equipped for the assessment of convergence to local optima.
+
+This package takes the latter approach to topic modeling.
 
 **Important:** If you find a bug, please don't hesitate to open an issue, I should reply promptly.
 
