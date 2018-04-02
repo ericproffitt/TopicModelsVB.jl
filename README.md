@@ -4,7 +4,7 @@
 
 A Julia Package for Variational Bayesian Topic Modeling.
 
-Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Topic models, like most probabilistic graphical models, are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
+Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
 
 Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly.  Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
