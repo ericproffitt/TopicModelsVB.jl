@@ -2,7 +2,7 @@
 
 **v0.6 compatible**
 
-A Julia Package for Variational Bayesian Topic Modeling.
+A Julia package for variational Bayesian topic modeling.
 
 Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
 
