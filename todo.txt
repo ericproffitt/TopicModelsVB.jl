@@ -16,3 +16,4 @@
 16. fix checkcorp! situation
 17. make extended integers datatype so that chkelbo can be Z U {Inf}
 18. when different lex keys map to the same word, need to merge these in fixcorp functions
+19. fix DTM
