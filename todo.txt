@@ -18,3 +18,4 @@
 18. when different lex keys map to the same word, need to merge these in fixcorp functions
 19. fix DTM
 20. make 1.0 compatible
+21. deal with counts situation
