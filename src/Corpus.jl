@@ -223,7 +223,9 @@ function fold_corp!(corp::Corpus)
 end
 
 function abridge_corp!(corp::Corpus, n::Integer)
-	doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+	"All terms which appear less than n times in the corpus are removed from all documents."
+
+	doc_vkeys = Set(vcat([doc.terms for doc in unique(corp)]...))
 	vocab_count = Dict(Int(j) => 0 for j in doc_vkeys)
 	
 	for doc in unique(corp), (j, c) in zip(doc.terms, doc.counts)
@@ -231,16 +233,37 @@ function abridge_corp!(corp::Corpus, n::Integer)
 	end
 
 	for doc in unique(corp)
-		keep = Bool[lexcount[j] >= abr for j in doc.terms]
+		keep = Bool[vocab_count[j] >= n for j in doc.terms]
 		doc.terms = doc.terms[keep]
 		doc.counts = doc.counts[keep]
 	end
 
+	### Should you remove empty docs?
 	keep = Bool[length(doc.terms) > 0 for doc in corp]
 	corp.docs = corp[keep]
 
 	nothing
 end
+
+function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)	
+	if lex
+		lkeys = sort(collect(keys(corp.lex)))
+		lkeymap = zip(lkeys, 1:length(corp.lex))
+		if alphabetize
+			alphabetdict = Dict(j => lkey for (j, lkey) in zip(sortperm([corp.lex[lkey] for lkey in lkeys]), 1:length(corp.lex)))
+			lkeydict = Dict(lkey => alphabetdict[j] for (lkey, j) in lkeymap)
+		else
+			lkeydict = Dict(lkey => j for (lkey, j) in lkeymap)
+		end
+		
+		corp.lex = Dict(lkeydict[lkey] => corp.lex[lkey] for lkey in keys(corp.lex))
+		for lkey in keys(corp.lex)
+			try if corp.lex[lkey][1:5] == "#term"; corp.lex[lkey] = "#term$(lkey)"; end
+			end
+		end
+	end
+
+function trim_corp!(corp::Corpus; vocab::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
 
 function trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
 	if lex		

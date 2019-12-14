@@ -19,3 +19,4 @@
 19. fix DTM
 20. make 1.0 compatible
 21. deal with counts situation
+22. what to do with empty documents in corpus.
