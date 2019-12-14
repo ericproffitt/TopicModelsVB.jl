@@ -1,28 +1,50 @@
-macro juliadots(expr::Expr)
-	expr = :(print_with_color(:red, " ●");
-				print_with_color(:green, "●");
-				print_with_color(:blue, "● ");
-				print_with_color(:bold, :($($expr))))
+### Macros for TopicModelsVB
+### Eric Proffitt
+### December 3, 2019
+
+### Print Julia dots before bolded string output.
+### For vanilla strings.
+macro juliadots(str::String)
+	expr = :(	
+			print(Crayon(foreground=:red), " ●");
+			print(Crayon(foreground=:green), "●");
+			print(Crayon(foreground=:blue), "● ");
+			print(Crayon(foreground=:white, bold=true), $str)
+			)
+	
 	return expr
 end
 
+### Print Julia dots before bolded string output.
+### For interpolated strings.
+macro juliadots(expr::Expr)
+	expr = :(	
+			print(Crayon(foreground=:red), " ●");
+			print(Crayon(foreground=:green), "●");
+			print(Crayon(foreground=:blue), "● ");
+			print(Crayon(foreground=:white, bold=true), :($($expr)))
+			)
+	
+	return expr
+end
+
+### Add EPSILON to a numerical value.
 macro boink(expr::Expr)
 	expr = :(:($($expr)) + EPSILON)
 	return expr
 end
 
-type Foo
-	x::Int
-end
-
+### Add EPSILON to a numerical variable or array of numerical variables during variable assignment.
 macro bumper(expr::Expr)
 	if (expr.head == :.) || (expr.head == :ref)
 		expr = :(:($($expr)) += EPSILON)
 	elseif expr.head == :(=)
 		expr = :(:($($(expr.args[1]))) = EPSILON + :($($(expr.args[2]))))
 	end
+
 	return expr
 end
+
 
 macro buf(args...)
 	if isa(args[1], Expr)

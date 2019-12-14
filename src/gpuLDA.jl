@@ -69,6 +69,8 @@ mutable struct gpuLDA <: GPUTopicModel
 		model = new(K, M, V, N, C, B, copy(corp), batches, topics, alpha, beta, gamma, phi)	
 		fixmodel!(model, check=false)
 
+		model.phi = [ones(K, N[d]) / K for d in 1:M]
+
 		for (b, batch) in enumerate(batches)
 			model.phi = [ones(K, N[d]) / K for d in batch]
 			model.Elogtheta = [digamma.(ones(K)) - digamma(K) for _ in batch]

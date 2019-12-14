@@ -1,90 +1,120 @@
-#############
-### Julia ###
-#############
+### Utilites for TopicModelsVB
+### Utilities for Julia (first).
+### Utilities for C++ (second).
+### Eric Proffitt
+### December 3, 2019
 
+### The function eps() outputs the machine epsilon of the argument.
+### Argument currently set to 1e-14.
+### Resulting EPSILON is approx. 1.6e-30
 const EPSILON = eps(1e-14)
 
+### Type alias for a vector of vectors.
 VectorList{T} = Vector{Vector{T}}
+
+### Type alias for a vector of matrices.
 MatrixList{T} = Vector{Matrix{T}}
 
+### Print bold function.
 bold(str::AbstractString) = print_with_color(:bold, bold=true, str)
+
+### Print yellow function.
 yellow(str::AbstractString) = print_with_color(:yellow, bold=true, str)
 
+### Check if a real number is negative.
 isnegative(x::Real) = x < 0
+
+### Check if a real number is positive.
 ispositive(x::Real) = x > 0
 
-function logsumexp{T<:Real}(xs::Array{T})
-	maxval = maximum(xs)
-	return maxval + log(sum(exp.(xs - maxval)))
+### The LogSumExp of a real-valued array.
+### Overflow safe.
+function logsumexp(x::Array{<:Real})
+	maxval = maximum(x)
+	return maxval + log(sum(exp.(x .- maxval)))
 end
 
-function addlogistic{T<:Real}(xs::Array{T})
-	maxval = maximum(xs)
-	xs -= maxval
-	xs = exp.(xs) / sum(exp.(xs))
-	return xs
-end
+### Additive logistic function of a real-valued matrix.
+### Overflow safe.
+function additive_logistic(x::Matrix{<:Real}; dims::Integer)
+	@assert dims in [1, 2]
 
-function addlogistic{T<:Real}(xs::Matrix{T}, region::Integer)
-	if region == 1
-		maxvals = [maximum(xs[:,j]) for j in 1:size(xs, 2)]
-		xs .-= maxvals'
-		xs = exp.(xs) ./ sum(exp.(xs), 1)
-	elseif region == 2
-		maxvals = [maximum(xs[i,:]) for i in 1:size(xs, 1)]
-		xs .-= maxvals
-		xs = exp.(xs) ./ sum(exp.(xs), 2)
+	if dims == 1
+		x = x .- [maximum(x[:,j]) for j in 1:size(x, 2)]'
+		x = exp.(x) ./ sum(exp.(x), dims=1)
+
 	else
-		xs = addlogistic(xs)
+		x = x .- [maximum(x[i,:]) for i in 1:size(x, 1)]
+		x = exp.(x) ./ sum(exp.(x), dims=2)
 	end
-	return xs
-end
 
-function Distributions.isprobvec{T<:Real}(P::Matrix{T}, region::Integer)
-	@assert region in [1, 2]
-
-	if region == 1
-		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
-	else
-		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
-	end
 	return x
 end
 
-function Distributions.Categorical(p::Vector{Float32})
-	@assert isapprox(sum(p), 1)
-	p = map(Float64, p)
-	p /= sum(p)
-	return Categorical(p)
+### Additive logistic function of a real-valued vector.
+### Overflow safe.
+function additive_logistic(x::Vector{<:Real})
+	x = x .- maximum(x)
+	return exp.(x) / sum(exp.(x))
 end
 
-function Distributions.Multinomial(n::Integer, p::Vector{Float32})
-	@assert isapprox(sum(p), 1)
-	p = map(Float64, p)
-	p /= sum(p)
-	return Multinomial(n, p)
+### Additive logistic function of a real-valued Matrix.
+### Overflow safe.
+function additive_logistic(x::Matrix{<:Real})
+	x = x .- maximum(x)
+	return exp.(x) / sum(exp.(x))
 end
 
-function partition{T<:Any}(xs::Union{UnitRange{T}, Vector{T}}, n::Integer)
-	@assert ispositive(n)
+### Extend the functionality of the isprobvec function in the Distributions Pkg.
+### Add row and column-wise functionality for isprobvec on real-valued matrices.
+function Distributions.isprobvec(P::Matrix{<:Real}; dims::Integer)
+	@assert dims in [1, 2]
 
-	q = div(length(xs), n)
-	r = length(xs) - q*n
-	p = typeof(xs)[xs[(n*i-n+1):(n*i)] for i in 1:q]
-	if ispositive(r)
-		push!(p, xs[(q*n+1):end])
+	if dims == 1
+		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
+
+	else
+		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
 	end
-	return p
+
+	return x
 end
 
+#function Distributions.Categorical(p::Vector{Float32})
+#	@assert isapprox(sum(p), 1)
+#	p = map(Float64, p)
+#	p /= sum(p)
+#	return Categorical(p)
+#end
 
+#function Distributions.Multinomial(n::Integer, p::Vector{Float32})
+#	@assert isapprox(sum(p), 1)
+#	p = map(Float64, p)
+#	p /= sum(p)
+#	return Multinomial(n, p)
+#end
 
-###########
-### C++ ###
-###########
+#function partition{T<:Any}(xs::Union{UnitRange{T}, Vector{T}}, n::Integer)
+#	@assert ispositive(n)
 
+#	q = div(length(xs), n)
+#	r = length(xs) - q*n
+#	p = typeof(xs)[xs[(n*i-n+1):(n*i)] for i in 1:q]
+#	if ispositive(r)
+#		push!(p, xs[(q*n+1):end])
+#	end
+
+#	return p
+#end
+
+### EPSILON32 is 1e-30
 const EPSILON32 = "0.000000000000000000000000000001f"
 
+### Numerical approximation to the digamma function.
+### Based on eq. (12), without looking at the accompanying source
+### code, of: K. S. Kölbig, "Programs for computing the logarithm of
+### the gamma function, and the digamma function, for complex
+### argument," Computer Phys. Commun.  vol. 4, pp. 221–226 (1972).
 const DIGAMMA_cpp =
 """
 inline float
@@ -114,10 +144,12 @@ digamma(float x)
 				- 0.021092796092796094f * t*t*t*t*t
 				+ 0.08333333333333333f * t*t*t*t*t*t
 				- 0.4432598039215686f * t*t*t*t*t*t*t;
+
 		return p;
 		}
 		"""
 
+### Algorithm for putting a matrix into reduced row echelon form.
 const RREF_cpp =
 """
 inline void
@@ -180,6 +212,7 @@ rref(	long K,
 		}			
 		"""
 
+### Algorithm for taking the L2 norm of a vector.
 const NORM2_cpp =
 """
 inline float
