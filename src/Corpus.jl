@@ -16,17 +16,20 @@ mutable struct Document
 	ratings::Vector{Int}
 	title::String
 
-	function Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), title="")
+	function Document(;terms=Int[], counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), title="")
+		all(ispositive.(terms)) || throw(ArgumentError("All terms must be positive integers."))
+		all(ispositive.(counts)) || throw(ArgumentError("All counts must be positive integers."))
+		all(ispositive.(readers)) || throw(ArgumentError("All readers must be positive integers."))
+		all(ispositive.(ratings)) || throw(ArgumentError("All ratings must be positive integers."))
+		isequal(length(terms), length(counts)) || throw(ArgumentError("The terms and counts vectors must have the same length."))
+
 		doc = new(terms, counts, readers, ratings, title)
-		checkdoc(doc)
 		return doc
 	end
 end
 
-Base.show(io::IO, doc::Document) = print(io, "Document with:\n * $(length(doc.terms)) terms\n * $(length(doc.readers)) readers")
-Base.length(doc::Document) = length(doc.terms)
-Base.size(doc::Document) = sum(doc.counts)
-Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
+### Document outer constructor for non-kwarg terms initialization.
+Document(terms) = Document(terms=terms)
 
 ### Corpus mutable struct.
 mutable struct Corpus
@@ -38,41 +41,22 @@ mutable struct Corpus
 	vocab::Dict{Int, String}
 	users::Dict{Int, String}
 
-	function Corpus(;docs=Document[], lex=[], users=[])
-		isa(lex, Dict) || (lex = Dict(lkey => term for (lkey, term) in enumerate(lex)))
+	function Corpus(;docs=Document[], vocab=[], users=[])
+		isa(vocab, Dict) || (vocab = Dict(vkey => term for (vkey, term) in enumerate(vocab)))
 		isa(users, Dict) || (users = Dict(ukey => user for (ukey, user) in enumerate(users)))
 
+		all(ispositive.(collect(keys(vocab)))) || throw(ArgumentError("All vocab keys must be positive integers."))
+		all(ispositive.(collect(keys(users)))) || throw(ArgumentError("All user keys must be positive integers."))
+
 		corp = new(docs, lex, users)
-		checkcorp(corp)
 		return corp
 	end
 end
 
-function checkcorp(corp::Corpus)
-	for (d, doc) in enumerate(corp)
-		@assert !isempty(doc.terms) || println("Document $d failed check.")
-
-function checkdoc(doc::Document)
-	pass =
-	(!isempty(doc.terms)
-	& all(ispositive.(doc.terms))
-	& all(ispositive.(doc.counts))
-	& isequal(length(doc.terms), length(doc.counts))
-	& all(ispositive.(doc.readers))
-	& all(ispositive.(doc.ratings))
-	& isequal(length(doc.readers), length(doc.ratings)))
-	return pass	
-end
-
-function checkcorp(corp::Corpus)
-	pass = true
-	for (d, doc) in enumerate(corp)
-		checkdoc(doc) || (println("Document $d failed check."); pass=false)
-	end
-	@assert all(ispositive.(collect(keys(corp.lex))))
-	@assert all(ispositive.(collect(keys(corp.users))))
-	return pass
-end
+Base.show(io::IO, doc::Document) = print(io, "Document with:\n * $(length(doc.terms)) terms\n * $(length(doc.readers)) readers")
+Base.length(doc::Document) = length(doc.terms)
+Base.size(doc::Document) = sum(doc.counts)
+Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
 
 function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
@@ -123,27 +107,26 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 	return corp
 end
 
-function writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)	
+function writecorp(corp::Corpus; docfile::AbstractString="", vocabfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
-	stamp = stamps
 
 	if !isempty(docfile)
-		dockwargs = [:counts, :readers, :ratings, :stamp]
-		dockwargs = dockwargs[[counts, readers, ratings, stamp]]
+		doc_kwargs = [:counts, :readers, :ratings]
+		doc_kwargs = doc_kwargs[[counts, readers, ratings]]
 		docfile = open(docfile, "w")
 		for doc in corp
 			write(docfile, join(doc.terms, delim), '\n')
-			for arg in dockwargs
+			for arg in doc_kwargs
 				write(docfile, join(doc.(arg), delim), '\n')
 			end
 		end
 		close(docfile)
 	end
 
-	if !isempty(lexfile)
-		lkeys = sort(collect(keys(corp.lex)))
-		lex = zip(lkeys, [corp.lex[lkey] for lkey in lkeys])
-		writedlm(lexfile, lex)
+	if !isempty(vocabfile)
+		vkeys = sort(collect(keys(corp.vocab)))
+		vocab = zip(vkeys, [corp.vocab[vkey] for vkey in vkeys])
+		writedlm(vocabfile, vocab)
 	end
 
 	if !isempty(userfile)
@@ -177,7 +160,6 @@ function stop_corp!(corp::Corpus)
 		doc.terms = doc.terms[keep]
 		doc.counts = doc.counts[keep]
 	end
-
 	nothing
 end
 
@@ -207,7 +189,6 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 			doc.users = [ukey_map[ukey] for ukey in doc.users]
 		end
 	end
-
 	nothing
 end
 
@@ -226,7 +207,6 @@ function abridge_corp!(corp::Corpus, n::Integer)
 		doc.terms = doc.terms[keep]
 		doc.counts = doc.counts[keep]
 	end
-
 	nothing
 end
 
@@ -252,7 +232,6 @@ function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 			doc.users = [ukey_map[ukey] for ukey in doc.users]
 		end
 	end
-
 	nothing
 end
 
@@ -268,7 +247,6 @@ function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 		doc_ukeys = Set(vcat([doc.terms for doc in corp]...))
 		corp.users = Dict(ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), doc_ukeys))
 	end
-
 	nothing
 end
 
@@ -294,7 +272,6 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 			doc.ratings = doc.ratings[keep]
 		end
 	end
-
 	nothing
 end
 
@@ -311,7 +288,6 @@ function condense_docs!(corp::Corpus)
 		doc.terms = collect(keys(docdict))
 		doc.counts = collect(values(docdict))
 	end
-
 	nothing
 end
 
@@ -320,7 +296,6 @@ function remove_empty_docs!(corp::Corpus)
 
 	keep = Bool[length(doc.terms) > 0 for doc in corp]
 	corp.docs = corp[keep]
-
 	nothing
 end
 
@@ -340,7 +315,6 @@ function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 			corp.users[ukey] = string(join(["#user", ukey]))
 		end
 	end
-
 	nothing
 end
 
@@ -387,7 +361,7 @@ Base.endof(corp::Corpus) = length(corp)
 
 
 
-function showdocs{T<:Integer}(corp::Corpus, ds::Vector{T})
+function showdocs{T<:Integer}(corp::Corpus, ds::Vector{<:Integer})
 	@assert checkbounds(Bool, 1:length(corp), ds) "Some document indices outside docs range."
 	
 	for d in ds
@@ -405,11 +379,11 @@ function showdocs(corp::Corpus, docs::Vector{Document})
 	showdocs(corp, ds)
 end
 
-showdocs{T<:Integer}(corp::Corpus, ds::UnitRange{T}) = showdocs(corp, collect(ds))
+showdocs(corp::Corpus, ds::UnitRange{<:Integer}) = showdocs(corp, collect(ds))
 showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
 showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
 
-getlex(corp::Corpus) = sort(collect(values(corp.lex)))
+getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
 getusers(corp::Corpus) = sort(collect(values(corp.users)))
 
 
@@ -418,31 +392,25 @@ getusers(corp::Corpus) = sort(collect(values(corp.users)))
 ### Pre-packaged Dataset Shortcuts ###
 ######################################
 
-function readcorp(corpsym::Symbol)
-	v = "v$(VERSION.major).$(VERSION.minor)"
+function readcorp(corp_symbol::Symbol)
+	version = "v$(VERSION.major).$(VERSION.minor)"
 
-	if corpsym == :nsf
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsfdocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsflex.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsftitles.txt"
+	if corp_symbol == :nsf
+		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfdocs.txt"
+		lexfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsflex.txt"
+		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsftitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
 
-	elseif corpsym == :citeu
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeudocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeulex.txt"
-		userfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeuusers.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeutitles.txt"
+	elseif corp_symbol == :citeu
+		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeudocs.txt"
+		vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeulex.txt"
+		userfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuusers.txt"
+		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeutitles.txt"
 		corp = readcorp(docfile=docfile, lexfile=lexfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 		padcorp!(corp)
 
-	elseif corpsym == :mac
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/macdocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/maclex.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/mactitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
-
 	else
-		println("Included corpora:\n:nsf\n:citeu\n:mac")
+		println("Included corpora:\n:nsf\n:citeu")
 		corp = nothing
 	end
 
