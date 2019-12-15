@@ -1,4 +1,4 @@
-### Document and Corpus data structures for TopicModelsVB
+### Document and Corpus data structures for TopicModelsVB.
 ### Eric Proffitt
 ### December 3, 2019
 
@@ -74,32 +74,35 @@ function checkcorp(corp::Corpus)
 	return pass
 end
 
-function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)	
+function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
 	(!isempty(docfile) | isempty(titlefile)) || warn("No docfile, titles will not be assigned.")
-	stamp = stamps
 
 	corp = Corpus()
 	if !isempty(docfile)
 		docs = open(docfile)
-		dockwargs = [:counts, :readers, :ratings, :stamp]	
-		for (d, docblock) in enumerate(partition(readlines(docs), counts + readers + ratings + stamp + 1))
+		doc_kwargs = [:counts, :readers, :ratings]	
+		
+		for (d, doc_block) in enumerate(partition(readlines(docs), counts + readers + ratings + 1))
 			try
-			doclines = Vector{Float64}[[parse(Float64, p) for p in split(line, delim)] for line in docblock]			
-			docinput = zip(dockwargs[[counts, readers, ratings, stamp]], doclines[2:end])
-			push!(corp, Document(doclines[1]; docinput...))
-			catch error("Document $d beginning on line $((d - 1) * (counts + readers + ratings + stamp) + d) failed to load.")
+				doc_lines = Vector{Float64}[[parse(Float64, p) for p in split(line, delim)] for line in doc_block]			
+				doc_input = zip(doc_kwargs[[counts, readers, ratings]], doc_lines[2:end])
+				push!(corp, Document(doc_lines[1]; doc_input...))
+			catch
+				error("Document $d beginning on line $((d - 1) * (counts + readers + ratings) + d) failed to load.")
 			end
 		end
-	else warn("No docfile, topic models cannot be trained without documents.")
+
+	else
+		warn("No docfile, topic models cannot be trained without documents.")
 	end
 
 	if !isempty(lexfile)
-		lex = readdlm(lexfile, '\t', comments=false)
-		lkeys = lex[:,1]
-		terms = [string(j) for j in lex[:,2]]
-		corp.lex = Dict{Int, String}(zip(lkeys, terms))
-		@assert all(ispositive.(collect(keys(corp.lex))))
+		vocab = readdlm(lexfile, '\t', comments=false)
+		lkeys = vocab[:,1]
+		terms = [string(j) for j in vocab[:,2]]
+		corp.vocab = Dict{Int, String}(zip(vkeys, terms))
+		@assert all(ispositive.(collect(keys(corp.vocab))))
 	end
 
 	if !isempty(userfile)
@@ -155,6 +158,11 @@ function writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractSt
 	nothing
 end
 
+### The _corp and _docs functions are designed to provide safe methods for modifying corpora.
+### The _corp functions only meaningfully modify the Corpus object.
+### In so far as the _corp functions modify Document objects, it only amounts to a possible relabeling of the keys in the documents.
+### The _doc functions only modify the Document objects attached the corpus, they do not modify the Corpus object.
+### The exception to the above rule is the stop_corp! function, which removes stop words from both the Corpus vocab dictionary and associated keys in the documents.
 
 function stop_corp!(corp::Corpus)
 	"Filter stop words in the associated corpus."
@@ -203,26 +211,8 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	nothing
 end
 
-function fold_corp!(corp::Corpus)
-	"Ignore term order in documents."
-	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
-
-	for doc in unique(corp)
-		
-		docdict = Dict(j => 0 for j in doc.terms)
-		for (j, c) in zip(doc.terms, doc.counts)
-			docdict[j] += c
-		end
-
-		doc.terms = collect(keys(docdict))
-		doc.counts = collect(values(docdict))
-	end
-
-	nothing
-end
-
 function abridge_corp!(corp::Corpus, n::Integer)
-	"All terms which appear less than n times in the corpus are removed from all documents."
+	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
 
 	doc_vkeys = Set(vcat([doc.terms for doc in unique(corp)]...))
 	vocab_count = Dict(Int(j) => 0 for j in doc_vkeys)
@@ -232,20 +222,16 @@ function abridge_corp!(corp::Corpus, n::Integer)
 	end
 
 	for doc in unique(corp)
-		keep = Bool[vocab_count[j] >= n for j in doc.terms]
+		keep = Bool[vocab_count[j] > n for j in doc.terms]
 		doc.terms = doc.terms[keep]
 		doc.counts = doc.counts[keep]
 	end
-
-	### Should you remove empty docs?
-	keep = Bool[length(doc.terms) > 0 for doc in corp]
-	corp.docs = corp[keep]
 
 	nothing
 end
 
 function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Relable vocab and/or user keys so that they form a unit range."
+	"Relabel vocab and/or user keys so that they form a unit range."
 
 	if vocab
 		vkeys = sort(collect(keys(corp.vocab)))
@@ -270,118 +256,106 @@ function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	nothing
 end
 
+function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Those keys which appear in the corpus vocab and/or user dictionaries but not in any of the documents are removed from the corpus."
 
-
-
-
-
-
-
-
-
-
-
-
-function trim_corp!(corp::Corpus; vocab::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
-
-function trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
-	if lex		
-		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		corp.lex = Dict(lkey => corp.lex[lkey] for lkey in intersect(keys(corp.lex), doclkeys))
+	if vocab
+		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+		corp.vocab = Dict(vkey => corp.vocab[vkey] for vkey in intersect(keys(corp.vocab), doc_vkeys))
 	end
 
+	if users
+		doc_ukeys = Set(vcat([doc.terms for doc in corp]...))
+		corp.users = Dict(ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), doc_ukeys))
+	end
+
+	nothing
+end
+
+function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
+	"Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents."
+
 	if terms
-		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		boguslkeys = setdiff(doclkeys, keys(corp.lex))
+		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+		bogus_vkeys = setdiff(doc_vkeys, keys(corp.vocab))
 		for doc in corp
-			keep = Bool[!(j in boguslkeys) for j in doc.terms]
+			keep = Bool[!(j in bogus_vkeys) for j in doc.terms]
 			doc.terms = doc.terms[keep]
 			doc.counts = doc.counts[keep]
 		end
 	end
-	
-	if users
-		docukeys = Set(vcat([doc.readers for doc in corp]...))
-		corp.users = Dict(ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), docukeys))
-	end
 
-	if readers
-		docukeys = Set(vcat([doc.readers for doc in corp]...))	
-		bogusukeys = setdiff(docukeys, keys(corp.users))
+	if terms
+		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
+		bogus_ukeys = setdiff(doc_ukeys, keys(corp.users))
 		for doc in corp
-			keep = Bool[!(u in bogusukeys) for u in doc.readers]
+			keep = Bool[!(u in bogus_ukeys) for u in doc.readers]
 			doc.readers = doc.readers[keep]
 			doc.ratings = doc.ratings[keep]
 		end
 	end
+
 	nothing
 end
 
-function padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
-	if lex
-		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		for lkey in setdiff(doclkeys, keys(corp.lex))
-			corp.lex[lkey] = string(join(["#term",lkey]))
+function condense_docs!(corp::Corpus)
+	"Ignore term order in documents."
+	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
+
+	for doc in unique(corp)
+		docdict = Dict(j => 0 for j in doc.terms)
+		for (j, c) in zip(doc.terms, doc.counts)
+			docdict[j] += c
+		end
+
+		doc.terms = collect(keys(docdict))
+		doc.counts = collect(values(docdict))
+	end
+
+	nothing
+end
+
+function remove_empty_docs!(corp::Corpus)
+	"Documents with no terms are removed from the corpus."
+
+	keep = Bool[length(doc.terms) > 0 for doc in corp]
+	corp.docs = corp[keep]
+
+	nothing
+end
+
+function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries."
+
+	if vocab
+		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+		for vkey in setdiff(doc_vkeys, keys(corp.vocab))
+			corp.vocab[vkey] = string(join(["#term", vkey]))
 		end
 	end
+
 	if users
-		docukeys = Set(vcat([doc.readers for doc in corp]...))
-		for ukey in setdiff(docukeys, keys(corp.users))
-			corp.users[ukey] = string(join(["#user",ukey]))
-		end
-	end
-	nothing
-end
-
-function cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Integer=1)
-	lexkeys = keys(corp.lex)
-	userkeys = keys(corp.users)
-	bogusdocs = Int[]
-	for (d, doc) in enumerate(corp)
-		if lex
-			for j in doc.terms
-				if !(j in lexkeys)
-					push!(bogusdocs, d)
-					break
-				end
-			end
-		end
-
-		if users & !(d in bogusdocs)
-			for u in doc.readers
-				if !(u in userkeys)
-					push!(bogusdocs, d)
-					break
-				end
-			end
-		end
-
-		if (len > 1) & !(d in bogusdocs)
-			if length(doc) < len
-				push!(bogusdocs, d)
-			end
-		end
-
-		if isempty(doc.terms) & !(d in bogusdocs)
-			push!(bogusdocs, d)
+		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
+		for ukey in setdiff(doc_ukeys, keys(corp.users))
+			corp.users[ukey] = string(join(["#user", ukey]))
 		end
 	end
 
-	deleteat!(corp, bogusdocs)
 	nothing
 end
 
-function fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, abr::Integer=1, len::Integer=1, alphabetize::Bool=true)
-	println("Abridging corpus..."); abridgecorp!(corp, stop=stop, order=order, abr=abr)
-	println("Trimming corpus..."); trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
-	println("Culling corpus..."); cullcorp!(corp, len=len)	
-	println("Compacting corpus..."); compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
+function fix_corp!(corp::Corpus, pad::Bool=false)
+	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
+
+	if pad
+		pad_corpus!(corp)
+	else
+		trim_docs!(corp)
+	end
+
+	compact_corp!(corp)
 	nothing
 end
-
-Base.length(doc::Document) = length(doc.terms)
-Base.size(doc::Document) = sum(doc.counts)
-Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
 
 Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.lex)) lex\n * $(length(corp.users)) users")
 Base.start(corp::Corpus) = 1

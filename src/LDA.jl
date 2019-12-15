@@ -154,7 +154,7 @@ function Elogqz(model::LDA, d::Int)
 end
 
 function update_elbo!(model::LDA, d::Int)
-	"Update the evidelnce lower bound."
+	"Update the evidence lower bound."
 
 	model.elbo = 0
 	for d in 1:model.M
@@ -228,7 +228,7 @@ function update_phi!(model::LDA, d::Int)
 end
 
 function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
-	"Coordinate ascent algorithm for latent Dirichlet allocation variational Bayes model."
+	"Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm."
 
 	@assert all(.!isnegative.([tol, ntol, vtol]))
 	@assert all(ispositive.([iter, niter, viter, chkelbo]))
