@@ -86,13 +86,14 @@ Base.size(corp::Corpus) = (length(corp), length(corp.vocab), length(corp.users))
 Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), vocab=copy(corp.vocab), users=copy(corp.users))
 Base.lastindex(corp::Corpus) = length(corp)
 Base.enumerate(corp::Corpus) = enumerate(corp.docs)
+Base.unique(corp::Corpus) = unique(corp.docs)
 
 function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
 	@assert checkbounds(Bool, 1:length(corp), doc_indices) "Some document indices outside docs range."
 	
 	for d in doc_indices
 		doc = corp[d]
-		@juliadots "document $d\n"
+		@juliadots "Document $d\n"
 		if !isempty(doc.title)
 			@juliadots "$(doc.title)\n"
 		end
