@@ -1,6 +1,6 @@
-showdocs(model::TopicModel, ds::Vector{Int}) = showdocs(model.corp, ds)
+showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
 showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
-showdocs(model::TopicModel, ds::UnitRange{Int}) = showdocs(model.corp, collect(ds))
+showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, collect(doc_range))
 showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
 showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
 
@@ -78,10 +78,13 @@ mutable struct LDA <: TopicModel
 	topics::VectorList{Int}
 	alpha::Vector{Float64}
 	beta::Matrix{Float64}
-	gamma::VectorList{Float64}
-	phi::Matrix{Float64}
 	beta_old::Matrix{Float64}
 	beta_temp::Matrix{Float64}
+	gamma::VectorList{Float64}
+	Elogtheta::VectorList{Float64}
+	Elogtheta_old::VectorList{Float64}
+	phi::Matrix{Float64}
+
 	elbo::Float64
 
 	function LDA(corp::Corpus, K::Integer)
@@ -97,14 +100,15 @@ mutable struct LDA <: TopicModel
 
 		alpha = ones(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
-		gamma = [ones(K) for _ in 1:M]
-		phi = ones(K, N[1]) / K
 		beta_old = beta
 		beta_temp = zeros(K, V)
+		gamma = [ones(K) for _ in 1:M]
+		Elogtheta = [Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		Elogtheta_old = copy(Elogtheta)
+		phi = ones(K, N[1]) / K
 		elbo = 0
 	
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, gamma, phi, beta_old, beta_temp, elbo)
-		fixmodel!(model, check=false)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, eta_old, beta_temp, gamma, Elogtheta, Elogtheta_old, phi, elbo)
 		
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
@@ -118,7 +122,7 @@ end
 function Elogptheta(model::LDA)
 	"Compute the numerical value for E[log(P(theta))]."
 
-	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, model.Elogtheta[d])
 	return x
 end
 
@@ -126,7 +130,7 @@ function Elogpz(model::LDA, d::Int)
 	"Compute the numerical value for E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi * counts, digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	x = dot(model.phi * counts, model.Elogtheta[d])
 	return x
 end
 
@@ -159,7 +163,7 @@ function update_elbo!(model::LDA, d::Int)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi = model.beta_old[:,terms] .* exp.(digamma.(model.gamma_old[d]) - digamma(sum(model.gamma_old[d])))
+		model.phi = model.beta_old[:,terms] .* exp.(model.Elogtheta_old[d])
 		model.phi ./= sum(model.phi, 1)
 		model.elbo += Elogptheta(model) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 	end
@@ -171,7 +175,7 @@ function update_alpha!(model::LDA, niter::Integer, ntol::Real)
 	"Update alpha."
 	"Interior-point Newton method with log-barrier and back-tracking line search."
 
-	Elogtheta_sum = sum([digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M])
+	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
 	nu = model.K
 	for _ in 1:niter
@@ -214,7 +218,6 @@ function update_gamma!(model::LDA, d::Int)
 	"Analytic."
 
 	counts = model.corp[d].counts
-	model.gamma_old[d] = model.gamma[d]
 	@bumper model.gamma[d] = model.alpha + model.phi * counts	
 end
 
@@ -223,8 +226,13 @@ function update_phi!(model::LDA, d::Int)
 	"Analytic."
 
 	terms = model.corp[d].terms
-	model.phi = model.beta[:,terms] .* exp.(digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])))
+	model.phi = model.beta[:,terms] .* exp.(model.Elogtheta[d])
 	model.phi ./= sum(model.phi, 1)
+end
+
+function update_Elogtheta!(model::LDA, d::Int)
+	model.Elogtheta_old[d] = model.Elogtheta[d]
+	model.Elogtheta[d] = digamma.(model.gamma[d]) - digamma(sum(model.gamma[d]))
 end
 
 function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
@@ -239,7 +247,8 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 			for _ in 1:viter
 				update_phi!(model, d)
 				update_gamma!(model, d)
-				if norm(model.gamma[d] - model.gamma_old[d]) < vtol
+				update_Elogtheta!(model, d)
+				if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
 					break
 				end
 			end

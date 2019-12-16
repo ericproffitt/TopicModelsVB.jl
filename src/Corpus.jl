@@ -108,7 +108,7 @@ function showdocs(corp::Corpus, docs::Vector{Document})
 	showdocs(corp, doc_indices)
 end
 
-showdocs(corp::Corpus, doc_indices::UnitRange{<:Integer}) = showdocs(corp, collect(doc_indices))
+showdocs(corp::Corpus, doc_range::UnitRange{<:Integer}) = showdocs(corp, collect(doc_range))
 showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
 showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
 
