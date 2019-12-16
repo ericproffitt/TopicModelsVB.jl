@@ -89,6 +89,8 @@ Base.enumerate(corp::Corpus) = enumerate(corp.docs)
 Base.unique(corp::Corpus) = unique(corp.docs)
 
 function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
+	"Display document(s) in readable format."
+
 	@assert checkbounds(Bool, 1:length(corp), doc_indices) "Some document indices outside docs range."
 	
 	for d in doc_indices
@@ -97,7 +99,7 @@ function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
 		if !isempty(doc.title)
 			@juliadots "$(doc.title)\n"
 		end
-		println(join([corp.vocab[vkey] for vkey in corp[d].terms], " "), '\n')
+		println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in corp[d].terms], " "), '\n')
 	end
 end
 
@@ -252,8 +254,9 @@ function stop_corp!(corp::Corpus)
 
 	version = "v$(VERSION.major).$(VERSION.minor)"	
 
-	stopwords = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
-	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stopwords, collect(keys(corp.vocab)))
+	stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
+	#stop_words = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
+	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
 	
 	for doc in unique(corp)
 		keep = Bool[!(j in stop_keys) for j in doc.terms]
@@ -280,19 +283,19 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 
 	if users
 		ukeys = sort(collect(keys(corp.users)))
-		users = sort(collect(values(corp.users))))
+		users = sort(collect(values(corp.users)))
 
 		ukey_map = Dict(ukey_old => ukey_new for (ukey_old, ukey_new) in zip(ukeys, ukeys[sortperm(sortperm([corp.users[ukey] for ukey in ukeys]))]))
-		corp.users = Dict(ukey => user for (ukey, user) in zip(ukeys, user))
+		corp.users = Dict(ukey => user for (ukey, user) in zip(ukeys, users))
 
 		for doc in unique(corp)
-			doc.users = [ukey_map[ukey] for ukey in doc.users]
+			doc.readers = [ukey_map[r] for r in doc.readers]
 		end
 	end
 	nothing
 end
 
-function abridge_corp!(corp::Corpus, n::Integer)
+function abridge_corp!(corp::Corpus, n::Integer=0)
 	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
 
 	doc_vkeys = Set(vcat([doc.terms for doc in unique(corp)]...))
@@ -329,7 +332,7 @@ function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 		corp.users = Dict(ukey_map[ukey] => corp.users[ukey] for ukey in keys(corp.users))
 
 		for doc in unique(corp)
-			doc.users = [ukey_map[ukey] for ukey in doc.users]
+			doc.readers = [ukey_map[ukey] for ukey in doc.readers]
 		end
 	end
 	nothing
