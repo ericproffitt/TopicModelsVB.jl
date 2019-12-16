@@ -74,7 +74,7 @@ Base.deleteat!(corp::Corpus, doc_indices::UnitRange{Int}) = deleteat!(corp.docs,
 Base.getindex(corp::Corpus, d::Int) = getindex(corp.docs, d)
 Base.getindex(corp::Corpus, doc_indices::Vector{Int}) = getindex(corp.docs, doc_indices)
 Base.getindex(corp::Corpus, doc_indices::UnitRange{Int}) = getindex(corp.docs, doc_indices)
-Base.getindex(corp::Corpus, doc_indices::Vector{Bool}) = getindex(corp.docs, find(doc_indices))
+Base.getindex(corp::Corpus, doc_bool::Vector{Bool}) = getindex(corp.docs, doc_bool)
 Base.setindex!(corp::Corpus, doc::Document, d::Int) = setindex!(corp.docs, doc, d)
 Base.setindex!(corp::Corpus, docs::Vector{Document}, doc_indices::Vector{Int}) = setindex!(corp.docs, docs, doc_indices)
 Base.setindex!(corp::Corpus, docs::Vector{Document}, doc_indices::UnitRange{Int}) = setindex!(corp.docs, docs, doc_indices)
@@ -86,7 +86,7 @@ Base.size(corp::Corpus) = (length(corp), length(corp.vocab), length(corp.users))
 Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), vocab=copy(corp.vocab), users=copy(corp.users))
 Base.lastindex(corp::Corpus) = length(corp)
 Base.enumerate(corp::Corpus) = enumerate(corp.docs)
-Base.unique(corp::Corpus) = unique(corp.docs)
+Base.unique(corp::Corpus) = Corpus(docs=unique(corp.docs), vocab=corp.vocab, users=corp.users)
 
 function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
 	"Display document(s) in readable format."
@@ -421,15 +421,22 @@ function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	nothing
 end
 
-function fix_corp!(corp::Corpus, pad::Bool=false)
+function fix_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
 	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
+	"Contains optional keyword arguments."
 
-	if pad
-		pad_corpus!(corp)
-	else
-		trim_docs!(corp)
-	end
+	pad ? padcorp!(corp) : trimdocs!(corp)
 
+	remove_empty_docs 	&& remove_empty_docs!(corp)
+	condense 			&& condense_corp!(corp)
+	abridge > 0 		&& abridge_corp!(corp)
+	pad 				&& pad_corp!(corp, vocab=vocab, users=users)
+	trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
+
+	stop 				&& stop_corp!(corp)
+	alphabetize 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
+
+	trimdocs!(corp)
 	compact_corp!(corp)
 	nothing
 end
