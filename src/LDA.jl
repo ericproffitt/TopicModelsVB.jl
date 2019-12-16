@@ -1,10 +1,3 @@
-using DelimitedFiles
-using Crayons
-using SpecialFunctions
-using Distributions
-using LinearAlgebra
-using Random
-
 abstract type TopicModel end
 
 const EPSILON = eps(1e-14)

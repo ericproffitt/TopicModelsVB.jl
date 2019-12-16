@@ -1,8 +1,7 @@
 1. CTPF goes negative on first iteration
-2. pre-compute ELBOs, or derive formula for various M and K
 3. decide on fixmodel! function
-4. camelCase to under_score
 5. new to temp
+4. camelCase to under_score
 6. change UTF8String in README to String
 7. put package back in official listing
 8. smooth out fLDA and fCTM
@@ -10,6 +9,18 @@
 10. Use feather or paraquet or some fead read-in binary file format for default corpora in order to speed up their loading times.
 11. tab align C code
 12. write run tests for package, see issue #3
+
+2. pre-compute ELBOs, or derive formula for various M and K
+
+
+
+
+
+
+
+
+
+
 13. write detect topic code, see issue #2
 14. save/load trained models see issue #13
 15. change comments to new style formatting

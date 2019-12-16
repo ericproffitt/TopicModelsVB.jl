@@ -1,101 +1,20 @@
 ### Utilites for TopicModelsVB
-### Utilities for Julia (first).
-### Utilities for C++ (second).
 ### Eric Proffitt
 ### December 3, 2019
 
 ### The function eps() outputs the machine epsilon of the argument.
 ### Argument currently set to 1e-14.
-### Resulting EPSILON is approx. 1.6e-30
+### Resulting EPSILON is approx. 1.6e-30.
 const EPSILON = eps(1e-14)
 
-### Type alias for a vector of vectors.
-VectorList{T} = Vector{Vector{T}}
-
-### Type alias for a vector of matrices.
-MatrixList{T} = Vector{Matrix{T}}
-
-### Check if a real number is negative.
-isnegative(x::Real) = x < 0
-
-### Check if a real number is positive.
-ispositive(x::Real) = x > 0
-
-### The LogSumExp of a real-valued array.
-### Overflow safe.
-function logsumexp(x::Array{<:Real})
-	maxval = maximum(x)
-	return maxval + log(sum(exp.(x .- maxval)))
-end
-
-### Additive logistic function of a real-valued matrix.
-### Overflow safe.
-function additive_logistic(x::Matrix{<:Real}; dims::Integer)
-	@assert dims in [1, 2]
-
-	if dims == 1
-		x = x .- [maximum(x[:,j]) for j in 1:size(x, 2)]'
-		x = exp.(x) ./ sum(exp.(x), dims=1)
-
-	else
-		x = x .- [maximum(x[i,:]) for i in 1:size(x, 1)]
-		x = exp.(x) ./ sum(exp.(x), dims=2)
-	end
-
-	return x
-end
-
-### Additive logistic function of a real-valued vector.
-### Overflow safe.
-function additive_logistic(x::Vector{<:Real})
-	x = x .- maximum(x)
-	return exp.(x) / sum(exp.(x))
-end
-
-### Additive logistic function of a real-valued Matrix.
-### Overflow safe.
-function additive_logistic(x::Matrix{<:Real})
-	x = x .- maximum(x)
-	return exp.(x) / sum(exp.(x))
-end
-
-### Extend the functionality of the isprobvec function in the Distributions Pkg.
-### Add row and column-wise functionality for isprobvec on real-valued matrices.
-function Distributions.isprobvec(P::Matrix{<:Real}; dims::Integer)
-	@assert dims in [1, 2]
-
-	if dims == 1
-		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
-
-	else
-		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
-	end
-
-	return x
-end
-
-#function Distributions.Categorical(p::Vector{Float32})
-#	@assert isapprox(sum(p), 1)
-#	p = map(Float64, p)
-#	p /= sum(p)
-#	return Categorical(p)
-#end
-
-#function Distributions.Multinomial(n::Integer, p::Vector{Float32})
-#	@assert isapprox(sum(p), 1)
-#	p = map(Float64, p)
-#	p /= sum(p)
-#	return Multinomial(n, p)
-#end
-
-### EPSILON32 is 1e-30
+### EPSILON32 is 1e-30.
 const EPSILON32 = "0.000000000000000000000000000001f"
 
 ### Numerical approximation to the digamma function.
 ### Based on eq. (12), without looking at the accompanying source
 ### code, of: K. S. Kölbig, "Programs for computing the logarithm of
 ### the gamma function, and the digamma function, for complex
-### argument," Computer Phys. Commun.  vol. 4, pp. 221–226 (1972).
+### argument," Computer Phys. Commun. vol. 4, pp. 221–226 (1972).
 const DIGAMMA_cpp =
 """
 inline float
@@ -134,10 +53,7 @@ digamma(float x)
 const RREF_cpp =
 """
 inline void
-rref(	long K,
-		long D,
-		global float *A,
-		global float *B)
+rref(long K, long D, global float *A, global float *B)
 			
 		{
 		for (long j=0; j<K; j++)
@@ -197,9 +113,7 @@ rref(	long K,
 const NORM2_cpp =
 """
 inline float
-norm2(	long K,
-		long d,
-		global float *x)
+norm2(long K, long d, global float *x)
 		
 		{
 		float acc = 0.0f;
@@ -210,3 +124,73 @@ norm2(	long K,
 		return sqrt(acc);
 		}
 		"""
+
+"Type alias for a vector of vectors."
+VectorList{T} = Vector{Vector{T}}
+
+"Type alias for a vector of matrices."
+MatrixList{T} = Vector{Matrix{T}}
+
+"Check if a real number is negative."
+isnegative(x::Real) = x < 0
+
+"Check if a real number is positive."
+ispositive(x::Real) = x > 0
+
+function logsumexp(x::Array{<:Real})
+	"The LogSumExp of a real-valued array."
+	"Overflow safe."
+
+	maxval = maximum(x)
+	return maxval + log(sum(exp.(x .- maxval)))
+end
+
+function additive_logistic(x::Matrix{<:Real}; dims::Integer)
+	"Additive logistic function of a real-valued matrix."
+	"Overflow safe."
+
+	@assert dims in [1, 2]
+
+	if dims == 1
+		x = x .- [maximum(x[:,j]) for j in 1:size(x, 2)]'
+		x = exp.(x) ./ sum(exp.(x), dims=1)
+
+	else
+		x = x .- [maximum(x[i,:]) for i in 1:size(x, 1)]
+		x = exp.(x) ./ sum(exp.(x), dims=2)
+	end
+
+	return x
+end
+
+function additive_logistic(x::Vector{<:Real})
+	"Additive logistic function of a real-valued vector."
+	"Overflow safe."
+
+	x = x .- maximum(x)
+	return exp.(x) / sum(exp.(x))
+end
+
+function additive_logistic(x::Matrix{<:Real})
+	"Additive logistic function of a real-valued Matrix."
+	"Overflow safe."
+
+	x = x .- maximum(x)
+	return exp.(x) / sum(exp.(x))
+end
+
+function Distributions.isprobvec(P::Matrix{<:Real}; dims::Integer)
+	"Extend the functionality of the isprobvec function in the Distributions Pkg."
+	"Add row and column-wise functionality for isprobvec on real-valued matrices."
+
+	@assert dims in [1, 2]
+
+	if dims == 1
+		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
+
+	else
+		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
+	end
+
+	return x
+end
