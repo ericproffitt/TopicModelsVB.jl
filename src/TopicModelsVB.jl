@@ -6,6 +6,7 @@ using SpecialFunctions
 using LinearAlgebra
 using Distributions
 using OpenCL
+using Random
 
 export VectorList, MatrixList
 export Document, Corpus

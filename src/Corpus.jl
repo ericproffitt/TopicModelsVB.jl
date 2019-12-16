@@ -2,6 +2,34 @@
 ### Eric Proffitt
 ### December 3, 2019
 
+macro juliadots(str::String)
+	"Print Julia dots before bolded string output."
+	"For vanilla strings."
+
+	expr = :(	
+			print(Crayon(foreground=:red, bold=true), " ●");
+			print(Crayon(foreground=:green, bold=true), "●");
+			print(Crayon(foreground=:blue, bold=true), "● ");
+			print(Crayon(foreground=:white, bold=true), $str);
+			)
+	
+	return expr
+end
+
+macro juliadots(expr::Expr)
+	"Print Julia dots before bolded string output."
+	"For interpolated strings."
+
+	expr = :(	
+			print(Crayon(foreground=:red, bold=true), " ●");
+			print(Crayon(foreground=:green, bold=true), "●");
+			print(Crayon(foreground=:blue, bold=true), "● ");
+			print(Crayon(foreground=:white, bold=true), :($($expr)))
+			)
+	
+	return expr
+end
+
 mutable struct Document
 	"Document mutable struct"
 
@@ -425,7 +453,7 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp
 	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
 	"Contains optional keyword arguments."
 
-	pad ? pad_corp!(corp) : trim_docs!(corp)
+	pad_corp ? pad_corp!(corp) : trim_docs!(corp)
 
 	remove_empty_docs 	&& remove_empty_docs!(corp)
 	condense_corp 		&& condense_corp!(corp)
