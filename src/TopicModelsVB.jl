@@ -1,5 +1,7 @@
 module TopicModelsVB
 
+using DelimitedFiles
+using Crayons
 using SpecialFunctions
 using Distributions
 using OpenCL

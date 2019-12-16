@@ -2,9 +2,10 @@
 ### Eric Proffitt
 ### December 3, 2019
 
-### Document mutable struct.
 mutable struct Document
-	"terms:   A vector{Int} containing keys for the Corpus lex Dict."
+	"Document mutable struct"
+
+	"terms:   A vector{Int} containing keys for the Corpus vocab Dict."
 	"counts:  A Vector{Int} denoting the counts of each term in the Document."
 	"readers: A Vector{Int} denoting the keys for the Corpus users Dict."
 	"ratings: A Vector{Int} denoting the ratings for each reader in the Document."
@@ -31,10 +32,11 @@ end
 ### Document outer constructor for non-kwarg terms initialization.
 Document(terms) = Document(terms=terms)
 
-### Corpus mutable struct.
 mutable struct Corpus
+	"Corpus mutable struct."
+
 	"docs:  A Vector{Document} containing the documents which belong to the Corpus."
-	"lex:   A Dict{Int, String} containing a mapping term Int (key) -> term String (value)."
+	"vocab:   A Dict{Int, String} containing a mapping term Int (key) -> term String (value)."
 	"users: A Dict{Int, String} containing a mapping user Int (key) -> user String (value)."
 
 	docs::Vector{Document}
@@ -48,7 +50,7 @@ mutable struct Corpus
 		all(ispositive.(collect(keys(vocab)))) || throw(ArgumentError("All vocab keys must be positive integers."))
 		all(ispositive.(collect(keys(users)))) || throw(ArgumentError("All user keys must be positive integers."))
 
-		corp = new(docs, lex, users)
+		corp = new(docs, vocab, users)
 		return corp
 	end
 end
@@ -58,20 +60,75 @@ Base.length(doc::Document) = length(doc.terms)
 Base.size(doc::Document) = sum(doc.counts)
 Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
 
-function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.vocab)) vocab\n * $(length(corp.users)) users")
+Base.iterate(corp::Corpus, d=1) = Base.iterate(corp.docs, d)
+Base.push!(corp::Corpus, doc::Document) = push!(corp.docs, doc)
+Base.pop!(corp::Corpus) = pop!(corp.docs)
+Base.pushfirst!(corp::Corpus, doc::Document) = pushfirst!(corp.docs, doc)
+Base.pushfirst!(corp::Corpus, docs::Vector{Document}) = pushfirst!(corp.docs, docs)
+Base.popfirst!(corp::Corpus) = popfirst!(corp.docs)
+Base.insert!(corp::Corpus, d::Int, doc::Document) = insert!(corp.docs, d, doc)
+Base.deleteat!(corp::Corpus, d::Int) = deleteat!(corp.docs, d)
+Base.deleteat!(corp::Corpus, doc_indices::Vector{Int}) = deleteat!(corp.docs, doc_indices)
+Base.deleteat!(corp::Corpus, doc_indices::UnitRange{Int}) = deleteat!(corp.docs, doc_indices)
+Base.getindex(corp::Corpus, d::Int) = getindex(corp.docs, d)
+Base.getindex(corp::Corpus, doc_indices::Vector{Int}) = getindex(corp.docs, doc_indices)
+Base.getindex(corp::Corpus, doc_indices::UnitRange{Int}) = getindex(corp.docs, doc_indices)
+Base.getindex(corp::Corpus, doc_indices::Vector{Bool}) = getindex(corp.docs, find(doc_indices))
+Base.setindex!(corp::Corpus, doc::Document, d::Int) = setindex!(corp.docs, doc, d)
+Base.setindex!(corp::Corpus, docs::Vector{Document}, doc_indices::Vector{Int}) = setindex!(corp.docs, docs, doc_indices)
+Base.setindex!(corp::Corpus, docs::Vector{Document}, doc_indices::UnitRange{Int}) = setindex!(corp.docs, docs, doc_indices)
+Base.findfirst(corp::Corpus, doc::Document) = findfirst(corp.docs, doc)
+Base.findall(corp::Corpus, docs::Vector{Document}) = findall((in)corp.docs, docs)
+Base.findall(corp::Corpus, doc::Document) = findall(corp, [doc])
+Base.length(corp::Corpus) = length(corp.docs)
+Base.size(corp::Corpus) = (length(corp), length(corp.vocab), length(corp.users))
+Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), vocab=copy(corp.vocab), users=copy(corp.users))
+Base.lastindex(corp::Corpus) = length(corp)
+Base.enumerate(corp::Corpus) = enumerate(corp.docs)
+
+function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
+	@assert checkbounds(Bool, 1:length(corp), doc_indices) "Some document indices outside docs range."
+	
+	for d in doc_indices
+		doc = corp[d]
+		@juliadots "document $d\n"
+		if !isempty(doc.title)
+			@juliadots "$(doc.title)\n"
+		end
+		println(join([corp.vocab[vkey] for vkey in corp[d].terms], " "), '\n')
+	end
+end
+
+function showdocs(corp::Corpus, docs::Vector{Document})
+	doc_indices = findall(corp, docs)
+	showdocs(corp, doc_indices)
+end
+
+showdocs(corp::Corpus, doc_indices::UnitRange{<:Integer}) = showdocs(corp, collect(doc_indices))
+showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
+showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
+
+getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
+getusers(corp::Corpus) = sort(collect(values(corp.users)))
+
+function readcorp(;docfile::AbstractString="", vocabfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+	"Load a Corpus object from text file(s)."
+
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
 	(!isempty(docfile) | isempty(titlefile)) || warn("No docfile, titles will not be assigned.")
 
 	corp = Corpus()
 	if !isempty(docfile)
 		docs = open(docfile)
-		doc_kwargs = [:counts, :readers, :ratings]	
+		doc_kwargs = [:terms, :counts, :readers, :ratings]	
 		
-		for (d, doc_block) in enumerate(partition(readlines(docs), counts + readers + ratings + 1))
-			try
-				doc_lines = Vector{Float64}[[parse(Float64, p) for p in split(line, delim)] for line in doc_block]			
-				doc_input = zip(doc_kwargs[[counts, readers, ratings]], doc_lines[2:end])
-				push!(corp, Document(doc_lines[1]; doc_input...))
+		for (d, doc_block) in enumerate(Iterators.partition(readlines(docs), counts + readers + ratings + 1))
+			try 
+				doc_lines = Vector{Int}[[parse(Int, p) for p in split(line, delim)] for line in doc_block]			
+				doc_input = zip(doc_kwargs[[true, counts, readers, ratings]], doc_lines)
+				push!(corp, Document(;doc_input...))
+			
 			catch
 				error("Document $d beginning on line $((d - 1) * (counts + readers + ratings) + d) failed to load.")
 			end
@@ -81,9 +138,9 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		warn("No docfile, topic models cannot be trained without documents.")
 	end
 
-	if !isempty(lexfile)
-		vocab = readdlm(lexfile, '\t', comments=false)
-		lkeys = vocab[:,1]
+	if !isempty(vocabfile)
+		vocab = readdlm(vocabfile, '\t', comments=false)
+		vkeys = vocab[:,1]
 		terms = [string(j) for j in vocab[:,2]]
 		corp.vocab = Dict{Int, String}(zip(vkeys, terms))
 		@assert all(ispositive.(collect(keys(corp.vocab))))
@@ -102,6 +159,48 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		for (d, doc) in enumerate(corp)
 			doc.title = titles[d]
 		end
+	end
+
+	return corp
+end
+
+function readcorp(corp_symbol::Symbol)
+	"Shortcuts for prepackaged corpora."
+
+	version = "v$(VERSION.major).$(VERSION.minor)"
+
+	if corp_symbol == :nsf
+		docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfdocs.txt"
+		vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfvocab.txt"
+		titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsftitles.txt"
+		corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
+
+	elseif corp_symbol == :citeu
+		docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeudocs.txt"
+		vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuvocab.txt"
+		userfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuusers.txt"
+		titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeutitles.txt"
+		corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
+
+	#if corp_symbol == :nsf
+	#	docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfdocs.txt"
+	#	vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfvocab.txt"
+	#	titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsftitles.txt"
+	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
+
+	#elseif corp_symbol == :citeu
+	#	docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeudocs.txt"
+	#	vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuvocab.txt"
+	#	userfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuusers.txt"
+	#	titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeutitles.txt"
+	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
+		
+		# why was this necessary?
+		#padcorp!(corp)
+
+	else
+		println("Included corpora:\n:nsf\n:citeu")
+		corp = nothing
 	end
 
 	return corp
@@ -329,90 +428,4 @@ function fix_corp!(corp::Corpus, pad::Bool=false)
 
 	compact_corp!(corp)
 	nothing
-end
-
-Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.lex)) lex\n * $(length(corp.users)) users")
-Base.start(corp::Corpus) = 1
-Base.next(corp::Corpus, d::Int) = corp.docs[d], d + 1
-Base.done(corp::Corpus, d::Int) = length(corp.docs) == d - 1
-Base.push!(corp::Corpus, doc::Document) = push!(corp.docs, doc)
-Base.pop!(corp::Corpus) = pop!(corp.docs)
-Base.unshift!(corp::Corpus, doc::Document) = unshift!(corp.docs, doc)
-Base.unshift!(corp::Corpus, docs::Vector{Document}) = unshift!(corp.docs, docs)
-Base.shift!(corp::Corpus) = shift!(corp.docs)
-Base.insert!(corp::Corpus, d::Int, doc::Document) = insert!(corp.docs, d, doc)
-Base.deleteat!(corp::Corpus, d::Int) = deleteat!(corp.docs, d)
-Base.deleteat!(corp::Corpus, ds::Vector{Int}) = deleteat!(corp.docs, ds)
-Base.deleteat!(corp::Corpus, ds::UnitRange{Int}) = deleteat!(corp.docs, ds)
-Base.getindex(corp::Corpus, d::Int) = getindex(corp.docs, d)
-Base.getindex(corp::Corpus, ds::Vector{Int}) = getindex(corp.docs, ds)
-Base.getindex(corp::Corpus, ds::UnitRange{Int}) = getindex(corp.docs, ds)
-Base.getindex(corp::Corpus, ds::Vector{Bool}) = getindex(corp.docs, find(ds))
-Base.setindex!(corp::Corpus, doc::Document, d::Int) = setindex!(corp.docs, doc, d)
-Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::Vector{Int}) = setindex!(corp.docs, docs, ds)
-Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::UnitRange{Int}) = setindex!(corp.docs, docs, ds)
-Base.findfirst(corp::Corpus, doc::Document) = findfirst(corp.docs, doc)
-Base.findin(corp::Corpus, docs::Vector{Document}) = findin(corp.docs, docs)
-Base.findin(corp::Corpus, doc::Document) = findin(corp, [doc])
-Base.length(corp::Corpus) = length(corp.docs)
-Base.size(corp::Corpus) = (length(corp), length(corp.lex), length(corp.users))
-Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), lex=copy(corp.lex), users=copy(corp.users))
-Base.endof(corp::Corpus) = length(corp)
-
-
-
-function showdocs{T<:Integer}(corp::Corpus, ds::Vector{<:Integer})
-	@assert checkbounds(Bool, 1:length(corp), ds) "Some document indices outside docs range."
-	
-	for d in ds
-		doc = corp[d]
-		@juliadots "doc $d\n"
-		if !isempty(doc.title)
-			@juliadots "$(doc.title)\n"
-		end
-		println(join([corp.lex[lkey] for lkey in corp[d].terms], " "), '\n')
-	end
-end
-
-function showdocs(corp::Corpus, docs::Vector{Document})
-	ds = findin(corp, docs)
-	showdocs(corp, ds)
-end
-
-showdocs(corp::Corpus, ds::UnitRange{<:Integer}) = showdocs(corp, collect(ds))
-showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
-showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
-
-getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
-getusers(corp::Corpus) = sort(collect(values(corp.users)))
-
-
-
-######################################
-### Pre-packaged Dataset Shortcuts ###
-######################################
-
-function readcorp(corp_symbol::Symbol)
-	version = "v$(VERSION.major).$(VERSION.minor)"
-
-	if corp_symbol == :nsf
-		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfdocs.txt"
-		lexfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsflex.txt"
-		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsftitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
-
-	elseif corp_symbol == :citeu
-		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeudocs.txt"
-		vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeulex.txt"
-		userfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuusers.txt"
-		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeutitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
-		padcorp!(corp)
-
-	else
-		println("Included corpora:\n:nsf\n:citeu")
-		corp = nothing
-	end
-
-	return corp
 end
