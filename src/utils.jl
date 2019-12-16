@@ -15,12 +15,6 @@ VectorList{T} = Vector{Vector{T}}
 ### Type alias for a vector of matrices.
 MatrixList{T} = Vector{Matrix{T}}
 
-### Print bold function.
-bold(str::AbstractString) = print_with_color(:bold, bold=true, str)
-
-### Print yellow function.
-yellow(str::AbstractString) = print_with_color(:yellow, bold=true, str)
-
 ### Check if a real number is negative.
 isnegative(x::Real) = x < 0
 
@@ -92,19 +86,6 @@ end
 #	p = map(Float64, p)
 #	p /= sum(p)
 #	return Multinomial(n, p)
-#end
-
-#function partition{T<:Any}(xs::Union{UnitRange{T}, Vector{T}}, n::Integer)
-#	@assert ispositive(n)
-
-#	q = div(length(xs), n)
-#	r = length(xs) - q*n
-#	p = typeof(xs)[xs[(n*i-n+1):(n*i)] for i in 1:q]
-#	if ispositive(r)
-#		push!(p, xs[(q*n+1):end])
-#	end
-
-#	return p
 #end
 
 ### EPSILON32 is 1e-30

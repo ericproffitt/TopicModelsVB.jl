@@ -233,12 +233,12 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	for k in 1:iter
 		for d in 1:model.M	
 			for _ in 1:viter
-				oldgamma = model.gamma[d]
+				#oldgamma = model.gamma[d]
 				update_phi!(model, d)
 				update_gamma!(model, d)
 				update_Elogtheta!(model, d)
-				if norm(oldgamma - model.gamma[d]) < vtol
-				#if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
+				#if norm(oldgamma - model.gamma[d]) < vtol
+				if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
 					break
 				end
 			end
