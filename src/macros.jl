@@ -6,10 +6,10 @@
 ### For vanilla strings.
 macro juliadots(str::String)
 	expr = :(	
-			print(Crayon(foreground=:red), " ●");
-			print(Crayon(foreground=:green), "●");
-			print(Crayon(foreground=:blue), "● ");
-			print(Crayon(foreground=:white, bold=true), $str)
+			print(Crayon(foreground=:red, bold=true), " ●");
+			print(Crayon(foreground=:green, bold=true), "●");
+			print(Crayon(foreground=:blue, bold=true), "● ");
+			print(Crayon(foreground=:white, bold=true), $str);
 			)
 	
 	return expr
@@ -19,9 +19,9 @@ end
 ### For interpolated strings.
 macro juliadots(expr::Expr)
 	expr = :(	
-			print(Crayon(foreground=:red), " ●");
-			print(Crayon(foreground=:green), "●");
-			print(Crayon(foreground=:blue), "● ");
+			print(Crayon(foreground=:red, bold=true), " ●");
+			print(Crayon(foreground=:green, bold=true), "●");
+			print(Crayon(foreground=:blue, bold=true), "● ");
 			print(Crayon(foreground=:white, bold=true), :($($expr)))
 			)
 	
