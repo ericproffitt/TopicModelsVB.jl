@@ -1,71 +1,31 @@
-showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
-showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
-showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, collect(doc_range))
-showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
-showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
+using DelimitedFiles
+using Crayons
+using SpecialFunctions
+using Distributions
+using LinearAlgebra
 
-getlex(model::TopicModel) = sort(collect(values(model.corp.lex)))
-getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
+abstract type TopicModel end
 
-Base.show(io::IO, model::LDA) = print(io, "Latent Dirichlet allocation model with $(model.K) topics.")
+const EPSILON = eps(1e-14)
 
-function checkELBO!(model::TopicModel, k::Int, chk::Bool, tol::Real)
-	converged = false
-	if chk
-		∆elbo = -(model.elbo - updateELBO!(model))
-		println(k, " ∆elbo: ", round(∆elbo, 3))
-		if abs(∆elbo) < tol
-			converged = true
-		end
-	end
+VectorList{T} = Vector{Vector{T}}
 
-	return converged
+MatrixList{T} = Vector{Matrix{T}}
+
+macro boink(expr::Expr)
+	expr = :(:($($expr)) .+ EPSILON)
+	return expr
 end
 
-function gendoc(model::AbstractLDA, a::Real=0.0)
-	@assert !isnegative(a)
+macro bumper(expr::Expr)
+	if (expr.head == :.) || (expr.head == :ref)
+		expr = :(:($($expr)) .+= EPSILON)
 	
-	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
-	theta = rand(Dirichlet(model.alpha))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.beta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
-	for _ in 1:C
-		z = rand(topicdist)
-		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
+	elseif expr.head == :(=)
+		expr = :(:($($(expr.args[1]))) = EPSILON .+ :($($(expr.args[2]))))
 	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
 
-	return Document(terms, counts=counts)
-end
-
-function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), cols::Integer=4)
-	@assert checkbounds(Bool, 1:model.V, N)
-	@assert checkbounds(Bool, 1:model.K, topics)
-	@assert ispositive(cols)
-	isa(topics, Vector) || (topics = [topics])
-	cols = min(cols, length(topics))
-
-	lex = model.corp.lex
-	maxjspacings = [maximum([length(lex[j]) for j in topic[1:N]]) for topic in model.topics]
-
-	for block in partition(topics, cols)
-		for j in 0:N
-			for (k, i) in enumerate(block)
-				if j == 0
-					jspacing = max(4, maxjspacings[i] - length("$i") - 2)
-					k == cols ? yellow("topic $i") : yellow("topic $i" * " "^jspacing)
-				else
-					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(lex[model.topics[i][j]]) + 4
-					k == cols ? print(lex[model.topics[i][j]]) : print(lex[model.topics[i][j]] * " "^jspacing)
-				end
-			end
-			println()
-		end
-		println()
-	end
+	return expr
 end
 
 mutable struct LDA <: TopicModel
@@ -84,13 +44,10 @@ mutable struct LDA <: TopicModel
 	Elogtheta::VectorList{Float64}
 	Elogtheta_old::VectorList{Float64}
 	phi::Matrix{Float64}
-
 	elbo::Float64
 
 	function LDA(corp::Corpus, K::Integer)
-		@assert ispositive(K)
-		@assert !isempty(corp)
-		checkcorp(corp)
+		ispositive(K) || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -108,21 +65,21 @@ mutable struct LDA <: TopicModel
 		phi = ones(K, N[1]) / K
 		elbo = 0
 	
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, eta_old, beta_temp, gamma, Elogtheta, Elogtheta_old, phi, elbo)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, gamma, Elogtheta, Elogtheta_old, phi, elbo)
 		
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
-			model.elbo += Elogptheta(model) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
+			model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 		end
 
 		return model
 	end
 end
 
-function Elogptheta(model::LDA)
+function Elogptheta(model::LDA, d::Int)
 	"Compute the numerical value for E[log(P(theta))]."
 
-	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, model.Elogtheta[d])
+	x = loggamma(sum(model.alpha)) - sum(loggamma.(model.alpha)) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
@@ -165,7 +122,7 @@ function update_elbo!(model::LDA, d::Int)
 		terms = model.corp[d].terms
 		model.phi = model.beta_old[:,terms] .* exp.(model.Elogtheta_old[d])
 		model.phi ./= sum(model.phi, 1)
-		model.elbo += Elogptheta(model) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
+		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 	end
 
 	return model.elbo
@@ -235,14 +192,13 @@ function update_Elogtheta!(model::LDA, d::Int)
 	model.Elogtheta[d] = digamma.(model.gamma[d]) - digamma(sum(model.gamma[d]))
 end
 
-function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
 	"Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm."
 
 	@assert all(.!isnegative.([tol, ntol, vtol]))
-	@assert all(ispositive.([iter, niter, viter, chkelbo]))
+	@assert all(ispositive.([iter, niter, viter, check_elbo]))
 
 	for k in 1:iter
-		chk = (k % chkelbo == 0)
 		for d in 1:model.M	
 			for _ in 1:viter
 				update_phi!(model, d)
@@ -256,10 +212,14 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		end
 		update_alpha!(model, niter, ntol)
 		update_beta!(model)
-		chk && update_elbo!(model)
-		
-		if checkELBO!(model, k, chk, tol)
-			break
+
+		if k % check_elbo == 0
+			delta_elbo = update_elbo!(model) - model.elbo
+			println(k, " ∆elbo: ", round(delta_elbo, 3))
+
+			if abs(delta_elbo) < tol
+				break
+			end
 		end
 	end
 

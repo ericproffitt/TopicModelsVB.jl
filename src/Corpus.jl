@@ -249,17 +249,18 @@ end
 ### The _doc functions only modify the Document objects attached the corpus, they do not modify the Corpus object.
 ### The exception to the above rule is the stop_corp! function, which removes stop words from both the Corpus vocab dictionary and associated keys in the documents.
 
-function stop_corp!(corp::Corpus)
-	"Filter stop words in the associated corpus."
+function abridge_corp!(corp::Corpus, n::Integer=0)
+	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
 
-	version = "v$(VERSION.major).$(VERSION.minor)"	
-
-	stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
-	#stop_words = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
-	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
+	doc_vkeys = Set(vcat([doc.terms for doc in unique(corp)]...))
+	vocab_count = Dict(Int(j) => 0 for j in doc_vkeys)
 	
+	for doc in unique(corp), (j, c) in zip(doc.terms, doc.counts)
+		vocab_count[j] += c
+	end
+
 	for doc in unique(corp)
-		keep = Bool[!(j in stop_keys) for j in doc.terms]
+		keep = Bool[vocab_count[j] > n for j in doc.terms]
 		doc.terms = doc.terms[keep]
 		doc.counts = doc.counts[keep]
 	end
@@ -295,24 +296,6 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	nothing
 end
 
-function abridge_corp!(corp::Corpus, n::Integer=0)
-	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
-
-	doc_vkeys = Set(vcat([doc.terms for doc in unique(corp)]...))
-	vocab_count = Dict(Int(j) => 0 for j in doc_vkeys)
-	
-	for doc in unique(corp), (j, c) in zip(doc.terms, doc.counts)
-		vocab_count[j] += c
-	end
-
-	for doc in unique(corp)
-		keep = Bool[vocab_count[j] > n for j in doc.terms]
-		doc.terms = doc.terms[keep]
-		doc.counts = doc.counts[keep]
-	end
-	nothing
-end
-
 function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	"Relabel vocab and/or user keys so that they form a unit range."
 
@@ -334,6 +317,66 @@ function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 		for doc in unique(corp)
 			doc.readers = [ukey_map[ukey] for ukey in doc.readers]
 		end
+	end
+	nothing
+end
+
+function condense_docs!(corp::Corpus)
+	"Ignore term order in documents."
+	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
+
+	for doc in unique(corp)
+		docdict = Dict(j => 0 for j in doc.terms)
+		for (j, c) in zip(doc.terms, doc.counts)
+			docdict[j] += c
+		end
+
+		doc.terms = collect(keys(docdict))
+		doc.counts = collect(values(docdict))
+	end
+	nothing
+end
+
+function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries."
+
+	if vocab
+		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+		for vkey in setdiff(doc_vkeys, keys(corp.vocab))
+			corp.vocab[vkey] = string(join(["#term", vkey]))
+		end
+	end
+
+	if users
+		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
+		for ukey in setdiff(doc_ukeys, keys(corp.users))
+			corp.users[ukey] = string(join(["#user", ukey]))
+		end
+	end
+	nothing
+end
+
+function remove_empty_docs!(corp::Corpus)
+	"Documents with no terms are removed from the corpus."
+
+	keep = Bool[length(doc.terms) > 0 for doc in corp]
+	corp.docs = corp[keep]
+	nothing
+end
+
+function stop_corp!(corp::Corpus)
+	"Filter stop words in the associated corpus."
+
+	version = "v$(VERSION.major).$(VERSION.minor)"	
+
+	stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
+	#stop_words = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
+	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
+	
+	for doc in unique(corp)
+		keep = Bool[!(j in stop_keys) for j in doc.terms]
+		doc.terms = doc.terms[keep]
+		doc.counts = doc.counts[keep]
 	end
 	nothing
 end
@@ -378,65 +421,21 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 	nothing
 end
 
-function condense_docs!(corp::Corpus)
-	"Ignore term order in documents."
-	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
-
-	for doc in unique(corp)
-		docdict = Dict(j => 0 for j in doc.terms)
-		for (j, c) in zip(doc.terms, doc.counts)
-			docdict[j] += c
-		end
-
-		doc.terms = collect(keys(docdict))
-		doc.counts = collect(values(docdict))
-	end
-	nothing
-end
-
-function remove_empty_docs!(corp::Corpus)
-	"Documents with no terms are removed from the corpus."
-
-	keep = Bool[length(doc.terms) > 0 for doc in corp]
-	corp.docs = corp[keep]
-	nothing
-end
-
-function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries."
-
-	if vocab
-		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
-		for vkey in setdiff(doc_vkeys, keys(corp.vocab))
-			corp.vocab[vkey] = string(join(["#term", vkey]))
-		end
-	end
-
-	if users
-		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
-		for ukey in setdiff(doc_ukeys, keys(corp.users))
-			corp.users[ukey] = string(join(["#user", ukey]))
-		end
-	end
-	nothing
-end
-
-function fix_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
+function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
 	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
 	"Contains optional keyword arguments."
 
-	pad ? padcorp!(corp) : trimdocs!(corp)
+	pad ? pad_corp!(corp) : trim_docs!(corp)
 
 	remove_empty_docs 	&& remove_empty_docs!(corp)
-	condense 			&& condense_corp!(corp)
-	abridge > 0 		&& abridge_corp!(corp)
-	pad 				&& pad_corp!(corp, vocab=vocab, users=users)
+	condense_corp 		&& condense_corp!(corp)
+	abridge_corp > 0 	&& abridge_corp!(corp)
+	pad_corp 			&& pad_corp!(corp, vocab=vocab, users=users)
 	trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
 
-	stop 				&& stop_corp!(corp)
-	alphabetize 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
+	stop_corp 			&& stop_corp!(corp)
+	alphabetize_corp 	&& alphabetize_corp!(corp, vocab=vocab, users=users)
 
-	trimdocs!(corp)
 	compact_corp!(corp)
 	nothing
 end

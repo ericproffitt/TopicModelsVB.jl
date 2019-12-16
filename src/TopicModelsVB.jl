@@ -3,6 +3,7 @@ module TopicModelsVB
 using DelimitedFiles
 using Crayons
 using SpecialFunctions
+using LinearAlgebra
 using Distributions
 using OpenCL
 

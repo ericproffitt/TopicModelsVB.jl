@@ -2,9 +2,10 @@
 ### Eric Proffitt
 ### December 3, 2019
 
-### Print Julia dots before bolded string output.
-### For vanilla strings.
 macro juliadots(str::String)
+	"Print Julia dots before bolded string output."
+	"For vanilla strings."
+
 	expr = :(	
 			print(Crayon(foreground=:red, bold=true), " ●");
 			print(Crayon(foreground=:green, bold=true), "●");
@@ -15,9 +16,10 @@ macro juliadots(str::String)
 	return expr
 end
 
-### Print Julia dots before bolded string output.
-### For interpolated strings.
 macro juliadots(expr::Expr)
+	"Print Julia dots before bolded string output."
+	"For interpolated strings."
+
 	expr = :(	
 			print(Crayon(foreground=:red, bold=true), " ●");
 			print(Crayon(foreground=:green, bold=true), "●");
@@ -28,23 +30,25 @@ macro juliadots(expr::Expr)
 	return expr
 end
 
-### Add EPSILON to a numerical value.
 macro boink(expr::Expr)
-	expr = :(:($($expr)) + EPSILON)
+	"Add EPSILON to a numerical variable or array."
+
+	expr = :(:($($expr)) .+ EPSILON)
 	return expr
 end
 
-### Add EPSILON to a numerical variable or array of numerical variables during variable assignment.
 macro bumper(expr::Expr)
+	"Add EPSILON to a numerical variable or array during variable assignment."
+
 	if (expr.head == :.) || (expr.head == :ref)
-		expr = :(:($($expr)) += EPSILON)
+		expr = :(:($($expr)) .+= EPSILON)
+	
 	elseif expr.head == :(=)
-		expr = :(:($($(expr.args[1]))) = EPSILON + :($($(expr.args[2]))))
+		expr = :(:($($(expr.args[1]))) = EPSILON .+ :($($(expr.args[2]))))
 	end
 
 	return expr
 end
-
 
 macro buf(args...)
 	if isa(args[1], Expr)
