@@ -267,7 +267,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 				update_lzeta!(model, d)
 				update_lambda!(model, d, niter, ntol)
 				update_vsq!(model, d, niter, ntol)
-				if norm(model.lambda_old[d] - model.lambda_old[d]) < vtol
+				if norm(model.lambda[d] - model.lambda_old[d]) < vtol
 					break
 				end
 			end
