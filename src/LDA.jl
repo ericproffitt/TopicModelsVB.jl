@@ -155,7 +155,7 @@ end
 
 function update_alpha!(model::LDA, niter::Integer, ntol::Real)
 	"Update alpha."
-	"Interior-point Newton method with log-barrier and back-tracking line search."
+	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
 	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 

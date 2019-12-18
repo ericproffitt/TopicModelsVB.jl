@@ -14,6 +14,7 @@
 21. deal with counts situation
 22. what to do with empty documents in corpus.
 17. make extended integers datatype so that chkelbo can be Z U {Inf}
+18. why is nu variable used in Newton's method for alpha in LDA but not vsq in CTM?
 
 
 

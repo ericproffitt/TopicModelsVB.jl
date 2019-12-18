@@ -130,7 +130,7 @@ end
 
 function update_alpha!(model::fLDA, niter::Integer, ntol::Real)
 	"Update alpha."
-	"Interior-point Newton method with log-barrier and back-tracking line search."
+	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
 	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
@@ -228,6 +228,8 @@ function update_tau!(model::fLDA, d::Int)
 end
 
 function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
+	"Coordinate ascent optimization procedure for filtered latent Dirichlet allocation variational Bayes algorithm."
+
 	@assert all(.!isnegative.([tol, ntol, vtol]))
 	@assert all(ispositive.([iter, niter, viter]))
 

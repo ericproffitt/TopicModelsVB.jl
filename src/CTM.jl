@@ -9,19 +9,18 @@ mutable struct CTM <: TopicModel
 	mu::Vector{Float64}
 	sigma::Matrix{Float64}
 	beta::Matrix{Float64}
+	beta_old::Matrix{Float64}
+	beta_temp::Matrix{Float64}
 	lambda::VectorList{Float64}
+	lambda_old::VectorList{Float64}
 	vsq::VectorList{Float64}
 	lzeta::Float64
 	phi::Matrix{Float64}
 	invsigma::Matrix{Float64}
-	newbeta::Matrix{Float64}
 	elbo::Float64
-	newelbo::Float64
 
 	function CTM(corp::Corpus, K::Integer)
-		@assert ispositive(K)
-		@assert !isempty(corp)
-		checkcorp(corp)
+		ispositive(K) || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -32,130 +31,165 @@ mutable struct CTM <: TopicModel
 		mu = zeros(K)
 		sigma = eye(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
+		beta_old = copy(beta)
+		beta_temp = zeros(K, V)
 		lambda = [zeros(K) for _ in 1:M]
+		lambda_old = copy(lambda)
 		vsq = [ones(K) for _ in 1:M]
 		lzeta = 0.5
 		phi = ones(K, N[1]) / K
+		elbo=0
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, beta, lambda, vsq, lzeta, phi)
-		fixmodel!(model, check=false)
-
-		for d in 1:M
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, lzeta, phi, elbo)
+		
+		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
-			updateNewELBO!(model, d)
+			model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)
 		end
-		model.phi = ones(K, N[1]) / K	
-		updateELBO!(model)
+
 		return model
 	end
 end
 
 function Elogpeta(model::CTM, d::Int)
+	"Compute the numerical value for E[log(P(eta))]."
+
 	x = 0.5 * (logdet(model.invsigma) - model.K * log(2pi) - dot(diag(model.invsigma), model.vsq[d]) - dot(model.lambda[d] - model.mu, model.invsigma * (model.lambda[d] - model.mu)))
 	return x
 end
 
 function Elogpz(model::CTM, d::Int)
+	"Compute the numerical value for E[log(P(z))]."
+
 	counts = model.corp[d].counts
 	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.lzeta
 	return x
 end
 
 function Elogpw(model::CTM, d::Int)
+	"Compute the numerical value for E[log(P(w))]."
+
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
 function Elogqeta(model::CTM, d::Int)
+	"Compute the numerical value for E[log(q(eta))]."
+
 	x = -entropy(MvNormal(model.lambda[d], diagm(model.vsq[d])))
 	return x
 end
 
 function Elogqz(model::CTM, d::Int)
+	"Compute the numerical value for E[log(q(z))]."
+
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
-function updateELBO!(model::CTM)
-	model.elbo = model.newelbo
-	model.newelbo = 0
+function update_elbo!(model::CTM)
+	"Update the evidence lower bound."
+
+	model.elbo = 0
+	for d in 1:model.M
+		terms = model.corp[d].terms
+		model.phi = additive_logistic(log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
+		model.phi ./= sum(model.phi, dims=1)
+		model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)
+	end
+
 	return model.elbo
 end
 
-function updateNewELBO!(model::CTM, d::Int)
-	model.newelbo += (Elogpeta(model, d)
-					+ Elogpz(model, d)
-					+ Elogpw(model, d)
-					- Elogqeta(model, d)
-					- Elogqz(model, d))					 
-end
+function update_mu!(model::CTM)
+	"Update mu."
+	"Analytic."
 
-function updateMu!(model::CTM)
 	model.mu = sum(model.lambda) / model.M
 end
 
-function updateSigma!(model::CTM)
+function update_sigma!(model::CTM)
+	"Update sigma."
+	"Analytic"
+
 	model.sigma = diagm(sum(model.vsq)) / model.M + Base.covm(hcat(model.lambda...), model.mu, 2, false)
 	model.invsigma = inv(model.sigma)
 end
 
-function updateBeta!(model::CTM)
-	model.beta = model.newbeta ./ sum(model.newbeta, 2)
-	model.newbeta = zeros(model.K, model.V)
+function update_beta!(model::CTM)
+	"Reset beta variables."
+
+	model.beta_old = model.beta
+	model.beta = model.beta_temp ./ sum(model.beta_temp, dims=2)
+	model.beta_temp = zeros(model.K, model.V)
 end
 
-function updateNewBeta!(model::CTM, d::Int)
+function update_beta!(model::CTM, d::Int)
+	"Update beta."
+	"Analytic."
+
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.newbeta[:,terms] += model.phi .* counts'
+	model.beta_temp[:,terms] += model.phi .* counts'
 end
 
-function updateLambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
-	"Newton's method."
-
-	counts = model.corp[d].counts
-	for _ in 1:niter
-		lambdaGrad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta)
-		lambdaInvHess = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))) * model.sigma
-		model.lambda[d] -= lambdaInvHess * lambdaGrad
-		if norm(lambdaGrad) < ntol
-			break
-		end
-	end
-end
-
-function updateVsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
-	"Newton's method."
+function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
+	"Update Vsq."
+	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
 	for _ in 1:niter
 		rho = 1.0
-		vsqGrad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) - 1 ./ model.vsq[d])
-		vsqInvHess = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) + 0.5 ./ model.vsq[d].^2)
-		p = vsqInvHess .* vsqGrad
+		vsq_grad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta) - 1 ./ model.vsq[d])
+		vsq_invhess_diag = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta) + 0.5 ./ model.vsq[d].^2)
+		p = vsq_invhess_diag .* vsq_grad
 		
 		while minimum(model.vsq[d] - rho * p) <= 0
 			rho *= 0.5
 		end	
 		model.vsq[d] -= rho * p
 		
-		if norm(vsqGrad) < ntol
+		if norm(vsq_grad) < ntol
 			break
 		end
 	end
 	@bumper model.vsq[d]
 end
 
-function updateLzeta!(model::CTM, d::Int)
+function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
+	"Update lambda."
+	"Newton's method."
+
+	counts = model.corp[d].counts
+	for _ in 1:niter
+		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta)
+		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta))) * model.sigma
+		model.lambda[d] -= lambda_invhess * lambda_grad
+		
+		if norm(lambda_grad) < ntol
+			break
+		end
+	end
+end
+
+function update_lzeta!(model::CTM, d::Int)
+	"Update lzeta."
+	"Analytic."
+
 	model.lzeta = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
-function updatePhi!(model::CTM, d::Int)
+function update_phi!(model::CTM, d::Int)
+	"Update phi."
+	"Analytic."
+
 	terms = model.corp[d].terms
-	model.phi = addlogistic(log.(model.beta[:,terms]) .+ model.lambda[d], 1)
+	model.phi = additive_logistic(log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
 function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+	"Coordinate ascent optimization procedure for correlated topic model variational Bayes algorithm."
+
 	@assert all(.!isnegative.([tol, ntol, vtol]))
 	@assert all(ispositive.([iter, niter, viter, chkelbo]))
 	
