@@ -139,6 +139,8 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	"Update lambda."
 	"Newton's method."
 
+	model.lambda_old[d] = model.lambda[d]
+
 	counts = model.corp[d].counts
 	for _ in 1:niter
 		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta)
