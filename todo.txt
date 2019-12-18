@@ -9,6 +9,7 @@
 10. Use feather or paraquet or some fead read-in binary file format for default corpora in order to speed up their loading times.
 11. tab align C code
 12. write run tests for package, see issue #3
+13. include perplexity function (possibly, not sure if I want to do this)
 
 2. pre-compute ELBOs, or derive formula for various M and K
 21. deal with counts situation

@@ -418,7 +418,7 @@ function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	end
 
 	if users
-		doc_ukeys = Set(vcat([doc.terms for doc in corp]...))
+		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
 		corp.users = Dict(ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), doc_ukeys))
 	end
 	nothing
