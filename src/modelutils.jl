@@ -1,90 +1,84 @@
-#################################
-### General Display Functions ###
-#################################
+### Model utilites for TopicModelsVB
+### Eric Proffitt
+### December 3, 2019
 
-showdocs(model::TopicModel, ds::Vector{Int}) = showdocs(model.corp, ds)
+showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
 showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
-showdocs(model::TopicModel, ds::UnitRange{Int}) = showdocs(model.corp, collect(ds))
+showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, collect(doc_range))
 showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
 showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
 
-getlex(model::TopicModel) = sort(collect(values(model.corp.lex)))
+getlex(model::TopicModel) = sort(collect(values(model.corp.vocab)))
 getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
 
+### Display output for TopicModel objects.
 Base.show(io::IO, model::LDA) = print(io, "Latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::fLDA) = print(io, "Filtered latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::CTM) = print(io, "Correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::fCTM) = print(io, "Filtered correlated topic model with $(model.K) topics.")
-Base.show(io::IO, model::DTM) = print(io, "Dynamic topic model with $(model.K) topics and ∆ = $(model.delta).")
 Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")
 Base.show(io::IO, model::gpuLDA) = print(io, "GPU accelerated latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
+function update_buffer!(model::gpuLDA)
+	"Update gpuLDA model data in VRAM."
 
-
-##################################################################
-### Host-to-Buffer and Buffer-to-Host Functions for GPU Models ###
-##################################################################
-
-function updateBuf!(model::gpuLDA, b::Int)
-	b = b % model.B + 1
-
-	@buf b model.Npsums
-	@buf b model.Jpsums
-	@buf b model.terms
-	@buf b model.counts
-	@buf b model.words
-
-	@buf b model.phi
-	@buf b model.Elogtheta
+	@buffer model.Npsums
+	@buffer model.Jpsums
+	@buffer model.terms
+	@buffer model.counts
+	@buffer model.words
+	@buffer model.phi
+	@buffer model.Elogtheta
 end
 
-function updateBuf!(model::gpuCTM, b::Int)
-	b = b % model.B + 1
+function update_buffer!(model::gpuCTM)
+	"Update gpuCTM model data in VRAM."
 
-	@buf b model.C
-	@buf b model.Npsums
-	@buf b model.Jpsums
-	@buf b model.terms
-	@buf b model.counts
-	@buf b model.words
-
-	@buf b model.newtontemp
-	@buf b model.newtongrad
-	@buf b model.newtoninvhess
-
-	@buf b model.phi
+	@buffer model.C
+	@buffer model.Npsums
+	@buffer model.Jpsums
+	@buffer model.terms
+	@buffer model.counts
+	@buffer model.words
+	@buffer model.newtontemp
+	@buffer model.newtongrad
+	@buffer model.newtoninvhess
+	@buffer model.phi
 end
 
-function updateBuf!(model::gpuCTPF, b::Int)
-	b = b % model.B + 1
+function update_buffer!(model::gpuCTPF)
+	"Update gpuCTPF model data in VRAM."
 
-	@buf b model.Npsums
-	@buf b model.Jpsums
-	@buf b model.Rpsums
-	@buf b model.Ypsums
-	@buf b model.terms
-	@buf b model.counts
-	@buf b model.words
-	@buf b model.readers
-	@buf b model.ratings
-	@buf b model.views
-
-	@buf b model.phi
-	@buf b model.xi
+	@buffer model.Npsums
+	@buffer model.Jpsums
+	@buffer model.Rpsums
+	@buffer model.Ypsums
+	@buffer model.terms
+	@buffer model.counts
+	@buffer model.words
+	@buffer model.readers
+	@buffer model.ratings
+	@buffer model.views
+	@buffer model.phi
+	@buffer model.xi
 end
 
-function updateHost!(model::gpuLDA, b::Int)
+function update_host!(model::gpuLDA)
+	"Update gpuLDA model data in RAM."
+
 	@host model.alphabuf
 	@host model.betabuf
 	@host model.gammabuf
-	@host b model.phibuf
-	@host b model.Elogthetabuf
-	@host b model.Elogthetasumbuf
+	@host model.phibuf
+	@host model.Elogthetabuf
+	@host model.Elogthetasumbuf
 end
 
-function updateHost!(model::gpuCTM, b::Int)
+function update_host!(model::gpuCTM)
+	"Update gpuCTM model data in RAM."
+
 	@host model.mubuf
 	@host model.sigmabuf
 	@host model.invsigmabuf
@@ -92,10 +86,12 @@ function updateHost!(model::gpuCTM, b::Int)
 	@host model.lambdabuf
 	@host model.vsqbuf
 	@host model.lzetabuf
-	@host b model.phibuf
+	@host model.phibuf
 end
 
-function updateHost!(model::gpuCTPF, b::Int)
+function update_host!(model::gpuCTPF)
+	"Update gpuCTPF model data in RAM."
+
 	@host model.alefbuf
 	@host model.betbuf
 	@host model.gimelbuf
@@ -104,15 +100,9 @@ function updateHost!(model::gpuCTPF, b::Int)
 	@host model.vavbuf
 	@host model.zayinbuf
 	@host model.hetbuf
-	@host b model.phibuf
-	@host b model.xibuf
+	@host model.phibuf
+	@host model.xibuf
 end
-
-
-
-##########################################################################################################
-### Function for Aligning Auxiliary Data with Primary Data Coupled with Optional Primary Data Checking ###
-##########################################################################################################
 
 function fixmodel!(model::LDA; check::Bool=true)
 	if check
@@ -426,14 +416,14 @@ function fixmodel!(model::gpuLDA; check::Bool=true)
 	end
 		
 	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for j in model.terms[b]
 			J[b][j+1] += 1
 		end
 	end
 
 	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for j in 1:model.V
 			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
 		end
@@ -512,14 +502,14 @@ function fixmodel!(model::gpuCTM; check::Bool=true)
 	end
 		
 	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for j in model.terms[b]
 			J[b][j+1] += 1
 		end
 	end
 
 	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for j in 1:model.V
 			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
 		end
@@ -635,28 +625,28 @@ function fixmodel!(model::gpuCTPF; check::Bool=true)
 	end
 		
 	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for j in model.terms[b]
 			J[b][j+1] += 1
 		end
 	end
 
 	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for j in 1:model.V
 			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
 		end
 	end
 
 	Y = [zeros(Int, model.U) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for r in model.readers[b]
 			Y[b][r+1] += 1
 		end
 	end
 
 	model.Ypsums = [zeros(Int, model.U + 1) for _ in 1:model.B]
-	for b in 1:model.B
+	for in 1:model.B
 		for u in 1:model.U
 			model.Ypsums[b][u+1] = model.Ypsums[b][u] + Y[b][u]
 		end
@@ -709,27 +699,6 @@ function fixmodel!(model::gpuCTPF; check::Bool=true)
 	model.newelbo = 0
 	nothing
 end
-
-
-
-######################################################
-### Function for Updating the Evidence Lower Bound ###
-######################################################
-
-function checkELBO!(model::TopicModel, k::Int, chk::Bool, tol::Real)
-	converged = false
-	if chk
-		∆elbo = -(model.elbo - updateELBO!(model))
-		println(k, " ∆elbo: ", round(∆elbo, 3))
-		if abs(∆elbo) < tol
-			converged = true
-		end
-	end
-
-	return converged
-end
-
-
 
 #################################################################
 ### Functions for Generating Artificial Documents and Corpora ###

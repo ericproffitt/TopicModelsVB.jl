@@ -261,7 +261,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 	end
 
 	@bumper model.fbeta = model.beta .* (model.kappa' .<= 0)
-	model.fbeta ./= sum(model.fbeta, 2)
+	model.fbeta ./= sum(model.fbeta, dims=2)
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing
 end
