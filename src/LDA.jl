@@ -196,6 +196,9 @@ function update_beta!(model::LDA, d::Int)
 end
 
 function update_Elogtheta!(model::LDA, d::Int)
+	"Update E[log(theta)]."
+	"Analytic."
+
 	model.Elogtheta_old[d] = model.Elogtheta[d]
 	model.Elogtheta[d] = digamma.(model.gamma[d]) .- digamma(sum(model.gamma[d]))
 end
@@ -217,7 +220,7 @@ function update_phi!(model::LDA, d::Int)
 	model.phi ./= sum(model.phi, dims=1)
 end
 
-function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1, print_delta_elbo::Bool=true)
+function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
 	"Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm."
 
 	@assert all(.!isnegative.([tol, ntol, vtol]))
@@ -235,15 +238,12 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 			end
 			update_beta!(model, d)
 		end
-		update_alpha!(model, niter, ntol)
 		update_beta!(model)
+		update_alpha!(model, niter, ntol)
 
 		if k % check_elbo == 0
 			delta_elbo = -(model.elbo - update_elbo!(model))
-
-			if print_delta_elbo
-				println(k, " ∆elbo: ", round(delta_elbo, digits=3))
-			end
+			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
 
 			if abs(delta_elbo) < tol
 				break
