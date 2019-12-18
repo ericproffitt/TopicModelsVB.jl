@@ -201,8 +201,8 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 			for _ in 1:viter
 				update_phi!(model, d)
 				update_lzeta!(model, d)
-				update_lambda!(model, d, niter, ntol)
 				update_vsq!(model, d, niter, ntol)
+				update_lambda!(model, d, niter, ntol)
 				if norm(model.lambda[d] - model.lambda_old[d]) < vtol
 					break
 				end

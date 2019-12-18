@@ -269,5 +269,3 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 	nothing
 end
 
-Base.show(io::IO, model::fLDA) = print(io, "Filtered latent Dirichlet allocation model with $(model.K) topics.")
-
