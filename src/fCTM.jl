@@ -8,20 +8,23 @@ mutable struct fCTM <: TopicModel
 	topics::VectorList{Int}
 	mu::Vector{Float64}
 	sigma::Matrix{Float64}
+	invsigma::Matrix{Float64}
 	eta::Float64
 	beta::Matrix{Float64}
+	beta_old::Matrix{Float64}
+	beta_temp::Matrix{Float64}
 	fbeta::Matrix{Float64}
 	kappa::Vector{Float64}
+	kappa_old::Vector{Float64}
+	kappa_temp::Vector{Float64}
 	lambda::VectorList{Float64}
+	lambda_old::VectorList{Float64}
 	vsq::VectorList{Float64}
 	lzeta::Float64
-	tau::VectorList{Float64}
 	phi::Matrix{Float64}
-	invsigma::Matrix{Float64}
-	newbeta::Matrix{Float64}
-	newkappa::Vector{Float64}
+	tau::VectorList{Float64}
+	tau_old::VectorList{Float64}
 	elbo::Float64
-	newelbo::Float64
 
 	function fCTM(corp::Corpus, K::Integer)
 		@assert ispositive(K)
@@ -35,30 +38,32 @@ mutable struct fCTM <: TopicModel
 		topics = [collect(1:V) for _ in 1:K]
 
 		mu = zeros(K)
-		sigma = eye(K)
-		invsigma = eye(K)
+		sigma = Matrix(I, K, K)
+		invsigma = copy(sigma)
 		eta = 0.95
 		neweta = 0.0
 		beta = rand(Dirichlet(V, 1.0), K)'
-		newbeta = zeros(K, V)
+		beta_old = copy(beta)
+		beta_temp = zeros(K, V)
 		fbeta = beta
 		kappa = rand(Dirichlet(V, 1.0))
-		newkappa = zeros(V)
+		kappa_old = copy(kappa)
+		kappa_temp = zeros(V)
 		lambda = [zeros(K) for _ in 1:M]
+		lambda_old = copy(lambda)
 		vsq = [ones(K) for _ in 1:M]
 		lzeta = 0.0
-		tau = [fill(eta, N[d]) for d in 1:M]
 		phi = ones(K, N[1]) / K
+		tau = [fill(eta, N[d]) for d in 1:M]
+		tau_old = copy(tau)
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, eta, beta, fbeta, kappa, lambda, vsq, lzeta, tau, phi)
-		fixmodel!(model, check=false)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, eta, beta, beta_old, beta_temp, fbeta, kappa, kappa_old, kappa_temp, lambda, lambda_old, vsq, lzeta, phi, tau, tau_old, elbo)
 
-		for d in 1:M
+		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
-			updateNewELBO!(model, d)
+			model.elbo += Elogpeta(model, d) + Elogpc(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 		end
-		model.phi = ones(K, N[1]) / K	
-		updateELBO!(model)
+
 		return model
 	end
 end
@@ -70,8 +75,7 @@ end
 
 function Elogpc(model::fCTM, d::Int)
 	counts = model.corp[d].counts
-	y = dot(model.tau[d], counts)
-	x = log(@boink model.eta^y * (1 - model.eta)^(model.C[d] - y))
+	x = log(@boink model.eta^dot(model.tau[d], counts) * (1 - model.eta)^(model.C[d] - dot(model.tau[d], counts)))
 	return x
 end
 
@@ -83,7 +87,7 @@ end
 
 function Elogpw(model::fCTM, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 - model.tau[d], log.(@boink model.kappa[terms]))
+	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
 	return x
 end
 
@@ -104,140 +108,154 @@ function Elogqz(model::fCTM, d::Int)
 	return x
 end
 
-function updateELBO!(model::fCTM)
-	model.elbo = model.newelbo
-	model.newelbo = 0
+function update_elbo!(model::fCTM)
+	"Update the evidence lower bound."
+
+	model.elbo = 0
+	for d in 1:model.M
+		terms = model.corp[d].terms
+		model.phi = addlogistic(model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
+		model.phi ./= sum(model.phi, dims=1)
+		model.elbo += Elogpeta(model, d) + Elogpc(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqc(model, d) - Elogqz(model, d)
+	end
+
 	return model.elbo
 end
 
-function updateNewELBO!(model::fCTM, d::Int)
-	model.newelbo += (Elogpeta(model, d)
-					+ Elogpc(model, d)
-					+ Elogpz(model, d)
-					+ Elogpw(model, d)
-					- Elogqeta(model, d)
-					- Elogqc(model, d)
-					- Elogqz(model, d))					 
-end
-
-function updateMu!(model::fCTM)
+function update_mu!(model::fCTM)
 	model.mu = sum(model.lambda) / model.M
 end
 
-function updateSigma!(model::fCTM)
-	model.sigma = diagm(sum(model.vsq)) / model.M + Base.covm(hcat(model.lambda...), model.mu, 2, false)
+function update_sigma!(model::fCTM)
+	"Update sigma."
+	"Analytic"
+
+	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
 	model.invsigma = inv(model.sigma)
 end
 
-function updateEta!(model::fCTM)
+function update_eta!(model::fCTM)
 	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
 end
 
-function updateBeta!(model::fCTM)	
+function update_beta!(model::fCTM)	
 	model.beta = model.newbeta ./ sum(model.newbeta, 2)
 	model.newbeta = zeros(model.K, model.V)
 end
 
-function updateNewBeta!(model::fCTM, d::Int)	
+function update_beta!(model::fCTM, d::Int)	
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.newbeta[:,terms] += model.phi .* (model.tau[d] .* counts)'
 end
 
-function updateKappa!(model::fCTM)
+function update_kappa!(model::fCTM)
 	model.kappa = model.newkappa / sum(model.newkappa)
 	model.newkappa = zeros(model.V)
 end
 
-function updateNewKappa!(model::fCTM, d::Int)
+function update_kappa!(model::fCTM, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.newkappa[terms] += (1 - model.tau[d]) .* counts
+	model.newkappa[terms] += (1 .- model.tau[d]) .* counts
 end
 
-function updateLambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
+function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
+	"Update lambda."
 	"Newton's method."
+
+	model.lambda_old[d] = model.lambda[d]
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambdaGrad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta)
-		lambdaInvHess = -inv(eye(model.K) + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta))) * model.sigma
-		model.lambda[d] -= lambdaInvHess * lambdaGrad
-		if norm(lambdaGrad) < ntol
+		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta)
+		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta))) * model.sigma
+		model.lambda[d] -= lambda_invhess * lambda_grad
+		
+		if norm(lambda_grad) < ntol
 			break
 		end
 	end
 end
 
-function updateVsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
-	"Newton's method."
+function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
+	"Update vsq."
+	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
 	for _ in 1:niter
 		rho = 1.0
-		vsqGrad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) - 1 ./ model.vsq[d])
-		vsqInvHess = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] - model.lzeta) + 0.5 ./ model.vsq[d].^2)
-		p = vsqInvHess .* vsqGrad
+		vsq_grad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta) - 1 ./ model.vsq[d])
+		vsq_invhess_diag = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta) + 0.5 ./ model.vsq[d].^2)
+		p = vsq_invhess_diag .* vsq_grad
 		
 		while minimum(model.vsq[d] - rho * p) <= 0
 			rho *= 0.5
 		end	
 		model.vsq[d] -= rho * p
 		
-		if norm(vsqGrad) < ntol
+		if norm(vsq_grad) < ntol
 			break
 		end
 	end
 	@bumper model.vsq[d]
 end
 
-function updateLzeta!(model::fCTM, d::Int)
+function update_lzeta!(model::fCTM, d::Int)
 	model.lzeta = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
-function updateTau!(model::fCTM, d::Int)
+function update_phi!(model::fCTM, d::Int)
 	terms = model.corp[d].terms
-	model.tau[d] = model.eta ./ (@boink model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, 1))))
+	model.phi = addlogistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
-function updatePhi!(model::fCTM, d::Int)
+function update_tau!(model::fCTM, d::Int)
+	model.tau_old[d] = model.tau[d]
+
 	terms = model.corp[d].terms
-	model.phi = addlogistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], 1)
+	model.tau[d] = model.eta ./ (@boink model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, dims=1))))
 end
 
-function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)	
+	"Coordinate ascent optimization procedure for filtered correlated topic model variational Bayes algorithm."
+
 	@assert all(.!isnegative.([tol, ntol, vtol]))
-	@assert all(ispositive.([iter, niter, viter, chkelbo]))
+	@assert all(ispositive.([iter, niter, viter]))
 
 	for k in 1:iter
-		chk = (k % chkelbo == 0)
 		for d in 1:model.M
 			for _ in 1:viter
-				oldlambda = model.lambda[d]
-				updatePhi!(model, d)
-				updateLzeta!(model, d)
-				updateLambda!(model, d, niter, ntol)
-				updateVsq!(model, d, niter, ntol)
-				if norm(oldlambda - model.lambda[d]) < vtol
+				update_phi!(model, d)
+				update_lzeta!(model, d)
+				update_lambda!(model, d, niter, ntol)
+				update_vsq!(model, d, niter, ntol)
+				if norm(model.lambda_old[d] - model.lambda_old[d]) < vtol
 					break
 				end
 			end
-			updateTau!(model, d)
-			updateNewBeta!(model, d)
-			updateNewKappa!(model, d)
-			chk && updateNewELBO!(model, d)
+			update_tau!(model, d)
+			update_kappa!(model, d)
+			update_beta!(model, d)
 		end
-		updateMu!(model)
-		updateSigma!(model)
-		updateEta!(model)
-		updateBeta!(model)
-		updateKappa!(model)
-		if checkELBO!(model, k, chk, tol)
-			break
+		update_kappa!(model)
+		update_beta!(model)
+		update_eta!(model)
+		update_sigma!(model)
+		update_mu!(model)
+
+		if k % check_elbo == 0
+			delta_elbo = -(model.elbo - update_elbo!(model))
+			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
+
+			if abs(delta_elbo) < tol
+				break
+			end
 		end
 	end
-	updatePhi!(model, 1)
-	updateLzeta!(model, 1)
+
 	@bumper model.fbeta = model.beta .* (model.kappa' .<= 0)
-	model.fbeta ./= sum(model.fbeta, 2)
+	model.fbeta ./= sum(model.fbeta, dims=2)
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing
 end
+
+Base.show(io::IO, model::fCTM) = print(io, "Filtered correlated topic model with $(model.K) topics.")
 

@@ -222,8 +222,9 @@ function update_tau!(model::fLDA, d::Int)
 	"Update tau."
 	"Analytic."
 
-	terms = model.corp[d].terms
 	model.tau_old[d] = model.tau[d]
+
+	terms = model.corp[d].terms
 	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, dims=1))))
 end
 
