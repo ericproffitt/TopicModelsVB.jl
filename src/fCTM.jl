@@ -27,9 +27,7 @@ mutable struct fCTM <: TopicModel
 	elbo::Float64
 
 	function fCTM(corp::Corpus, K::Integer)
-		@assert ispositive(K)
-		@assert !isempty(corp)
-		checkcorp(corp)
+		ispositive(K) || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -56,6 +54,7 @@ mutable struct fCTM <: TopicModel
 		phi = ones(K, N[1]) / K
 		tau = [fill(eta, N[d]) for d in 1:M]
 		tau_old = copy(tau)
+		elbo=0
 
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, eta, beta, beta_old, beta_temp, fbeta, kappa, kappa_old, kappa_temp, lambda, lambda_old, vsq, lzeta, phi, tau, tau_old, elbo)
 
@@ -69,40 +68,54 @@ mutable struct fCTM <: TopicModel
 end
 
 function Elogpeta(model::fCTM, d::Int)
+	"Compute the numerical value for E[log(P(eta))]."
+
 	x = 0.5 * (logdet(model.invsigma) - model.K * log(2pi) - dot(diag(model.invsigma), model.vsq[d]) - dot(model.lambda[d] - model.mu, model.invsigma * (model.lambda[d] - model.mu)))
 	return x
 end
 
 function Elogpc(model::fCTM, d::Int)
+	"Compute the numerical value for E[log(P(c))]."
+
 	counts = model.corp[d].counts
 	x = log(@boink model.eta^dot(model.tau[d], counts) * (1 - model.eta)^(model.C[d] - dot(model.tau[d], counts)))
 	return x
 end
 
 function Elogpz(model::fCTM, d::Int)
+	"Compute the numerical value for E[log(P(z))]."
+
 	counts = model.corp[d].counts
 	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.lzeta
 	return x
 end
 
 function Elogpw(model::fCTM, d::Int)
+	"Compute the numerical value for E[log(P(w))]."
+
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
 	return x
 end
 
 function Elogqeta(model::fCTM, d::Int)
+	"Compute the numerical value for E[log(q(eta))]."
+
 	x = -entropy(MvNormal(model.lambda[d], diagm(model.vsq[d])))
 	return x
 end
 
 function Elogqc(model::fCTM, d::Int)
+	"Compute the numerical value for E[log(q(c))]."
+
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Bernoulli(model.tau[d][n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
 function Elogqz(model::fCTM, d::Int)
+	"Compute the numerical value for E[log(q(z))]."
+
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
 	return x
@@ -114,7 +127,7 @@ function update_elbo!(model::fCTM)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi = addlogistic(model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
+		model.phi = additive_logistic(model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
 		model.phi ./= sum(model.phi, dims=1)
 		model.elbo += Elogpeta(model, d) + Elogpc(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 	end
@@ -123,6 +136,9 @@ function update_elbo!(model::fCTM)
 end
 
 function update_mu!(model::fCTM)
+	"Update mu."
+	"Analytic."
+
 	model.mu = sum(model.lambda) / model.M
 end
 
@@ -135,30 +151,46 @@ function update_sigma!(model::fCTM)
 end
 
 function update_eta!(model::fCTM)
+	"Update eta."
+	"Analytic."
+
 	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
 end
 
-function update_beta!(model::fCTM)	
-	model.beta = model.newbeta ./ sum(model.newbeta, 2)
-	model.newbeta = zeros(model.K, model.V)
+function update_beta!(model::fCTM)
+	"Reset beta variables."
+
+	model.beta_old = model.beta
+	model.beta = model.beta_temp ./ sum(model.beta_temp, dims=2)
+	model.beta_temp = zeros(model.K, model.V)
 end
 
-function update_beta!(model::fCTM, d::Int)	
+function update_beta!(model::fCTM, d::Int)
+	"Update beta."
+	"Analytic."
+
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.newbeta[:,terms] += model.phi .* (model.tau[d] .* counts)'
+	model.beta_temp[:,terms] += model.phi .* (model.tau[d] .* counts)'
 end
 
 function update_kappa!(model::fCTM)
-	model.kappa = model.newkappa / sum(model.newkappa)
-	model.newkappa = zeros(model.V)
+	"Reset kappa variables."
+	"Analytic."
+
+	model.kappa_old = model.kappa
+	model.kappa = model.kappa_temp ./ sum(model.kappa_temp)
+	model.kappa_temp = zeros(model.V)
 end
 
 function update_kappa!(model::fCTM, d::Int)
+	"Update kappa."
+	"Analytic."
+
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.newkappa[terms] += (1 .- model.tau[d]) .* counts
+	model.kappa_temp[terms] += (1 .- model.tau[d]) .* counts
 end
 
-function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
+function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	"Update lambda."
 	"Newton's method."
 
@@ -176,7 +208,7 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	end
 end
 
-function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
+function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	"Update vsq."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
@@ -199,19 +231,28 @@ function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 end
 
 function update_lzeta!(model::fCTM, d::Int)
+	"Update lzeta."
+	"Analytic."
+
 	model.lzeta = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function update_phi!(model::fCTM, d::Int)
+	"Update phi."
+	"Analytic"
+
 	terms = model.corp[d].terms
-	model.phi = addlogistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
+	model.phi = additive_logistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
 function update_tau!(model::fCTM, d::Int)
+	"Update tau."
+	"Analytic."
+
 	model.tau_old[d] = model.tau[d]
 
 	terms = model.corp[d].terms
-	model.tau[d] = model.eta ./ (@boink model.eta + (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, dims=1))))
+	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, dims=1))))
 end
 
 function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)	
