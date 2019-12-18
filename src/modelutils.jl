@@ -104,6 +104,19 @@ function update_host!(model::gpuCTPF)
 	@host model.xibuf
 end
 
+function check_elbo(model::TopicModel)
+	"Check and print value of evidence lower build."
+	"If abs(delta_elbo) < tol, terminate algorithm."
+
+	delta_elbo = -(model.elbo - update_elbo!(model))
+	println(k, " ∆elbo: ", round(delta_elbo, digits=3))
+
+	if abs(delta_elbo) < tol
+		return break
+	end
+	nothing
+end
+
 function fixmodel!(model::LDA; check::Bool=true)
 	if check
 		checkcorp(model.corp)

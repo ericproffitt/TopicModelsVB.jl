@@ -47,14 +47,14 @@ mutable struct LDA <: TopicModel
 end
 
 function Elogptheta(model::LDA, d::Int)
-	"Compute the numerical value for E[log(P(theta))]."
+	"Compute E[log(P(theta))]."
 
 	x = loggamma(sum(model.alpha)) - sum(loggamma.(model.alpha)) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
 function Elogpz(model::LDA, d::Int)
-	"Compute the numerical value for E[log(P(z))]."
+	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
 	x = dot(model.phi * counts, model.Elogtheta[d])
@@ -62,7 +62,7 @@ function Elogpz(model::LDA, d::Int)
 end
 
 function Elogpw(model::LDA, d::Int)
-	"Compute the numerical value for E[log(P(w))]."
+	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
@@ -70,14 +70,14 @@ function Elogpw(model::LDA, d::Int)
 end
 
 function Elogqtheta(model::LDA, d::Int)
-	"Compute the numerical value for E[log(q(theta))]."
+	"Compute E[log(q(theta))]."
 
 	x = -entropy(Dirichlet(model.gamma[d]))
 	return x
 end
 
 function Elogqz(model::LDA, d::Int)
-	"Compute the numerical value for E[log(q(z))]."
+	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
@@ -185,14 +185,9 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		end
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)
-
-		if k % check_elbo == 0
-			delta_elbo = -(model.elbo - update_elbo!(model))
-			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
-
-			if abs(delta_elbo) < tol
-				break
-			end
+		
+		if k % check_elbo
+			check_elbo(model)
 		end
 	end
 

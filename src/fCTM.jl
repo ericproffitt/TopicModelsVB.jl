@@ -6,24 +6,24 @@ mutable struct fCTM <: TopicModel
 	C::Vector{Int}
 	corp::Corpus
 	topics::VectorList{Int}
+	eta::Float64
 	mu::Vector{Float64}
 	sigma::Matrix{Float64}
 	invsigma::Matrix{Float64}
-	eta::Float64
+	kappa::Vector{Float64}
+	kappa_old::Vector{Float64}
+	kappa_temp::Vector{Float64}
 	beta::Matrix{Float64}
 	beta_old::Matrix{Float64}
 	beta_temp::Matrix{Float64}
 	fbeta::Matrix{Float64}
-	kappa::Vector{Float64}
-	kappa_old::Vector{Float64}
-	kappa_temp::Vector{Float64}
 	lambda::VectorList{Float64}
 	lambda_old::VectorList{Float64}
 	vsq::VectorList{Float64}
 	lzeta::Float64
-	phi::Matrix{Float64}
 	tau::VectorList{Float64}
 	tau_old::VectorList{Float64}
+	phi::Matrix{Float64}
 	elbo::Float64
 
 	function fCTM(corp::Corpus, K::Integer)
@@ -35,27 +35,27 @@ mutable struct fCTM <: TopicModel
 
 		topics = [collect(1:V) for _ in 1:K]
 
+		eta = 0.95
 		mu = zeros(K)
 		sigma = Matrix(I, K, K)
 		invsigma = copy(sigma)
-		eta = 0.95
+		kappa = rand(Dirichlet(V, 1.0))
+		kappa_old = copy(kappa)
+		kappa_temp = zeros(V)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
 		fbeta = copy(beta)
-		kappa = rand(Dirichlet(V, 1.0))
-		kappa_old = copy(kappa)
-		kappa_temp = zeros(V)
 		lambda = [zeros(K) for _ in 1:M]
 		lambda_old = copy(lambda)
 		vsq = [ones(K) for _ in 1:M]
 		lzeta = 0.0
-		phi = ones(K, N[1]) / K
 		tau = [fill(eta, N[d]) for d in 1:M]
 		tau_old = copy(tau)
+		phi = ones(K, N[1]) / K
 		elbo = 0
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, eta, beta, beta_old, beta_temp, fbeta, kappa, kappa_old, kappa_temp, lambda, lambda_old, vsq, lzeta, phi, tau, tau_old, elbo)
+		model = new(K, M, V, N, C, copy(corp), topics, eta, mu, sigma, invsigma, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, fbeta, lambda, lambda_old, vsq, lzeta, tau, tau_old, phi, elbo)
 
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
@@ -134,6 +134,13 @@ function update_elbo!(model::fCTM)
 	return model.elbo
 end
 
+function update_eta!(model::fCTM)
+	"Update eta."
+	"Analytic."
+
+	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
+end
+
 function update_mu!(model::fCTM)
 	"Update mu."
 	"Analytic."
@@ -147,29 +154,6 @@ function update_sigma!(model::fCTM)
 
 	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
 	model.invsigma = inv(model.sigma)
-end
-
-function update_eta!(model::fCTM)
-	"Update eta."
-	"Analytic."
-
-	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
-end
-
-function update_beta!(model::fCTM)
-	"Reset beta variables."
-
-	model.beta_old = model.beta
-	model.beta = model.beta_temp ./ sum(model.beta_temp, dims=2)
-	model.beta_temp = zeros(model.K, model.V)
-end
-
-function update_beta!(model::fCTM, d::Int)
-	"Update beta."
-	"Analytic."
-
-	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.beta_temp[:,terms] += model.phi .* (model.tau[d] .* counts)'
 end
 
 function update_kappa!(model::fCTM)
@@ -187,6 +171,22 @@ function update_kappa!(model::fCTM, d::Int)
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.kappa_temp[terms] += (1 .- model.tau[d]) .* counts
+end
+
+function update_beta!(model::fCTM)
+	"Reset beta variables."
+
+	model.beta_old = model.beta
+	model.beta = model.beta_temp ./ sum(model.beta_temp, dims=2)
+	model.beta_temp = zeros(model.K, model.V)
+end
+
+function update_beta!(model::fCTM, d::Int)
+	"Update beta."
+	"Analytic."
+
+	terms, counts = model.corp[d].terms, model.corp[d].counts
+	model.beta_temp[:,terms] += model.phi .* (model.tau[d] .* counts)'
 end
 
 function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
@@ -236,14 +236,6 @@ function update_lzeta!(model::fCTM, d::Int)
 	model.lzeta = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
-function update_phi!(model::fCTM, d::Int)
-	"Update phi."
-	"Analytic"
-
-	terms = model.corp[d].terms
-	model.phi = additive_logistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
-end
-
 function update_tau!(model::fCTM, d::Int)
 	"Update tau."
 	"Analytic."
@@ -252,6 +244,14 @@ function update_tau!(model::fCTM, d::Int)
 
 	terms = model.corp[d].terms
 	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, dims=1))))
+end
+
+function update_phi!(model::fCTM, d::Int)
+	"Update phi."
+	"Analytic"
+
+	terms = model.corp[d].terms
+	model.phi = additive_logistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
 function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)	
@@ -264,6 +264,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		for d in 1:model.M
 			for _ in 1:viter
 				update_phi!(model, d)
+				update_tau!(model, d)
 				update_lzeta!(model, d)
 				update_lambda!(model, d, niter, ntol)
 				update_vsq!(model, d, niter, ntol)
@@ -271,23 +272,18 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 					break
 				end
 			end
-			update_tau!(model, d)
 			update_kappa!(model, d)
 			update_beta!(model, d)
 		end
-		update_kappa!(model)
 		update_beta!(model)
-		update_eta!(model)
+		update_kappa!(model)
 		update_sigma!(model)
 		update_mu!(model)
-
-		if k % check_elbo == 0
-			delta_elbo = -(model.elbo - update_elbo!(model))
-			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
-
-			if abs(delta_elbo) < tol
-				break
-			end
+		update_eta!(model)
+		check_elbo(model)
+		
+		if k % check_elbo
+			check_elbo(model)
 		end
 	end
 
@@ -296,6 +292,3 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing
 end
-
-Base.show(io::IO, model::fCTM) = print(io, "Filtered correlated topic model with $(model.K) topics.")
-

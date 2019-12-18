@@ -212,14 +212,9 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		update_beta!(model)
 		update_sigma!(model)
 		update_mu!(model)
-
-		if k % check_elbo == 0
-			delta_elbo = -(model.elbo - update_elbo!(model))
-			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
-
-			if abs(delta_elbo) < tol
-				break
-			end
+		
+		if k % check_elbo
+			check_elbo(model)
 		end
 	end
 

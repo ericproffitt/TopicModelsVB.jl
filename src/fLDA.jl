@@ -252,14 +252,9 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		update_kappa!(model)
 		update_alpha!(model, niter, ntol)
 		update_eta!(model)	
-
-		if k % check_elbo == 0
-			delta_elbo = -(model.elbo - update_elbo!(model))
-			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
-
-			if abs(delta_elbo) < tol
-				break
-			end
+		
+		if k % check_elbo
+			check_elbo(model)
 		end
 	end
 
@@ -268,45 +263,3 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing
 end
-
-function train2!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
-	"Coordinate ascent optimization procedure for filtered latent Dirichlet allocation variational Bayes algorithm."
-
-	@assert all(.!isnegative.([tol, ntol, vtol]))
-	@assert all(ispositive.([iter, niter, viter]))
-
-	for k in 1:iter
-		for d in 1:model.M	
-			for _ in 1:viter
-				update_phi!(model, d)
-				update_gamma!(model, d)
-				update_Elogtheta!(model, d)
-				if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
-					break
-				end
-			end
-			update_tau!(model, d)
-			update_kappa!(model, d)
-			update_beta!(model, d)
-		end
-		update_kappa!(model)
-		update_beta!(model)
-		update_eta!(model)	
-		update_alpha!(model, niter, ntol)
-
-		if k % check_elbo == 0
-			delta_elbo = -(model.elbo - update_elbo!(model))
-			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
-
-			if abs(delta_elbo) < tol
-				break
-			end
-		end
-	end
-
-	@bumper model.fbeta = model.beta .* (model.kappa' .<= 0)
-	model.fbeta ./= sum(model.fbeta, dims=2)
-	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
-	nothing
-end
-
