@@ -354,14 +354,9 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 		update_bet!(model)
 		update_he!(model)
 		update_vav!(model)
-	end
 
-	if k % check_elbo == 0
-		delta_elbo = -(model.elbo - update_elbo!(model))
-		println(k, " ∆elbo: ", round(delta_elbo, digits=3))
-
-		if abs(delta_elbo) < tol
-			break
+		if k % check_elbo
+			check_delta_elbo(model)
 		end
 	end
 	

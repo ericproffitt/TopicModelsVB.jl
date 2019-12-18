@@ -104,8 +104,8 @@ function update_host!(model::gpuCTPF)
 	@host model.xibuf
 end
 
-function check_elbo(model::TopicModel)
-	"Check and print value of evidence lower build."
+function check_delta_elbo(model::TopicModel)
+	"Print value for evidence lower build and check delta_elbo."
 	"If abs(delta_elbo) < tol, terminate algorithm."
 
 	delta_elbo = -(model.elbo - update_elbo!(model))
