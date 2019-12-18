@@ -29,7 +29,8 @@ mutable struct CTM <: TopicModel
 		topics = [collect(1:V) for _ in 1:K]
 
 		mu = zeros(K)
-		sigma = eye(K)
+		sigma = Matrix(I, K, K)
+		invsigma = copy(sigma)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
@@ -40,7 +41,7 @@ mutable struct CTM <: TopicModel
 		phi = ones(K, N[1]) / K
 		elbo=0
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, lzeta, phi, elbo)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, lzeta, phi, elbo)
 		
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
@@ -114,7 +115,7 @@ function update_sigma!(model::CTM)
 	"Update sigma."
 	"Analytic"
 
-	model.sigma = diagm(sum(model.vsq)) / model.M + Base.cov(hcat(model.lambda...), model.mu, 2, false)
+	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
 	model.invsigma = inv(model.sigma)
 end
 
@@ -151,7 +152,7 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 end
 
 function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
-	"Update Vsq."
+	"Update vsq."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
 	for _ in 1:niter
@@ -191,7 +192,7 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	"Coordinate ascent optimization procedure for correlated topic model variational Bayes algorithm."
 
 	@assert all(.!isnegative.([tol, ntol, vtol]))
-	@assert all(ispositive.([iter, niter, viter, chkelbo]))
+	@assert all(ispositive.([iter, niter, viter]))
 	
 	for k in 1:iter
 		for d in 1:model.M
@@ -223,4 +224,7 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
+
+Base.show(io::IO, model::CTM) = print(io, "Correlated topic model with $(model.K) topics.")
+
 
