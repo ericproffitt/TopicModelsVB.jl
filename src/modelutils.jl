@@ -22,7 +22,7 @@ Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic m
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 function update_buffer!(model::gpuLDA)
-	"Update gpuLDA model data in VRAM."
+	"Update gpuLDA model data in GPU RAM."
 
 	@buffer model.Npsums
 	@buffer model.Jpsums
@@ -34,7 +34,7 @@ function update_buffer!(model::gpuLDA)
 end
 
 function update_buffer!(model::gpuCTM)
-	"Update gpuCTM model data in VRAM."
+	"Update gpuCTM model data in GPU RAM."
 
 	@buffer model.C
 	@buffer model.Npsums
@@ -49,7 +49,7 @@ function update_buffer!(model::gpuCTM)
 end
 
 function update_buffer!(model::gpuCTPF)
-	"Update gpuCTPF model data in VRAM."
+	"Update gpuCTPF model data in GPU RAM."
 
 	@buffer model.Npsums
 	@buffer model.Jpsums
@@ -66,7 +66,7 @@ function update_buffer!(model::gpuCTPF)
 end
 
 function update_host!(model::gpuLDA)
-	"Update gpuLDA model data in RAM."
+	"Update gpuLDA model data in CPU RAM."
 
 	@host model.alphabuf
 	@host model.betabuf
@@ -77,7 +77,7 @@ function update_host!(model::gpuLDA)
 end
 
 function update_host!(model::gpuCTM)
-	"Update gpuCTM model data in RAM."
+	"Update gpuCTM model data in CPU RAM."
 
 	@host model.mubuf
 	@host model.sigmabuf
@@ -90,7 +90,7 @@ function update_host!(model::gpuCTM)
 end
 
 function update_host!(model::gpuCTPF)
-	"Update gpuCTPF model data in RAM."
+	"Update gpuCTPF model data in CPU RAM."
 
 	@host model.alefbuf
 	@host model.betbuf
