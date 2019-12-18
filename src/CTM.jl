@@ -8,6 +8,7 @@ mutable struct CTM <: TopicModel
 	topics::VectorList{Int}
 	mu::Vector{Float64}
 	sigma::Matrix{Float64}
+	invsigma::Matrix{Float64}
 	beta::Matrix{Float64}
 	beta_old::Matrix{Float64}
 	beta_temp::Matrix{Float64}
@@ -16,7 +17,6 @@ mutable struct CTM <: TopicModel
 	vsq::VectorList{Float64}
 	lzeta::Float64
 	phi::Matrix{Float64}
-	invsigma::Matrix{Float64}
 	elbo::Float64
 
 	function CTM(corp::Corpus, K::Integer)
@@ -114,7 +114,7 @@ function update_sigma!(model::CTM)
 	"Update sigma."
 	"Analytic"
 
-	model.sigma = diagm(sum(model.vsq)) / model.M + Base.covm(hcat(model.lambda...), model.mu, 2, false)
+	model.sigma = diagm(sum(model.vsq)) / model.M + Base.cov(hcat(model.lambda...), model.mu, 2, false)
 	model.invsigma = inv(model.sigma)
 end
 
@@ -132,6 +132,22 @@ function update_beta!(model::CTM, d::Int)
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.beta_temp[:,terms] += model.phi .* counts'
+end
+
+function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
+	"Update lambda."
+	"Newton's method."
+
+	counts = model.corp[d].counts
+	for _ in 1:niter
+		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta)
+		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta))) * model.sigma
+		model.lambda[d] -= lambda_invhess * lambda_grad
+		
+		if norm(lambda_grad) < ntol
+			break
+		end
+	end
 end
 
 function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
@@ -156,22 +172,6 @@ function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	@bumper model.vsq[d]
 end
 
-function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
-	"Update lambda."
-	"Newton's method."
-
-	counts = model.corp[d].counts
-	for _ in 1:niter
-		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta)
-		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta))) * model.sigma
-		model.lambda[d] -= lambda_invhess * lambda_grad
-		
-		if norm(lambda_grad) < ntol
-			break
-		end
-	end
-end
-
 function update_lzeta!(model::CTM, d::Int)
 	"Update lzeta."
 	"Analytic."
@@ -187,37 +187,39 @@ function update_phi!(model::CTM, d::Int)
 	model.phi = additive_logistic(log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
-function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
 	"Coordinate ascent optimization procedure for correlated topic model variational Bayes algorithm."
 
 	@assert all(.!isnegative.([tol, ntol, vtol]))
 	@assert all(ispositive.([iter, niter, viter, chkelbo]))
 	
 	for k in 1:iter
-		chk = (k % chkelbo == 0)
 		for d in 1:model.M
 			for _ in 1:viter
-				oldlambda = model.lambda[d]
-				updatePhi!(model, d)
-				updateLzeta!(model, d)
-				updateLambda!(model, d, niter, ntol)
-				updateVsq!(model, d, niter, ntol)
-				if norm(oldlambda - model.lambda[d]) < vtol
+				update_phi!(model, d)
+				update_lzeta!(model, d)
+				update_lambda!(model, d, niter, ntol)
+				update_vsq!(model, d, niter, ntol)
+				if norm(model.lambda[d] - model.lambda_old[d]) < vtol
 					break
 				end
 			end
-			updateNewBeta!(model, d)
-			chk && updateNewELBO!(model, d)
+			update_beta!(model, d)
 		end
-		updateMu!(model)
-		updateSigma!(model)
-		updateBeta!(model)
-		if checkELBO!(model, k, chk, tol)
-			break
+		update_beta!(model)
+		update_mu!(model)
+		update_sigma!(model)
+
+		if k % check_elbo == 0
+			delta_elbo = -(model.elbo - update_elbo!(model))
+			println(k, " ∆elbo: ", round(delta_elbo, digits=3))
+
+			if abs(delta_elbo) < tol
+				break
+			end
 		end
 	end
-	updatePhi!(model, 1)
-	updateLzeta!(model, 1)
+
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
