@@ -39,11 +39,10 @@ mutable struct fCTM <: TopicModel
 		sigma = Matrix(I, K, K)
 		invsigma = copy(sigma)
 		eta = 0.95
-		neweta = 0.0
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		fbeta = beta
+		fbeta = copy(beta)
 		kappa = rand(Dirichlet(V, 1.0))
 		kappa_old = copy(kappa)
 		kappa_temp = zeros(V)
@@ -54,7 +53,7 @@ mutable struct fCTM <: TopicModel
 		phi = ones(K, N[1]) / K
 		tau = [fill(eta, N[d]) for d in 1:M]
 		tau_old = copy(tau)
-		elbo=0
+		elbo = 0
 
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, eta, beta, beta_old, beta_temp, fbeta, kappa, kappa_old, kappa_temp, lambda, lambda_old, vsq, lzeta, phi, tau, tau_old, elbo)
 
