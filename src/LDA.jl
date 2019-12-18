@@ -65,9 +65,9 @@ mutable struct LDA <: TopicModel
 	beta::Matrix{Float64}
 	beta_old::Matrix{Float64}
 	beta_temp::Matrix{Float64}
-	gamma::VectorList{Float64}
 	Elogtheta::VectorList{Float64}
 	Elogtheta_old::VectorList{Float64}
+	gamma::VectorList{Float64}
 	phi::Matrix{Float64}
 	elbo::Float64
 
@@ -84,13 +84,13 @@ mutable struct LDA <: TopicModel
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		gamma = [ones(K) for _ in 1:M]
 		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
 		Elogtheta_old = copy(Elogtheta)
+		gamma = [ones(K) for _ in 1:M]
 		phi = ones(K, N[1]) / K
 		elbo = 0
 	
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, gamma, Elogtheta, Elogtheta_old, phi, elbo)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, phi, elbo)
 		
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
@@ -195,6 +195,11 @@ function update_beta!(model::LDA, d::Int)
 	model.beta_temp[:,terms] += model.phi .* counts'		
 end
 
+function update_Elogtheta!(model::LDA, d::Int)
+	model.Elogtheta_old[d] = model.Elogtheta[d]
+	model.Elogtheta[d] = digamma.(model.gamma[d]) .- digamma(sum(model.gamma[d]))
+end
+
 function update_gamma!(model::LDA, d::Int)
 	"Update gamma."
 	"Analytic."
@@ -212,11 +217,6 @@ function update_phi!(model::LDA, d::Int)
 	model.phi ./= sum(model.phi, dims=1)
 end
 
-function update_Elogtheta!(model::LDA, d::Int)
-	model.Elogtheta_old[d] = model.Elogtheta[d]
-	model.Elogtheta[d] = digamma.(model.gamma[d]) .- digamma(sum(model.gamma[d]))
-end
-
 function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1, print_delta_elbo::Bool=true)
 	"Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm."
 
@@ -226,11 +226,9 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	for k in 1:iter
 		for d in 1:model.M	
 			for _ in 1:viter
-				#oldgamma = model.gamma[d]
 				update_phi!(model, d)
 				update_gamma!(model, d)
 				update_Elogtheta!(model, d)
-				#if norm(oldgamma - model.gamma[d]) < vtol
 				if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
 					break
 				end

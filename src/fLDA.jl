@@ -9,22 +9,21 @@ mutable struct fLDA <: TopicModel
 	alpha::Vector{Float64}
 	eta::Float64
 	beta::Matrix{Float64}
+	beta_old::Matrix{Float64}
+	beta_temp::Matrix{Float64}
 	fbeta::Matrix{Float64}
 	kappa::Vector{Float64}
-	gamma::VectorList{Float64}
-	tau::VectorList{Float64}
-	phi::Matrix{Float64}
+	kappa_old::Vector{Float64}
+	kappa_temp::Vector{Float64}
 	Elogtheta::Vector{Float64}
-	Elogthetasum::Vector{Float64}
-	newbeta::Matrix{Float64}
-	newkappa::Vector{Float64}
+	Elogtheta_old::Vector{Float64}
+	gamma::VectorList{Float64}
+	phi::Matrix{Float64}
+	tau::VectorList{Float64}
 	elbo::Float64
-	newelbo::Float64
 
 	function fLDA(corp::Corpus, K::Integer)
-		@assert ispositive(K)
-		@assert !isempty(corp)
-		checkcorp(corp)
+		ispositive(K) || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -35,27 +34,31 @@ mutable struct fLDA <: TopicModel
 		alpha = ones(K)
 		eta = 0.95
 		beta = rand(Dirichlet(V, 1.0), K)'
+		beta_old = copy(beta)
+		beta_temp = zeros(K, V)
 		fbeta = copy(beta)
 		kappa = rand(Dirichlet(V, 1.0))
+		kappa_old = copy(kappa)
+		kappa_temp = zeros(V)
+		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		Elogtheta_old = copy(Elogtheta)
 		gamma = [ones(K) for _ in 1:M]
 		tau = [fill(eta, N[d]) for d in 1:M]
 		phi = ones(K, N[1]) / K
+		elbo = 0
 	
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, eta, beta, fbeta, kappa, gamma, tau, phi)
-		fixmodel!(model, check=false)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, eta, beta, beta_old, beta_temp, fbeta, kappa, kappa_old, kappa_temp, Elogtheta, Elogtheta_old, gamma, phi, tau)
 		
-		model.newelbo = 0
-		for d in 1:M
+		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
-			updateNewELBO!(model, d)
+			model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 		end
-		model.phi = ones(K, N[1]) / K
-		updateELBO!(model)
+
 		return model
 	end
 end
 
-function Elogptheta(model::fLDA)
+function Elogptheta(model::fLDA, d::Int)
 	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, model.Elogtheta)
 	return x
 end

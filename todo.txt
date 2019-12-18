@@ -11,9 +11,9 @@
 12. write run tests for package, see issue #3
 
 2. pre-compute ELBOs, or derive formula for various M and K
-
-
-
+21. deal with counts situation
+22. what to do with empty documents in corpus.
+17. make extended integers datatype so that chkelbo can be Z U {Inf}
 
 
 
@@ -25,9 +25,8 @@
 14. save/load trained models see issue #13
 15. change comments to new style formatting
 16. fix checkcorp! situation
-17. make extended integers datatype so that chkelbo can be Z U {Inf}
+
 18. when different lex keys map to the same word, need to merge these in fixcorp functions
 19. fix DTM
-20. make 1.0 compatible
-21. deal with counts situation
-22. what to do with empty documents in corpus.
+
+
