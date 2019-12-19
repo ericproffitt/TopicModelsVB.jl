@@ -731,7 +731,7 @@ end
 function showlibs(model::CTPF, users::Vector{<:Integer})
 	"Display the documents in a user(s) library."
 
-	@assert checkbounds(Bool, 1:model.U, users)
+	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	
 	for u in users
 		@juliadots "user $u\n"
@@ -748,7 +748,7 @@ function showlibs(model::CTPF, users::Vector{<:Integer})
 			print(Crayon(foreground=:yellow, bold=true), " • ")
 			isempty(model.corp[d].title) ? print(Crayon(foreground=:white, bold=true), "doc $d\n") : print(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)\n")
 		end
-		println()
+		print()
 	end
 end
 
@@ -760,7 +760,7 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 
 	@assert checkbounds(Bool, 1:model.M, docs)	
 	@assert checkbounds(Bool, 1:model.U, U)
-	@assert ispositive(cols)
+	@assert cols > 0
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
@@ -770,16 +770,19 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 			@juliadots corp[d].title * "\n"
 		end
 
-		usercols = partition(drecs[d][1:U], Int(ceil(U / cols)))
-		rankcols = partition(1:U, Int(ceil(U / cols)))
+		usercols = Iterators.partition(drecs[d][1:U], Int(ceil(U / cols)))
+		rankcols = Iterators.partition(1:U, Int(ceil(U / cols)))
 
 		for i in 1:length(usercols[1])
 			for j in 1:length(usercols)
 				try
-				uspacing = maximum([length(users[u]) for u in usercols[j]]) - length(users[usercols[j][i]]) + 4
-				rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
-				yellow(string(rankcols[j][i]) * ". " * " "^rspacing)
-				j == length(usercols) ? print(users[usercols[j][i]]) : print(users[usercols[j][i]] * " "^uspacing)
+					uspacing = maximum([length(users[u]) for u in usercols[j]]) - length(users[usercols[j][i]]) + 4
+					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
+					print(Crayon(foreground=:yellow, bold=true), string(rankcols[j][i]) * ". " * " "^rspacing)
+					j == length(usercols) ? print(Crayon(foreground=:white, bold=false), users[usercols[j][i]]) : print(Crayon(foreground=:white, bold=false), users[usercols[j][i]] * " "^uspacing)
+				
+				catch
+					continue
 				end
 			end
 			println()
