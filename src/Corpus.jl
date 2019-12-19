@@ -430,7 +430,7 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 	if terms
 		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
 		bogus_vkeys = setdiff(doc_vkeys, keys(corp.vocab))
-		for doc in corp
+		for doc in unique(corp)
 			keep = Bool[!(j in bogus_vkeys) for j in doc.terms]
 			doc.terms = doc.terms[keep]
 			doc.counts = doc.counts[keep]
@@ -440,7 +440,7 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 	if terms
 		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
 		bogus_ukeys = setdiff(doc_ukeys, keys(corp.users))
-		for doc in corp
+		for doc in unique(corp)
 			keep = Bool[!(u in bogus_ukeys) for u in doc.readers]
 			doc.readers = doc.readers[keep]
 			doc.ratings = doc.ratings[keep]

@@ -724,48 +724,6 @@ function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); 
 	end
 end
 
-function showtopics{T<:Integer, S<:Integer}(model::AbstractDTM, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), times::Union{S, Vector{S}}=collect(1:model.T), cols::Integer=4)
-	@assert checkbounds(Bool, 1:model.V, N)
-	@assert checkbounds(Bool, 1:model.K, topics)
-	@assert checkbounds(Bool, 1:model.T, times)
-	@assert ispositive(cols)
-	isa(times, Vector) || (times = [times])
-	
-	corp, lex = model.corp, model.corp.lex
-
-	if length(topics) > 1
-		container = LDA(corp, model.K)
-		for t in times
-			container.topics = model.topics[t][topics]
-			container.V = model.V
-			@juliadots "Time: $t\n"
-			@juliadots "Span: $(corp[model.S[t][1]].stamp) - $(corp[model.S[t][end]].stamp)\n"
-			showtopics(container, N, topics=topics, cols=cols)
-		end
-	
-	else
-		cols = min(cols, length(times))
-		@juliadots "Topic: $(topics[1])\n"
-		maxjspacings = [maximum([length(lex[j]) for j in time[topics[1]][1:N]]) for time in model.topics]
-
-		for block in partition(times, cols)
-			for j in 0:N
-				for (s, t) in enumerate(block)
-					if j == 0
-						jspacing = max(4, maxjspacings[t] - length("$t") - 1)
-						s == cols ? yellow("time $t") : yellow("time $t" * " "^jspacing)
-					else
-						jspacing = max(5 + length("$t"), maxjspacings[t]) - length(lex[model.topics[t][topics[1]][j]]) + 4
-						s == cols ? print(lex[model.topics[t][topics[1]][j]]) : print(lex[model.topics[t][topics[1]][j]] * " "^jspacing)
-					end
-				end
-				println()
-			end
-			println()
-		end
-	end
-end
-
 function showlibs{T<:Integer}(model::AbstractCTPF, users::Vector{T})
 	@assert checkbounds(Bool, 1:model.U, users)
 	

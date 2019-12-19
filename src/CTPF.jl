@@ -51,11 +51,15 @@ mutable struct CTPF <: TopicModel
 		R = [length(doc.readers) for doc in corp]
 
 		topics = [collect(1:V) for _ in 1:K]
+		scores = zeros(M, U)
 
 		libs = [Int[] for _ in 1:U]
 		for u in 1:U, d in 1:M
 			u in corp[d].readers && push!(libs[u], d)
 		end
+
+		drecs = Vector[]
+		urecs = Vector[]
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
@@ -81,7 +85,7 @@ mutable struct CTPF <: TopicModel
 		xi = ones(2K, R[1]) / 2K
 		elbo = 0
 
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo)
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo)
 
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
@@ -385,6 +389,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 			break
 		end
 	end
+	return nothing
 	
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]
