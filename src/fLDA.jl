@@ -61,14 +61,14 @@ mutable struct fLDA <: TopicModel
 end
 
 function Elogptheta(model::fLDA, d::Int)
-	"Compute the numerical value for E[log(P(theta))]."
+	"Compute E[log(P(theta))]."
 
 	x = loggamma(sum(model.alpha)) - sum(loggamma.(model.alpha)) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
 function Elogpc(model::fLDA, d::Int)
-	"Compute the numerical value for E[log(P(c))]."
+	"Compute E[log(P(c))]."
 
 	counts = model.corp[d].counts
 	x = log(@boink model.eta^dot(model.tau[d], counts) * (1 - model.eta)^(model.C[d] - dot(model.tau[d], counts)))
@@ -76,7 +76,7 @@ function Elogpc(model::fLDA, d::Int)
 end
 
 function Elogpz(model::fLDA, d::Int)
-	"Compute the numerical value for E[log(P(z))]."
+	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
 	x = dot(model.phi * counts, model.Elogtheta[d])
@@ -84,7 +84,7 @@ function Elogpz(model::fLDA, d::Int)
 end
 
 function Elogpw(model::fLDA, d::Int)
-	"Compute the numerical value for E[log(P(w))]."
+	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
@@ -92,14 +92,14 @@ function Elogpw(model::fLDA, d::Int)
 end
 
 function Elogqtheta(model::fLDA, d::Int)
-	"Compute the numerical value for E[log(q(theta))]."
+	"Compute E[log(q(theta))]."
 
 	x = -entropy(Dirichlet(model.gamma[d]))
 	return x
 end
 
 function Elogqc(model::fLDA, d::Int)
-	"Compute the numerical value for E[log(q(c))]."
+	"Compute E[log(q(c))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Bernoulli(model.tau[d][n])) for (n, c) in enumerate(counts)])
@@ -107,7 +107,7 @@ function Elogqc(model::fLDA, d::Int)
 end
 
 function Elogqz(model::fLDA, d::Int)
-	"Compute the numerical value for E[log(q(z))]."
+	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
@@ -254,7 +254,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		update_eta!(model)	
 		
 		if k % check_elbo
-			check_elbo(model)
+			check_delta_elbo(model)
 		end
 	end
 

@@ -53,14 +53,14 @@ mutable struct CTM <: TopicModel
 end
 
 function Elogpeta(model::CTM, d::Int)
-	"Compute the numerical value for E[log(P(eta))]."
+	"Compute E[log(P(eta))]."
 
 	x = 0.5 * (logdet(model.invsigma) - model.K * log(2pi) - dot(diag(model.invsigma), model.vsq[d]) - dot(model.lambda[d] - model.mu, model.invsigma * (model.lambda[d] - model.mu)))
 	return x
 end
 
 function Elogpz(model::CTM, d::Int)
-	"Compute the numerical value for E[log(P(z))]."
+	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
 	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.lzeta
@@ -68,7 +68,7 @@ function Elogpz(model::CTM, d::Int)
 end
 
 function Elogpw(model::CTM, d::Int)
-	"Compute the numerical value for E[log(P(w))]."
+	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
@@ -76,14 +76,14 @@ function Elogpw(model::CTM, d::Int)
 end
 
 function Elogqeta(model::CTM, d::Int)
-	"Compute the numerical value for E[log(q(eta))]."
+	"Compute E[log(q(eta))]."
 
 	x = -entropy(MvNormal(model.lambda[d], diagm(model.vsq[d])))
 	return x
 end
 
 function Elogqz(model::CTM, d::Int)
-	"Compute the numerical value for E[log(q(z))]."
+	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
@@ -214,7 +214,7 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		update_mu!(model)
 		
 		if k % check_elbo
-			check_elbo(model)
+			check_delta_elbo(model)
 		end
 	end
 

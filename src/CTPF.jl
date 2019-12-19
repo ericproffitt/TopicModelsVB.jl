@@ -42,8 +42,8 @@ mutable struct CTPF <: TopicModel
 		C = [size(doc) for doc in corp]
 		R = [length(doc.readers) for doc in corp]
 
-		@assert ispositive(U)
-		@assert isequal(collect(1:U), sort(collect(keys(corp.users))))
+		topics = [collect(1:V) for _ in 1:K]
+
 		libs = [Int[] for _ in 1:U]
 		for u in 1:U, d in 1:M
 			u in corp[d].readers && push!(libs[u], d)
@@ -52,15 +52,23 @@ mutable struct CTPF <: TopicModel
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
 		alef = exp.(rand(Dirichlet(V, 1.0), K)' - 0.5)
-		topics = [collect(1:V) for _ in 1:K]
-		
-		bet = ones(K)
-		gimel = [ones(K) for _ in 1:M]
-		dalet = ones(K)	
+		alef_old = copy(alef)
+		alef_temp = fill(a, K, V)
 		he = ones(K, U)
+		he_old = copy(he)
+		he_temp = fill(e, K, U)
+		bet = ones(K)
+		bet_old = copy(bet)
 		vav = ones(K)
+		vav_old = copy(vav)
+		gimel = [ones(K) for _ in 1:M]
+		gimel_old = copy(gimel)
 		zayin = [ones(K) for _ in 1:M]
+		zayin_old = copy(zayin)
+		dalet = ones(K)
+		dalet_old = copy(dalet)
 		het = ones(K)
+		het_old = copy(het)
 		phi = ones(K, N[1]) / K
 		xi = ones(2K, R[1]) / 2K
 		elbo = 0
@@ -78,7 +86,7 @@ mutable struct CTPF <: TopicModel
 end
 
 function Elogpya(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(P(ya))]."
+	"Compute E[log(P(ya))]."
 
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
@@ -90,7 +98,7 @@ function Elogpya(model::CTPF, d::Int)
 end
 
 function Elogpyb(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(P(yb))]."
+	"Compute E[log(P(yb))]."
 
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
@@ -102,7 +110,7 @@ function Elogpyb(model::CTPF, d::Int)
 end
 
 function Elogpz(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(P(z))]."
+	"Compute E[log(P(z))]."
 
 	x = 0
 	terms, counts = model.corp[d].terms, model.corp[d].counts
@@ -114,9 +122,9 @@ function Elogpz(model::CTPF, d::Int)
 end
 
 function Elogpbeta(model::CTPF)
-	"Compute the numerical value for E[log(P(beta))]."
+	"Compute E[log(P(beta))]."
 
-	x = model.V * model.K * (model.a * log(model.b) - lgamma(model.a))
+	x = model.V * model.K * (model.a * log(model.b) -  loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
 		x += (model.a - 1) * (digamma(model.alef[i,j]) - log(model.bet[i])) - model.b * model.alef[i,j] / model.bet[i]
 	end
@@ -124,9 +132,9 @@ function Elogpbeta(model::CTPF)
 end
 
 function Elogptheta(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(P(theta))]."
+	"Compute E[log(P(theta))]."
 
-	x = model.K * (model.c * log(model.d) - lgamma(model.c))
+	x = model.K * (model.c * log(model.d) -  loggamma(model.c))
 	for i in 1:model.K
 		x += (model.c - 1) * (digamma(model.gimel[d][i]) - log(model.dalet[i])) - model.d * model.gimel[d][i] / model.dalet[i]
 	end
@@ -134,9 +142,9 @@ function Elogptheta(model::CTPF, d::Int)
 end
 
 function Elogpeta(model::CTPF)
-	"Compute the numerical value for E[log(P(eta))]."
+	"Compute E[log(P(eta))]."
 
-	x = model.U * model.K * (model.e * log(model.f) - lgamma(model.e))
+	x = model.U * model.K * (model.e * log(model.f) -  loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
 		x += (model.e - 1) * (digamma(model.he[i,u]) - log(model.vav[i])) - model.f * model.he[i,u] / model.vav[i]
 	end
@@ -144,9 +152,9 @@ function Elogpeta(model::CTPF)
 end
 
 function Elogpepsilon(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(P(epsilon))]."
+	"Compute E[log(P(epsilon))]."
 
-	x = model.K * (model.g * log(model.h) - lgamma(model.g))
+	x = model.K * (model.g * log(model.h) -  loggamma(model.g))
 	for i in 1:model.K
 		x += (model.g - 1) * (digamma(model.zayin[d][i]) - log(model.het[i])) - model.h * model.zayin[d][i] / model.het[i]
 	end
@@ -154,7 +162,7 @@ function Elogpepsilon(model::CTPF, d::Int)
 end
 
 function Elogqy(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(q(y))]."
+	"Compute E[log(q(y))]."
 
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
@@ -164,7 +172,7 @@ function Elogqy(model::CTPF, d::Int)
 end
 
 function Elogqz(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(q(z))]."
+	"Compute E[log(q(z))]."
 
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
@@ -174,7 +182,7 @@ function Elogqz(model::CTPF, d::Int)
 end
 
 function Elogqbeta(model::CTPF)
-	"Compute the numerical value for E[log(q(beta))]."
+	"Compute E[log(q(beta))]."
 
 	x = 0
 	for j in 1:model.V, i in 1:model.K
@@ -184,7 +192,7 @@ function Elogqbeta(model::CTPF)
 end
 
 function Elogqtheta(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(q(theta))]."
+	"Compute E[log(q(theta))]."
 
 	x = 0
 	for i in 1:model.K
@@ -194,7 +202,7 @@ function Elogqtheta(model::CTPF, d::Int)
 end
 
 function Elogqeta(model::CTPF)
-	"Compute the numerical value for E[log(q(eta))]."
+	"Compute E[log(q(eta))]."
 
 	x = 0
 	for u in 1:model.U, i in 1:model.K
@@ -204,7 +212,7 @@ function Elogqeta(model::CTPF)
 end	
 
 function Elogqepsilon(model::CTPF, d::Int)
-	"Compute the numerical value for E[log(q(epsilon))]."
+	"Compute E[log(q(epsilon))]."
 
 	x = 0
 	for i in 1:model.K
@@ -221,11 +229,11 @@ function update_elbo!(model::CTPF)
 		terms = model.terms[d]
 		readers = model.corp[d].readers
 
-		model.phi = exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]))
-		model.phi ./= sum(model.phi, 1)
+		model.phi = exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.bet_old) .+ digamma.(model.alef_old[:,terms]))
+		model.phi ./= sum(model.phi, dims=1)
 
-		model.xi = vcat(exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.vav) .+ digamma.(model.he[:,readers])), exp.(digamma.(model.zayin[d]) - log.(model.het) - log.(model.vav) .+ digamma.(model.he[:,readers])))
-		model.xi ./= sum(model.xi, 1)
+		model.xi = vcat(exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])), exp.(digamma.(model.zayin_old[d]) - log.(model.het_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])))
+		model.xi ./= sum(model.xi, dims=1)
 		
 		model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
 	end
@@ -237,8 +245,9 @@ function update_alef!(model::CTPF)
 	"Update alef."
 	"Analytic."
 
-	model.alef = copy(model.newalef)
-	model.newalef = fill(model.a, model.K, model.V)
+	model.alef_old = model.alef
+	model.alef = model.alef_temp
+	model.alef_temp = fill(model.a, model.K, model.V)
 end
 
 function update_alef!(model::CTPF, d::Int)
@@ -246,37 +255,16 @@ function update_alef!(model::CTPF, d::Int)
 	"Analytic."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.newalef[:,terms] += model.phi .* counts'
-end
-
-function update_bet!(model::CTPF)
-	"Update het."
-	"Analytic"
-
-	model.bet = model.b + sum(model.gimel) ./ model.dalet
-end
-
-function update_gimel!(model::CTPF, d::Int)
-	"Update gimel."
-	"Analytic."
-
-	counts, ratings = model.corp[d].counts, model.corp[d].ratings
-	model.gimel[d] = model.c + model.phi * counts + model.xi[1:model.K,:] * ratings
-end
-
-function update_dalet!(model::CTPF)
-	"Update dalet."
-	"Analytic."
-
-	model.dalet = model.d + vec(sum(model.alef, 2)) ./ model.bet + vec(sum(model.he, 2)) ./ model.vav
+	model.alef_temp[:,terms] += model.phi .* counts'
 end
 
 function update_he!(model::CTPF)
 	"Update he."
 	"Analytic."
 
-	model.he = copy(model.newhe)
-	model.newhe = fill(model.e, model.K, model.U)
+	model.he_old = copy(model.he)
+	model.he = model.he_temp
+	model.he_temp = fill(model.e, model.K, model.U)
 end
 
 function update_he!(model::CTPF, d::Int)
@@ -284,29 +272,59 @@ function update_he!(model::CTPF, d::Int)
 	"Analytic."
 
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
-	model.newhe[:,readers] += (model.xi[1:model.K,:] + model.xi[model.K+1:end,:]) .* ratings'
+	model.he_temp[:,readers] += (model.xi[1:model.K,:] + model.xi[model.K+1:end,:]) .* ratings'
+end
+
+function update_bet!(model::CTPF)
+	"Update bet."
+	"Analytic"
+
+	model.bet_old = model.bet
+	model.bet = model.b + sum(model.gimel) ./ model.dalet
 end
 
 function update_vav!(model::CTPF)
 	"Update vav."
 	"Analytic."
 
+	model.vav_old = model.vav
 	model.vav = model.f + sum(model.gimel) ./ model.dalet + sum(model.zayin) ./ model.het
+end
+
+function update_gimel!(model::CTPF, d::Int)
+	"Update gimel."
+	"Analytic."
+
+	model.gimel_old[d] = model.gimel[d]
+
+	counts, ratings = model.corp[d].counts, model.corp[d].ratings
+	model.gimel[d] = model.c + model.phi * counts + model.xi[1:model.K,:] * ratings
 end
 
 function update_zayin!(model::CTPF, d::Int)
 	"Update zayin."
 	"Analytic"
 
+	model.zayin_old[d] = model.zayin[d]
+
 	ratings = model.corp[d].ratings
 	model.zayin[d] = model.g + model.xi[model.K+1:end,:] * ratings
+end
+
+function update_dalet!(model::CTPF)
+	"Update dalet."
+	"Analytic."
+
+	model.dalet_old = model.dalet
+	model.dalet = model.d + vec(sum(model.alef, dims=2)) ./ model.bet + vec(sum(model.he, dims=2)) ./ model.vav
 end
 
 function update_het!(model::CTPF)
 	"Update het."
 	"Analytic"
 
-	model.het = model.h + vec(sum(model.he, 2)) ./ model.vav
+	model.het_old = model.het
+	model.het = model.h + vec(sum(model.he, dims=2)) ./ model.vav
 end
 
 function update_phi!(model::CTPF, d::Int)
@@ -315,7 +333,7 @@ function update_phi!(model::CTPF, d::Int)
 
 	terms = model.corp[d].terms
 	model.phi = exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]))
-	model.phi ./= sum(model.phi, 1)
+	model.phi ./= sum(model.phi, dims=1)
 end
 
 function update_xi!(model::CTPF, d::Int)
@@ -324,7 +342,7 @@ function update_xi!(model::CTPF, d::Int)
 
 	readers = model.corp[d].readers
 	model.xi = vcat(exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.vav) .+ digamma.(model.he[:,readers])), exp.(digamma.(model.zayin[d]) - log.(model.het) - log.(model.vav) .+ digamma.(model.he[:,readers])))
-	model.xi ./= sum(model.xi, 1)
+	model.xi ./= sum(model.xi, dims=1)
 end
 
 function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
@@ -337,11 +355,11 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 		for d in 1:model.M
 			for _ in 1:viter
 				oldgimel = model.gimel[d]
-				update_phi!(model, d)
 				update_xi!(model, d)
-				update_gimel!(model, d)
+				update_phi!(model, d)
 				update_zayin!(model, d)
-				if norm(oldgimel - model.gimel[d]) < vtol
+				update_gimel!(model, d)
+				if norm(model.gimel[d] - model.gimel_old[d]) < vtol
 					break
 				end
 			end
@@ -383,5 +401,3 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 	end
 	nothing
 end
-
-Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")

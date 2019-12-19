@@ -67,14 +67,14 @@ mutable struct fCTM <: TopicModel
 end
 
 function Elogpeta(model::fCTM, d::Int)
-	"Compute the numerical value for E[log(P(eta))]."
+	"Compute E[log(P(eta))]."
 
 	x = 0.5 * (logdet(model.invsigma) - model.K * log(2pi) - dot(diag(model.invsigma), model.vsq[d]) - dot(model.lambda[d] - model.mu, model.invsigma * (model.lambda[d] - model.mu)))
 	return x
 end
 
 function Elogpc(model::fCTM, d::Int)
-	"Compute the numerical value for E[log(P(c))]."
+	"Compute E[log(P(c))]."
 
 	counts = model.corp[d].counts
 	x = log(@boink model.eta^dot(model.tau[d], counts) * (1 - model.eta)^(model.C[d] - dot(model.tau[d], counts)))
@@ -82,7 +82,7 @@ function Elogpc(model::fCTM, d::Int)
 end
 
 function Elogpz(model::fCTM, d::Int)
-	"Compute the numerical value for E[log(P(z))]."
+	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
 	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.lzeta
@@ -90,7 +90,7 @@ function Elogpz(model::fCTM, d::Int)
 end
 
 function Elogpw(model::fCTM, d::Int)
-	"Compute the numerical value for E[log(P(w))]."
+	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
@@ -98,14 +98,14 @@ function Elogpw(model::fCTM, d::Int)
 end
 
 function Elogqeta(model::fCTM, d::Int)
-	"Compute the numerical value for E[log(q(eta))]."
+	"Compute E[log(q(eta))]."
 
 	x = -entropy(MvNormal(model.lambda[d], diagm(model.vsq[d])))
 	return x
 end
 
 function Elogqc(model::fCTM, d::Int)
-	"Compute the numerical value for E[log(q(c))]."
+	"Compute E[log(q(c))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Bernoulli(model.tau[d][n])) for (n, c) in enumerate(counts)])
@@ -113,7 +113,7 @@ function Elogqc(model::fCTM, d::Int)
 end
 
 function Elogqz(model::fCTM, d::Int)
-	"Compute the numerical value for E[log(q(z))]."
+	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
@@ -283,7 +283,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		check_elbo(model)
 		
 		if k % check_elbo
-			check_elbo(model)
+			check_delta_elbo(model)
 		end
 	end
 

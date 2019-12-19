@@ -105,7 +105,7 @@ function update_host!(model::gpuCTPF)
 end
 
 function check_delta_elbo(model::TopicModel)
-	"Print value for evidence lower build and check delta_elbo."
+	"Check and print value of delta_elbo."
 	"If abs(delta_elbo) < tol, terminate algorithm."
 
 	delta_elbo = -(model.elbo - update_elbo!(model))
