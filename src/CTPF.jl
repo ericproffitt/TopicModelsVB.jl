@@ -358,7 +358,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 
 	all([tol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be positive integers."))
-	(isa(check_elbo, Integer) & check_elbo > 0) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
 		for d in 1:model.M
@@ -393,7 +393,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 	for d in 1:model.M
 		Etheta = model.gimel[d] ./ model.dalet
 		Eepsilon = model.zayin[d] ./ model.het
-		model.scores[d,:] = sum(Eeta .* (Etheta + Eepsilon), 1)
+		model.scores[d,:] = sum(Eeta .* (Etheta + Eepsilon), dims=1)
 	end
 
 	model.drecs = Vector{Int}[]
