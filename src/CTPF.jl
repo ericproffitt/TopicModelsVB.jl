@@ -403,7 +403,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 
 	model.drecs = Vector{Int}[]
 	for d in 1:model.M
-		nr = setdiff(keys(model.corp.users), model.corp[d].readers)
+		nr = collect(setdiff(keys(model.corp.users), model.corp[d].readers))
 		push!(model.drecs, nr[reverse(sortperm(vec(model.scores[d,nr])))])
 	end
 
