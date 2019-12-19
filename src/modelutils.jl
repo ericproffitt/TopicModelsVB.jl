@@ -724,26 +724,29 @@ function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); 
 	end
 end
 
-function showlibs{T<:Integer}(model::AbstractCTPF, users::Vector{T})
+function showlibs(model::CTPF, users::Vector{<:Integer})
 	@assert checkbounds(Bool, 1:model.U, users)
 	
 	for u in users
 		@juliadots "user $u\n"
-		try if model.corp.users[u][1:5] != "#user"
+		try
+			if model.corp.users[u][1:5] != "#user"
 				@juliadots model.corp.users[u] * "\n"
 			end
-		catch @juliadots model.corp.users[u] * "\n"
+		
+		catch
+			@juliadots model.corp.users[u] * "\n"
 		end
 		
 		for d in model.libs[u]
-			yellow(" • ")
-			isempty(model.corp[d].title) ? bold("doc $d\n") : bold("$(model.corp[d].title)\n")
+			print(Crayon(foreground=:yellow, bold=true), " • ")
+			isempty(model.corp[d].title) ? print(Crayon(foreground=:white, bold=true), "doc $d\n") : print(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)\n")
 		end
 		println()
 	end
 end
 
-showlibs(model::AbstractCTPF, user::Integer) = showlibs(model, [user])
+showlibs(model::CTPF, user::Integer) = showlibs(model, [user])
 
 function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U::Integer=min(16, model.U); cols::Integer=4)
 	@assert checkbounds(Bool, 1:model.M, docs)	
