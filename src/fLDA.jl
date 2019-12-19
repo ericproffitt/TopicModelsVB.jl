@@ -254,7 +254,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		update_alpha!(model, niter, ntol)
 		update_eta!(model)	
 		
-		if k % check_elbo
+		if k % check_elbo == 0
 			check_delta_elbo(model)
 		end
 	end

@@ -283,7 +283,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		update_eta!(model)
 		check_elbo(model)
 		
-		if k % check_elbo
+		if k % check_elbo == 0
 			check_delta_elbo(model)
 		end
 	end

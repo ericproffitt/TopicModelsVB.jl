@@ -381,7 +381,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 		update_he!(model)
 		update_vav!(model)
 
-		if k % check_elbo
+		if k % check_elbo == 0
 			check_delta_elbo(model)
 		end
 	end
