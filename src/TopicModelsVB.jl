@@ -1,23 +1,24 @@
 module TopicModelsVB
 
+using Random
 using DelimitedFiles
 using Crayons
 using SpecialFunctions
 using LinearAlgebra
 using Distributions
 using OpenCL
-using Random
 
 export VectorList, MatrixList
 export Document, Corpus
-export TopicModel, GPUTopicModel, BaseTopicModel
-export AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfCTM, AbstractDTM, AbstractCTPF
-export LDA, fLDA, CTM, fCTM, CTPF, DTM
-export gpuLDA, gpuCTM, gpuCTPF
-export isnegative, ispositive, logsumexp, addlogistic, partition
-export checkdoc, checkcorp, readcorp, writecorp, abridgecorp!, trimcorp!, compactcorp!, padcorp!, cullcorp!, fixcorp!, showdocs, getlex, getusers
-export train!, @gpu
-export fixmodel!, gendoc, gencorp, showtopics, showlibs, showdrecs, showurecs
+export TopicModel, BaseTopicModel
+export AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfCTM, AbstractCTPF
+export LDA, fLDA, CTM, fCTM, CTPF
+export gpuLDA, gpufLDA, gpuCTM, gpufCTM, gpuCTPF
+export logsumexp, additive_logistic
+export readcorp, writecorp, abridge_corp!, alphabetize_corp!, compact_corp!, condense_corp!, pad_corp!, trim_corp!, remove_empty_docs!, stop_corp!, trim_docs!, fixcorp!, showdocs, getlex, getusers
+export train!
+export @gpu
+export gendoc, gencorp, showtopics, showlibs, showdrecs, showurecs
 
 include("macros.jl")
 include("utils.jl")
@@ -41,9 +42,6 @@ include("fCTM.jl")
 include("AbstractfCTM.jl")
 
 include("BaseTopicModel.jl")
-
-include("DTM.jl")
-include("AbstractDTM.jl")
 
 include("CTPF.jl")
 include("gpuCTPF.jl")
