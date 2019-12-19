@@ -59,7 +59,7 @@ mutable struct CTPF <: TopicModel
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
-		alef = exp.(rand(Dirichlet(V, 1.0), K)' - 0.5)
+		alef = exp.(rand(Dirichlet(V, 1.0), K)' .- 0.5)
 		alef_old = copy(alef)
 		alef_temp = fill(a, K, V)
 		he = ones(K, U)
@@ -84,9 +84,21 @@ mutable struct CTPF <: TopicModel
 		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo)
 
 		for d in 1:model.M
+			println(d)
 			model.phi = ones(K, N[d]) / K
 			model.xi = ones(2K, R[d]) / 2K
-			model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
+			model.elbo += 	(
+							Elogpya(model, d) +
+							Elogpyb(model, d) +
+							Elogpz(model, d) +
+							Elogptheta(model, d) +
+							Elogpepsilon(model, d) -
+							#Elogqy(model, d) -
+							#Elogqz(model, d) -
+							Elogqtheta(model, d) -
+							Elogqepsilon(model, d)
+							)
+			#model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
 		end
 
 		return model
