@@ -84,21 +84,9 @@ mutable struct CTPF <: TopicModel
 		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo)
 
 		for d in 1:model.M
-			println(d)
 			model.phi = ones(K, N[d]) / K
 			model.xi = ones(2K, R[d]) / 2K
-			model.elbo += 	(
-							Elogpya(model, d) +
-							Elogpyb(model, d) +
-							Elogpz(model, d) +
-							Elogptheta(model, d) +
-							Elogpepsilon(model, d) -
-							#Elogqy(model, d) -
-							#Elogqz(model, d) -
-							Elogqtheta(model, d) -
-							Elogqepsilon(model, d)
-							)
-			#model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
+			model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
 		end
 
 		return model
@@ -300,7 +288,7 @@ function update_bet!(model::CTPF)
 	"Analytic"
 
 	model.bet_old = model.bet
-	model.bet = model.b + sum(model.gimel) ./ model.dalet
+	model.bet = model.b .+ sum(model.gimel) ./ model.dalet
 end
 
 function update_vav!(model::CTPF)
@@ -308,7 +296,7 @@ function update_vav!(model::CTPF)
 	"Analytic."
 
 	model.vav_old = model.vav
-	model.vav = model.f + sum(model.gimel) ./ model.dalet + sum(model.zayin) ./ model.het
+	model.vav = model.f .+ sum(model.gimel) ./ model.dalet + sum(model.zayin) ./ model.het
 end
 
 function update_gimel!(model::CTPF, d::Int)
@@ -318,7 +306,7 @@ function update_gimel!(model::CTPF, d::Int)
 	model.gimel_old[d] = model.gimel[d]
 
 	counts, ratings = model.corp[d].counts, model.corp[d].ratings
-	model.gimel[d] = model.c + model.phi * counts + model.xi[1:model.K,:] * ratings
+	model.gimel[d] = model.c .+ model.phi * counts + model.xi[1:model.K,:] * ratings
 end
 
 function update_zayin!(model::CTPF, d::Int)
@@ -328,7 +316,7 @@ function update_zayin!(model::CTPF, d::Int)
 	model.zayin_old[d] = model.zayin[d]
 
 	ratings = model.corp[d].ratings
-	model.zayin[d] = model.g + model.xi[model.K+1:end,:] * ratings
+	model.zayin[d] = model.g .+ model.xi[model.K+1:end,:] * ratings
 end
 
 function update_dalet!(model::CTPF)
@@ -336,7 +324,7 @@ function update_dalet!(model::CTPF)
 	"Analytic."
 
 	model.dalet_old = model.dalet
-	model.dalet = model.d + vec(sum(model.alef, dims=2)) ./ model.bet + vec(sum(model.he, dims=2)) ./ model.vav
+	model.dalet = model.d .+ vec(sum(model.alef, dims=2)) ./ model.bet + vec(sum(model.he, dims=2)) ./ model.vav
 end
 
 function update_het!(model::CTPF)
@@ -344,7 +332,7 @@ function update_het!(model::CTPF)
 	"Analytic"
 
 	model.het_old = model.het
-	model.het = model.h + vec(sum(model.he, dims=2)) ./ model.vav
+	model.het = model.h .+ vec(sum(model.he, dims=2)) ./ model.vav
 end
 
 function update_phi!(model::CTPF, d::Int)
@@ -370,7 +358,7 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 
 	all([tol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be positive integers."))
-	(isa(check_elbo, Integer) & check_elbo > 0) | check_elbo == Inf  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(check_elbo, Integer) & check_elbo > 0) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
 		for d in 1:model.M
