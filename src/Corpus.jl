@@ -46,10 +46,10 @@ mutable struct Document
 	title::String
 
 	function Document(;terms=Int[], counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), title="")
-		all(ispositive.(terms)) || throw(ArgumentError("All terms must be positive integers."))
-		all(ispositive.(counts)) || throw(ArgumentError("All counts must be positive integers."))
-		all(ispositive.(readers)) || throw(ArgumentError("All readers must be positive integers."))
-		all(ispositive.(ratings)) || throw(ArgumentError("All ratings must be positive integers."))
+		all(terms .> 0 ) || throw(ArgumentError("All terms must be positive integers."))
+		all(counts .> 0) || throw(ArgumentError("All counts must be positive integers."))
+		all(readers .> 0) || throw(ArgumentError("All readers must be positive integers."))
+		all(ratings .> 0) || throw(ArgumentError("All ratings must be positive integers."))
 		isequal(length(terms), length(counts)) || throw(ArgumentError("The terms and counts vectors must have the same length."))
 
 		doc = new(terms, counts, readers, ratings, title)
@@ -75,8 +75,8 @@ mutable struct Corpus
 		isa(vocab, Dict) || (vocab = Dict(vkey => term for (vkey, term) in enumerate(vocab)))
 		isa(users, Dict) || (users = Dict(ukey => user for (ukey, user) in enumerate(users)))
 
-		all(ispositive.(collect(keys(vocab)))) || throw(ArgumentError("All vocab keys must be positive integers."))
-		all(ispositive.(collect(keys(users)))) || throw(ArgumentError("All user keys must be positive integers."))
+		all(collect(keys(vocab)) .> 0) || throw(ArgumentError("All vocab keys must be positive integers."))
+		all(collect(keys(users)) .> 0) || throw(ArgumentError("All user keys must be positive integers."))
 
 		corp = new(docs, vocab, users)
 		return corp
@@ -174,7 +174,7 @@ function readcorp(;docfile::AbstractString="", vocabfile::AbstractString="", use
 		vkeys = vocab[:,1]
 		terms = [string(j) for j in vocab[:,2]]
 		corp.vocab = Dict{Int, String}(zip(vkeys, terms))
-		@assert all(ispositive.(collect(keys(corp.vocab))))
+		@assert all(collect(keys(corp.vocab)) .> 0)
 	end
 
 	if !isempty(userfile)
@@ -182,7 +182,7 @@ function readcorp(;docfile::AbstractString="", vocabfile::AbstractString="", use
 		ukeys = users[:,1]
 		users = [string(u) for u in users[:,2]]
 		corp.users = Dict{Int, String}(zip(ukeys, users))
-		@assert all(ispositive.(collect(keys(corp.users))))
+		@assert all(collect(keys(corp.users)) .> 0)
 	end
 
 	if !isempty(titlefile)
