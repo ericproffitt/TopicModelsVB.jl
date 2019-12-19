@@ -27,7 +27,7 @@ mutable struct fCTM <: TopicModel
 	elbo::Float64
 
 	function fCTM(corp::Corpus, K::Integer)
-		ispositive(K) || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -254,11 +254,12 @@ function update_phi!(model::fCTM, d::Int)
 	model.phi = additive_logistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
-function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)	
+function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)	
 	"Coordinate ascent optimization procedure for filtered correlated topic model variational Bayes algorithm."
 
-	@assert all(.!isnegative.([tol, ntol, vtol]))
-	@assert all(ispositive.([iter, niter, viter]))
+	all([tol, ntol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be nonnegative."))
+	(isa(check_elbo, Integer) & check_elbo > 0) | check_elbo == Inf  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
 		for d in 1:model.M

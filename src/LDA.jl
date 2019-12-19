@@ -17,7 +17,7 @@ mutable struct LDA <: TopicModel
 	elbo::Float64
 
 	function LDA(corp::Corpus, K::Integer)
-		ispositive(K) || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -165,11 +165,12 @@ function update_phi!(model::LDA, d::Int)
 	model.phi ./= sum(model.phi, dims=1)
 end
 
-function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
+function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm."
 
-	@assert all(.!isnegative.([tol, ntol, vtol]))
-	@assert all(ispositive.([iter, niter, viter, check_elbo]))
+	all([tol, ntol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be nonnegative."))
+	(isa(check_elbo, Integer) & check_elbo > 0) | check_elbo == Inf  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
 		for d in 1:model.M	

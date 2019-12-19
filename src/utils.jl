@@ -138,12 +138,6 @@ VectorList{T} = Vector{Vector{T}}
 "Type alias for a vector of matrices."
 MatrixList{T} = Vector{Matrix{T}}
 
-"Check if a real number is negative."
-isnegative(x::Real) = x < 0
-
-"Check if a real number is positive."
-ispositive(x::Real) = x > 0
-
 function logsumexp(x::Array{<:Real})
 	"The LogSumExp of a real-valued array."
 	"Overflow safe."

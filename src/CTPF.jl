@@ -21,21 +21,29 @@ mutable struct CTPF <: TopicModel
 	g::Float64
 	h::Float64
 	alef::Matrix{Float64}
-	bet::Vector{Float64}
-	gimel::VectorList{Float64}
-	dalet::Vector{Float64}
+	alef_old::Matrix{Float64}
+	alef_temp::Matrix{Float64}
 	he::Matrix{Float64}
+	he_old::Matrix{Float64}
+	he_temp::Matrix{Float64}
+	bet::Vector{Float64}
+	bet_old::Vector{Float64}
 	vav::Vector{Float64}
+	vav_old::Vector{Float64}
+	gimel::VectorList{Float64}
+	gimel_old::VectorList{Float64}
 	zayin::VectorList{Float64}
+	zayin_old::VectorList{Float64}
+	dalet::Vector{Float64}
+	dalet_old::Vector{Float64}
 	het::Vector{Float64}
+	het_old::Vector{Float64}
 	phi::Matrix{Float64}
 	xi::Matrix{Float64}
-	newalef::Matrix{Float64}
-	newhe::Matrix{Float64}
 	elbo::Float64
 
 	function CTPF(corp::Corpus, K::Integer)
-		ispositive(K) || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -73,7 +81,7 @@ mutable struct CTPF <: TopicModel
 		xi = ones(2K, R[1]) / 2K
 		elbo = 0
 
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, gimel, dalet, he, vav, zayin, het, phi, xi, elbo)
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo)
 
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
@@ -345,16 +353,16 @@ function update_xi!(model::CTPF, d::Int)
 	model.xi ./= sum(model.xi, dims=1)
 end
 
-function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, check_elbo::Integer=1)
+function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for collaborative topic Poisson factorization variational Bayes algorithm."
 
-	@assert all(.!isnegative.([tol, vtol]))
-	@assert all(ispositive.([iter, viter]))
+	all([tol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be nonnegative."))
+	(isa(check_elbo, Integer) & check_elbo > 0) | check_elbo == Inf  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
 		for d in 1:model.M
 			for _ in 1:viter
-				oldgimel = model.gimel[d]
 				update_xi!(model, d)
 				update_phi!(model, d)
 				update_zayin!(model, d)
