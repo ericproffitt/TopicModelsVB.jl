@@ -234,7 +234,7 @@ function update_elbo!(model::CTPF)
 
 	model.elbo = 0
 	for d in 1:model.M
-		terms = model.terms[d]
+		terms = model.corp[d].terms
 		readers = model.corp[d].readers
 
 		model.phi = exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.bet_old) .+ digamma.(model.alef_old[:,terms]))
@@ -381,8 +381,8 @@ function train!(model::CTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::
 		update_he!(model)
 		update_vav!(model)
 
-		if k % check_elbo == 0
-			check_delta_elbo(model)
+		if check_delta_elbo(model, check_elbo, k, tol)
+			break
 		end
 	end
 	

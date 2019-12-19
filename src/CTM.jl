@@ -214,8 +214,8 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		update_sigma!(model)
 		update_mu!(model)
 		
-		if k % check_elbo == 0
-			check_delta_elbo(model)
+		if check_delta_elbo(model, check_elbo, k, tol)
+			break
 		end
 	end
 
