@@ -597,6 +597,7 @@ end
 
 function gendoc(model::AbstractLDA, laplace_smooth::Real=0.0)
 	"Generate artificial document from LDA or gpuLDA generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
 	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
@@ -618,6 +619,7 @@ end
 
 function gendoc(model::AbstractfLDA, laplace_smooth::Real=0.0)
 	"Generate artificial document from fLDA generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
 	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
@@ -639,6 +641,7 @@ end
 
 function gendoc(model::AbstractCTM, laplace_smooth::Real=0.0)
 	"Generate artificial document from CTM or gpuCTM generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
 	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
@@ -661,6 +664,7 @@ end
 
 function gendoc(model::AbstractfCTM, laplace_smooth::Real=0.0)
 	"Generate artificial document from fCTM generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
 	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
@@ -683,6 +687,7 @@ end
 
 function gencorp(model::Union{AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfCTM}, corp_size::Integer, laplace_smooth::Real=0.0)
 	"Generate artificial corpus using specified generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
 	corp_size > 0 || throw(ArgumentError("corp_size parameter must be a positive integer."))
 	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
