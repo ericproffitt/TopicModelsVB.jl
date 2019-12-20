@@ -11,35 +11,26 @@ mutable struct gpuLDA <: TopicModel
 	Elogtheta::VectorList{Float32}
 	gamma::VectorList{Float32}
 	phi::MatrixList{Float32}
-	newbeta::Void
-	Npsums::VectorList{Int}
-	Jpsums::VectorList{Int}
 	terms::VectorList{Int}
 	counts::VectorList{Int}
 	words::VectorList{Int}
 	device::cl.Device
 	context::cl.Context
 	queue::cl.CmdQueue
-	betakern::cl.Kernel
-	betanormkern::cl.Kernel
-	newbetakern::cl.Kernel
-	gammakern::cl.Kernel
-	phikern::cl.Kernel
-	phinormkern::cl.Kernel
-	Elogthetakern::cl.Kernel
-	Elogthetasumkern::cl.Kernel
-	Npsumsbuf::cl.Buffer{Int}
-	Jpsumsbuf::cl.Buffer{Int}
-	termsbuf::cl.Buffer{Int}
-	countsbuf::cl.Buffer{Int}
-	wordsbuf::cl.Buffer{Int}
-	alphabuf::cl.Buffer{Float32}
-	betabuf::cl.Buffer{Float32}
-	newbetabuf::cl.Buffer{Float32}
-	gammabuf::cl.Buffer{Float32}
-	phibuf::cl.Buffer{Float32}
-	Elogthetabuf::cl.Buffer{Float32}
-	Elogthetasumbuf::cl.Buffer{Float32}
+	beta_kernel::cl.Kernel
+	beta_norm_kernel::cl.Kernel
+	gamma_kernel::cl.Kernel
+	phi_kernel::cl.Kernel
+	phi_norm_kernel::cl.Kernel
+	Elogtheta_kernel::cl.Kernel
+	terms_buffer::cl.Buffer{Int}
+	counts_buffer::cl.Buffer{Int}
+	words_buffer::cl.Buffer{Int}
+	alpha_buffer::cl.Buffer{Float32}
+	beta_buffer::cl.Buffer{Float32}
+	gamma_buffer::cl.Buffer{Float32}
+	phi_buffer::cl.Buffer{Float32}
+	Elogtheta_buffer::cl.Buffer{Float32}
 	elbo::Float32
 
 	function gpuLDA(corp::Corpus, K::Integer, batchsize::Integer=length(corp))
@@ -48,6 +39,15 @@ mutable struct gpuLDA <: TopicModel
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
+
+		model.terms = vcat([doc.terms for doc in model.corp) .- 1
+		model.counts = vcat([doc.counts for doc in model.corp)
+		model.words = sortperm(model.terms) .- 1
+			
+		J = zeros(Int, model.V)
+		for j in model.terms
+			J[j+1] += 1
+		end
 		
 		topics = [collect(1:V) for _ in 1:K]
 
@@ -63,42 +63,23 @@ mutable struct gpuLDA <: TopicModel
 
 		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, phi, elbo)
 
-		model.terms = vcat([doc.terms for doc in model.corp) .- 1
-		model.counts = vcat([doc.counts for doc in model.corp)
-		model.words = sortperm(model.terms) .- 1
-			
-		J = zeros(Int, model.V)
-		for j in model.terms
-			J[j+1] += 1
-		end
-
 		model.device, model.context, model.queue = cl.create_compute_context()
 
 		beta_program = cl.Program(model.context, source=LDA_BETA_c) |> cl.build!
 		beta_norm_program = cl.Program(model.context, source=LDA_BETA_NORM_c) |> cl.build!
-		new_beta_program = cl.Program(model.context, source=LDA_NEWBETA_c) |> cl.build!
 		gamma_program = cl.Program(model.context, source=LDA_GAMMA_c) |> cl.build!
 		phi_program = cl.Program(model.context, source=LDA_PHI_c) |> cl.build!
 		phi_norm_program = cl.Program(model.context, source=LDA_PHI_NORM_c) |> cl.build!
 		Elogtheta_program = cl.Program(model.context, source=LDA_ELOGTHETA_c) |> cl.build!
 
 		model.beta_kernel = cl.Kernel(beta_program, "update_beta")
-		model.beta_norm_kernel = cl.Kernel(beta_norm_program, "normalizeBeta")
-		model.new_beta_kernel = cl.Kernel(newbetaprog, "updateNewbeta")
-		model.gamma_kernel = cl.Kernel(gammaprog, "updateGamma")
+		model.beta_norm_kernel = cl.Kernel(beta_norm_program, "normalize_beta")
+		model.gamma_kernel = cl.Kernel(gamma_program, "update_gamma")
 		model.phi_kernel = cl.Kernel(phi_program, "update_phi")
-		model.phi_norm_kernel = cl.Kernel(phinormprog, "normalize_phi")
-		model.Elogtheta_kernel = cl.Kernel(Elogthetaprog, "update_Elogtheta")
+		model.phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
+		model.Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
 
-		@buffer model.alpha
-		@buffer model.beta
-		@buffer model.gamma
-		@buffer model.Elogthetasum
-		@buffer model.newbeta
 		update_buffer!(model)
-
-		model.phi = [ones(K, N[d]) / K for d in 1:M]
-		model.Elogtheta = [digamma.(ones(K)) - digamma(K) for _ in 1:M]
 		update_elbo!(model)	
 		return model
 	end
@@ -115,7 +96,7 @@ function Elogpz(model::gpuLDA, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi * counts, model.Elogtheta)
+	x = dot(model.phi * counts, model.Elogtheta[d])
 	return x
 end
 
@@ -123,7 +104,7 @@ function Elogpw(model::gpuLDA, d::Int)
 	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi[d] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -138,12 +119,14 @@ function Elogqz(model::gpuLDA, d::Int)
 	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
 function update_elbo!(model::gpuLDA)
 	"Update the evidence lower bound."
+
+	update_host!(model)
 
 	for d in 1:model.M
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
@@ -177,7 +160,6 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 		nu *= 0.5
 	end
 	@bumper model.alpha
-
 	@buffer model.alpha
 end
 
@@ -261,6 +243,7 @@ function update_Elogtheta!(model::gpuLDA)
 	"Analytic."
 	
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.gamma_buffer, model.Elogtheta_buffer)
+	@host model.Elogtheta_buffer
 end
 
 const LDA_GAMMA_c =
@@ -351,7 +334,7 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 			update_phi!(model)			
 			update_gamma!(model)
 			update_Elogtheta!(model)
-			if sum([norm(diff) for diff in model.Elogtheta - model.Elogtheta_old]) < vtol
+			if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
 				break
 			end
 		end
