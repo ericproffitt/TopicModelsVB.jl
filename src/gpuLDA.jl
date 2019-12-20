@@ -61,8 +61,6 @@ mutable struct gpuLDA <: TopicModel
 		phi = [ones(K, N[d]) / K for d in 1:M]
 		elbo = 0
 
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, phi, elbo)
-
 		model.device, model.context, model.queue = cl.create_compute_context()
 
 		beta_program = cl.Program(model.context, source=LDA_BETA_c) |> cl.build!
@@ -78,6 +76,8 @@ mutable struct gpuLDA <: TopicModel
 		model.phi_kernel = cl.Kernel(phi_program, "update_phi")
 		model.phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 		model.Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
+
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo)
 
 		update_buffer!(model)
 		update_elbo!(model)	
