@@ -221,8 +221,8 @@ function updateBeta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
-	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.newbetabuf, model.betabuf)
-	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.betabuf)
+	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.new_beta_buffer, model.beta_buffer)
+	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
 const LDA_NEWBETA_c =
@@ -249,7 +249,7 @@ updateNewbeta(	long K,
 				"""
 
 function updateNewBeta!(model::gpuLDA)
-	model.queue(model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)
+	model.queue(model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.counts_buffer, model.words_buffer, model.phi_buffer, model.new_beta_buffer)
 end
 
 const LDA_ELOGTHETA_c =
@@ -284,7 +284,7 @@ function updateElogtheta!(model::gpuLDA)
 	model.queue(model.Elogtheta_kernel, model.M, nothing, 0, model.K, model.gamma_buffer, model.Elogtheta_buffer)
 end
 
-const LDA_GAMMA_cpp =
+const LDA_GAMMA_c =
 """
 kernel void
 update_gamma(	long F,
@@ -312,7 +312,7 @@ function updateGamma!(model::gpuLDA)
 	"Update gamma."
 	"Analytic."
 
-	model.queue(model.gammakern, (model.K, model.M), nothing, 0, model.K, model.Npsumsbuf, model.countsbuf, model.alphabuf, model.phibuf, model.gammabuf)
+	model.queue(model.gammakern, (model.K, model.M), nothing, 0, model.K, model.Npsumsbuf, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
 
 const LDA_PHI_c =
@@ -370,29 +370,25 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
+		for d in 1:model.M	
 			for _ in 1:viter
-				update_phi!(model)			
-				update_gamma!(model)
-				update_Elogtheta!(model)
-				if sum([norm(diff) for diff in oldElogtheta - Elogtheta]) < vtol
+				update_phi!(model, d)
+				update_gamma!(model, d)
+				update_Elogtheta!(model, d)
+				if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
 					break
 				end
 			end
-			updateElogtheta!(model, b)
-			updateElogthetasum!(model, b)
-			updateNewBeta!(model)
-			if chk
-				update_host!(model, b)
-				updateNewELBO!(model, b)
-			end
+			update_beta!(model, d)
 		end
-		update_alpha!(model, niter, ntol)
 		update_beta!(model)
-		if check_elbo!(model, k, chk, tol)
+		update_alpha!(model, niter, ntol)
+		
+		if check_delta_elbo(model, check_elbo, k, tol)
 			break
 		end
 	end
-	update_host!(model, 1)
+
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end

@@ -104,7 +104,7 @@ function update_host!(model::gpuCTPF)
 	@host model.xibuf
 end
 
-function check_delta_elbo(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
+function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
 	"Check and print value of delta_elbo."
 	"If abs(delta_elbo) < tol, terminate algorithm."
 
