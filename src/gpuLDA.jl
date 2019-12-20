@@ -140,9 +140,6 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	"Update alpha."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	@host model.alpha_buffer
-	@host model.Elogtheta_buffer
-
 	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
 	nu = model.K
@@ -246,7 +243,7 @@ function update_Elogtheta!(model::gpuLDA)
 	"Analytic."
 	
 	model.Elogtheta_old = model.Elogtheta
-	
+
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.gamma_buffer, model.Elogtheta_buffer)
 	@host model.Elogtheta_buffer
 end
@@ -331,8 +328,8 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
 
 	all([tol, ntol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be positive integers."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	all([iter, niter, viter] .> 0) 	|| throw(ArgumentError("Iteration parameters must be positive integers."))
+	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	update_buffer!(model)
 
