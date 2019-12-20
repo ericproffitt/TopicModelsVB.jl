@@ -33,7 +33,7 @@ mutable struct gpuLDA <: TopicModel
 	Elogtheta_buffer::cl.Buffer{Float32}
 	elbo::Float32
 
-	function gpuLDA(corp::Corpus, K::Integer, batchsize::Integer=length(corp))
+	function gpuLDA(corp::Corpus, K::Integer)
 		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
