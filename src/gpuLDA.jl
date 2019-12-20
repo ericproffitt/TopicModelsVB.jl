@@ -4,7 +4,22 @@ mutable struct gpuLDA <: GPUTopicModel
 	V::Int
 	N::Vector{Int}
 	C::Vector{Int}
-	B::Int
+	corp::Corpus
+	topics::VectorList{Int}
+	alpha::Vector{Float64}
+	beta::Matrix{Float64}
+	beta_old::Matrix{Float64}
+	beta_temp::Matrix{Float64}
+	Elogtheta::VectorList{Float64}
+	Elogtheta_old::VectorList{Float64}
+	gamma::VectorList{Float64}
+	phi::Matrix{Float64}
+
+	K::Int
+	M::Int
+	V::Int
+	N::Vector{Int}
+	C::Vector{Int}
 	corp::Corpus
 	batches::Vector{UnitRange{Int}}
 	topics::VectorList{Int}
@@ -47,56 +62,81 @@ mutable struct gpuLDA <: GPUTopicModel
 	newelbo::Float32
 
 	function gpuLDA(corp::Corpus, K::Integer, batchsize::Integer=length(corp))
-		@assert !isempty(corp)		
-		@assert all(ispositive.([K, batchsize]))
-		checkcorp(corp)
+		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
-
-		batches = partition(1:M, batchsize)
-		B = length(batches)
-
+		
 		topics = [collect(1:V) for _ in 1:K]
 
 		alpha = ones(K)
 		beta = rand(Dirichlet(V, 1.0), K)'
-		newbeta = Array{Float32}(0, 0)
+		beta_old = copy(beta)
+		beta_temp = zeros(K, V)
+		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		Elogtheta_old = copy(Elogtheta)
 		gamma = [ones(K) for _ in 1:M]
-		phi = [ones(K, N[d]) / K for d in batches[1]]		
+		phi = ones(K, N[1]) / K
+		elbo = 0
 
-		model = new(K, M, V, N, C, B, copy(corp), batches, topics, alpha, beta, gamma, phi)	
-		fixmodel!(model, check=false)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, phi, elbo)
+
+		model.terms = vcat([doc.terms for doc in model.corp) .- 1
+		model.counts = vcat([doc.counts for doc in model.corp)
+		model.words = sortperm(model.terms) .- 1
+			
+		J = zeros(Int, model.V)
+		for j in model.terms
+			J[j+1] += 1
+		end
+
+		model.device, model.context, model.queue = cl.create_compute_context()
+
+		beta_program = cl.Program(model.context, source=LDA_BETA_c) |> cl.build!
+		beta_norm_program = cl.Program(model.context, source=LDA_BETA_NORM_c) |> cl.build!
+		new_beta_program = cl.Program(model.context, source=LDA_NEWBETA_c) |> cl.build!
+		gamma_program = cl.Program(model.context, source=LDA_GAMMA_c) |> cl.build!
+		phi_program = cl.Program(model.context, source=LDA_PHI_c) |> cl.build!
+		phi_norm_program = cl.Program(model.context, source=LDA_PHI_NORM_c) |> cl.build!
+		Elogtheta_program = cl.Program(model.context, source=LDA_ELOGTHETA_c) |> cl.build!
+
+		model.beta_kernel = cl.Kernel(beta_program, "update_beta")
+		model.beta_norm_kernel = cl.Kernel(beta_norm_program, "normalizeBeta")
+		model.new_beta_kernel = cl.Kernel(newbetaprog, "updateNewbeta")
+		model.gamma_kernel = cl.Kernel(gammaprog, "updateGamma")
+		model.phi_kernel = cl.Kernel(phiprog, "update_phi")
+		model.phi_norm_kernel = cl.Kernel(phinormprog, "normalize_phi")
+		model.Elogtheta_kernel = cl.Kernel(Elogthetaprog, "update_Elogtheta")
+
+		@buffer model.alpha
+		@buffer model.beta
+		@buffer model.gamma
+		@buffer model.Elogthetasum
+		@buffer model.newbeta
+		update_buffer!(model)
 
 		model.phi = [ones(K, N[d]) / K for d in 1:M]
-
-		for (b, batch) in enumerate(batches)
-			model.phi = [ones(K, N[d]) / K for d in batch]
-			model.Elogtheta = [digamma.(ones(K)) - digamma(K) for _ in batch]
-			updateNewELBO!(model, b)
-		end
-		model.phi = [ones(K, N[d]) / K for d in batches[1]]
-		model.Elogtheta = [digamma.(ones(K)) - digamma(K) for _ in batches[1]]
-		updateELBO!(model)	
+		model.Elogtheta = [digamma.(ones(K)) - digamma(K) for _ in 1:M]
+		update_elbo!(model)	
 		return model
 	end
 end
 
-function Elogptheta(model::gpuLDA, d::Int, m::Int)
-	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, model.Elogtheta[m])
+function Elogptheta(model::gpuLDA)
+	x = lgamma(sum(model.alpha)) - sum(lgamma.(model.alpha)) + dot(model.alpha - 1, model.Elogtheta)
 	return x
 end
 
-function Elogpz(model::gpuLDA, d::Int, m::Int)
+function Elogpz(model::gpuLDA, d::Int)
 	counts = model.corp[d].counts
-	x = dot(model.phi[m] * counts, model.Elogtheta[m])
+	x = dot(model.phi[m] * counts, model.Elogtheta)
 	return x
 end
 
-function Elogpw(model::gpuLDA, d::Int, m::Int)
+function Elogpw(model::gpuLDA, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[m] .* log.(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -105,26 +145,15 @@ function Elogqtheta(model::gpuLDA, d::Int)
 	return x
 end
 
-function Elogqz(model::gpuLDA, d::Int, m::Int)
+function Elogqz(model::gpuLDA, d::Int)
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[m][:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
-function updateELBO!(model::gpuLDA)
-	model.elbo = model.newelbo
-	model.newelbo = 0
-	return model.elbo
-end
-
-function updateNewELBO!(model::gpuLDA, b::Int)
-	batch = model.batches[b]
-	for (m, d) in enumerate(batch)
-		model.newelbo += (Elogptheta(model, d, m)
-						+ Elogpz(model, d, m)
-						+ Elogpw(model, d, m) 
-						- Elogqtheta(model, d)
-						- Elogqz(model, d, m))
+function update_elbo!(model::gpuLDA)
+	for d in 1:model.M
+		model.newelbo += Elogptheta(model, d, m) + Elogpz(model, d, m) + Elogpw(model, d, m) - Elogqtheta(model, d) - Elogqz(model, d, m)
 	end
 end
 
@@ -154,11 +183,11 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	@bumper model.alpha
 
 	model.Elogthetasum = zeros(model.K)
-	@buf model.alpha
-	@buf model.Elogthetasum
+	@buffer model.alpha
+	@buffer model.Elogthetasum
 end
 
-const LDA_BETA_cpp =
+const LDA_BETA_c =
 """
 kernel void
 updateBeta(long K,
@@ -174,7 +203,7 @@ updateBeta(long K,
 			}
 			"""
 
-const LDA_BETA_NORM_cpp =
+const LDA_BETA_NORM_c =
 """
 kernel void
 normalizeBeta(long K,
@@ -199,7 +228,7 @@ function updateBeta!(model::gpuLDA)
 	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.betabuf)
 end
 
-const LDA_NEWBETA_cpp =
+const LDA_NEWBETA_c =
 """
 kernel void
 updateNewbeta(long K,
@@ -250,20 +279,14 @@ updateGamma(long F,
 			}
 			"""
 
-function updateGamma!(model::gpuLDA, b::Int)
-	batch = model.batches[b]
-	model.queue(model.gammakern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.Npsumsbuf, model.countsbuf, model.alphabuf, model.phibuf, model.gammabuf)
+function updateGamma!(model::gpuLDA)
+	model.queue(model.gammakern, (model.K, model.M), nothing, 0, model.K, model.Npsumsbuf, model.countsbuf, model.alphabuf, model.phibuf, model.gammabuf)
 end
 
-const LDA_PHI_cpp =
+const LDA_PHI_c =
 """
 kernel void
-updatePhi(long K,
-			const global long *Npsums,
-			const global long *terms,
-			const global float *beta,
-			const global float *Elogtheta,
-			global float *phi)
+update_phi(long K, const global long *Npsums, const global long *terms, const global float *beta, const global float *Elogtheta, global float *phi)
                                         
 			{
 			long i = get_global_id(0);
@@ -274,11 +297,10 @@ updatePhi(long K,
 			}
 			"""
 
-const LDA_PHI_NORM_cpp =
+const LDA_PHI_NORM_c =
 """
 kernel void
-normalizePhi(long K,
-				global float *phi)
+normalize_phi(long K, global float *phi)
 				
 				{
 				long dn = get_global_id(0);
@@ -293,21 +315,17 @@ normalizePhi(long K,
 				}
 				"""
 
-function updatePhi!(model::gpuLDA, b::Int)
-	batch = model.batches[b]
-	model.queue(model.phikern, (model.K, length(batch)), nothing, model.K, model.Npsumsbuf, model.termsbuf, model.betabuf, model.Elogthetabuf, model.phibuf)	
-	model.queue(model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
+function updatePhi!(model::gpuLDA)
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
+	model.queue(model.phi_norm_kernel, sum(model.N[batch]), nothing, model.K, model.phi_buffer)
 end
 
-const LDA_ELOGTHETA_cpp =
+const LDA_ELOGTHETA_c =
 """
-$(DIGAMMA_cpp)
+$(DIGAMMA_c)
 
 kernel void
-updateElogtheta(long F,
-				long K,
-				const global float *gamma,
-				global float *Elogtheta)
+update_Elogtheta(long F, long K, const global float *gamma, global float *Elogtheta)
 
 				{
 				long d = get_global_id(0);
@@ -326,49 +344,22 @@ updateElogtheta(long F,
 
 function updateElogtheta!(model::gpuLDA, b::Int)
 	batch = model.batches[b]
-	model.queue(model.Elogthetakern, length(batch), nothing, batch[1] - 1, model.K, model.gammabuf, model.Elogthetabuf)
+	model.queue(model.Elogthetakern, model.M, nothing, batch[1] - 1, model.K, model.gammabuf, model.Elogthetabuf)
 end
 
-const LDA_ELOGTHETASUM_cpp =
-"""
-kernel void
-updateElogthetasum(long K,
-					long D,
-					const global float *Elogtheta,
-					global float *Elogthetasum)
+function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
+	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
 
-					{
-					long i = get_global_id(0);
-
-					float acc = 0.0f;
-
-					for (long d=0; d<D; d++)
-						acc += Elogtheta[K * d + i];
-
-					Elogthetasum[i] += acc;	
-					}
-					"""
-
-function updateElogthetasum!(model::gpuLDA, b::Int)
-	batch = model.batches[b]
-	model.queue(model.Elogthetasumkern, model.K, nothing, model.K, length(batch), model.Elogthetabuf, model.Elogthetasumbuf)
-end
-
-function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
-	@assert all(.!isnegative.([tol, ntol, vtol]))
-	@assert all(ispositive.([iter, niter, viter, chkelbo]))
-	lowVRAM = model.B > 1
+	all([tol, ntol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be positive integers."))
+	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
-		chk = (k % chkelbo == 0)
-		for b in 1:model.B
 			for _ in 1:viter
-				oldElogtheta = @host b model.Elogthetabuf
-				updateElogtheta!(model, b)
-				updatePhi!(model, b)			
-				updateGamma!(model, b)
-				Elogtheta = @host b model.Elogthetabuf
-				if sum([norm(diff) for diff in oldElogtheta - Elogtheta]) < length(model.batches[b]) * vtol
+				update_phi!(model)			
+				update_gamma!(model)
+				update_Elogtheta!(model)
+				if sum([norm(diff) for diff in oldElogtheta - Elogtheta]) < vtol
 					break
 				end
 			end
