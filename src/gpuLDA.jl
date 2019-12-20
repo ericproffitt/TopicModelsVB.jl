@@ -370,30 +370,26 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
-		for d in 1:model.M	
-			for _ in 1:viter
-				update_phi!(model, d)
-				update_gamma!(model, d)
-				update_Elogtheta!(model, d)
-				if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
-					break
-				end
+		for _ in 1:viter
+			update_phi!(model)			
+			update_gamma!(model)
+			update_Elogtheta!(model)
+			if sum([norm(diff) for diff in model.Elogtheta - model.Elogtheta_old]) < vtol
+				break
 			end
-			update_beta!(model, d)
 		end
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)
 		
-		if check_delta_elbo(model, check_elbo, k, tol)
+		if check_elbo!(model, check_elbo, k, tol)
 			break
 		end
 	end
 
+	update_host!(model)
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
-
-
 
 
 
