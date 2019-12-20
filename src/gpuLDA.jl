@@ -4,16 +4,19 @@ mutable struct gpuLDA <: TopicModel
 	V::Int
 	N::Vector{Int}
 	C::Vector{Int}
+	J::Vector{Int}
 	corp::Corpus
+	terms::VectorList{Int}
+	counts::VectorList{Int}
+	words::VectorList{Int}
 	topics::VectorList{Int}
 	alpha::Vector{Float32}
 	beta::Matrix{Float32}
 	Elogtheta::VectorList{Float32}
+	Elogtheta_old::VectorList{Float32}
 	gamma::VectorList{Float32}
 	phi::MatrixList{Float32}
-	terms::VectorList{Int}
-	counts::VectorList{Int}
-	words::VectorList{Int}
+	elbo::Float32
 	device::cl.Device
 	context::cl.Context
 	queue::cl.CmdQueue
@@ -23,6 +26,9 @@ mutable struct gpuLDA <: TopicModel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
 	Elogtheta_kernel::cl.Kernel
+	N_buffer::cl.Buffer{Int}
+	C_buffer::cl.Buffer{Int}
+	J_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
 	counts_buffer::cl.Buffer{Int}
 	words_buffer::cl.Buffer{Int}
@@ -31,7 +37,6 @@ mutable struct gpuLDA <: TopicModel
 	gamma_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
 	Elogtheta_buffer::cl.Buffer{Float32}
-	elbo::Float32
 
 	function gpuLDA(corp::Corpus, K::Integer)
 		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
@@ -40,12 +45,12 @@ mutable struct gpuLDA <: TopicModel
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
 
-		model.terms = vcat([doc.terms for doc in model.corp) .- 1
-		model.counts = vcat([doc.counts for doc in model.corp)
-		model.words = sortperm(model.terms) .- 1
+		terms = vcat([doc.terms for doc in corp) .- 1
+		counts = vcat([doc.counts for doc in corp)
+		words = sortperm(terms) .- 1
 			
-		J = zeros(Int, model.V)
-		for j in model.terms
+		J = zeros(Int, V)
+		for j in terms
 			J[j+1] += 1
 		end
 		
@@ -61,25 +66,23 @@ mutable struct gpuLDA <: TopicModel
 		phi = [ones(K, N[d]) / K for d in 1:M]
 		elbo = 0
 
-		model.device, model.context, model.queue = cl.create_compute_context()
+		device, context, queue = cl.create_compute_context()
 
-		beta_program = cl.Program(model.context, source=LDA_BETA_c) |> cl.build!
-		beta_norm_program = cl.Program(model.context, source=LDA_BETA_NORM_c) |> cl.build!
-		gamma_program = cl.Program(model.context, source=LDA_GAMMA_c) |> cl.build!
-		phi_program = cl.Program(model.context, source=LDA_PHI_c) |> cl.build!
-		phi_norm_program = cl.Program(model.context, source=LDA_PHI_NORM_c) |> cl.build!
-		Elogtheta_program = cl.Program(model.context, source=LDA_ELOGTHETA_c) |> cl.build!
+		beta_program = cl.Program(context, source=LDA_BETA_c) |> cl.build!
+		beta_norm_program = cl.Program(context, source=LDA_BETA_NORM_c) |> cl.build!
+		gamma_program = cl.Program(context, source=LDA_GAMMA_c) |> cl.build!
+		phi_program = cl.Program(context, source=LDA_PHI_c) |> cl.build!
+		phi_norm_program = cl.Program(context, source=LDA_PHI_NORM_c) |> cl.build!
+		Elogtheta_program = cl.Program(context, source=LDA_ELOGTHETA_c) |> cl.build!
 
-		model.beta_kernel = cl.Kernel(beta_program, "update_beta")
-		model.beta_norm_kernel = cl.Kernel(beta_norm_program, "normalize_beta")
-		model.gamma_kernel = cl.Kernel(gamma_program, "update_gamma")
-		model.phi_kernel = cl.Kernel(phi_program, "update_phi")
-		model.phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
-		model.Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
+		beta_kernel = cl.Kernel(beta_program, "update_beta")
+		beta_norm_kernel = cl.Kernel(beta_norm_program, "normalize_beta")
+		gamma_kernel = cl.Kernel(gamma_program, "update_gamma")
+		phi_kernel = cl.Kernel(phi_program, "update_phi")
+		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
+		Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
 
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo)
-
-		update_buffer!(model)
+		model = new(K, M, V, N, C, J, copy(corp), terms, counts, words, topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, gamma_kernel, phi_kernel, phi_norm_kernel, Elogtheta_norm_kernel)
 		update_elbo!(model)	
 		return model
 	end
@@ -242,6 +245,8 @@ function update_Elogtheta!(model::gpuLDA)
 	"Update E[log(theta)]."
 	"Analytic."
 	
+	model.Elogtheta_old = model.Elogtheta
+	
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.gamma_buffer, model.Elogtheta_buffer)
 	@host model.Elogtheta_buffer
 end
@@ -273,7 +278,7 @@ function update_gamma!(model::gpuLDA)
 	"Update gamma."
 	"Analytic."
 
-	model.queue(model.gammakern, (model.K, model.M), nothing, model.K, model.N, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
+	model.queue(model.gammakern, (model.K, model.M), nothing, model.K, model.N_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
 
 const LDA_PHI_c =
@@ -328,6 +333,8 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	all([tol, ntol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+
+	update_buffer!(model)
 
 	for k in 1:iter
 		for _ in 1:viter

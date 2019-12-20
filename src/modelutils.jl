@@ -24,11 +24,17 @@ Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative top
 function update_buffer!(model::gpuLDA)
 	"Update gpuLDA model data in GPU RAM."
 
+	@buffer model.N
+	@buffer model.C
+	@buffer model.J
+	@buffer model.alpha
+	@buffer model.beta
+	@buffer model.Elogtheta
+	@buffer model.gamma
+	@buffer model.phi
 	@buffer model.terms
 	@buffer model.counts
 	@buffer model.words
-	@buffer model.phi
-	@buffer model.Elogtheta
 end
 
 function update_buffer!(model::gpuCTM)
@@ -66,12 +72,10 @@ end
 function update_host!(model::gpuLDA)
 	"Update gpuLDA model data in CPU RAM."
 
-	@host model.alphabuf
-	@host model.betabuf
-	@host model.gammabuf
-	@host model.phibuf
-	@host model.Elogthetabuf
-	@host model.Elogthetasumbuf
+	@host model.beta_buffer
+	@host model.Elogtheta_buffer
+	@host model.gamma_buffer
+	@host model.phi_buffer
 end
 
 function update_host!(model::gpuCTM)
