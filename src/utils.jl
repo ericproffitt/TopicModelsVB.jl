@@ -22,7 +22,7 @@ const EPSILON32 = "0.000000000000000000000000000001f"
 ### code, of: K. S. Kölbig, "Programs for computing the logarithm of
 ### the gamma function, and the digamma function, for complex
 ### argument," Computer Phys. Commun. vol. 4, pp. 221–226 (1972).
-const DIGAMMA_cpp =
+const DIGAMMA_c =
 """
 inline float
 digamma(float x)
@@ -57,7 +57,7 @@ digamma(float x)
 		"""
 
 ### Algorithm for putting a matrix into reduced row echelon form.
-const RREF_cpp =
+const RREF_c =
 """
 inline void
 rref(long K, long D, global float *A, global float *B)
@@ -117,7 +117,7 @@ rref(long K, long D, global float *A, global float *B)
 		"""
 
 ### Algorithm for taking the L2 norm of a vector.
-const NORM2_cpp =
+const NORM2_c =
 """
 inline float
 norm2(long K, long d, global float *x)
