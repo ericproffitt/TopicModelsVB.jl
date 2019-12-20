@@ -86,7 +86,7 @@ mutable struct gpuLDA <: TopicModel
 		model.beta_norm_kernel = cl.Kernel(beta_norm_program, "normalizeBeta")
 		model.new_beta_kernel = cl.Kernel(newbetaprog, "updateNewbeta")
 		model.gamma_kernel = cl.Kernel(gammaprog, "updateGamma")
-		model.phi_kernel = cl.Kernel(phiprog, "update_phi")
+		model.phi_kernel = cl.Kernel(phi_program, "update_phi")
 		model.phi_norm_kernel = cl.Kernel(phinormprog, "normalize_phi")
 		model.Elogtheta_kernel = cl.Kernel(Elogthetaprog, "update_Elogtheta")
 
@@ -181,19 +181,34 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	@buffer model.alpha
 end
 
+function updateBeta!(model::gpuLDA)
+	"Update beta"
+	"Analytic."
+
+	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.new_beta_buffer, model.beta_buffer)
+	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.beta_buffer)
+end
+
 const LDA_BETA_c =
 """
 kernel void
 update_beta(long K,
-			global float *newbeta,
+			const global long *J,
+			const global long *counts,
+			const global long *words,
+			const global float *phi,
 			global float *beta)
-	
+						
 			{
 			long i = get_global_id(0);
 			long j = get_global_id(1);
 
-			beta[K * j + i] = newbeta[K * j + i];
-			newbeta[K * j + i] = 0.0f;
+			float acc = 0.0f;
+
+			for (long w=0; w<J[j]; w++)
+				acc += counts[words[w]] * phi[K * words[w] + i];
+
+			newbeta[K * j + i] += acc;
 			}
 			"""
 
@@ -217,39 +232,12 @@ normalize_beta(	long K,
 				}
 				"""
 
-function updateBeta!(model::gpuLDA)
+function update_beta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
-	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.new_beta_buffer, model.beta_buffer)
+	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.J, model.counts_buffer, model.words_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.beta_buffer)
-end
-
-const LDA_NEWBETA_c =
-"""
-kernel void
-updateNewbeta(	long K,
-				const global long *Jpsums,
-				const global long *counts,
-				const global long *words,
-				const global float *phi,
-				global float *newbeta)
-							
-				{
-				long i = get_global_id(0);
-				long j = get_global_id(1);
-
-				float acc = 0.0f;
-
-				for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
-					acc += counts[words[w]] * phi[K * words[w] + i];
-
-				newbeta[K * j + i] += acc;
-				}
-				"""
-
-function updateNewBeta!(model::gpuLDA)
-	model.queue(model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.counts_buffer, model.words_buffer, model.phi_buffer, model.new_beta_buffer)
 end
 
 const LDA_ELOGTHETA_c =
@@ -257,8 +245,7 @@ const LDA_ELOGTHETA_c =
 $(DIGAMMA_c)
 
 kernel void
-update_Elogtheta(	long F,
-					long K,
+update_Elogtheta(	long K,
 					const global float *gamma,
 					global float *Elogtheta)
 
@@ -268,12 +255,12 @@ update_Elogtheta(	long F,
 					float acc = 0.0f;
 
 					for (long i=0; i<K; i++)
-						acc += gamma[K * (F + d) + i];
+						acc += gamma[K * d + i];
 
 					acc = digamma(acc);	
 
 					for (long i=0; i<K; i++)
-						Elogtheta[K * d + i] = digamma(gamma[K * (F + d) + i]) - acc;
+						Elogtheta[K * d + i] = digamma(gamma[K * d + i]) - acc;
 					}
 					"""
 
@@ -281,15 +268,14 @@ function updateElogtheta!(model::gpuLDA)
 	"Update E[log(theta)]."
 	"Analytic."
 	
-	model.queue(model.Elogtheta_kernel, model.M, nothing, 0, model.K, model.gamma_buffer, model.Elogtheta_buffer)
+	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.gamma_buffer, model.Elogtheta_buffer)
 end
 
 const LDA_GAMMA_c =
 """
 kernel void
-update_gamma(	long F,
-				long K,
-				const global long *Npsums,
+update_gamma(	long K,
+				const global long *N,
 				const global long *counts,
 				const global float *alpha,
 				const global float *phi,
@@ -301,10 +287,10 @@ update_gamma(	long F,
 
 				float acc = 0.0f;
 
-				for (long n=Npsums[d]; n<Npsums[d+1]; n++)
+				for (long n=0; n<N[d]; n++)
 					acc += phi[K * n + i] * counts[n]; 
 
-				gamma[K * (F + d) + i] = alpha[i] + acc + $(EPSILON32);
+				gamma[K * d + i] = alpha[i] + acc + $(EPSILON32);
 				}
 				"""
 
@@ -312,15 +298,14 @@ function updateGamma!(model::gpuLDA)
 	"Update gamma."
 	"Analytic."
 
-	model.queue(model.gammakern, (model.K, model.M), nothing, 0, model.K, model.Npsumsbuf, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
+	model.queue(model.gammakern, (model.K, model.M), nothing, model.K, model.N, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
 
 const LDA_PHI_c =
 """
 kernel void
 update_phi(	long K,
-			const global,
-			long *Npsums,
+			const global long *N,
 			const global long *terms,
 			const global float *beta,
 			const global float *Elogtheta,
@@ -330,7 +315,7 @@ update_phi(	long K,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			for (long n=Npsums[d]; n<Npsums[d+1]; n++)
+			for (long n=0; n<N[d]; n++)
 				phi[K * n + i] = beta[K * terms[n] + i] * exp(Elogtheta[K * d + i]);
 			}
 			"""
@@ -358,7 +343,7 @@ function update_phi!(model::gpuLDA)
 	"Update phi."
 	"Analytic."
 
-	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.N, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
