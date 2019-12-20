@@ -150,12 +150,12 @@ function update_elbo!(model::gpuLDA)
 	end
 end
 
-function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
+function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	"Update alpha."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
 	@host model.alpha_buffer
-	@host model.Elogthetasum_buffer
+	@host model.Elogtheta_buffer
 
 	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
@@ -179,14 +179,6 @@ function updateAlpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	@bumper model.alpha
 
 	@buffer model.alpha
-end
-
-function updateBeta!(model::gpuLDA)
-	"Update beta"
-	"Analytic."
-
-	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.new_beta_buffer, model.beta_buffer)
-	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
 const LDA_BETA_c =
@@ -264,7 +256,7 @@ update_Elogtheta(	long K,
 					}
 					"""
 
-function updateElogtheta!(model::gpuLDA)
+function update_Elogtheta!(model::gpuLDA)
 	"Update E[log(theta)]."
 	"Analytic."
 	
@@ -294,7 +286,7 @@ update_gamma(	long K,
 				}
 				"""
 
-function updateGamma!(model::gpuLDA)
+function update_gamma!(model::gpuLDA)
 	"Update gamma."
 	"Analytic."
 
