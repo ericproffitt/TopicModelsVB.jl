@@ -60,17 +60,17 @@ mutable struct gpuLDA <: TopicModel
 
 		beta_program = cl.Program(context, source=LDA_BETA_c) |> cl.build!
 		beta_norm_program = cl.Program(context, source=LDA_BETA_NORM_c) |> cl.build!
+		Elogtheta_program = cl.Program(context, source=LDA_ELOGTHETA_c) |> cl.build!
 		gamma_program = cl.Program(context, source=LDA_GAMMA_c) |> cl.build!
 		phi_program = cl.Program(context, source=LDA_PHI_c) |> cl.build!
 		phi_norm_program = cl.Program(context, source=LDA_PHI_NORM_c) |> cl.build!
-		Elogtheta_program = cl.Program(context, source=LDA_ELOGTHETA_c) |> cl.build!
 
 		beta_kernel = cl.Kernel(beta_program, "update_beta")
 		beta_norm_kernel = cl.Kernel(beta_norm_program, "normalize_beta")
+		Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
 		gamma_kernel = cl.Kernel(gamma_program, "update_gamma")
 		phi_kernel = cl.Kernel(phi_program, "update_phi")
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
-		Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
 
 		model = new(K, M, V, N, C, J, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, gamma_kernel, phi_kernel, phi_norm_kernel, Elogtheta_norm_kernel)
 		update_elbo!(model)	
