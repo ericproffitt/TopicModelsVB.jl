@@ -50,293 +50,139 @@ macro bumper(expr::Expr)
 	return expr
 end
 
-macro buf(args...)
-	if isa(args[1], Expr)
-		expr = args[1]
-	else
-		b = args[1]
-		expr = args[2]
-	end
+macro buffer(args...)
+	"Load individual variables into buffer memory."
 
+	expr = args[1]
 	model = expr.args[1]
 
-	if expr.args[2] == :(:Npsums)
-		quoteblock =
-		quote
-		$(esc(model)).Npsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Npsums[$(esc(b))])
-		end
-
-	elseif expr.args[2] == :(:Jpsums)
-		quoteblock =
-		quote
-		$(esc(model)).Jpsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Jpsums[$(esc(b))])
-		end
-
-	elseif expr.args[2] == :(:Rpsums)
-		quoteblock =
-		quote
-		$(esc(model)).Rpsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Rpsums[$(esc(b))])
-		end
-
-	elseif expr.args[2] == :(:Ypsums)
-		quoteblock =
-		quote
-		$(esc(model)).Ypsumsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).Ypsums[$(esc(b))])
-		end
-
-	elseif expr.args[2] == :(:terms)
-		quoteblock =
-		quote
-		$(esc(model)).termsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).terms[$(esc(b))])
-		end
+	if expr.args[2] == :(:terms)
+		expr_out = :($(esc(model)).terms_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).terms))
 
 	elseif expr.args[2] == :(:counts)
-		quoteblock =
-		quote
-		$(esc(model)).countsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).counts[$(esc(b))])
-		end
+		expr_out = :($(esc(model)).counts_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).counts))
 
 	elseif expr.args[2] == :(:words)
-		quoteblock =
-		quote
-		$(esc(model)).wordsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).words[$(esc(b))])
-		end
+		expr_out = :($(esc(model)).words_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).words))
 
 	elseif expr.args[2] == :(:readers)
-		quoteblock =
-		quote
-		$(esc(model)).readersbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).readers[$(esc(b))])
-		end
+		expr_out = :($(esc(model)).readers_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).readers))
 
 	elseif expr.args[2] == :(:ratings)
-		quoteblock =
-		quote
-		$(esc(model)).ratingsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).ratings[$(esc(b))])
-		end
+		expr_out = :($(esc(model)).ratings_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).ratings))
 
 	elseif expr.args[2] == :(:views)
-		quoteblock =
-		quote
-		$(esc(model)).viewsbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views[$(esc(b))])
-		end
+		expr_out = :($(esc(model)).views_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views))
 
 	elseif expr.args[2] == :(:alpha)
-		quoteblock =
-		quote
-		$(esc(model)).alphabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha)
-		end
+		expr_out = :($(esc(model)).alphabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
 
 	elseif expr.args[2] == :(:beta)
-		quoteblock =
-		quote
-		$(esc(model)).betabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).beta)
-		end
-
-	elseif expr.args[2] == :(:newbeta)
-		quoteblock =
-		quote
-		$(esc(model)).newbetabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=zeros(Float32, $(esc(model)).K, $(esc(model)).V))
-		end
+		expr_out = :($(esc(model)).beta_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).beta))
 
 	elseif expr.args[2] == :(:gamma)
-		quoteblock =
-		quote
-		$(esc(model)).gammabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gamma..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
-		end
+		expr_out = :($(esc(model)).gamma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gamma..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
 
 	elseif expr.args[2] == :(:phi)
-		quoteblock =
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		$(esc(model)).phibuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=ones(Float32, $(esc(model)).K, sum($(esc(model)).N[batch]) + 64 - sum($(esc(model)).N[batch]) % 64) / $(esc(model)).K)
-		end
+		expr_out = :($(esc(model)).phi_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=ones(Float32, $(esc(model)).K, sum($(esc(model)).N) + 64 - sum($(esc(model)).N) % 64) / $(esc(model)).K))
 
 	elseif expr.args[2] == :(:Elogtheta)
-		quoteblock = 
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		$(esc(model)).Elogthetabuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * (length(batch) + 64 - length(batch) % 64))
-		end
+		expr_out = :($(esc(model)).Elogtheta_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * ($(esc(model)).M + 64 - $(esc(model)).M % 64))
 
-	elseif expr.args[2] == :(:Elogthetasum)
-		quoteblock =
-		quote
-		$(esc(model)).Elogthetasumbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).Elogthetasum)
-		end
+	elseif expr.args[2] == :(:N)
+		expr_out = :($(esc(model)).N_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).N)
 
 	elseif expr.args[2] == :(:C)
-		quoteblock =
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		$(esc(model)).Cbuf = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).C[batch])
-		end
+		expr_out = :($(esc(model)).C_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).C)
+
+	elseif expr.args[2] == :(:J)
+		expr_out = :($(esc(model)).J_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).J)
 
 	elseif expr.args[2] == :(:newtontemp)
-		quoteblock =
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		$(esc(model)).newtontempbuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64))
-		end
+		expr_out = :($(esc(model)).newtontemp_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64)))
 
 	elseif expr.args[2] == :(:newtongrad)
-		quoteblock =
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		$(esc(model)).newtongradbuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * (length(batch) + 64 - length(batch) % 64))
-		end
+		expr_out = :($(esc(model)).newtongrad_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * (length(batch) + 64 - length(batch) % 64)))
 
 	elseif expr.args[2] == :(:newtoninvhess)
-		quoteblock =
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		$(esc(model)).newtoninvhessbuf = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64))	
-		end
+		expr_out = :($(esc(model)).newtoninvhess_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64)))
 
 	elseif expr.args[2] == :(:mu)
-		quoteblock =
-		quote
-		$(esc(model)).mubuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).mu)
-		end
+		expr_out = :($(esc(model)).mu_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).mu))
 
 	elseif expr.args[2] == :(:sigma)
-		quoteblock =
-		quote
-		$(esc(model)).sigmabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).sigma)
-		end
+		expr_out = :($(esc(model)).sigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).sigma))
 
 	elseif expr.args[2] == :(:invsigma)
-		quoteblock =
-		quote
-		$(esc(model)).invsigmabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma)
-		end
+		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
 
 	elseif expr.args[2] == :(:lambda)
-		quoteblock =
-		quote
-		$(esc(model)).lambdabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).lambda..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
-		end
+		expr_out = :($(esc(model)).lambda_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).lambda..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
 
 	elseif expr.args[2] == :(:vsq)
-		quoteblock =
-		quote
-		$(esc(model)).vsqbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).vsq..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
-		end
+		expr_out = $(esc(model)).vsq_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).vsq..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
 
 	elseif expr.args[2] == :(:lzeta)
-		quoteblock =
-		quote
-		$(esc(model)).lzetabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).lzeta)
-		end
+		expr_out = :($(esc(model)).lzeta_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).lzeta))
 
 	elseif expr.args[2] == :(:alef)
-		quoteblock = 
-		quote
-		$(esc(model)).alefbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alef)
-		end
-
-	elseif expr.args[2] == :(:newalef)
-		quoteblock = 
-		quote
-		$(esc(model)).newalefbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=fill($(esc(model)).a, $(esc(model)).K, $(esc(model)).V))
-		end
+		expr_out = :($(esc(model)).alef_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alef))
 
 	elseif expr.args[2] == :(:bet)
-		quoteblock =
-		quote
-		$(esc(model)).betbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).bet)
-		end
+		expr_out = :($(esc(model)).bet_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).bet))
 
 	elseif expr.args[2] == :(:gimel)
-		quoteblock =
-		quote
-		$(esc(model)).gimelbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gimel..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
-		end
+		expr_out = :($(esc(model)).gimel_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gimel..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
 
 	elseif expr.args[2] == :(:dalet)
-		quoteblock =
-		quote
-		$(esc(model)).daletbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).dalet)
-		end
+		expr_out = :($(esc(model)).dalet_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).dalet))
 
 	elseif expr.args[2] == :(:he)
-		quoteblock = 
-		quote
-		$(esc(model)).hebuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).he)
-		end
-
-	elseif expr.args[2] == :(:newhe)
-		quoteblock = 
-		quote
-		$(esc(model)).newhebuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=fill($(esc(model)).e, $(esc(model)).K, $(esc(model)).U))
-		end
+		expr_out = :($(esc(model)).he_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).he))
 
 	elseif expr.args[2] == :(:vav)
-		quoteblock =
-		quote
-		$(esc(model)).vavbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).vav)
-		end
+		expr_out = :($(esc(model)).vav_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).vav))
 
 	elseif expr.args[2] == :(:zayin)
-		quoteblock =
-		quote
-		$(esc(model)).zayinbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).zayin..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
-		end
+		expr_out = :($(esc(model)).zayin_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).zayin..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
 
 	elseif expr.args[2] == :(:het)
-		quoteblock =
-		quote
-		$(esc(model)).hetbuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).het)
-		end
+		expr_out = :($(esc(model)).het_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).het))
 
 	elseif expr.args[2] == :(:xi)
-		quoteblock =
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		$(esc(model)).xibuf = cl.Buffer(Float32, $(esc(model)).context, :rw, 2 * $(esc(model)).K * (sum($(esc(model)).R[batch]) + 64 - sum($(esc(model)).R[batch]) % 64))
-		end
+		expr_out = :($(esc(model)).xi_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, 2 * $(esc(model)).K * (sum($(esc(model)).R) + 64 - sum($(esc(model)).R) % 64))
 	end
-	return quoteblock
+	
+	return expr_out
 end
 
 macro host(args...)
-	if isa(args[1], Expr)
-		expr = args[1]
-	else
-		b = args[1]
-		expr = args[2]
-	end
+	"Load individual variables into host memory."
 
+	expr = args[1]
 	model = expr.args[1]
 
-	if expr.args[2] == :(:alphabuf)
-		quoteblock =
+	if expr.args[2] == :(:alpha_buffer)
+		expr_out = :($(esc(model)).alpha = cl.read($(esc(model)).queue, $(esc(model)).alpha_buffer))
+
+	elseif expr.args[2] == :(:beta_buffer)
+		expr_out = :($(esc(model)).beta = reshape(cl.read($(esc(model)).queue, $(esc(model)).betabuf), $(esc(model)).K, $(esc(model)).V))
+
+	elseif expr.args[2] == :(:gamma_buffer)
+		expr_out = 
 		quote
-		$(esc(model)).alpha = cl.read($(esc(model)).queue, $(esc(model)).alphabuf)
+		gamma_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gamma_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).gamma = [gamma_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
-	elseif expr.args[2] == :(:betabuf)
-		quoteblock = 
+	elseif expr.args[2] == :(:phi_buffer)
+		expr_out = 
 		quote
-		$(esc(model)).beta = reshape(cl.read($(esc(model)).queue, $(esc(model)).betabuf), $(esc(model)).K, $(esc(model)).V)
+		phi_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).phi_buffer), $(esc(model)).K, sum($(esc(model)).N) + 64 - sum($(esc(model)).N) % 64)
+		$(esc(model)).phi = [phi_host[:,Npsums[d]+1:Npsums[d+1]] for d in 1:$(esc(model)).M]
 		end
 
-	elseif expr.args[2] == :(:gammabuf)
-		quoteblock = 
-		quote
-		hostgamma = reshape(cl.read($(esc(model)).queue, $(esc(model)).gammabuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).gamma = [hostgamma[:,d] for d in 1:$(esc(model)).M]
-		end
-
-	elseif expr.args[2] == :(:phibuf)
-		quoteblock = 
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		Npsums = $(esc(model)).Npsums[$(esc(b))]
-		hostphi = reshape(cl.read($(esc(model)).queue, $(esc(model)).phibuf), $(esc(model)).K, sum($(esc(model)).N[batch]) + 64 - sum($(esc(model)).N[batch]) % 64)
-		$(esc(model)).phi = [hostphi[:,Npsums[d]+1:Npsums[d+1]] for d in 1:length(batch)]
-		end
-
-	elseif expr.args[2] == :(:Elogthetabuf)
+	elseif expr.args[2] == :(:Elogtheta_buffer)
 		quoteblock = 
 		quote
 		batch = $(esc(model)).batches[$(esc(b))]
@@ -344,105 +190,97 @@ macro host(args...)
 		$(esc(model)).Elogtheta = [hostElogtheta[:,d] for d in 1:length(batch)]
 		end
 
-	elseif expr.args[2] == :(:Elogthetasumbuf)
-		quoteblock = 
-		quote
-		$(esc(model)).Elogthetasum = cl.read($(esc(model)).queue, $(esc(model)).Elogthetasumbuf)
-		end
-
-	elseif expr.args[2] == :(:mubuf)
+	elseif expr.args[2] == :(:mu_buffer)
 		quoteblock =
 		quote
 		$(esc(model)).mu = cl.read($(esc(model)).queue, $(esc(model)).mubuf)
 		end
 
-	elseif expr.args[2] == :(:sigmabuf)
+	elseif expr.args[2] == :(:sigma_buffer)
 		quoteblock =
 		quote
 		$(esc(model)).sigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).sigmabuf), $(esc(model)).K, $(esc(model)).K)
 		end
 
-	elseif expr.args[2] == :(:invsigmabuf)
+	elseif expr.args[2] == :(:invsigma_buffer)
 		quoteblock =
 		quote
 		$(esc(model)).invsigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).invsigmabuf), $(esc(model)).K, $(esc(model)).K)
 		end
 
-	elseif expr.args[2] == :(:lambdabuf)
+	elseif expr.args[2] == :(:lambda_buffer)
 		quoteblock = 
 		quote
 		hostlambda = reshape(cl.read($(esc(model)).queue, $(esc(model)).lambdabuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
 		$(esc(model)).lambda = [hostlambda[:,d] for d in 1:$(esc(model)).M]
 		end
 
-	elseif expr.args[2] == :(:vsqbuf)
+	elseif expr.args[2] == :(:vsq_buffer)
 		quoteblock = 
 		quote
 		hostvsq = reshape(cl.read($(esc(model)).queue, $(esc(model)).vsqbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
 		$(esc(model)).vsq = [hostvsq[:,d] for d in 1:$(esc(model)).M]
 		end
 
-	elseif expr.args[2] == :(:lzetabuf)
+	elseif expr.args[2] == :(:lzeta_buffer)
 		quoteblock = 
 		quote
 		$(esc(model)).lzeta = cl.read($(esc(model)).queue, $(esc(model)).lzetabuf)
 		end
 
-	elseif expr.args[2] == :(:alefbuf)
+	elseif expr.args[2] == :(:alef_buffer)
 		quoteblock = 
 		quote
 		$(esc(model)).alef = reshape(cl.read($(esc(model)).queue, $(esc(model)).alefbuf), $(esc(model)).K, $(esc(model)).V)
 		end
 
-	elseif expr.args[2] == :(:betbuf)
+	elseif expr.args[2] == :(:bet_buffer)
 		quoteblock = 
 		quote
 		$(esc(model)).bet = cl.read($(esc(model)).queue, $(esc(model)).betbuf)
 		end
 
-	elseif expr.args[2] == :(:gimelbuf)
+	elseif expr.args[2] == :(:gimel_buffer)
 		quoteblock = 
 		quote
 		hostgimel = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimelbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
 		$(esc(model)).gimel = [hostgimel[:,d] for d in 1:$(esc(model)).M]
 		end
 
-	elseif expr.args[2] == :(:daletbuf)
+	elseif expr.args[2] == :(:dalet_buffer)
 		quoteblock = 
 		quote
 		$(esc(model)).dalet = cl.read($(esc(model)).queue, $(esc(model)).daletbuf)
 		end
 
-	elseif expr.args[2] == :(:hebuf)
+	elseif expr.args[2] == :(:he_buffer)
 		quoteblock = 
 		quote
 		$(esc(model)).he = reshape(cl.read($(esc(model)).queue, $(esc(model)).hebuf), $(esc(model)).K, $(esc(model)).U)
 		end
 
-	elseif expr.args[2] == :(:vavbuf)
+	elseif expr.args[2] == :(:vav_buffer)
 		quoteblock = 
 		quote
 		$(esc(model)).vav = cl.read($(esc(model)).queue, $(esc(model)).vavbuf)
 		end
 
-	elseif expr.args[2] == :(:zayinbuf)
+	elseif expr.args[2] == :(:zayin_buffer)
 		quoteblock = 
 		quote
 		hostzayin = reshape(cl.read($(esc(model)).queue, $(esc(model)).zayinbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
 		$(esc(model)).zayin = [hostzayin[:,d] for d in 1:$(esc(model)).M]
 		end
 
-	elseif expr.args[2] == :(:hetbuf)
+	elseif expr.args[2] == :(:het_buffer)
 		quoteblock = 
 		quote
 		$(esc(model)).het = cl.read($(esc(model)).queue, $(esc(model)).hetbuf)
 		end
 
-	elseif expr.args[2] == :(:xibuf)
+	elseif expr.args[2] == :(:xi_buffer)
 		quoteblock = 
 		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		Rpsums = $(esc(model)).Rpsums[$(esc(b))]
 		hostxi = reshape(cl.read($(esc(model)).queue, $(esc(model)).xibuf), 2 * $(esc(model)).K, sum($(esc(model)).R[batch]) + 64 - sum($(esc(model)).R[batch]) % 64)
 		$(esc(model)).xi = [hostxi[:,Rpsums[m]+1:Rpsums[m+1]] for m in 1:length(batch)]
 		end
