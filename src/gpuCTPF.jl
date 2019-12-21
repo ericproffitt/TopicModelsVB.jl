@@ -95,37 +95,7 @@ function check_model(model::gpuCTPF)
 		end
 	end
 
-	model.device, model.context, model.queue = cl.create_compute_context()		
 
-	alefprog = cl.Program(model.context, source=CTPF_ALEF_cpp) |> cl.build!
-	newalefprog = cl.Program(model.context, source=CTPF_NEWALEF_cpp) |> cl.build!
-	betprog = cl.Program(model.context, source=CTPF_BET_cpp) |> cl.build!
-	gimelprog = cl.Program(model.context, source=CTPF_GIMEL_cpp) |> cl.build!
-	daletprog = cl.Program(model.context, source=CTPF_DALET_cpp) |> cl.build!
-	heprog = cl.Program(model.context, source=CTPF_HE_cpp) |> cl.build!
-	newheprog = cl.Program(model.context, source=CTPF_NEWHE_cpp) |> cl.build!
-	vavprog = cl.Program(model.context, source=CTPF_VAV_cpp) |> cl.build!
-	zayinprog = cl.Program(model.context, source=CTPF_ZAYIN_cpp) |> cl.build!
-	hetprog = cl.Program(model.context, source=CTPF_HET_cpp) |> cl.build!
-	phiprog = cl.Program(model.context, source=CTPF_PHI_cpp) |> cl.build!
-	phinormprog = cl.Program(model.context, source=CTPF_PHI_NORM_cpp) |> cl.build!
-	xiprog = cl.Program(model.context, source=CTPF_XI_cpp) |> cl.build!
-	xinormprog = cl.Program(model.context, source=CTPF_XI_NORM_cpp) |> cl.build!
-
-	model.alefkern = cl.Kernel(alefprog, "updateAlef")
-	model.newalefkern = cl.Kernel(newalefprog, "updateNewalef")
-	model.betkern = cl.Kernel(betprog, "updateBet")
-	model.gimelkern = cl.Kernel(gimelprog, "updateGimel")
-	model.daletkern = cl.Kernel(daletprog, "updateDalet")
-	model.hekern = cl.Kernel(heprog, "updateHe")
-	model.newhekern = cl.Kernel(newheprog, "updateNewhe")
-	model.vavkern = cl.Kernel(vavprog, "updateVav")
-	model.zayinkern = cl.Kernel(zayinprog, "updateZayin")
-	model.hetkern = cl.Kernel(hetprog, "updateHet")
-	model.phikern = cl.Kernel(phiprog, "updatePhi")
-	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
-	model.xikern = cl.Kernel(xiprog, "updateXi")
-	model.xinormkern = cl.Kernel(xinormprog, "normalizeXi")
 		
 	@buf model.alef
 	@buf model.bet
@@ -231,18 +201,13 @@ mutable struct gpuCTPF <: GPUTopicModel
 	elbo::Float32
 	newelbo::Float32
 
-	function gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer=length(corp), basemodel::Union{Void, BaseTopicModel}=nothing)
-		@assert !isempty(corp)		
-		@assert all(ispositive.([K, batchsize]))
-		checkcorp(corp)
+	function gpuCTPF(corp::Corpus, K::Integer)
+		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
 		R = [length(doc.readers) for doc in corp]
-
-		batches = partition(1:M, batchsize)
-		B = length(batches)
 
 		@assert ispositive(U)
 		@assert isequal(collect(1:U), sort(collect(keys(corp.users))))
@@ -273,61 +238,84 @@ mutable struct gpuCTPF <: GPUTopicModel
 		vav = ones(K)
 		zayin = [ones(K) for _ in 1:M]
 		het = ones(K)
-		phi = [ones(K, N[d]) / K for d in batches[1]]
-		xi = [ones(2K, R[d]) / 2K for d in batches[1]]
+		phi = [ones(K, N[d]) / K for d in 1:M]
+		xi = [ones(2K, R[d]) / 2K for d in 1:M]
+		elbo = 0
 
-		model = new(K, M, V, U, N, C, R, B, copy(corp), batches, topics, zeros(M, U), libs, Vector[], Vector[], a, b, c, d, e, f, g, h, alef, bet, gimel, dalet, he, vav, zayin, het, phi, xi)
-		fixmodel!(model, check=false)
+		device, context, queue = cl.create_compute_context()		
 
-		for (b, batch) in enumerate(batches)
-			model.phi = [ones(K, N[d]) / K for d in batch]
-			model.xi = [ones(2K, R[d]) / 2K for d in batch]
-			updateNewELBO!(model, b)
-		end
-		model.phi = [ones(K, N[d]) / K for d in batches[1]]
-		model.xi = [ones(2K, R[d]) / 2K for d in batches[1]]
-		updateELBO!(model)
+		alef_prog = cl.Program(context, source=CTPF_ALEF_c) |> cl.build!
+		bet_program = cl.Program(context, source=CTPF_BET_c) |> cl.build!
+		gimel_program = cl.Program(context, source=CTPF_GIMEL_c) |> cl.build!
+		dalet_program = cl.Program(context, source=CTPF_DALET_c) |> cl.build!
+		he_program = cl.Program(context, source=CTPF_HE_c) |> cl.build!
+		vav_program = cl.Program(context, source=CTPF_VAV_c) |> cl.build!
+		zayin_program = cl.Program(context, source=CTPF_ZAYIN_c) |> cl.build!
+		het_program = cl.Program(context, source=CTPF_HET_c) |> cl.build!
+		phi_program = cl.Program(context, source=CTPF_PHI_c) |> cl.build!
+		phi_norm_program = cl.Program(context, source=CTPF_PHI_NORM_c) |> cl.build!
+		xi_program = cl.Program(context, source=CTPF_XI_c) |> cl.build!
+		xi_norm_program = cl.Program(context, source=CTPF_XI_NORM_c) |> cl.build!
+
+		alef_kernel = cl.Kernel(alef_program, "update_alef")
+		bet_kernel = cl.Kernel(bet_program, "update_bet")
+		gimel_kernel = cl.Kernel(gimel_program, "update_gimel")
+		dalet_kernel = cl.Kernel(dalet_program, "update_dalet")
+		he_kernel = cl.Kernel(he_program, "update_he")
+		vav_kernel = cl.Kernel(vav_program, "update_vav")
+		zayin_kernel = cl.Kernel(zayin_program, "update_zayin")
+		het_kernel = cl.Kernel(het_program, "update_het")
+		phi_kernel = cl.Kernel(phi_program, "update_phi")
+		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
+		xi_kernel = cl.Kernel(xi_program, "update_xi")
+		xi_norm_kernel = cl.Kernel(xi_norm_program, "normalize_xi")
+
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo, alef_kernel, bet_kernel, gimel_kernel, dalet_kernel, he_kernel, vav_kernel, zayin_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
+		update_elbo!(model)
 		return model
 	end
 end
 
-gpuCTPF(corp::Corpus, K::Int, basemodel::Union{Void, BaseTopicModel}) = gpuCTPF(corp, K, length(corp), basemodel)
+function Elogpya(model::gpuCTPF, d::Int)
+	"Compute E[log(P(ya))]."
 
-function Elogpya(model::gpuCTPF, d::Int, m::Int)
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[m][i,u])
-		x += (ra * model.xi[m][i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
-				- (model.gimel[d][i] / model.dalet[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * lgamma(y + 1) for y in 0:ra]))
+		binom = Binomial(ra, model.xi[i,u])
+		x += (ra * model.xi[i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
 
-function Elogpyb(model::gpuCTPF, d::Int, m::Int)
+function Elogpyb(model::gpuCTPF, d::Int)
+	"Compute E[log(P(yb))]."
+
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[m][model.K+i,u])
-		x += (ra * model.xi[m][model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i]))
-				- (model.zayin[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * lgamma(y + 1) for y in 0:ra]))
+		binom = Binomial(ra, model.xi[model.K+i,u])
+		x += (ra * model.xi[model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.zayin[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
 
-function Elogpz(model::gpuCTPF, d::Int, m::Int)
+function Elogpz(model::gpuCTPF, d::Int)
+	"Compute E[log(P(z))]."
+
 	x = 0
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
-		binom = Binomial(c, model.phi[m][i,n])
-		x += (c * model.phi[m][i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i]))
-				- (model.gimel[d][i] / model.dalet[i]) * (model.alef[i,j] / model.bet[i]) - sum([pdf(binom, z) * lgamma(z + 1) for z in 0:c]))
+		binom = Binomial(c, model.phi[i,n])
+		x += (c * model.phi[i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.alef[i,j] / model.bet[i]) - sum([pdf(binom, z) * loggamma(z + 1) for z in 0:c]))
 	end
 	return x
 end
 
 function Elogpbeta(model::gpuCTPF)
-	x = model.V * model.K * (model.a * log(model.b) - lgamma(model.a))
+	"Compute E[log(P(beta))]."
+
+	x = model.V * model.K * (model.a * log(model.b) -  loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
 		x += (model.a - 1) * (digamma(model.alef[i,j]) - log(model.bet[i])) - model.b * model.alef[i,j] / model.bet[i]
 	end
@@ -335,7 +323,9 @@ function Elogpbeta(model::gpuCTPF)
 end
 
 function Elogptheta(model::gpuCTPF, d::Int)
-	x = model.K * (model.c * log(model.d) - lgamma(model.c))
+	"Compute E[log(P(theta))]."
+
+	x = model.K * (model.c * log(model.d) -  loggamma(model.c))
 	for i in 1:model.K
 		x += (model.c - 1) * (digamma(model.gimel[d][i]) - log(model.dalet[i])) - model.d * model.gimel[d][i] / model.dalet[i]
 	end
@@ -343,7 +333,9 @@ function Elogptheta(model::gpuCTPF, d::Int)
 end
 
 function Elogpeta(model::gpuCTPF)
-	x = model.U * model.K * (model.e * log(model.f) - lgamma(model.e))
+	"Compute E[log(P(eta))]."
+
+	x = model.U * model.K * (model.e * log(model.f) -  loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
 		x += (model.e - 1) * (digamma(model.he[i,u]) - log(model.vav[i])) - model.f * model.he[i,u] / model.vav[i]
 	end
@@ -351,30 +343,38 @@ function Elogpeta(model::gpuCTPF)
 end
 
 function Elogpepsilon(model::gpuCTPF, d::Int)
-	x = model.K * (model.g * log(model.h) - lgamma(model.g))
+	"Compute E[log(P(epsilon))]."
+
+	x = model.K * (model.g * log(model.h) -  loggamma(model.g))
 	for i in 1:model.K
 		x += (model.g - 1) * (digamma(model.zayin[d][i]) - log(model.het[i])) - model.h * model.zayin[d][i] / model.het[i]
 	end
 	return x
 end
 
-function Elogqy(model::gpuCTPF, d::Int, m::Int)
+function Elogqy(model::gpuCTPF, d::Int)
+	"Compute E[log(q(y))]."
+
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
-		x -= entropy(Multinomial(ra, model.xi[m][:,u]))
+		x -= entropy(Multinomial(ra, model.xi[:,u]))
 	end
 	return x
 end
 
-function Elogqz(model::gpuCTPF, d::Int, m::Int)
+function Elogqz(model::gpuCTPF, d::Int)
+	"Compute E[log(q(z))]."
+
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
-		x -= entropy(Multinomial(c, model.phi[m][:,n]))
+		x -= entropy(Multinomial(c, model.phi[:,n]))
 	end
 	return x
 end
 
 function Elogqbeta(model::gpuCTPF)
+	"Compute E[log(q(beta))]."
+
 	x = 0
 	for j in 1:model.V, i in 1:model.K
 		x -= entropy(Gamma(model.alef[i,j], 1 / model.bet[i]))
@@ -383,6 +383,8 @@ function Elogqbeta(model::gpuCTPF)
 end
 
 function Elogqtheta(model::gpuCTPF, d::Int)
+	"Compute E[log(q(theta))]."
+
 	x = 0
 	for i in 1:model.K
 		x -= entropy(Gamma(model.gimel[d][i], 1 / model.dalet[i]))
@@ -391,6 +393,8 @@ function Elogqtheta(model::gpuCTPF, d::Int)
 end
 
 function Elogqeta(model::gpuCTPF)
+	"Compute E[log(q(eta))]."
+
 	x = 0
 	for u in 1:model.U, i in 1:model.K
 		x -= entropy(Gamma(model.he[i,u], 1 / model.vav[i]))
@@ -399,6 +403,8 @@ function Elogqeta(model::gpuCTPF)
 end	
 
 function Elogqepsilon(model::gpuCTPF, d::Int)
+	"Compute E[log(q(epsilon))]."
+
 	x = 0
 	for i in 1:model.K
 		x -= entropy(Gamma(model.zayin[d][i], 1 / model.het[i]))
@@ -412,44 +418,16 @@ function updateELBO!(model::gpuCTPF)
 	return model.elbo
 end
 
-function updateNewELBO!(model::gpuCTPF, b::Int)
-	batch = model.batches[b]
-	for (m, d) in enumerate(batch)
-		model.newelbo += (Elogpya(model, d, m)
-						+ Elogpyb(model, d, m)
-						+ Elogpz(model, d, m)
-						+ Elogptheta(model, d)
-						+ Elogpepsilon(model, d)
-						- Elogqy(model, d, m)
-						- Elogqz(model, d, m) 
-						- Elogqtheta(model, d)
-						- Elogqepsilon(model, d))
+function update_elbo!(model::gpuCTPF)
+	"Update the evidence lower bound."
+
+	model.elbo = 0
+	for d in 1:model.M
+		model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
 	end
 end
 
-
-const CTPF_ALEF_cpp =
-"""
-kernel void
-updateAlef(long K,
-			float a,
-			global float *newalef,
-			global float *alef)
-
-			{
-			long i = get_global_id(0);
-			long j = get_global_id(1);
-
-			alef[K * j + i] = newalef[K * j + i];
-			newalef[K * j + i] = a;
-			}
-			"""
-
-function updateAlef!(model::gpuCTPF)
-	model.queue(model.alefkern, (model.K, model.V), nothing, model.K, model.a, model.newalefbuf, model.alefbuf)
-end
-
-const CTPF_NEWALEF_cpp =
+const CTPF_ALEF_c =
 """
 kernel void
 updateNewalef(long K,
@@ -473,10 +451,10 @@ updateNewalef(long K,
 				"""
 
 function updateNewalef!(model::gpuCTPF)
-	model.queue(model.newalefkern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newalefbuf)
+	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newalefbuf)
 end
 
-const CTPF_BET_cpp = 
+const CTPF_BET_c = 
 """
 kernel void
 updateBet(long K,
@@ -499,11 +477,11 @@ updateBet(long K,
 			}
 			"""
 
-function updateBet!(model::gpuCTPF)
-	model.queue(model.betkern, model.K, nothing, model.K, model.M, model.b, model.alefbuf, model.gimelbuf, model.daletbuf, model.betbuf)
+function update_bet!(model::gpuCTPF)
+	model.queue(model.bet_kern, model.K, nothing, model.K, model.M, model.b, model.alefbuf, model.gimelbuf, model.daletbuf, model.betbuf)
 end
 
-const CTPF_GIMEL_cpp = 
+const CTPF_GIMEL_c = 
 """
 kernel void
 updateGimel(long F,
@@ -534,12 +512,17 @@ updateGimel(long F,
 			}
 			"""
 
-function updateGimel!(model::gpuCTPF, b::Int)
-	batch = model.batches[b]
+function update_gimel!(model::gpuCTPF, b::Int)
+	"Update gimel."
+	"Analytic."
+
+	model.gimel_old[d] = model.gimel[d]
+
 	model.queue(model.gimelkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.c, model.Npsumsbuf, model.Rpsumsbuf, model.countsbuf, model.ratingsbuf, model.phibuf, model.xibuf, model.gimelbuf)
+	@buffer model.gimel
 end
 
-const CTPF_DALET_cpp =
+const CTPF_DALET_c =
 """
 kernel void
 updateDalet(long K,
@@ -568,35 +551,18 @@ updateDalet(long K,
 			}
 			"""
 
-function updateDalet!(model::gpuCTPF)
+function update_dalet!(model::gpuCTPF)
 	model.queue(model.daletkern, model.K, nothing, model.K, model.V, model.U, model.d, model.alefbuf, model.betbuf, model.hebuf, model.vavbuf, model.daletbuf)
 end
 
-const CTPF_HE_cpp =
-"""
-kernel void
-updateHe(long K,
-			float e,
-			global float *newhe,
-			global float *he)
-
-			{
-			long i = get_global_id(0);
-			long u = get_global_id(1);
-
-			he[K * u + i] = newhe[K * u + i];
-			newhe[K * u + i] = e;
-			}
-			"""
-
-function updateHe!(model::gpuCTPF)
+function update_he!(model::gpuCTPF)
 	model.queue(model.hekern, (model.K, model.U), nothing, model.K, model.e, model.newhebuf, model.hebuf)
 end
 
-const CTPF_NEWHE_cpp =
+const CTPF_HE_c =
 """
 kernel void
-updateNewhe(long K,
+update_he(long K,
 			const global long *Ypsums,
 			const global long *ratings,
 			const global long *views,
@@ -620,10 +586,10 @@ function updateNewhe!(model::gpuCTPF)
 	model.queue(model.newhekern, (model.K, model.U), nothing, model.K, model.Ypsumsbuf, model.ratingsbuf, model.viewsbuf, model.xibuf, model.newhebuf)
 end
 
-const CTPF_VAV_cpp = 
+const CTPF_VAV_c = 
 """
 kernel void
-updateVav(long K,
+update_vav(long K,
 			long M,
 			float f,
 			const global float *gimel,
@@ -652,10 +618,10 @@ function updateVav!(model::gpuCTPF)
 	model.queue(model.vavkern, model.K, nothing, model.K, model.M, model.f, model.gimelbuf, model.daletbuf, model.zayinbuf, model.hetbuf, model.vavbuf)
 end
 
-const CTPF_ZAYIN_cpp =
+const CTPF_ZAYIN_c =
 """
 kernel void
-updateZayin(long F,
+update_zayin(long F,
 			long K,
 			float g,
 			const global long *Rpsums,
@@ -681,10 +647,10 @@ function updateZayin!(model::gpuCTPF, b::Int)
 	model.queue(model.zayinkern, (model.K, length(batch)), nothing, batch[1] - 1, model.K, model.g, model.Rpsumsbuf, model.ratingsbuf, model.xibuf, model.zayinbuf)
 end
 
-const CTPF_HET_cpp =
+const CTPF_HET_c =
 """
 kernel void
-updateHet(long K,
+update_het(long K,
 			long U,
 			float h,
 			const global float *he,
@@ -707,12 +673,12 @@ function updateHet!(model::gpuCTPF)
 	model.queue(model.hetkern, model.K, nothing, model.K, model.U, model.h, model.hebuf, model.vavbuf, model.hetbuf)
 end
 
-const CTPF_PHI_cpp =
+const CTPF_PHI_c =
 """
-$(DIGAMMA_cpp)
+$(DIGAMMA_c)
 
 kernel void
-updatePhi(long F,
+update_phi(long F,
 			long K,
 			const global long *Npsums,
 			const global long *terms,
@@ -734,10 +700,10 @@ updatePhi(long F,
 			}
 			"""
 
-const CTPF_PHI_NORM_cpp =
+const CTPF_PHI_NORM_c =
 """
 kernel void
-normalizePhi(long K,
+normalize_phi(long K,
 				global float *phi)
 				
 				{
@@ -759,12 +725,12 @@ function updatePhi!(model::gpuCTPF, b::Int)
 	model.queue(model.phinormkern, sum(model.N[batch]), nothing, model.K, model.phibuf)
 end
 
-const CTPF_XI_cpp =
+const CTPF_XI_c =
 """
-$(DIGAMMA_cpp)
+$(DIGAMMA_c)
 
 kernel void
-updateXi(long F,
+update_xi(long F,
 			long K,
 			const global long *Rpsums,
 			const global long *readers,
@@ -792,10 +758,10 @@ updateXi(long F,
 			}
 			"""
 
-const CTPF_XI_NORM_cpp =
+const CTPF_XI_NORM_c =
 """
 kernel void
-normalizeXi(long K,
+normalize_xi(long K,
 			global float *xi)
 				
 				{
@@ -817,50 +783,38 @@ function updateXi!(model::gpuCTPF, b::Int)
 	model.queue(model.xinormkern, sum(model.R[batch]), nothing, model.K, model.xibuf)
 end
 
-function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, chkelbo::Int=1)
-	@assert all(.!isnegative.([tol, vtol]))
-	@assert all(ispositive.([iter, viter, chkelbo]))
-	lowVRAM = model.B > 1
+function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
+	"Coordinate ascent optimization procedure for GPU accelerated collaborative topic Poisson factorization variational Bayes algorithm."
+
+	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
+	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+
+	update_buffer!(model)
 
 	for k in 1:iter
-		chk = (k % chkelbo == 0)
-		for b in 1:model.B
-			for _ in 1:viter
-				oldgimel = @host b model.gimelbuf
-				updatePhi!(model, b)
-				updateXi!(model, b)
-				updateGimel!(model, b)
-				updateZayin!(model, b)
-				gimel = @host b model.gimelbuf
-				if sum([norm(diff) for diff in oldgimel - gimel]) < length(model.batches[b]) * vtol
-					break
-				end
+		for _ in 1:viter
+			update_xi!(model)
+			update_phi!(model)
+			update_zayin!(model)
+			update_gimel!(model)
+			if sum([norm(model.gimel[d] - model.gimel_old[d]) for d in 1:model.M]) < model.M * vtol
+				break
 			end
-			updateNewalef!(model)
-			updateNewhe!(model)
-			if chk
-				updateHost!(model, b)
-				updateNewELBO!(model, b)
-			end
-			lowVRAM && updateBuf!(model, b)
 		end
-		if checkELBO!(model, k, chk, tol)
-			updateDalet!(model)
-			updateHet!(model)
-			updateAlef!(model)
-			updateBet!(model)
-			updateHe!(model)
-			updateVav!(model)
+		update_dalet!(model)
+		update_het!(model)
+		update_alef!(model)
+		update_bet!(model)
+		update_he!(model)
+		update_vav!(model)
+
+		if check_elbo!(model, check_elbo, k, tol)
 			break
 		end
-		updateDalet!(model)
-		updateHet!(model)
-		updateAlef!(model)
-		updateBet!(model)
-		updateHe!(model)
-		updateVav!(model)	
 	end
-	updateHost!(model, 1)
+
+	update_host!(model, 1)
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]
 
