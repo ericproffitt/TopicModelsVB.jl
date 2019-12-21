@@ -199,8 +199,8 @@ function update_beta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
-	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
-	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.beta_buffer)
+	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
+	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
 const LDA_ELOGTHETA_c =
@@ -264,7 +264,7 @@ function update_gamma!(model::gpuLDA)
 	"Update gamma."
 	"Analytic."
 
-	model.queue(model.gammakern, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
+	model.queue(model.gamma_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
 
 const LDA_PHI_c =

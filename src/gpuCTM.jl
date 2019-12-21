@@ -225,16 +225,22 @@ updateMu(	long K,
 			}
 			"""
 
-function updateMu!(model::gpuCTM)
-	model.queue(model.mukern, model.K, nothing, model.K, model.M, model.lambdabuf, model.mubuf)
+function update_mu!(model::gpuCTM)
+	"Update mu."
+	"Analytic."
+
+	model.queue(model.mu_kernel, model.K, nothing, model.K, model.M, model.lambda_buffer, model.mu_buffer)
 end
 
 function update_sigma!(model::gpuCTM)
+	"Update sigma."
+	"Analytic"
+
 	@host model.mubuf
 	@host model.lambdabuf
 	@host model.vsqbuf
 
-	model.sigma = diagm(sum(model.vsq)) / model.M + Base.covm(hcat(model.lambda...), model.mu, 2, false)
+	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
 	model.invsigma = inv(model.sigma)
 
 	@buffer model.sigma
@@ -245,11 +251,11 @@ const CTM_BETA_c =
 """
 kernel void
 updateNewbeta(	long K,
-				const global long *Jpsums,
+				const global long *J_partial_sums,
+				const global long *terms_sortperm
 				const global long *counts,
-				const global long *words,
 				const global float *phi,
-				global float *newbeta)
+				global float *beta)
 								
 				{
 				long i = get_global_id(0);
@@ -257,28 +263,12 @@ updateNewbeta(	long K,
 
 				float acc = 0.0f;
 
-				for (long w=Jpsums[j]; w<Jpsums[j+1]; w++)
-					acc += counts[words[w]] * phi[K * words[w] + i];
+				for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
+					acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
-				newbeta[K * j + i] += acc;
+				beta[K * j + i] += acc;
 				}
 				"""
-
-const CTM_BETA_c =
-"""
-kernel void
-updateBeta(	long K,
-			global float *newbeta,
-			global float *beta)
-	
-			{
-			long i = get_global_id(0);
-			long j = get_global_id(1);
-
-			beta[K * j + i] = newbeta[K * j + i];
-			newbeta[K * j + i] = 0.0f;
-			}
-			"""
 
 const CTM_BETA_NORM_c =
 """
@@ -300,13 +290,15 @@ normalizeBeta(	long K,
 				}
 				"""
 
-function updateBeta!(model::gpuCTM)
-	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.newbetabuf, model.betabuf)
-	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.betabuf)
+function update_beta!(model::gpuCTM)
+	"Update beta."
+	"Analytic."
+
+	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
+	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
 function updateNewbeta!(model::gpuCTM)
-	model.queue(model.newbetakern, (model.K, model.V), nothing, model.K, model.Jpsumsbuf, model.countsbuf, model.wordsbuf, model.phibuf, model.newbetabuf)
 end
 
 const CTM_LAMBDA_c =
@@ -374,7 +366,12 @@ updateLambda(	long niter,
 				}
 				"""
 
-function updateLambda!(model::gpuCTM, niter::Int, ntol::Float32)
+function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
+	"Update lambda."
+	"Newton's method."
+
+	model.lambda_old = model.lambda
+
 	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzetabuf, model.phi_buffer, model.lambda_buffer)
 	@host model.lambda_buffer
 end
@@ -429,6 +426,9 @@ updateVsq(	long niter,
 			"""
 
 function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
+	"Update vsq."
+	"Interior-point Newton's method with log-barrier and back-tracking line search."
+
 	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.Cbuf, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
@@ -463,6 +463,9 @@ updatelogzeta(	long K,
 				"""
 
 function update_logzeta!(model::gpuCTM)
+	"Update logzeta."
+	"Analytic."
+
 	model.queue(model.logzeta_kernel, model.M, nothing, model.K, batch[1] - 1, model.lambda_buffer, model.vsq_buffer, model.logzeta_buffer)
 end
 
@@ -515,6 +518,9 @@ normalizePhi(	long K,
 				"""
 
 function update_phi!(model::gpuCTM)
+	"Update phi."
+	"Analytic."
+
 	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, batch[1] - 1, model.N_partial_sums_buffer, model.terms_buffer, model.beta_buffer, model.lambda_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N[batch]), nothing, model.K, model.phi_buffer)
 end
@@ -530,20 +536,17 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 
 	for k in 1:iter
 		for _ in 1:viter
-			oldlambda = @host model.lambdabuf
-			update_phi!(model, b)
-			update_logzeta!(model, b)
-
-			update_lambda!(model, b, niter, ntol)
-			update_vsq!(model, b, niter, ntol)
-			lambda = @host model.lambdabuf
+			update_phi!(model)
+			update_logzeta!(model)
+			update_vsq!(model, niter, ntol)
+			update_lambda!(model, niter, ntol)
 			if sum([norm(model.lambda[d] - model.lambda_old[d]) for d in 1:model.M]) < model.M * vtol
 				break
 			end
 		end
-		update_mu!(model)
-		update_sigma!(model)
 		update_beta!(model)
+		update_sigma!(model)
+		update_mu!(model)
 
 		if check_elbo!(model, check_elbo, k, tol)
 			break
