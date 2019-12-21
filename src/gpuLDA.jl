@@ -26,11 +26,11 @@ mutable struct gpuLDA <: TopicModel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
 	Elogtheta_kernel::cl.Kernel
+	N_partial_sums_buffer::cl.Buffer{Int}
+	J_partial_sums_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
 	terms_sortperm_buffer::cl.Buffer{Int}
 	counts_buffer::cl.Buffer{Int}
-	N_partial_sums_buffer::cl.Buffer{Int}
-	J_partial_sums_buffer::cl.Buffer{Int}
 	alpha_buffer::cl.Buffer{Float32}
 	beta_buffer::cl.Buffer{Float32}
 	gamma_buffer::cl.Buffer{Float32}
@@ -155,9 +155,9 @@ const LDA_BETA_c =
 """
 kernel void
 update_beta(long K,
-			const global long *J,
-			const global long *counts,
+			const global long *J_partial_sums,
 			const global long *terms_sortperm,
+			const global long *counts,
 			const global float *phi,
 			global float *beta)
 						
@@ -167,10 +167,10 @@ update_beta(long K,
 
 			float acc = 0.0f;
 
-			for (long w=0; w<J[j]; w++)
+			for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
 				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
-			newbeta[K * j + i] += acc;
+			beta[K * j + i] += acc;
 			}
 			"""
 
@@ -198,7 +198,7 @@ function update_beta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
-	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.J, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.beta_buffer)
+	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
@@ -240,7 +240,7 @@ const LDA_GAMMA_c =
 """
 kernel void
 update_gamma(	long K,
-				const global long *N,
+				const global long *N_partial_sums,
 				const global long *counts,
 				const global float *alpha,
 				const global float *phi,
@@ -252,7 +252,7 @@ update_gamma(	long K,
 
 				float acc = 0.0f;
 
-				for (long n=0; n<N[d]; n++)
+				for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
 					acc += phi[K * n + i] * counts[n]; 
 
 				gamma[K * d + i] = alpha[i] + acc + $(EPSILON32);
@@ -263,7 +263,7 @@ function update_gamma!(model::gpuLDA)
 	"Update gamma."
 	"Analytic."
 
-	model.queue(model.gammakern, (model.K, model.M), nothing, model.K, model.N_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
+	model.queue(model.gammakern, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
 
 const LDA_PHI_c =
