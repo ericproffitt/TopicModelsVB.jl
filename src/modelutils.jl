@@ -21,6 +21,32 @@ Base.show(io::IO, model::gpuLDA) = print(io, "GPU accelerated latent Dirichlet a
 Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
+function check_model(model::LDA)
+	check_corp(model.corp) 
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))			|| throw(TopicModelError(""))
+	isequal(model.M, length(model.corp))										|| throw(TopicModelError(""))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError(""))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError(""))
+	all(isfinite.(model.alpha))													|| throw(TopicModelError(""))
+	all(model.alpha .> 0)														|| throw(TopicModelError(""))
+	isequal(length(model.alpha), model.K)										|| throw(TopicModelError(""))
+	isequal(size(model.beta), (model.K, model.V))								|| throw(TopicModelError(""))
+	isprobvec(model.beta, 2)													|| throw(TopicModelError(""))
+	isequal(size(model.beta_old), (model.K, model.V))							|| throw(TopicModelError(""))
+	isequal(model.beta_temp, zeros(model.K, model.V))							|| throw(TopicModelError(""))
+	isequal(length(model.Elogtheta), model.M)									|| throw(TopicModelError(""))
+	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError(""))
+	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])			|| throw(TopicModelError(""))
+	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])					|| throw(TopicModelError(""))
+	isequal(length(model.gamma), model.M)										|| throw(TopicModelError(""))
+	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError(""))
+	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])				|| throw(TopicModelError(""))
+	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])						|| throw(TopicModelError(""))
+	isequal(size(model.phi[1]), (model.K, model.N[1]))							|| throw(TopicModelError(""))
+	isprobvec(model.phi[1], 1)													|| throw(TopicModelError(""))
+	isfinite(model.elbo)														|| throw(TopicModelError(""))
+end
+
 function update_buffer!(model::gpuLDA)
 	"Update gpuLDA model data in GPU RAM."
 
@@ -431,7 +457,7 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	checkbounds(Bool, 1:model.M, docs) || throw(ArgumentError("Some document indices are outside range."))
-	@assert cols > 0
+	cols > 0
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
@@ -468,7 +494,7 @@ function showurecs(model::CTPF, users::Union{Integer, Vector{<:Integer}}, M::Int
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	checkbounds(Bool, 1:model.M, M) || throw(ArgumentError("Some document indices are outside range."))
-	@assert cols > 0
+	cols > 0
 	isa(users, Vector) || (users = [users])
 
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs

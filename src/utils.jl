@@ -180,17 +180,17 @@ function additive_logistic(x::Matrix{<:Real})
 	return exp.(x) / sum(exp.(x))
 end
 
-function Distributions.isprobvec(P::Matrix{<:Real}; dims::Integer)
-	"Extend the functionality of the isprobvec function in the Distributions Pkg."
-	"Add row and column-wise functionality for isprobvec on real-valued matrices."
-
-	@assert dims in [1, 2]
+function isstochastic(P::Matrix{<:Real}; dims::Integer)
+	"Check to see if X is a stochastic matrix."
+	"if dims = 1, check for left stochastic matrix."
+	"if dims = 2, check for right stochastic matrix."
 
 	if dims == 1
 		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
-
-	else
+	elseif dims == 2
 		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
+	else
+		x = P
 	end
 
 	return x
