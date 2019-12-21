@@ -18,13 +18,8 @@ mutable struct Document
 	title::String
 
 	function Document(;terms=Int[], counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), title="")
-		all(terms .> 0 )						|| throw(ArgumentError("All terms must be positive integers."))
-		all(counts .> 0) 						|| throw(ArgumentError("All counts must be positive integers."))
-		all(readers .> 0)						|| throw(ArgumentError("All readers must be positive integers."))
-		all(ratings .> 0)						|| throw(ArgumentError("All ratings must be positive integers."))
-		isequal(length(terms), length(counts))	|| throw(ArgumentError("The terms and counts vectors must have the same length."))
-
 		doc = new(terms, counts, readers, ratings, title)
+		check_doc(doc)
 		return doc
 	end
 end
@@ -41,12 +36,12 @@ Base.showerror(io::IO, e::DocumentError) = print(io, "DocumentError: ", e.msg)
 function check_doc(doc::Document)
 	"Check Document parameters."
 
-	all(doc.terms .> 0)									|| throw(DocumentError(""))
-	all(doc.counts .> 0)								|| throw(DocumentError(""))
-	isequal(length(doc.terms), length(doc.counts))		|| throw(DocumentError(""))
-	all(doc.readers .> 0)								|| throw(DocumentError(""))
-	all(doc.ratings .> 0)								|| throw(DocumentError(""))
-	isequal(length(doc.readers), length(doc.ratings)))	|| throw(DocumentError(""))
+	all(doc.terms .> 0)									|| throw(ArgumentError("All terms must be positive integers."))
+	all(doc.counts .> 0)								|| throw(ArgumentError("All counts must be positive integers."))
+	isequal(length(doc.terms), length(doc.counts))		|| throw(ArgumentError("The terms and counts vectors must have the same length."))
+	all(doc.readers .> 0)								|| throw(ArgumentError("All readers must be positive integers."))
+	all(doc.ratings .> 0)								|| throw(ArgumentError("All ratings must be positive integers."))
+	isequal(length(doc.readers), length(doc.ratings)))	|| throw(ArgumentError("The readers and ratings vectors must have the same length."))
  	nothing
  end
 
