@@ -231,8 +231,8 @@ end
 
 const CTM_LAMBDA_c =
 """
-$(RREF_cpp)
-$(NORM2_cpp)
+$(RREF_c)
+$(NORM2_c)
 
 kernel void
 update_lambda(	long niter,
@@ -305,7 +305,7 @@ end
 
 const CTM_VSQ_c =
 """
-$(NORM2_cpp)
+$(NORM2_c)
 
 kernel void
 update_vsq(	long niter,
