@@ -2,34 +2,6 @@
 ### Eric Proffitt
 ### December 3, 2019
 
-macro juliadots(str::String)
-	"Print Julia dots before bolded string output."
-	"For vanilla strings."
-
-	expr = :(	
-			print(Crayon(foreground=:red, bold=true), " ●");
-			print(Crayon(foreground=:green, bold=true), "●");
-			print(Crayon(foreground=:blue, bold=true), "● ");
-			print(Crayon(foreground=:white, bold=true), $str);
-			)
-	
-	return expr
-end
-
-macro juliadots(expr::Expr)
-	"Print Julia dots before bolded string output."
-	"For interpolated strings."
-
-	expr = :(	
-			print(Crayon(foreground=:red, bold=true), " ●");
-			print(Crayon(foreground=:green, bold=true), "●");
-			print(Crayon(foreground=:blue, bold=true), "● ");
-			print(Crayon(foreground=:white, bold=true), :($($expr)))
-			)
-	
-	return expr
-end
-
 mutable struct Document
 	"Document mutable struct"
 
@@ -64,8 +36,8 @@ mutable struct Corpus
 	"Corpus mutable struct."
 
 	"docs:  A Vector{Document} containing the documents which belong to the Corpus."
-	"vocab:   A Dict{Int, String} containing a mapping term Int (key) -> term String (value)."
-	"users: A Dict{Int, String} containing a mapping user Int (key) -> user String (value)."
+	"vocab: A Dict{Int, String} containing a mapping term Int (key) => term String (value)."
+	"users: A Dict{Int, String} containing a mapping user Int (key) => user String (value)."
 
 	docs::Vector{Document}
 	vocab::Dict{Int, String}

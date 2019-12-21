@@ -17,6 +17,7 @@ mutable struct LDA <: TopicModel
 	elbo::Float64
 
 	function LDA(corp::Corpus, K::Integer)
+		check_corp(corp)
 		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)

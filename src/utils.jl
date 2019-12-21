@@ -186,9 +186,9 @@ function isstochastic(P::Matrix{<:Real}; dims::Integer)
 	"if dims = 2, check for right stochastic matrix."
 
 	if dims == 1
-		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
+		x = all([isprobvec(push!(P[:,j], 1 - sum(P[:,j]))) for j in 1:size(P, 2)])
 	elseif dims == 2
-		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
+		x = all([isprobvec(push!(P[i,:], 1 - sum(P[i,:]))) for i in 1:size(P, 1)])
 	else
 		x = P
 	end

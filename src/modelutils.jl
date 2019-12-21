@@ -2,6 +2,17 @@
 ### Eric Proffitt
 ### December 3, 2019
 
+struct CorpusError <: Exception
+    msg::AbstractString
+end
+
+struct TopicModelError <: Exception
+    msg::AbstractString
+end
+
+Base.showerror(io::IO, e::CorpusError) = print(io, "CorpusError: ", e.msg)
+Base.showerror(io::IO, e::TopicModelError) = print(io, "TopicModelError: ", e.msg)
+
 showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
 showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
 showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, collect(doc_range))
@@ -22,8 +33,8 @@ Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic m
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 function check_model(model::LDA)
-	check_corp(model.corp) 
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))			|| throw(TopicModelError(""))
+	#check_corp(model.corp) 
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))										|| throw(TopicModelError(""))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError(""))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError(""))
@@ -31,7 +42,7 @@ function check_model(model::LDA)
 	all(model.alpha .> 0)														|| throw(TopicModelError(""))
 	isequal(length(model.alpha), model.K)										|| throw(TopicModelError(""))
 	isequal(size(model.beta), (model.K, model.V))								|| throw(TopicModelError(""))
-	isprobvec(model.beta, 2)													|| throw(TopicModelError(""))
+	isstochastic(model.beta, dims=2)											|| throw(TopicModelError(""))
 	isequal(size(model.beta_old), (model.K, model.V))							|| throw(TopicModelError(""))
 	isequal(model.beta_temp, zeros(model.K, model.V))							|| throw(TopicModelError(""))
 	isequal(length(model.Elogtheta), model.M)									|| throw(TopicModelError(""))
@@ -42,9 +53,43 @@ function check_model(model::LDA)
 	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError(""))
 	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])				|| throw(TopicModelError(""))
 	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])						|| throw(TopicModelError(""))
-	isequal(size(model.phi[1]), (model.K, model.N[1]))							|| throw(TopicModelError(""))
-	isprobvec(model.phi[1], 1)													|| throw(TopicModelError(""))
+	#isequal(size(model.phi[1]), (model.K, model.N[1]))							|| throw(TopicModelError(""))
+	isstochastic(model.phi[1], dims=1)											|| throw(TopicModelError(""))
 	isfinite(model.elbo)														|| throw(TopicModelError(""))
+	nothing
+end
+
+function check_model(model::fLDA)
+	checkcorp(model.corp)
+	@assert !isempty(model.corp)
+	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
+	@assert isequal(model.M, length(model.corp))
+	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
+	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
+	@assert isequal(length(model.alpha), model.K)	
+	@assert all(isfinite.(model.alpha))
+	@assert all(ispositive.(model.alpha))
+	@assert (0 <= model.eta <= 1)	
+	@assert isequal(size(model.beta), (model.K, model.V))
+	@assert isprobvec(model.beta, 2)
+	@assert isequal(size(model.newbeta), (model.K, model.V))
+	@assert isequal(model.newbeta, zeros(model.K, model.V))
+	@assert isequal(size(model.fbeta), (model.K, model.V))
+	@assert isprobvec(model.fbeta, 2)	
+	@assert isequal(length(model.kappa), model.V)
+	@assert isprobvec(model.kappa)
+	@assert isequal(length(model.newkappa), model.V)
+	@assert isequal(model.newkappa, zeros(model.V))	
+	@assert isequal(length(model.gamma), model.M)
+	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])
+	@assert isequal(length(model.tau), model.M)
+	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
+	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])	
+	@assert isequal(size(model.phi), (model.K, model.N[1]))
+	@assert isprobvec(model.phi, 1)
+	@assert isfinite(model.elbo)
 end
 
 function update_buffer!(model::gpuLDA)
