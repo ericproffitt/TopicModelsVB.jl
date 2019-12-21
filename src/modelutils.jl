@@ -24,17 +24,37 @@ Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative top
 function update_buffer!(model::gpuLDA)
 	"Update gpuLDA model data in GPU RAM."
 
-	@buffer model.N
-	@buffer model.C
-	@buffer model.J
+	terms = vcat([doc.terms for doc in model.corp) .- 1
+	terms_sortperm = sortperm(terms) .- 1
+	counts = vcat([doc.counts for doc in model.corp)
+		
+	J = zeros(Int, model.V)
+	for j in terms
+		J[j+1] += 1
+	end
+
+	N_partial_sums = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
+	end
+
+	J_partial_sums = zeros(Int, model.M + 1)
+	for j in 1:model.V
+		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
+	end
+
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms))
+	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
+	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
+
+	N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
+	J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
+
 	@buffer model.alpha
-	@buffer model.beta
-	@buffer model.Elogtheta
-	@buffer model.gamma
-	@buffer model.phi
-	@buffer model.terms
-	@buffer model.counts
-	@buffer model.words
+	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
+	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, :rw, hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, zeros(Float32, model.K * model.M + 64 - model.M % 64))
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, zeros(Float32, model.K, sum(model.N) + 64 - sum(model.N) % 64))
 end
 
 function update_buffer!(model::gpuCTM)
@@ -55,6 +75,15 @@ end
 function update_buffer!(model::gpuCTPF)
 	"Update gpuCTPF model data in GPU RAM."
 
+	elseif expr.args[2] == :(:readers)
+		expr_out = :($(esc(model)).readers_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).readers))
+
+	elseif expr.args[2] == :(:ratings)
+		expr_out = :($(esc(model)).ratings_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).ratings))
+
+	elseif expr.args[2] == :(:views)
+		expr_out = :($(esc(model)).views_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views))
+
 	@buffer model.Npsums
 	@buffer model.Jpsums
 	@buffer model.Rpsums
@@ -69,13 +98,31 @@ function update_buffer!(model::gpuCTPF)
 	@buffer model.xi
 end
 
+function update_host!(model::TopicModel)
+	nothing
+end
+
 function update_host!(model::gpuLDA)
 	"Update gpuLDA model data in CPU RAM."
 
-	@host model.beta_buffer
+	N_partial_sums = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
+	end
+
+	J_partial_sums = zeros(Int, model.M + 1)
+	for j in 1:model.V
+		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
+	end
+
+	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
 	@host model.Elogtheta_buffer
-	@host model.gamma_buffer
-	@host model.phi_buffer
+
+	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
+	model.gamma = [gamma_host[:,d] for d in 1:model.M]
+
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
 end
 
 function update_host!(model::gpuCTM)
@@ -111,6 +158,7 @@ function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
 	"If abs(delta_elbo) < tol, terminate algorithm."
 
 	if k % check_elbo == 0
+		update_host!(model)
 		delta_elbo = -(model.elbo - update_elbo!(model))
 		println(k, " ∆elbo: ", round(delta_elbo, digits=3))
 

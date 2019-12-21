@@ -56,47 +56,8 @@ macro buffer(args...)
 	expr = args[1]
 	model = expr.args[1]
 
-	if expr.args[2] == :(:terms)
-		expr_out = :($(esc(model)).terms_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).terms))
-
-	elseif expr.args[2] == :(:counts)
-		expr_out = :($(esc(model)).counts_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).counts))
-
-	elseif expr.args[2] == :(:words)
-		expr_out = :($(esc(model)).words_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).words))
-
-	elseif expr.args[2] == :(:readers)
-		expr_out = :($(esc(model)).readers_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).readers))
-
-	elseif expr.args[2] == :(:ratings)
-		expr_out = :($(esc(model)).ratings_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).ratings))
-
-	elseif expr.args[2] == :(:views)
-		expr_out = :($(esc(model)).views_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views))
-
-	elseif expr.args[2] == :(:alpha)
+	if expr.args[2] == :(:alpha)
 		expr_out = :($(esc(model)).alpha_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
-
-	elseif expr.args[2] == :(:beta)
-		expr_out = :($(esc(model)).beta_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).beta))
-
-	elseif expr.args[2] == :(:gamma)
-		expr_out = :($(esc(model)).gamma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gamma..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
-
-	elseif expr.args[2] == :(:phi)
-		expr_out = :($(esc(model)).phi_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=ones(Float32, $(esc(model)).K, sum($(esc(model)).N) + 64 - sum($(esc(model)).N) % 64) / $(esc(model)).K))
-
-	elseif expr.args[2] == :(:Elogtheta)
-		expr_out = :($(esc(model)).Elogtheta_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * ($(esc(model)).M + 64 - $(esc(model)).M % 64))
-
-	elseif expr.args[2] == :(:N)
-		expr_out = :($(esc(model)).N_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).N)
-
-	elseif expr.args[2] == :(:C)
-		expr_out = :($(esc(model)).C_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).C)
-
-	elseif expr.args[2] == :(:J)
-		expr_out = :($(esc(model)).J_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).J)
 
 	elseif expr.args[2] == :(:newtontemp)
 		expr_out = :($(esc(model)).newtontemp_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64)))
@@ -162,32 +123,11 @@ macro host(args...)
 	expr = args[1]
 	model = expr.args[1]
 
-	if expr.args[2] == :(:alpha_buffer)
-		expr_out = :($(esc(model)).alpha = cl.read($(esc(model)).queue, $(esc(model)).alpha_buffer))
-
-	elseif expr.args[2] == :(:beta_buffer)
-		expr_out = :($(esc(model)).beta = reshape(cl.read($(esc(model)).queue, $(esc(model)).betabuf), $(esc(model)).K, $(esc(model)).V))
-
-	elseif expr.args[2] == :(:gamma_buffer)
+	if expr.args[2] == :(:Elogtheta_buffer)
 		expr_out = 
 		quote
-		gamma_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gamma_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).gamma = [gamma_host[:,d] for d in 1:$(esc(model)).M]
-		end
-
-	elseif expr.args[2] == :(:phi_buffer)
-		expr_out = 
-		quote
-		phi_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).phi_buffer), $(esc(model)).K, sum($(esc(model)).N) + 64 - sum($(esc(model)).N) % 64)
-		$(esc(model)).phi = [phi_host[:,Npsums[d]+1:Npsums[d+1]] for d in 1:$(esc(model)).M]
-		end
-
-	elseif expr.args[2] == :(:Elogtheta_buffer)
-		quoteblock = 
-		quote
-		batch = $(esc(model)).batches[$(esc(b))]
-		hostElogtheta = reshape(cl.read($(esc(model)).queue, $(esc(model)).Elogthetabuf), $(esc(model)).K, length(batch) + 64 - length(batch) % 64)
-		$(esc(model)).Elogtheta = [hostElogtheta[:,d] for d in 1:length(batch)]
+		Elogtheta_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).Elogtheta = [hostElogtheta[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:mu_buffer)

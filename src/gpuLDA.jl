@@ -43,25 +43,6 @@ mutable struct gpuLDA <: TopicModel
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]
-
-		terms = vcat([doc.terms for doc in corp) .- 1
-		counts = vcat([doc.counts for doc in corp)
-		terms_sortperm = sortperm(terms) .- 1
-			
-		J = zeros(Int, V)
-		for j in terms
-			J[j+1] += 1
-		end
-
-		N_partial_sums = zeros(Int, M + 1)
-		for d in 1:model.M
-			N_partial_sums[d+1] = N_partial_sums[d] + N[d]
-		end
-
-		J_partial_sums = zeros(Int, M + 1)
-		for j in 1:model.V
-			J_partial_sums[j+1] = J_partial_sums[j] + J[j]
-		end
 		
 		topics = [collect(1:V) for _ in 1:K]
 
@@ -91,7 +72,7 @@ mutable struct gpuLDA <: TopicModel
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 		Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
 
-		model = new(K, M, V, N, C, J, copy(corp), terms, counts, terms_sortperm, topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, gamma_kernel, phi_kernel, phi_norm_kernel, Elogtheta_norm_kernel)
+		model = new(K, M, V, N, C, J, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, gamma_kernel, phi_kernel, phi_norm_kernel, Elogtheta_norm_kernel)
 		update_elbo!(model)	
 		return model
 	end
@@ -137,8 +118,6 @@ end
 
 function update_elbo!(model::gpuLDA)
 	"Update the evidence lower bound."
-
-	update_host!(model)
 
 	for d in 1:model.M
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
