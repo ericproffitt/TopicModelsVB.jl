@@ -65,32 +65,8 @@ macro buffer(args...)
 	elseif expr.args[2] == :(:invsigma)
 		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
 
-	elseif expr.args[2] == :(:alef)
-		expr_out = :($(esc(model)).alef_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alef))
-
-	elseif expr.args[2] == :(:bet)
-		expr_out = :($(esc(model)).bet_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).bet))
-
 	elseif expr.args[2] == :(:gimel)
 		expr_out = :($(esc(model)).gimel_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gimel..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
-
-	elseif expr.args[2] == :(:dalet)
-		expr_out = :($(esc(model)).dalet_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).dalet))
-
-	elseif expr.args[2] == :(:he)
-		expr_out = :($(esc(model)).he_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).he))
-
-	elseif expr.args[2] == :(:vav)
-		expr_out = :($(esc(model)).vav_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).vav))
-
-	elseif expr.args[2] == :(:zayin)
-		expr_out = :($(esc(model)).zayin_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).zayin..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
-
-	elseif expr.args[2] == :(:het)
-		expr_out = :($(esc(model)).het_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).het))
-
-	elseif expr.args[2] == :(:xi)
-		expr_out = :($(esc(model)).xi_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, 2 * $(esc(model)).K * (sum($(esc(model)).R) + 64 - sum($(esc(model)).R) % 64))
 	end
 	
 	return expr_out
