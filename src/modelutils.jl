@@ -345,9 +345,9 @@ end
 function update_buffer!(model::gpuLDA)
 	"Update gpuLDA model data in GPU RAM."
 
-	terms = vcat([doc.terms for doc in model.corp) .- 1
+	terms = convert(Vector{Int}, vcat(Int[doc.terms for doc in model.corp]...) .- 1)
 	terms_sortperm = sortperm(terms) .- 1
-	counts = vcat([doc.counts for doc in model.corp)
+	counts = convert(Vector{Int}, vcat([doc.counts for doc in model.corp]...))
 		
 	J = zeros(Int, model.V)
 	for j in terms
@@ -364,7 +364,7 @@ function update_buffer!(model::gpuLDA)
 		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
 	end
 
-	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms))
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
@@ -381,9 +381,9 @@ end
 function update_buffer!(model::gpuCTM)
 	"Update gpuCTM model data in GPU RAM."
 
-	terms = vcat([doc.terms for doc in model.corp) .- 1
+	terms = vcat([doc.terms for doc in model.corp]...) .- 1
 	terms_sortperm = sortperm(terms) .- 1
-	counts = vcat([doc.counts for doc in model.corp)
+	counts = vcat([doc.counts for doc in model.corp]...)
 
 	J = zeros(Int, model.V)
 	for j in terms
@@ -400,7 +400,7 @@ function update_buffer!(model::gpuCTM)
 		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
 	end
 
-	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms))
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
