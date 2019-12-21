@@ -106,78 +106,60 @@ macro gpu(expr::Expr)
 
 	quote
 	local model = $(esc(expr.args[2]))
-	local batchsize = Int(min($(esc(batchsize)), length(model.corp)))
-	local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[3:end]))]
+	local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[2:end]))]
 	
 	if isa(model, LDA)
-		fakecorp = Corpus(docs=[Document([1])], lex=["1"])
-		gpumodel = gpuLDA(fakecorp, 1)
-
+		gpumodel = gpuLDA(Corpus(), 1)
 		gpumodel.corp = model.corp
-
 		gpumodel.K = model.K
 		gpumodel.M = model.M
 		gpumodel.V = model.V
 		gpumodel.N = model.N
 		gpumodel.C = model.C
-
-		gpumodel.batches = partition(1:model.M, batchsize)
-		gpumodel.B = length(gpumodel.batches)
-		
 		gpumodel.topics = model.topics
-
 		gpumodel.alpha = model.alpha
 		gpumodel.beta = model.beta
+		gpumodel.Elogtheta = model.Elogtheta
 		gpumodel.gamma = model.gamma
-		gpumodel.phi = unshift!([ones(model.K, model.N[d]) / model.K for d in gpumodel.batches[1][2:end]], model.phi)
+		gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
 		gpumodel.elbo = model.elbo
 		
-		fixmodel!(gpumodel)
 		train!(gpumodel; kwargs...)
 		
 		model.topics = gpumodel.topics
 		model.alpha = gpumodel.alpha
 		model.beta = gpumodel.beta
+		model.Elogtheta = gpumodel.Elogtheta[1]
 		model.gamma = gpumodel.gamma
 		model.phi = gpumodel.phi[1]
-		model.Elogtheta = gpumodel.Elogtheta[1]
-		model.Elogthetasum = zeros(gpumodel.K)
 		model.elbo = gpumodel.elbo
 
-		model.beta ./= sum(model.beta, 2)
-		model.phi ./= sum(model.phi, 1)
+		model.beta ./= sum(model.beta, dims=2)
+		model.phi ./= sum(model.phi, dims=1)
 		nothing
 
 	elseif isa(model, fLDA)
 		nothing
 
 	elseif isa(model, CTM)
-		fakecorp = Corpus(docs=[Document([1])], lex=["1"])
-		gpumodel = gpuCTM(fakecorp, 1)
-
+		gpumodel = gpuCTM(Corpus(), 1)
 		gpumodel.corp = model.corp
-
 		gpumodel.K = model.K
 		gpumodel.M = model.M
 		gpumodel.V = model.V
 		gpumodel.N = model.N
 		gpumodel.C = model.C
-
-		gpumodel.batches = partition(1:model.M, batchsize)
-		gpumodel.B = length(gpumodel.batches)
-		
 		gpumodel.topics = model.topics
-
 		gpumodel.mu = model.mu
 		gpumodel.sigma = model.sigma
+		gpumodel.invsigma = model.invsigma
 		gpumodel.beta = model.beta
 		gpumodel.lambda = model.lambda
 		gpumodel.vsq = model.vsq
-		gpumodel.lzeta = fill(model.lzeta, model.M)
-		gpumodel.phi = unshift!([ones(model.K, model.N[d]) / model.K for d in gpumodel.batches[1][2:end]], model.phi)
+		gpumodel.logzeta = model.logzeta
+		gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
 		gpumodel.elbo = model.elbo
 		
-		fixmodel!(gpumodel)
 		train!(gpumodel; kwargs...)
 		
 		model.topics = gpumodel.topics
@@ -187,12 +169,12 @@ macro gpu(expr::Expr)
 		model.beta = gpumodel.beta
 		model.lambda = gpumodel.lambda
 		model.vsq = gpumodel.vsq
-		model.lzeta = gpumodel.lzeta[1]
+		model.logzeta = gpumodel.logzeta
 		model.phi = gpumodel.phi[1]
 		model.elbo = gpumodel.elbo
 
-		model.beta ./= sum(model.beta, 2)
-		model.phi ./= sum(model.phi, 1)
+		model.beta ./= sum(model.beta, dims=2)
+		model.phi ./= sum(model.phi, dims=1)
 		nothing
 
 	elseif isa(model, fCTM)
