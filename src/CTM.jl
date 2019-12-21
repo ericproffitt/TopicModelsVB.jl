@@ -16,7 +16,7 @@ mutable struct CTM <: TopicModel
 	lambda_old::VectorList{Float64}
 	vsq::VectorList{Float64}
 	logzeta::Vector{Float64}
-	phi::Matrix{Float64}
+	phi::MatrixList{Float64}
 	elbo::Float64
 
 	function CTM(corp::Corpus, K::Integer)
@@ -38,13 +38,13 @@ mutable struct CTM <: TopicModel
 		lambda_old = copy(lambda)
 		vsq = [ones(K) for _ in 1:M]
 		logzeta = fill(0.5, M)
-		phi = ones(K, N[1]) / K
+		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo=0
 
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, logzeta, phi, elbo)
 		
 		for d in 1:model.M
-			model.phi = ones(K, N[d]) / K
+			model.phi[1] = ones(K, N[d]) / K
 			model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)
 		end
 
@@ -63,7 +63,7 @@ function Elogpz(model::CTM, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
+	x = dot(model.phi[1]' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
 	return x
 end
 
@@ -71,7 +71,7 @@ function Elogpw(model::CTM, d::Int)
 	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -86,7 +86,7 @@ function Elogqz(model::CTM, d::Int)
 	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[1][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
@@ -96,8 +96,8 @@ function update_elbo!(model::CTM)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi = additive_logistic(log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
-		model.phi ./= sum(model.phi, dims=1)
+		model.phi[1] = additive_logistic(log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
+		model.phi[1] ./= sum(model.phi[1], dims=1)
 		model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)
 	end
 
@@ -132,7 +132,7 @@ function update_beta!(model::CTM, d::Int)
 	"Analytic."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.beta_temp[:,terms] += model.phi .* counts'
+	model.beta_temp[:,terms] += model.phi[1] .* counts'
 end
 
 function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
@@ -143,7 +143,7 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
+		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi[1] * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
 		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]))) * model.sigma
 		model.lambda[d] -= lambda_invhess * lambda_grad
 		
@@ -187,7 +187,7 @@ function update_phi!(model::CTM, d::Int)
 	"Analytic."
 
 	terms = model.corp[d].terms
-	model.phi = additive_logistic(log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
+	model.phi[1] = additive_logistic(log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
 function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
@@ -196,7 +196,8 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
-	
+	isempty(model.corp) && (iter = 0)
+
 	for k in 1:iter
 		for d in 1:model.M
 			for _ in 1:viter

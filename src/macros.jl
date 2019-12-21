@@ -61,6 +61,7 @@ macro buffer(expr::Expr)
 
 	elseif expr.args[2] == :(:invsigma)
 		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
+	end
 	
 	return expr_out
 end
@@ -98,6 +99,7 @@ macro host(expr::Expr)
 		gimel_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimel_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
 		$(esc(model)).gimel = [gimel_host[:,d] for d in 1:$(esc(model)).M]
 		end
+	end
 
 	return expr_out
 end
@@ -132,9 +134,9 @@ macro gpu(expr::Expr)
 			model.topics = gpumodel.topics
 			model.alpha = gpumodel.alpha
 			model.beta = gpumodel.beta
-			model.Elogtheta = gpumodel.Elogtheta[1]
+			model.Elogtheta = gpumodel.Elogtheta
 			model.gamma = gpumodel.gamma
-			model.phi = gpumodel.phi[1]
+			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
 			model.elbo = gpumodel.elbo
 
 			model.beta ./= sum(model.beta, dims=2)
@@ -173,7 +175,7 @@ macro gpu(expr::Expr)
 			model.lambda = gpumodel.lambda
 			model.vsq = gpumodel.vsq
 			model.logzeta = gpumodel.logzeta
-			model.phi = gpumodel.phi[1]
+			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
 			model.elbo = gpumodel.elbo
 
 			model.beta ./= sum(model.beta, dims=2)
@@ -232,8 +234,8 @@ macro gpu(expr::Expr)
 			model.zayin = gpumodel.zayin
 			model.dalet = gpumodel.dalet
 			model.het = gpumodel.het
-			model.phi = gpumodel.phi[1]
-			model.xi = gpumodel.xi[1]
+			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
+			model.xi = gpumodel.xi[1:min(gpumodel.M, 1)]
 			model.elbo = gpumodel.elbo
 
 			model.phi ./= sum(model.phi, dims=1)

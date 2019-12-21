@@ -129,7 +129,7 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	"Update alpha."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
+	Elogtheta_sum = sum(Float64[model.Elogtheta[d] for d in 1:model.M])
 
 	nu = model.K
 	for _ in 1:niter
@@ -138,7 +138,7 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 		alpha_invhess_diag = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
 		p = (alpha_grad .- dot(alpha_grad, alpha_invhess_diag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alpha_invhess_diag))) .* alpha_invhess_diag
 		
-		while minimum(model.alpha - rho * p) < 0
+		while minimum(push!(model.alpha - rho * p, Inf)) < 0
 			rho *= 0.5
 		end	
 		model.alpha -= rho * p

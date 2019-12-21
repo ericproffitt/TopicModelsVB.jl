@@ -366,28 +366,29 @@ function gencorp(model::Union{AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfC
 	return corp
 end
 
-function showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), cols::Integer=4)
-	"Display the top N terms for each topic."
+function showtopics(model::TopicModel, top_n_terms::Integer=min(15, model.V); topics::Union{<:Integer, Vector{<:Integer}}=collect(1:model.K), cols::Integer=4)
+	"Display the top n terms for each topic."
 	"topics parameter controls which topics are displayed."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	checkbounds(Bool, 1:model.V, N) || throw(ArgumentError("Some vocab indices are outside range."))
-	checkbounds(Bool, 1:model.K, topics) || throw(ArgumentError("Some topic indices are outside range."))
-	cols > 0 || throw(ArgumentError("cols must be a positive integer."))
+	top_n_terms <= model.V					|| throw(ArgumentError("Number of displayed terms must be less than vocab size."))
+	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("Some topic indices are outside range."))
+	cols > 0								|| throw(ArgumentError("cols must be a positive integer."))
+	
 	cols = min(cols, length(topics))
 
 	vocab = model.corp.vocab
-	maxjspacings = [maximum([length(vocab[j]) for j in topic[1:N]]) for topic in model.topics]
+	maxjspacings = [maximum(push!([length(vocab[j]) for j in topic[1:top_n_terms]], -Inf)) for topic in model.topics]
 
-	for block in partition(topics, cols)
-		for j in 0:N
+	for block in Iterators.partition(topics, cols)
+		for j in 0:top_n_terms
 			for (k, i) in enumerate(block)
 				if j == 0
 					jspacing = max(4, maxjspacings[i] - length("$i") - 2)
-					k == cols ? yellow("topic $i") : yellow("topic $i" * " "^jspacing)
+					k == cols ? print(Crayon(foreground=:yellow, bold=true), "topic $i") : print(Crayon(foreground=:yellow, bold=true), "topic $i" * " "^jspacing)
 				else
 					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(vocab[model.topics[i][j]]) + 4
-					k == cols ? print(vocab[model.topics[i][j]]) : print(vocab[model.topics[i][j]] * " "^jspacing)
+					k == cols ? print(Crayon(foreground=:white, bold=false), vocab[model.topics[i][j]]) : print(Crayon(foreground=:white, bold=false), vocab[model.topics[i][j]] * " "^jspacing)
 				end
 			end
 			println()

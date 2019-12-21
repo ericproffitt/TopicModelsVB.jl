@@ -13,7 +13,7 @@ mutable struct LDA <: TopicModel
 	Elogtheta::VectorList{Float64}
 	Elogtheta_old::VectorList{Float64}
 	gamma::VectorList{Float64}
-	phi::Matrix{Float64}
+	phi::MatrixList{Float64}
 	elbo::Float64
 
 	function LDA(corp::Corpus, K::Integer)
@@ -32,13 +32,13 @@ mutable struct LDA <: TopicModel
 		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
 		Elogtheta_old = copy(Elogtheta)
 		gamma = [ones(K) for _ in 1:M]
-		phi = ones(K, N[1]) / K
+		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo = 0
 	
 		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, phi, elbo)
 		
 		for d in 1:model.M
-			model.phi = ones(K, N[d]) / K
+			model.phi[1] = ones(K, N[d]) / K
 			model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 		end
 
@@ -57,7 +57,7 @@ function Elogpz(model::LDA, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi * counts, model.Elogtheta[d])
+	x = dot(model.phi[1] * counts, model.Elogtheta[d])
 	return x
 end
 
@@ -65,7 +65,7 @@ function Elogpw(model::LDA, d::Int)
 	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -80,7 +80,7 @@ function Elogqz(model::LDA, d::Int)
 	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[1][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
@@ -90,8 +90,8 @@ function update_elbo!(model::LDA)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi = model.beta_old[:,terms] .* exp.(model.Elogtheta_old[d])
-		model.phi ./= sum(model.phi, dims=1)
+		model.phi[1] = model.beta_old[:,terms] .* exp.(model.Elogtheta_old[d])
+		model.phi[1] ./= sum(model.phi[1], dims=1)
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 	end
 
@@ -137,7 +137,7 @@ function update_beta!(model::LDA, d::Int)
 	"Analytic."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.beta_temp[:,terms] += model.phi .* counts'		
+	model.beta_temp[:,terms] += model.phi[1] .* counts'		
 end
 
 function update_Elogtheta!(model::LDA, d::Int)
@@ -153,7 +153,7 @@ function update_gamma!(model::LDA, d::Int)
 	"Analytic."
 
 	counts = model.corp[d].counts
-	@bumper model.gamma[d] = model.alpha + model.phi * counts	
+	@bumper model.gamma[d] = model.alpha + model.phi[1] * counts	
 end
 
 function update_phi!(model::LDA, d::Int)
@@ -161,8 +161,8 @@ function update_phi!(model::LDA, d::Int)
 	"Analytic."
 
 	terms = model.corp[d].terms
-	model.phi = model.beta[:,terms] .* exp.(model.Elogtheta[d])
-	model.phi ./= sum(model.phi, dims=1)
+	model.phi[1] = model.beta[:,terms] .* exp.(model.Elogtheta[d])
+	model.phi[1] ./= sum(model.phi[1], dims=1)
 end
 
 function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
@@ -171,6 +171,7 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	isempty(model.corp) && (iter = 0)
 
 	for k in 1:iter
 		for d in 1:model.M	
