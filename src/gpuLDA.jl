@@ -119,6 +119,7 @@ end
 function update_elbo!(model::gpuLDA)
 	"Update the evidence lower bound."
 
+	model.elbo = 0
 	for d in 1:model.M
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 	end
