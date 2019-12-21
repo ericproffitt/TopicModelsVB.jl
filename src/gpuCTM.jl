@@ -269,10 +269,10 @@ update_lambda(	long niter,
 							A[D + K * l + i] = -C[d] * sigma[K * l + i] * exp(lambda[K * d + l] + 0.5f * vsq[K * d + l] - logzeta[d]);
 						}
 
-						for (long n=Npsums[d]; n<Npsums[d+1]; n++)
+						for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
 							acc += phi[K * n + i] * counts[n];
 
-						lambda_grad[K * d + i] = acc - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[F + d]);
+						lambda_grad[K * d + i] = acc - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
 						A[D + K * i + i] -= 1.0f;
 					}
 
@@ -287,6 +287,7 @@ update_lambda(	long niter,
 							lambda[K * d + i] -= lambda_invhess[D + K * l + i] * lambda_grad[K * d + l];
 
 					float lgnorm = norm2(K, d, lambda_grad);
+					
 					if (lgnorm < ntol)
 						break;
 				}
@@ -342,6 +343,7 @@ update_vsq(	long niter,
 					vsq[K * d + i] -= rho * p[K * d + i];
 
 				float vgnorm = norm2(K, d, vsq_grad);
+				
 				if (vgnorm < ntol)
 					break;
 			}
