@@ -167,9 +167,9 @@ function update_sigma!(model::gpuCTM)
 	"Update sigma."
 	"Analytic"
 
-	@host model.mubuf
-	@host model.lambdabuf
-	@host model.vsqbuf
+	@host model.mu_buffer
+	@host model.lambda_buffer
+	@host model.vsq_buffer
 
 	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
 	model.invsigma = inv(model.sigma)
@@ -299,7 +299,7 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 
 	model.lambda_old = model.lambda
 
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzetabuf, model.phi_buffer, model.lambda_buffer)
+	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzetabuf, model.phi_buffer, model.lambda_buffer)
 	@host model.lambda_buffer
 end
 
@@ -330,8 +330,8 @@ update_vsq(	long niter,
 
 				for (long i=0; i<K; i++)
 				{
-					vsq_grad[K * d + i] = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[F + d]) - 1 / vsq[K * d + i]);
-					vsq_invhess = -1 / (0.25f * C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[F + d]) + 0.5f / (vsq[K * d + i] * vsq[K * d + i]));
+					vsq_grad[K * d + i] = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) - 1 / vsq[K * d + i]);
+					vsq_invhess = -1 / (0.25f * C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) + 0.5f / (vsq[K * d + i] * vsq[K * d + i]));
 				
 					p[K * d + i] = vsq_grad[K * d + i] * vsq_invhess;
 					while (vsq[K * d + i] - rho * p[K * d + i] <= 0)
@@ -373,7 +373,7 @@ update_logzeta(	long K,
 
 				for (long i=0; i<K; i++)
 				{
-					float x = lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i];
+					float x = lambda[K * d + i] + 0.5f * vsq[K * d + i];
 					if (x > maxval)
 						maxval = x;
 				}
@@ -381,9 +381,9 @@ update_logzeta(	long K,
 				float acc = 0.0f;
 
 				for (long i=0; i<K; i++)
-					acc += exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - maxval);
+					acc += exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - maxval);
 
-				logzeta[F + d] = maxval + log(acc);
+				logzeta[d] = maxval + log(acc);
 				}
 				"""
 
@@ -398,7 +398,7 @@ const CTM_PHI_c =
 """
 kernel void
 update_phi(	long K,
-			const global long *Npsums,
+			const global long *N_partial_sums,
 			const global long *terms,
 			const global float *beta,
 			const global float *lambda,
@@ -408,8 +408,8 @@ update_phi(	long K,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			for (long n=Npsums[d]; n<Npsums[d+1]; n++)
-				phi[K * n + i] = log(beta[K * terms[n] + i]) + lambda[K * (F + d) + i];
+			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+				phi[K * n + i] = log(beta[K * terms[n] + i]) + lambda[K * d + i];
 			}
 			"""
 
