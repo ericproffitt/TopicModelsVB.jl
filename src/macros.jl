@@ -61,10 +61,6 @@ macro buffer(expr::Expr)
 
 	elseif expr.args[2] == :(:invsigma)
 		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
-
-	elseif expr.args[2] == :(:gimel)
-		expr_out = :($(esc(model)).gimel_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).gimel..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
-	end
 	
 	return expr_out
 end
@@ -94,6 +90,13 @@ macro host(expr::Expr)
 		quote
 		vsq_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).vsq_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
 		$(esc(model)).vsq = [vsq_host[:,d] for d in 1:$(esc(model)).M]
+		end
+
+	elseif expr.args[2] == :(:gimel_buffer)
+		expr_out = 
+		quote
+		gimel_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimel_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).gimel = [gimel_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	return expr_out

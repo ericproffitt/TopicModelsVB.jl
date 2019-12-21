@@ -166,7 +166,7 @@ function update_buffer!(model::gpuCTPF)
 	model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
 	model.bet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.bet)
 	model.vav_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
-	@buffer model.gimel
+	model.gimel_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel..., zeros(Float32, model.K, 64 - model.M % 64)))
 	mdoel.zayin_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin..., zeros(Float32, model.K, 64 - model.M % 64)))
 	model.dalet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet))
 	model.het_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het))
@@ -233,9 +233,7 @@ function update_host!(model::gpuCTPF)
 	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U))
 	model.bet = cl.read(model.queue, model.beta_buffer)
 	model.vav = cl.read(model.queue, model.vav_buffer))
-	
-	gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M + 64 - model.M % 64)
-	model.gimel = [gimel_host[:,d] for d in 1:model.M]
+	@host model.gimel_buffer
 	
 	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, mdoel.M + 64 - model.M % 64)
 	model.zayin = [zayin_host[:,d] for d in 1:model.M]
