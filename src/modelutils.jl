@@ -60,51 +60,43 @@ end
 function update_buffer!(model::gpuCTM)
 	"Update gpuCTM model data in GPU RAM."
 
-	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
-	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
+	terms = vcat([doc.terms for doc in model.corp) .- 1
+	terms_sortperm = sortperm(terms) .- 1
+	counts = vcat([doc.counts for doc in model.corp)
 
-	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	for (b, batch) in enumerate(model.batches)
-		for (n, d) in enumerate(batch)
-			model.Npsums[b][n+1] = model.Npsums[b][n] + model.N[d]
-		end
-	end
-		
-	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for in 1:model.B
-		for j in model.terms[b]
-			J[b][j+1] += 1
-		end
+	J = zeros(Int, model.V)
+	for j in terms
+		J[j+1] += 1
 	end
 
-	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for in 1:model.B
-		for j in 1:model.V
-			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
-		end
+	N_partial_sums = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
-		
-	@buf model.mu
-	@buf model.sigma
-	@buf model.beta
-	@buf model.lambda
-	@buf model.vsq
-	@buf model.logzeta
-	@buf model.invsigma
-	@buf model.newbeta
-	updateBuf!(model, 0)
 
-	@buffer model.C
-	@buffer model.Npsums
-	@buffer model.Jpsums
-	@buffer model.terms
-	@buffer model.counts
-	@buffer model.words
-	@buffer model.newtontemp
-	@buffer model.newtongrad
-	@buffer model.newtoninvhess
-	@buffer model.phi
+	J_partial_sums = zeros(Int, model.M + 1)
+	for j in 1:model.V
+		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
+	end
+
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms))
+	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
+	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
+
+	N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
+	J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
+
+	model.newton_temp_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64)))
+	model.newton_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64)))
+	model.newton_invhess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64)))
+
+	@buffer model.sigma
+	@buffer model.invsigma
+	model.mu_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).mu))
+	model.lambda_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64))))
+	model.vsq_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.logzeta_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=model.logzeta))
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, zeros(Float32, model.K, sum(model.N) + 64 - sum(model.N) % 64))
 end
 
 function update_buffer!(model::gpuCTPF)

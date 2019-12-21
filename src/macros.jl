@@ -59,32 +59,11 @@ macro buffer(args...)
 	if expr.args[2] == :(:alpha)
 		expr_out = :($(esc(model)).alpha_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
 
-	elseif expr.args[2] == :(:newtontemp)
-		expr_out = :($(esc(model)).newtontemp_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64)))
-
-	elseif expr.args[2] == :(:newtongrad)
-		expr_out = :($(esc(model)).newtongrad_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K * (length(batch) + 64 - length(batch) % 64)))
-
-	elseif expr.args[2] == :(:newtoninvhess)
-		expr_out = :($(esc(model)).newtoninvhess_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, $(esc(model)).K^2 * (length(batch) + 64 - length(batch) % 64)))
-
-	elseif expr.args[2] == :(:mu)
-		expr_out = :($(esc(model)).mu_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).mu))
-
 	elseif expr.args[2] == :(:sigma)
 		expr_out = :($(esc(model)).sigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).sigma))
 
 	elseif expr.args[2] == :(:invsigma)
 		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
-
-	elseif expr.args[2] == :(:lambda)
-		expr_out = :($(esc(model)).lambda_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).lambda..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64))))
-
-	elseif expr.args[2] == :(:vsq)
-		expr_out = $(esc(model)).vsq_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat($(esc(model)).vsq..., zeros(Float32, $(esc(model)).K, 64 - $(esc(model)).M % 64)))
-
-	elseif expr.args[2] == :(:lzeta)
-		expr_out = :($(esc(model)).lzeta_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).lzeta))
 
 	elseif expr.args[2] == :(:alef)
 		expr_out = :($(esc(model)).alef_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alef))

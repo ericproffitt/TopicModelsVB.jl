@@ -39,9 +39,9 @@ mutable struct gpuCTM <: TopicModel
 	vsq_buffer::cl.Buffer{Float32}
 	logzeta_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
-	newtontempbuf::cl.Buffer{Float32}
-	newtongradbuf::cl.Buffer{Float32}
-	newtoninvhessbuf::cl.Buffer{Float32}
+	newton_grad_buffer::cl.Buffer{Float32}
+	newton_invhess_buffer::cl.Buffer{Float32}
+	newton_temp_buffer::cl.Buffer{Float32}
 
 	function gpuCTM(corp::Corpus, K::Integer)
 		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
@@ -300,7 +300,7 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 
 	model.lambda_old = model.lambda
 
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzetabuf, model.phi_buffer, model.lambda_buffer)
+	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer)
 	@host model.lambda_buffer
 end
 
@@ -357,7 +357,7 @@ function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update vsq."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.newtontempbuf, model.newtongradbuf, model.Cbuf, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
+	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.newton_grad_buffer, model.Cbuf, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
 const CTM_logzeta_c = 
