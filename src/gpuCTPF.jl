@@ -75,37 +75,29 @@ mutable struct gpuCTPF <: TopicModel
 		C = [size(doc) for doc in corp]
 		R = [length(doc.readers) for doc in corp]
 
-		@assert ispositive(U)
-		@assert isequal(collect(1:U), sort(collect(keys(corp.users))))
+		topics = [collect(1:V) for _ in 1:K]
+		scores = zeros(M, U)
+
 		libs = [Int[] for _ in 1:U]
 		for u in 1:U, d in 1:M
 			u in corp[d].readers && push!(libs[u], d)
 		end
 
+		drecs = Vector[]
+		urecs = Vector[]
+
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
-		if isa(basemodel, Union{AbstractLDA, AbstractCTM})
-			@assert isequal(size(basemodel.beta), (K, V))
-			alef = exp.(basemodel.beta)
-			topics = basemodel.topics		
-		elseif isa(basemodel, Union{AbstractfLDA, AbstractfCTM})
-			@assert isequal(size(basemodel.fbeta), (K, V))
-			alef = exp.(basemodel.fbeta)
-			topics = basemodel.topics
-		else
-			alef = exp.(rand(Dirichlet(V, 1.0), K)' - 0.5)
-			topics = [collect(1:V) for _ in 1:K]
-		end
-		
-		bet = ones(K)
-		gimel = [ones(K) for _ in 1:M]
-		dalet = ones(K)
+		alef = exp.(rand(Dirichlet(V, 1.0), K)' .- 0.5)
 		he = ones(K, U)
+		bet = ones(K)
 		vav = ones(K)
+		gimel = [ones(K) for _ in 1:M]
 		zayin = [ones(K) for _ in 1:M]
+		dalet = ones(K)
 		het = ones(K)
-		phi = [ones(K, N[d]) / K for d in 1:M]
-		xi = [ones(2K, R[d]) / 2K for d in 1:M]
+		phi = ones(K, N[1]) / K
+		xi = ones(2K, R[1]) / 2K
 		elbo = 0
 
 		device, context, queue = cl.create_compute_context()		
@@ -294,7 +286,6 @@ update_alef(long K,
 			const global long *J_partial_sums,
 			const global long *terms_sortperm,
 			const global long *counts,
-
 			const global float *phi,
 			global float *alef)
 						
@@ -378,7 +369,7 @@ updateGimel(long K,
 			}
 			"""
 
-function update_gimel!(model::gpuCTPF, b::Int)
+function update_gimel!(model::gpuCTPF)
 	"Update gimel."
 	"Analytic."
 
@@ -451,7 +442,7 @@ function udpate_he!(model::gpuCTPF)
 	"Update he."
 	"Analytic."
 
-	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.Y_partial_sums_buffer, model.ratings_buffer, model.views_buffer, model.xi_buffer, model.he_buffer)
+	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.Y_partial_sums_buffer, model.ratings_buffer, model.ratings_sortperm_buffer, model.xi_buffer, model.he_buffer)
 end
 
 const CTPF_VAV_c = 
@@ -482,7 +473,7 @@ update_vav(	long K,
 			}
 			"""
 
-function updateVav!(model::gpuCTPF)
+function update_vav!(model::gpuCTPF)
 	"Update vav."
 	"Analytic."
 
@@ -577,7 +568,7 @@ update_phi(	long K,
 const CTPF_PHI_NORM_c =
 """
 kernel void
-normalize_phi(long K,
+normalize_phi(	long K,
 				global float *phi)
 				
 				{
@@ -691,7 +682,7 @@ function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vto
 		end
 	end
 
-	update_host!(model, 1)
+	update_host!(model)
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]
 
