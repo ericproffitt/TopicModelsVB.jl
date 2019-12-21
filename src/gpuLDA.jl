@@ -171,7 +171,7 @@ update_beta(long K,
 			for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
 				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
-			beta[K * j + i] += acc;
+			beta[K * j + i] = acc;
 			}
 			"""
 
@@ -199,6 +199,7 @@ function update_beta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
+	@buffer model.beta
 	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end

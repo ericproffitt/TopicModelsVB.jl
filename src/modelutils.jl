@@ -60,6 +60,41 @@ end
 function update_buffer!(model::gpuCTM)
 	"Update gpuCTM model data in GPU RAM."
 
+	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
+	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
+	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
+
+	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
+	for (b, batch) in enumerate(model.batches)
+		for (n, d) in enumerate(batch)
+			model.Npsums[b][n+1] = model.Npsums[b][n] + model.N[d]
+		end
+	end
+		
+	J = [zeros(Int, model.V) for _ in 1:model.B]
+	for in 1:model.B
+		for j in model.terms[b]
+			J[b][j+1] += 1
+		end
+	end
+
+	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
+	for in 1:model.B
+		for j in 1:model.V
+			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
+		end
+	end
+		
+	@buf model.mu
+	@buf model.sigma
+	@buf model.beta
+	@buf model.lambda
+	@buf model.vsq
+	@buf model.logzeta
+	@buf model.invsigma
+	@buf model.newbeta
+	updateBuf!(model, 0)
+
 	@buffer model.C
 	@buffer model.Npsums
 	@buffer model.Jpsums
