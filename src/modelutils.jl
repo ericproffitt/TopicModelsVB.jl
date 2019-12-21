@@ -33,6 +33,8 @@ Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic m
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 function check_model(model::LDA)
+	"Check latent Dirichlet allocation model parameters."
+
 	#check_corp(model.corp) 
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
@@ -64,6 +66,8 @@ function check_model(model::LDA)
 end
 
 function check_model(model::fLDA)
+	"Check filtered latent Dirichlet allocation model parameters."
+
 	#check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
@@ -105,6 +109,8 @@ function check_model(model::fLDA)
 end
 
 function check_model(model::CTM)
+	"Check correlated topic model parameters."
+
 	#check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))	
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
@@ -135,6 +141,8 @@ function check_model(model::CTM)
 end
 
 function check_model(model::fCTM)
+	"Check filtered correlated topic model parameters."
+
 	#check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
@@ -175,6 +183,8 @@ function check_model(model::fCTM)
 end
 
 function check_model(model::CTPF)
+	"Check collaborative topic Poisson factorization model parameters."
+
 	#check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))
 	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))							|| throw(TopicModelError(""))
@@ -225,6 +235,8 @@ function check_model(model::CTPF)
 end
 
 function check_model(model::gpuLDA)
+	"Check GPU accelerated latent Dirichlet allocation model parameters."
+
 	#check_corp(model.corp) 
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
@@ -256,6 +268,8 @@ function check_model(model::gpuLDA)
 end
 
 function check_model(model::gpuCTM)
+	"Check GPU accelerated correlated topic model parameters."
+
 	#check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))	
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
@@ -286,6 +300,8 @@ function check_model(model::gpuCTM)
 end
 
 function check_model(model::gpuCTPF)
+	"Check GPU accelerated collaborative topic Poisson factorization model parameters."
+
 	#check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))
 	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))							|| throw(TopicModelError(""))
