@@ -168,7 +168,6 @@ function update_sigma!(model::gpuCTM)
 	"Analytic"
 
 	@host model.mu_buffer
-	@host model.lambda_buffer
 	@host model.vsq_buffer
 
 	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M

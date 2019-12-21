@@ -186,7 +186,7 @@ function update_host!(model::gpuLDA)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	J_partial_sums = zeros(Int, model.M + 1)
+	J_partial_sums = zeros(Int, model.V + 1)
 	for j in 1:model.V
 		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
 	end
@@ -204,6 +204,35 @@ end
 function update_host!(model::gpuCTM)
 	"Update gpuCTM model data in CPU RAM."
 
+	N_partial_sums = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
+	end
+
+	J_partial_sums = zeros(Int, model.V + 1)
+	for j in 1:model.V
+		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
+	end
+
+	elseif expr.args[2] == :(:sigma_buffer)
+		quoteblock =
+		quote
+		$(esc(model)).sigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).sigmabuf), $(esc(model)).K, $(esc(model)).K)
+		end
+
+	elseif expr.args[2] == :(:invsigma_buffer)
+		quoteblock =
+		quote
+		$(esc(model)).invsigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).invsigmabuf), $(esc(model)).K, $(esc(model)).K)
+		end
+
+
+	elseif expr.args[2] == :(:lzeta_buffer)
+		quoteblock = 
+		quote
+		$(esc(model)).lzeta = cl.read($(esc(model)).queue, $(esc(model)).lzetabuf)
+		end
+
 	@host model.mubuf
 	@host model.sigmabuf
 	@host model.invsigmabuf
@@ -217,16 +246,45 @@ end
 function update_host!(model::gpuCTPF)
 	"Update gpuCTPF model data in CPU RAM."
 
-	@host model.alefbuf
-	@host model.betbuf
-	@host model.gimelbuf
-	@host model.daletbuf
-	@host model.hebuf
-	@host model.vavbuf
-	@host model.zayinbuf
-	@host model.hetbuf
-	@host model.phibuf
-	@host model.xibuf
+	N_partial_sums = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
+	end
+
+	J_partial_sums = zeros(Int, model.V + 1)
+	for j in 1:model.V
+		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
+	end
+
+	R_partial_sums = zeros(Int, model.R + 1)
+	for d in 1:model.R
+		R_partial_sums[d+1] = R_partial_sums[d] + model.R[d]
+	end
+		
+	Y_partial_sums = zeros(Int, model.U + 1)
+	for u in 1:model.U
+		Y_partial_sums[u+1] = Y_partial_sums[u] + Y[u]
+	end
+
+	model.alef = reshape(cl.read(model.queue, model.alef_buffer), model.K, model.V)
+	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U))
+	model.bet = cl.read(model.queue, model.beta_buffer)
+	model.vav = cl.read(model.queue, model.vav_buffer))
+	
+	gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M + 64 - model.M % 64)
+	model.gimel = [gimel_host[:,d] for d in 1:model.M]
+	
+	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, mdoel.M + 64 - model.M % 64)
+	model.zayin = [zayin_host[:,d] for d in 1:model.M]
+		
+	model.dalet = cl.read(model.queue, model.dalet_buffer))
+	model.het = cl.read(model.queue, model.het_buffer)
+	
+	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R) + 64 - sum(model.R) % 64)
+	model.xi = [xi_host[:,R_partial_sums[d]+1:R_partial_sums[d+1]] for d in 1:model.M]
+	
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
 end
 
 function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
