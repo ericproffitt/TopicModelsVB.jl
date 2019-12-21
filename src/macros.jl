@@ -75,7 +75,7 @@ macro buffer(args...)
 		expr_out = :($(esc(model)).views_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views))
 
 	elseif expr.args[2] == :(:alpha)
-		expr_out = :($(esc(model)).alphabuf = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
+		expr_out = :($(esc(model)).alpha_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
 
 	elseif expr.args[2] == :(:beta)
 		expr_out = :($(esc(model)).beta_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).beta))
@@ -241,51 +241,40 @@ macro host(args...)
 		end
 
 	elseif expr.args[2] == :(:gimel_buffer)
-		quoteblock = 
+		expr_out = 
 		quote
-		hostgimel = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimelbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).gimel = [hostgimel[:,d] for d in 1:$(esc(model)).M]
+		gimel_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimel_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).gimel = [gimel_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:dalet_buffer)
-		quoteblock = 
-		quote
-		$(esc(model)).dalet = cl.read($(esc(model)).queue, $(esc(model)).daletbuf)
-		end
+		expr_out = :($(esc(model)).dalet = cl.read($(esc(model)).queue, $(esc(model)).dalet_buffer))
 
 	elseif expr.args[2] == :(:he_buffer)
-		quoteblock = 
-		quote
-		$(esc(model)).he = reshape(cl.read($(esc(model)).queue, $(esc(model)).hebuf), $(esc(model)).K, $(esc(model)).U)
-		end
+		expr_out = :($(esc(model)).he = reshape(cl.read($(esc(model)).queue, $(esc(model)).he_buffer), $(esc(model)).K, $(esc(model)).U))
 
 	elseif expr.args[2] == :(:vav_buffer)
-		quoteblock = 
-		quote
-		$(esc(model)).vav = cl.read($(esc(model)).queue, $(esc(model)).vavbuf)
-		end
+		expr_out = :($(esc(model)).vav = cl.read($(esc(model)).queue, $(esc(model)).vav_buffer))
 
 	elseif expr.args[2] == :(:zayin_buffer)
-		quoteblock = 
+		expr_out = 
 		quote
-		hostzayin = reshape(cl.read($(esc(model)).queue, $(esc(model)).zayinbuf), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).zayin = [hostzayin[:,d] for d in 1:$(esc(model)).M]
+		zayin_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).zayin_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).zayin = [zayin_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:het_buffer)
-		quoteblock = 
-		quote
-		$(esc(model)).het = cl.read($(esc(model)).queue, $(esc(model)).hetbuf)
-		end
+		expr_out = :($(esc(model)).het = cl.read($(esc(model)).queue, $(esc(model)).het_buffer))
 
 	elseif expr.args[2] == :(:xi_buffer)
-		quoteblock = 
+		expr_out = 
 		quote
-		hostxi = reshape(cl.read($(esc(model)).queue, $(esc(model)).xibuf), 2 * $(esc(model)).K, sum($(esc(model)).R[batch]) + 64 - sum($(esc(model)).R[batch]) % 64)
-		$(esc(model)).xi = [hostxi[:,Rpsums[m]+1:Rpsums[m+1]] for m in 1:length(batch)]
+		hostxi = reshape(cl.read($(esc(model)).queue, $(esc(model)).xi_buffer), 2 * $(esc(model)).K, sum($(esc(model)).R[batch]) + 64 - sum($(esc(model)).R[batch]) % 64)
+		$(esc(model)).xi = [hostxi[:,Rpsums[m]+1:Rpsums[m+1]] for m in 1:$(esc(model)).M]
 		end
 	end
-	return quoteblock
+
+	return expr_out
 end
 
 macro gpu(args...)

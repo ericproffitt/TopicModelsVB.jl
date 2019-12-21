@@ -8,7 +8,7 @@ mutable struct gpuLDA <: TopicModel
 	corp::Corpus
 	terms::VectorList{Int}
 	counts::VectorList{Int}
-	words::VectorList{Int}
+	terms_sortperm::VectorList{Int}
 	topics::VectorList{Int}
 	alpha::Vector{Float32}
 	beta::Matrix{Float32}
@@ -26,12 +26,11 @@ mutable struct gpuLDA <: TopicModel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
 	Elogtheta_kernel::cl.Kernel
-	N_buffer::cl.Buffer{Int}
-	C_buffer::cl.Buffer{Int}
-	J_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
+	terms_sortperm_buffer::cl.Buffer{Int}
 	counts_buffer::cl.Buffer{Int}
-	words_buffer::cl.Buffer{Int}
+	N_partial_sums_buffer::cl.Buffer{Int}
+	J_partial_sums_buffer::cl.Buffer{Int}
 	alpha_buffer::cl.Buffer{Float32}
 	beta_buffer::cl.Buffer{Float32}
 	gamma_buffer::cl.Buffer{Float32}
@@ -47,11 +46,21 @@ mutable struct gpuLDA <: TopicModel
 
 		terms = vcat([doc.terms for doc in corp) .- 1
 		counts = vcat([doc.counts for doc in corp)
-		words = sortperm(terms) .- 1
+		terms_sortperm = sortperm(terms) .- 1
 			
 		J = zeros(Int, V)
 		for j in terms
 			J[j+1] += 1
+		end
+
+		N_partial_sums = zeros(Int, M + 1)
+		for d in 1:model.M
+			N_partial_sums[d+1] = N_partial_sums[d] + N[d]
+		end
+
+		J_partial_sums = zeros(Int, M + 1)
+		for j in 1:model.V
+			J_partial_sums[j+1] = J_partial_sums[j] + J[j]
 		end
 		
 		topics = [collect(1:V) for _ in 1:K]
@@ -82,7 +91,7 @@ mutable struct gpuLDA <: TopicModel
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 		Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
 
-		model = new(K, M, V, N, C, J, copy(corp), terms, counts, words, topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, gamma_kernel, phi_kernel, phi_norm_kernel, Elogtheta_norm_kernel)
+		model = new(K, M, V, N, C, J, copy(corp), terms, counts, terms_sortperm, topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, gamma_kernel, phi_kernel, phi_norm_kernel, Elogtheta_norm_kernel)
 		update_elbo!(model)	
 		return model
 	end
@@ -169,7 +178,7 @@ kernel void
 update_beta(long K,
 			const global long *J,
 			const global long *counts,
-			const global long *words,
+			const global long *terms_sortperm,
 			const global float *phi,
 			global float *beta)
 						
@@ -180,7 +189,7 @@ update_beta(long K,
 			float acc = 0.0f;
 
 			for (long w=0; w<J[j]; w++)
-				acc += counts[words[w]] * phi[K * words[w] + i];
+				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
 			newbeta[K * j + i] += acc;
 			}
@@ -210,7 +219,7 @@ function update_beta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
-	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.J, model.counts_buffer, model.words_buffer, model.phi_buffer, model.beta_buffer)
+	model.queue(model.betakern, (model.K, model.V), nothing, model.K, model.J, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.betanormkern, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
@@ -282,17 +291,17 @@ const LDA_PHI_c =
 """
 kernel void
 update_phi(	long K,
-			const global long *N,
+			const global long *N_partial_sums,
 			const global long *terms,
 			const global float *beta,
 			const global float *Elogtheta,
 			global float *phi)
-                                        
+
 			{
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			for (long n=0; n<N[d]; n++)
+			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
 				phi[K * n + i] = beta[K * terms[n] + i] * exp(Elogtheta[K * d + i]);
 			}
 			"""
@@ -307,7 +316,7 @@ normalize_phi(	long K,
 				long dn = get_global_id(0);
 
 				float normalizer = 0.0f;
-											
+
 				for (long i=0; i<K; i++)
 					normalizer += phi[K * dn + i];
 
@@ -320,7 +329,7 @@ function update_phi!(model::gpuLDA)
 	"Update phi."
 	"Analytic."
 
-	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.N, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.N_partial_sums_buffer, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
