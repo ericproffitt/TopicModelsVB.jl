@@ -8,12 +8,12 @@ mutable struct gpuCTM <: TopicModel
 	topics::VectorList{Int}
 	mu::Vector{Float32}
 	sigma::Matrix{Float32}
+	invsigma::Matrix{Float32}
 	beta::Matrix{Float32}
 	lambda::VectorList{Float32}
 	vsq::VectorList{Float32}
 	logzeta::Vector{Float32}
 	phi::MatrixList{Float32}
-	invsigma::Matrix{Float32}
 	elbo::Float32
 	device::cl.Device
 	context::cl.Context

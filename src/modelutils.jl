@@ -186,11 +186,6 @@ function update_host!(model::gpuLDA)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	J_partial_sums = zeros(Int, model.V + 1)
-	for j in 1:model.V
-		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
-	end
-
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
 	@host model.Elogtheta_buffer
 
@@ -209,37 +204,16 @@ function update_host!(model::gpuCTM)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	J_partial_sums = zeros(Int, model.V + 1)
-	for j in 1:model.V
-		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
-	end
+	@host model.mu_buffer
+	model.sigma = reshape(cl.read(model.queue, $model.sigma_buffer), model.K, model.K)
+	model.invsigma = reshape(cl.read(model.queue, model.invsigma_buffer), model.K, model.K)
+	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
+	@host model.lambda_buffer
+	@host model.vsq_buffer
+	model.logzeta = cl.read(model.queue, model.logzeta_buffer)
 
-	elseif expr.args[2] == :(:sigma_buffer)
-		quoteblock =
-		quote
-		$(esc(model)).sigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).sigmabuf), $(esc(model)).K, $(esc(model)).K)
-		end
-
-	elseif expr.args[2] == :(:invsigma_buffer)
-		quoteblock =
-		quote
-		$(esc(model)).invsigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).invsigmabuf), $(esc(model)).K, $(esc(model)).K)
-		end
-
-	elseif expr.args[2] == :(:lzeta_buffer)
-		quoteblock = 
-		quote
-		$(esc(model)).lzeta = cl.read($(esc(model)).queue, $(esc(model)).lzetabuf)
-		end
-
-	@host model.mubuf
-	@host model.sigmabuf
-	@host model.invsigmabuf
-	@host model.betabuf
-	@host model.lambdabuf
-	@host model.vsqbuf
-	@host model.lzetabuf
-	@host model.phibuf
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
 end
 
 function update_host!(model::gpuCTPF)
@@ -250,19 +224,9 @@ function update_host!(model::gpuCTPF)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	J_partial_sums = zeros(Int, model.V + 1)
-	for j in 1:model.V
-		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
-	end
-
 	R_partial_sums = zeros(Int, model.R + 1)
 	for d in 1:model.R
 		R_partial_sums[d+1] = R_partial_sums[d] + model.R[d]
-	end
-		
-	Y_partial_sums = zeros(Int, model.U + 1)
-	for u in 1:model.U
-		Y_partial_sums[u+1] = Y_partial_sums[u] + Y[u]
 	end
 
 	model.alef = reshape(cl.read(model.queue, model.alef_buffer), model.K, model.V)

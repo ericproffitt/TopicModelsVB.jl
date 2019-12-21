@@ -50,11 +50,8 @@ macro bumper(expr::Expr)
 	return expr
 end
 
-macro buffer(args...)
+macro buffer(expr::Expr)
 	"Load individual variable into buffer memory."
-
-	expr = args[1]
-	model = expr.args[1]
 
 	if expr.args[2] == :(:alpha)
 		expr_out = :($(esc(model)).alpha_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
@@ -72,11 +69,8 @@ macro buffer(args...)
 	return expr_out
 end
 
-macro host(args...)
+macro host(expr::Expr)
 	"Load individual variable into host memory."
-
-	expr = args[1]
-	model = expr.args[1]
 
 	if expr.args[2] == :(:Elogtheta_buffer)
 		expr_out = 
@@ -105,22 +99,10 @@ macro host(args...)
 	return expr_out
 end
 
-macro gpu(args...)
-	if length(args) == 1
-		@assert isa(args[1], Expr)
-		batchsize = Inf
-		expr = args[1]
-	elseif length(args) == 2
-		@assert isa(args[1], Integer)
-		@assert isa(args[2], Expr)
-		batchsize = args[1]
-		expr = args[2]
-	else
-		throw(ArgumentError("Wrong number of arguments."))
-	end
+macro gpu(expr::Expr)
+	"Train model on GPU."
 
-	@assert ispositive(batchsize)
-	@assert expr.args[1] == :train! "GPU acceleration only applies to the train! function."
+	expr.args[1] == :train! || throw(ArgumentError("GPU acceleration only applies to the train! function."))
 
 	quote
 	local model = $(esc(expr.args[2]))
@@ -214,9 +196,6 @@ macro gpu(args...)
 		nothing
 
 	elseif isa(model, fCTM)
-		nothing
-
-	elseif isa(model, DTM)
 		nothing
 
 	elseif isa(model, CTPF)
