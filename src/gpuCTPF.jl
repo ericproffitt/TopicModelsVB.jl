@@ -1,118 +1,3 @@
-function check_model(model::gpuCTPF)
-	@assert isequal(vcat(model.batches...), collect(1:model.M))
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])
-	@assert isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])
-	@assert isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])
-	@assert ispositive(model.a)
-	@assert ispositive(model.b)
-	@assert ispositive(model.c)
-	@assert ispositive(model.d)
-	@assert ispositive(model.e)
-	@assert ispositive(model.f)
-	@assert ispositive(model.g)
-	@assert ispositive(model.h)	
-	@assert isequal(size(model.alef), (model.K, model.V))
-	@assert all(isfinite.(model.alef))
-	@assert all(ispositive.(model.alef))
-	@assert isequal(length(model.bet), model.K)
-	@assert all(isfinite.(model.bet))
-	@assert all(ispositive.(model.bet))
-	@assert isequal(length(model.gimel), model.M)
-	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gimel[d])) for d in 1:model.M])
-	@assert isequal(length(model.dalet), model.K)
-	@assert all(isfinite.(model.dalet))
-	@assert all(ispositive.(model.dalet))
-	@assert isequal(size(model.he), (model.K, model.U))	
-	@assert all(isfinite.(model.he))
-	@assert all(ispositive.(model.he))
-	@assert isequal(length(model.vav), model.K)
-	@assert all(isfinite.(model.vav))
-	@assert all(ispositive.(model.vav))
-	@assert isequal(length(model.zayin), model.M)
-	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.zayin[d])) for d in 1:model.M])
-	@assert isequal(length(model.het), model.K)
-	@assert all(isfinite.(model.het))
-	@assert all(ispositive.(model.het))
-	@assert isequal(length(model.phi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
-	@assert isequal(length(model.xi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.xi[d], 1) for d in model.batches[1]])
-
-	model.newalef = nothing
-	model.newhe = nothing
-		
-	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
-	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
-
-	model.readers = [vcat([doc.readers for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.ratings = [vcat([doc.ratings for doc in model.corp[batch]]...) for batch in model.batches]
-	model.views = [sortperm(readervec) - 1 for readervec in model.readers]
-
-	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	model.Rpsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	for (b, batch) in enumerate(model.batches)
-		for (m, d) in enumerate(batch)
-			model.Npsums[b][m+1] = model.Npsums[b][m] + model.N[d]
-			model.Rpsums[b][m+1] = model.Rpsums[b][m] + model.R[d]
-		end
-	end
-		
-	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for in 1:model.B
-		for j in model.terms[b]
-			J[b][j+1] += 1
-		end
-	end
-
-	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for in 1:model.B
-		for j in 1:model.V
-			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
-		end
-	end
-
-	Y = [zeros(Int, model.U) for _ in 1:model.B]
-	for in 1:model.B
-		for r in model.readers[b]
-			Y[b][r+1] += 1
-		end
-	end
-
-	model.Ypsums = [zeros(Int, model.U + 1) for _ in 1:model.B]
-	for in 1:model.B
-		for u in 1:model.U
-			model.Ypsums[b][u+1] = model.Ypsums[b][u] + Y[b][u]
-		end
-	end
-
-
-		
-	@buf model.alef
-	@buf model.bet
-	@buf model.gimel
-	@buf model.dalet
-	@buf model.he
-	@buf model.vav
-	@buf model.zayin
-	@buf model.het
-	@buf model.newalef
-	@buf model.newhe
-	updateBuf!(model, 0)
-
-	model.newelbo = 0
-	nothing
-end
-
 mutable struct gpuCTPF <: TopicModel
 	K::Int
 	M::Int
@@ -121,9 +6,7 @@ mutable struct gpuCTPF <: TopicModel
 	N::Vector{Int}
 	C::Vector{Int}
 	R::Vector{Int}
-	B::Int
 	corp::Corpus
-	batches::Vector{UnitRange{Int}}
 	topics::VectorList{Int}
 	scores::Matrix{Float32}
 	libs::VectorList{Int}
@@ -138,58 +21,48 @@ mutable struct gpuCTPF <: TopicModel
 	g::Float32
 	h::Float32
 	alef::Matrix{Float32}
-	bet::Vector{Float32}
-	gimel::VectorList{Float32}
-	dalet::Vector{Float32}
 	he::Matrix{Float32}
+	bet::Vector{Float32}
 	vav::Vector{Float32}
+	gimel::VectorList{Float32}
 	zayin::VectorList{Float32}
+	dalet::Vector{Float32}
 	het::Vector{Float32}
 	phi::MatrixList{Float32}
 	xi::MatrixList{Float32}
 	elbo::Float32
-	Npsums::VectorList{Int}
-	Jpsums::VectorList{Int}
-	Rpsums::VectorList{Int}
-	Ypsums::VectorList{Int}
-	terms::VectorList{Int}
-	counts::VectorList{Int}
-	words::VectorList{Int}
-	readers::VectorList{Int}
-	ratings::VectorList{Int}
-	views::VectorList{Int}
 	device::cl.Device
 	context::cl.Context
 	queue::cl.CmdQueue
-	N_partial_sums_buffer::cl.Buffer{Int}
-	J_partial_sums_buffer::cl.Buffer{Int}
-	R_partial_sums_buffer::cl.Buffer{Int}
-	Ypsumsbuf::cl.Buffer{Int}
-	termsbuf::cl.Buffer{Int}
-	counts_buffer::cl.Buffer{Int}
-	terms_sortperm_buffer::cl.Buffer{Int}
-	readers_buffer::cl.Buffer{Int}
-	ratingsbuf::cl.Buffer{Int}
-	viewsbuf::cl.Buffer{Int}
 	alef_kernel::cl.Kernel
+	he_kernel::cl.Kernel
 	bet_kernel::cl.Kernel
-	gimelkern::cl.Kernel
-	daletkern::cl.Kernel
-	hekern::cl.Kernel
 	vav_kernel::cl.Kernel
+	gimel_kernel::cl.Kernel
 	zayin_kernel::cl.Kernel
+	dalet_kernel::cl.Kernel
 	het_kernel::cl.Kernel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
 	xi_kernel::cl.Kernel
 	xi_norm_kernel::cl.Kernel
+	N_partial_sums_buffer::cl.Buffer{Int}
+	J_partial_sums_buffer::cl.Buffer{Int}
+	R_partial_sums_buffer::cl.Buffer{Int}
+	Y_partial_sums_buffer::cl.Buffer{Int}
+	terms_buffer::cl.Buffer{Int}
+	terms_sortperm_buffer::cl.Buffer{Int}
+	counts_buffer::cl.Buffer{Int}
+	readers_buffer::cl.Buffer{Int}
+	ratings_buffer::cl.Buffer{Int}
+	ratings_sortperm_buffer::cl.Buffer{Int}
 	alef_buffer::cl.Buffer{Float32}
+	he_buffer::cl.Buffer{Float32}
 	bet_buffer::cl.Buffer{Float32}
-	gimel_buffer::cl.Buffer{Float32}
-	dalet_buffer::cl.Buffer{Float32}
-	hebuf::cl.Buffer{Float32}
 	vav_buffer::cl.Buffer{Float32}
+	gimel_buffer::cl.Buffer{Float32}
 	zayin_buffer::cl.Buffer{Float32}
+	dalet_buffer::cl.Buffer{Float32}
 	het_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
 	xi_buffer::cl.Buffer{Float32}
@@ -238,12 +111,12 @@ mutable struct gpuCTPF <: TopicModel
 		device, context, queue = cl.create_compute_context()		
 
 		alef_prog = cl.Program(context, source=CTPF_ALEF_c) |> cl.build!
-		bet_program = cl.Program(context, source=CTPF_BET_c) |> cl.build!
-		gimel_program = cl.Program(context, source=CTPF_GIMEL_c) |> cl.build!
-		dalet_program = cl.Program(context, source=CTPF_DALET_c) |> cl.build!
 		he_program = cl.Program(context, source=CTPF_HE_c) |> cl.build!
+		bet_program = cl.Program(context, source=CTPF_BET_c) |> cl.build!
 		vav_program = cl.Program(context, source=CTPF_VAV_c) |> cl.build!
+		gimel_program = cl.Program(context, source=CTPF_GIMEL_c) |> cl.build!
 		zayin_program = cl.Program(context, source=CTPF_ZAYIN_c) |> cl.build!
+		dalet_program = cl.Program(context, source=CTPF_DALET_c) |> cl.build!
 		het_program = cl.Program(context, source=CTPF_HET_c) |> cl.build!
 		phi_program = cl.Program(context, source=CTPF_PHI_c) |> cl.build!
 		phi_norm_program = cl.Program(context, source=CTPF_PHI_NORM_c) |> cl.build!
@@ -251,19 +124,19 @@ mutable struct gpuCTPF <: TopicModel
 		xi_norm_program = cl.Program(context, source=CTPF_XI_NORM_c) |> cl.build!
 
 		alef_kernel = cl.Kernel(alef_program, "update_alef")
-		bet_kernel = cl.Kernel(bet_program, "update_bet")
-		gimel_kernel = cl.Kernel(gimel_program, "update_gimel")
-		dalet_kernel = cl.Kernel(dalet_program, "update_dalet")
 		he_kernel = cl.Kernel(he_program, "update_he")
+		bet_kernel = cl.Kernel(bet_program, "update_bet")
 		vav_kernel = cl.Kernel(vav_program, "update_vav")
+		gimel_kernel = cl.Kernel(gimel_program, "update_gimel")
 		zayin_kernel = cl.Kernel(zayin_program, "update_zayin")
+		dalet_kernel = cl.Kernel(dalet_program, "update_dalet")
 		het_kernel = cl.Kernel(het_program, "update_het")
 		phi_kernel = cl.Kernel(phi_program, "update_phi")
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 		xi_kernel = cl.Kernel(xi_program, "update_xi")
 		xi_norm_kernel = cl.Kernel(xi_norm_program, "normalize_xi")
 
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo, alef_kernel, bet_kernel, gimel_kernel, dalet_kernel, he_kernel, vav_kernel, zayin_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
 		update_elbo!(model)
 		return model
 	end
@@ -405,12 +278,6 @@ function Elogqepsilon(model::gpuCTPF, d::Int)
 	return x
 end
 
-function updateELBO!(model::gpuCTPF)
-	model.elbo = model.newelbo + Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
-	model.newelbo = 0
-	return model.elbo
-end
-
 function update_elbo!(model::gpuCTPF)
 	"Update the evidence lower bound."
 
@@ -445,6 +312,9 @@ update_alef(long K,
 			"""
 
 function update_alef!(model::gpuCTPF)
+	"Update alef."
+	"Analytic."
+
 	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.alef_buffer)
 end
 
@@ -472,6 +342,9 @@ update_bet(	long K,
 			"""
 
 function update_bet!(model::gpuCTPF)
+	"Update bet."
+	"Analytic."
+
 	model.queue(model.bet_kernel, model.K, nothing, model.K, model.M, model.b, model.alef_buffer, model.gimel_buffer, model.dalet_buffer, model.bet_buffer)
 end
 
@@ -480,8 +353,8 @@ const CTPF_GIMEL_c =
 kernel void
 updateGimel(long K,
 			float c,
-			const global long *Npsums,
-			const global long *Rpsums,
+			const global long *N_partial_sums,
+			const global long *R_partial_sums,
 			const global long *counts,
 			const global long *ratings,
 			const global float *phi,
@@ -495,10 +368,10 @@ updateGimel(long K,
 			float acc_phi = 0.0f;
 			float acc_xi = 0.0f;
 
-			for (long n=Npsums[d]; n<Npsums[d+1]; n++)
+			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
 				acc_phi += phi[K * n + i] * counts[n];
 
-			for (long r=Rpsums[d]; r<Rpsums[d+1]; r++)
+			for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
 				acc_xi += xi[2 * K * r + i] * ratings[r]; 
 
 			gimel[K * d + i] = c + acc_phi + acc_xi;
@@ -511,7 +384,7 @@ function update_gimel!(model::gpuCTPF, b::Int)
 
 	model.gimel_old[d] = model.gimel[d]
 
-	model.queue(model.gimelkern, (model.K, model.M), nothing, model.K, model.c, model.N_partial_sums_buffer, model.R_partial_sums_buffer, model.counts_buffer, model.ratingsbuf, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
+	model.queue(model.gimel_kernel, (model.K, model.M), nothing, model.K, model.c, model.N_partial_sums_buffer, model.R_partial_sums_buffer, model.counts_buffer, model.ratings_buffer, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
 	@buffer model.gimel
 end
 
@@ -531,32 +404,31 @@ updateDalet(long K,
 			{
 			long i = get_global_id(0);
 			
-			float accalef = 0.0f;
-			float acche = 0.0f;
+			float acc_alef = 0.0f;
+			float acc_he = 0.0f;
 				
 			for (long j=0; j<V; j++)
-				accalef += alef[K * j + i];
+				acc_alef += alef[K * j + i];
 
 			for (long u=0; u<U; u++)
-				acche += he[K * u + i];
+				acc_he += he[K * u + i];
 
-			dalet[i] = d + accalef / bet[i] + acche / vav[i];
+			dalet[i] = d + acc_alef / bet[i] + acc_he / vav[i];
 			}
 			"""
 
 function update_dalet!(model::gpuCTPF)
-	model.queue(model.daletkern, model.K, nothing, model.K, model.V, model.U, model.d, model.alef_buffer, model.bet_buffer, model.hebuf, model.vav_buffer, model.dalet_buffer)
-end
+	"Update dalet."
+	"Analytic."
 
-function update_he!(model::gpuCTPF)
-	model.queue(model.hekern, (model.K, model.U), nothing, model.K, model.e, model.newhebuf, model.hebuf)
+	model.queue(model.dalet_kernel, model.K, nothing, model.K, model.V, model.U, model.d, model.alef_buffer, model.bet_buffer, model.he_buffer, model.vav_buffer, model.dalet_buffer)
 end
 
 const CTPF_HE_c =
 """
 kernel void
-update_he(long K,
-			const global long *Ypsums,
+update_he(	long K,
+			const global long *Y_partial_sums,
 			const global long *ratings,
 			const global long *views,
 			const global float *xi,
@@ -568,21 +440,24 @@ update_he(long K,
 
 			float acc = 0.0f;
 
-			for (long r=Ypsums[u]; r<Ypsums[u+1]; r++)
-				acc += ratings[views[r]] * (xi[2 * K * views[r] + i] + xi[K * (2 * views[r] + 1) + i]);
+			for (long r=Y_partial_sums[u]; r<Y_partial_sums[u+1]; r++)
+				acc += ratings[ratings_sortperm[r]] * (xi[2 * K * ratings_sortperm[r] + i] + xi[K * (2 * ratings_sortperm[r] + 1) + i]);
 
-			newhe[K * u + i] += acc;
+			he[K * u + i] = acc;
 			}
 			"""
 
 function udpate_he!(model::gpuCTPF)
-	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.Ypsumsbuf, model.ratingsbuf, model.viewsbuf, model.xi_buffer, model.he_buffer)
+	"Update he."
+	"Analytic."
+
+	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.Y_partial_sums_buffer, model.ratings_buffer, model.views_buffer, model.xi_buffer, model.he_buffer)
 end
 
 const CTPF_VAV_c = 
 """
 kernel void
-update_vav(long K,
+update_vav(	long K,
 			long M,
 			float f,
 			const global float *gimel,
@@ -594,20 +469,23 @@ update_vav(long K,
 			{
 			long i = get_global_id(0);
 
-			float accgimel = 0.0f;
-			float acczayin = 0.0f;
+			float acc_gimel = 0.0f;
+			float acc_zayin = 0.0f;
 
 			for (long d=0; d<M; d++)
 			{
-				accgimel += gimel[K * d + i];
-				acczayin += zayin[K * d + i];				
+				acc_gimel += gimel[K * d + i];
+				acc_zayin += zayin[K * d + i];				
 			}
 
-			vav[i] = f + accgimel / dalet[i] + acczayin / het[i];
+			vav[i] = f + acc_gimel / dalet[i] + acc_zayin / het[i];
 			}
 			"""
 
 function updateVav!(model::gpuCTPF)
+	"Update vav."
+	"Analytic."
+
 	model.queue(model.vav_kernel, model.K, nothing, model.K, model.M, model.f, model.gimel_buffer, model.dalet_buffer, model.zayin_buffer, model.het_buffer, model.vav_buffer)
 end
 
@@ -616,7 +494,7 @@ const CTPF_ZAYIN_c =
 kernel void
 update_zayin(	long K,
 				float g,
-				const global long *Rpsums,
+				const global long *R_partial_sums,
 				const global long *ratings,
 				const global float *xi,
 				global float *zayin)
@@ -627,21 +505,24 @@ update_zayin(	long K,
 
 				float acc = 0.0f;
 
-				for (long r=Rpsums[d]; r<Rpsums[d+1]; r++)
+				for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
 					acc += xi[K * (2 * r + 1) + i] * ratings[r];
 
-				zayin[K * (F + d) + i] = g + acc; 
+				zayin[K * d + i] = g + acc; 
 				}
 				"""
 
 function update_zayin!(model::gpuCTPF)
-	model.queue(model.zayin_kernel, (model.K, model.M), nothing, model.K, model.g, model.R_partial_sums_buffer, model.ratingsbuf, model.xi_buffer, model.zayin_buffer)
+	"Update zayin."
+	"Analytic."
+
+	model.queue(model.zayin_kernel, (model.K, model.M), nothing, model.K, model.g, model.R_partial_sums_buffer, model.ratings_buffer, model.xi_buffer, model.zayin_buffer)
 end
 
 const CTPF_HET_c =
 """
 kernel void
-update_het(long K,
+update_het(	long K,
 			long U,
 			float h,
 			const global float *he,
@@ -661,7 +542,10 @@ update_het(long K,
 			"""
 
 function update_het!(model::gpuCTPF)
-	model.queue(model.het_kernel, model.K, nothing, model.K, model.U, model.h, model.hebuf, model.vav_buffer, model.het_buffer)
+	"Update het."
+	"Analytic."
+
+	model.queue(model.het_kernel, model.K, nothing, model.K, model.U, model.h, model.he_buffer, model.vav_buffer, model.het_buffer)
 end
 
 const CTPF_PHI_c =
@@ -670,7 +554,7 @@ $(DIGAMMA_c)
 
 kernel void
 update_phi(	long K,
-			const global long *Npsums,
+			const global long *N_partial_sums,
 			const global long *terms,
 			const global float *alef,
 			const global float *bet,
@@ -683,9 +567,9 @@ update_phi(	long K,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			float gdb = digamma(gimel[K * (F + d) + i]) - log(dalet[i]) - log(bet[i]);
+			float gdb = digamma(gimel[K * d + i]) - log(dalet[i]) - log(bet[i]);
 
-			for (long n=Npsums[d]; n<Npsums[d+1]; n++)
+			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
 				phi[K * n + i] = exp(gdb + digamma(alef[K * terms[n] + i]));
 			}
 			"""
@@ -709,9 +593,11 @@ normalize_phi(long K,
 				}
 				"""
 
-function updatePhi!(model::gpuCTPF, b::Int)
-	batch = model.batches[b]
-	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.termsbuf, model.alef_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.phi_buffer)
+function update_phi!(model::gpuCTPF)
+	"Update phi."
+	"Analytic."
+
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.terms_buffer, model.alef_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
@@ -720,9 +606,8 @@ const CTPF_XI_c =
 $(DIGAMMA_c)
 
 kernel void
-update_xi(long F,
-			long K,
-			const global long *Rpsums,
+update_xi(	long K,
+			const global long *R_partial_sums,
 			const global long *readers,
 			const global float *bet,
 			const global float *gimel,
@@ -737,10 +622,10 @@ update_xi(long F,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			float gdv = digamma(gimel[K * (F + d) + i]) - log(dalet[i]) - log(bet[i]);
-			float zhv = digamma(zayin[K * (F + d) + i]) - log(het[i]) - log(vav[i]);
+			float gdv = digamma(gimel[K * d + i]) - log(dalet[i]) - log(bet[i]);
+			float zhv = digamma(zayin[K * d + i]) - log(het[i]) - log(vav[i]);
 
-			for (long r=Rpsums[d]; r<Rpsums[d+1]; r++)
+			for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
 			{
 				xi[2 * K * r + i] = exp(gdv + digamma(he[K * readers[r] + i]));
 				xi[K * (2 * r + 1) + i] = exp(zhv + digamma(he[K * readers[r] + i]));			
@@ -751,8 +636,8 @@ update_xi(long F,
 const CTPF_XI_NORM_c =
 """
 kernel void
-normalize_xi(long K,
-			global float *xi)
+normalize_xi(	long K,
+				global float *xi)
 				
 				{
 				long dn = get_global_id(0);
@@ -767,9 +652,11 @@ normalize_xi(long K,
 				}
 				"""
 
-function updateXi!(model::gpuCTPF, b::Int)
-	batch = model.batches[b]
-	model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_partial_sums_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.hebuf, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
+function update_xi!(model::gpuCTPF)
+	"Update xi."
+	"Analytic."
+
+	model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_partial_sums_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
 	model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
 end
 

@@ -111,6 +111,67 @@ function update_buffer!(model::gpuCTPF)
 	elseif expr.args[2] == :(:views)
 		expr_out = :($(esc(model)).views_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views))
 
+	model.newalef = nothing
+	model.newhe = nothing
+		
+	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
+	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
+	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
+
+	model.readers = [vcat([doc.readers for doc in model.corp[batch]]...) - 1 for batch in model.batches]
+	model.ratings = [vcat([doc.ratings for doc in model.corp[batch]]...) for batch in model.batches]
+	model.views = [sortperm(readervec) - 1 for readervec in model.readers]
+
+	model.N_partial_sums = [zeros(Int, length(batch) + 1) for batch in model.batches]
+	model.R_partial_sums = [zeros(Int, length(batch) + 1) for batch in model.batches]
+	for (b, batch) in enumerate(model.batches)
+		for (m, d) in enumerate(batch)
+			model.N_partial_sums[b][m+1] = model.N_partial_sums[b][m] + model.N[d]
+			model.R_partial_sums[b][m+1] = model.R_partial_sums[b][m] + model.R[d]
+		end
+	end
+		
+	J = [zeros(Int, model.V) for _ in 1:model.B]
+	for in 1:model.B
+		for j in model.terms[b]
+			J[b][j+1] += 1
+		end
+	end
+
+	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
+	for in 1:model.B
+		for j in 1:model.V
+			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
+		end
+	end
+
+	Y = [zeros(Int, model.U) for _ in 1:model.B]
+	for in 1:model.B
+		for r in model.readers[b]
+			Y[b][r+1] += 1
+		end
+	end
+
+	model.Y_partial_sums = [zeros(Int, model.U + 1) for _ in 1:model.B]
+	for in 1:model.B
+		for u in 1:model.U
+			model.Y_partial_sums[b][u+1] = model.Y_partial_sums[b][u] + Y[b][u]
+		end
+	end
+
+
+		
+	@buf model.alef
+	@buf model.bet
+	@buf model.gimel
+	@buf model.dalet
+	@buf model.he
+	@buf model.vav
+	@buf model.zayin
+	@buf model.het
+	@buf model.newalef
+	@buf model.newhe
+
 	@buffer model.Npsums
 	@buffer model.Jpsums
 	@buffer model.Rpsums
