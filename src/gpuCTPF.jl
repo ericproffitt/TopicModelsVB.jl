@@ -68,6 +68,7 @@ mutable struct gpuCTPF <: TopicModel
 	xi_buffer::cl.Buffer{Float32}
 
 	function gpuCTPF(corp::Corpus, K::Integer)
+		check_corp(corp)
 		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
@@ -376,7 +377,7 @@ function update_gimel!(model::gpuCTPF)
 	model.gimel_old[d] = model.gimel[d]
 
 	model.queue(model.gimel_kernel, (model.K, model.M), nothing, model.K, model.c, model.N_partial_sums_buffer, model.R_partial_sums_buffer, model.counts_buffer, model.ratings_buffer, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
-	@buffer model.gimel
+	@host model.gimel
 end
 
 const CTPF_DALET_c =
@@ -654,9 +655,11 @@ end
 function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for GPU accelerated collaborative topic Poisson factorization variational Bayes algorithm."
 
+	check_model(model)
+	isempty(model.corp) && (iter = 0)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	update_buffer!(model)
 

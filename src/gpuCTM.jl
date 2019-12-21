@@ -44,6 +44,7 @@ mutable struct gpuCTM <: TopicModel
 	newton_temp_buffer::cl.Buffer{Float32}
 
 	function gpuCTM(corp::Corpus, K::Integer)
+		check_corp(corp)
 		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
@@ -453,9 +454,11 @@ end
 function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for GPU accelerated correlated topic model variational Bayes algorithm."
 
+	check_model(model)
+	isempty(model.corp) && (iter = 0)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 	
 	update_buffer!(model)
 
