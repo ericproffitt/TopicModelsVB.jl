@@ -105,151 +105,141 @@ macro gpu(expr::Expr)
 	expr.args[1] == :train! || throw(ArgumentError("GPU acceleration only applies to the train! function."))
 
 	quote
-	local model = $(esc(expr.args[2]))
-	local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[2:end]))]
-	
-	if isa(model, LDA)
-		gpumodel = gpuLDA(Corpus(), 1)
-		gpumodel.corp = model.corp
-		gpumodel.K = model.K
-		gpumodel.M = model.M
-		gpumodel.V = model.V
-		gpumodel.N = model.N
-		gpumodel.C = model.C
-		gpumodel.topics = model.topics
-		gpumodel.alpha = model.alpha
-		gpumodel.beta = model.beta
-		gpumodel.Elogtheta = model.Elogtheta
-		gpumodel.gamma = model.gamma
-		gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
-		gpumodel.elbo = model.elbo
+		local model = $(esc(expr.args[2]))
+		local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[2:end]))]
 		
-		train!(gpumodel; kwargs...)
-		
-		model.topics = gpumodel.topics
-		model.alpha = gpumodel.alpha
-		model.beta = gpumodel.beta
-		model.Elogtheta = gpumodel.Elogtheta[1]
-		model.gamma = gpumodel.gamma
-		model.phi = gpumodel.phi[1]
-		model.elbo = gpumodel.elbo
+		if isa(model, LDA)
+			gpumodel = gpuLDA(Corpus(), 1)
+			gpumodel.corp = model.corp
+			gpumodel.K = model.K
+			gpumodel.M = model.M
+			gpumodel.V = model.V
+			gpumodel.N = model.N
+			gpumodel.C = model.C
+			gpumodel.topics = model.topics
+			gpumodel.alpha = model.alpha
+			gpumodel.beta = model.beta
+			gpumodel.Elogtheta = model.Elogtheta
+			gpumodel.gamma = model.gamma
+			gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
+			gpumodel.elbo = model.elbo
+			
+			train!(gpumodel; kwargs...)
+			
+			model.topics = gpumodel.topics
+			model.alpha = gpumodel.alpha
+			model.beta = gpumodel.beta
+			model.Elogtheta = gpumodel.Elogtheta[1]
+			model.gamma = gpumodel.gamma
+			model.phi = gpumodel.phi[1]
+			model.elbo = gpumodel.elbo
 
-		model.beta ./= sum(model.beta, dims=2)
-		model.phi ./= sum(model.phi, dims=1)
-		nothing
+			model.beta ./= sum(model.beta, dims=2)
+			model.phi ./= sum(model.phi, dims=1)
+			nothing
 
-	elseif isa(model, fLDA)
-		nothing
+		elseif isa(model, fLDA)
+			nothing
 
-	elseif isa(model, CTM)
-		gpumodel = gpuCTM(Corpus(), 1)
-		gpumodel.corp = model.corp
-		gpumodel.K = model.K
-		gpumodel.M = model.M
-		gpumodel.V = model.V
-		gpumodel.N = model.N
-		gpumodel.C = model.C
-		gpumodel.topics = model.topics
-		gpumodel.mu = model.mu
-		gpumodel.sigma = model.sigma
-		gpumodel.invsigma = model.invsigma
-		gpumodel.beta = model.beta
-		gpumodel.lambda = model.lambda
-		gpumodel.vsq = model.vsq
-		gpumodel.logzeta = model.logzeta
-		gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
-		gpumodel.elbo = model.elbo
-		
-		train!(gpumodel; kwargs...)
-		
-		model.topics = gpumodel.topics
-		model.mu = gpumodel.mu
-		model.sigma = gpumodel.sigma
-		model.invsigma = gpumodel.invsigma
-		model.beta = gpumodel.beta
-		model.lambda = gpumodel.lambda
-		model.vsq = gpumodel.vsq
-		model.logzeta = gpumodel.logzeta
-		model.phi = gpumodel.phi[1]
-		model.elbo = gpumodel.elbo
+		elseif isa(model, CTM)
+			gpumodel = gpuCTM(Corpus(), 1)
+			gpumodel.corp = model.corp
+			gpumodel.K = model.K
+			gpumodel.M = model.M
+			gpumodel.V = model.V
+			gpumodel.N = model.N
+			gpumodel.C = model.C
+			gpumodel.topics = model.topics
+			gpumodel.mu = model.mu
+			gpumodel.sigma = model.sigma
+			gpumodel.invsigma = model.invsigma
+			gpumodel.beta = model.beta
+			gpumodel.lambda = model.lambda
+			gpumodel.vsq = model.vsq
+			gpumodel.logzeta = model.logzeta
+			gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
+			gpumodel.elbo = model.elbo
+			
+			train!(gpumodel; kwargs...)
+			
+			model.topics = gpumodel.topics
+			model.mu = gpumodel.mu
+			model.sigma = gpumodel.sigma
+			model.invsigma = gpumodel.invsigma
+			model.beta = gpumodel.beta
+			model.lambda = gpumodel.lambda
+			model.vsq = gpumodel.vsq
+			model.logzeta = gpumodel.logzeta
+			model.phi = gpumodel.phi[1]
+			model.elbo = gpumodel.elbo
 
-		model.beta ./= sum(model.beta, dims=2)
-		model.phi ./= sum(model.phi, dims=1)
-		nothing
+			model.beta ./= sum(model.beta, dims=2)
+			model.phi ./= sum(model.phi, dims=1)
+			nothing
 
-	elseif isa(model, fCTM)
-		nothing
+		elseif isa(model, fCTM)
+			nothing
 
-	elseif isa(model, CTPF)
-		fakecorp = Corpus(docs=[Document([1], readers=[1])], lex=["1"], users=["1"])
-		gpumodel = gpuCTPF(fakecorp, 1)
+		elseif isa(model, CTPF)
+			gpumodel = gpuCTPF(Corpus(), 1)
+			gpumodel.corp = model.corp
+			gpumodel.topics = model.topics
+			gpumodel.scores = model.scores
+			gpumodel.libs = model.libs
+			gpumodel.drecs = model.drecs
+			gpumodel.urecs = model.urecs
+			gpumodel.K = model.K
+			gpumodel.M = model.M
+			gpumodel.V = model.V
+			gpumodel.U = model.U
+			gpumodel.N = model.N
+			gpumodel.C = model.C
+			gpumodel.R = model.R
+			gpumodel.a = model.a
+			gpumodel.b = model.b
+			gpumodel.c = model.c
+			gpumodel.d = model.d
+			gpumodel.e = model.e
+			gpumodel.f = model.f
+			gpumodel.g = model.g
+			gpumodel.h = model.h
+			gpumodel.alef = model.alef
+			gpumodel.bet = model.bet
+			gpumodel.gimel = model.gimel
+			gpumodel.dalet = model.dalet
+			gpumodel.he = model.he
+			gpumodel.vav = model.vav
+			gpumodel.zayin = model.zayin
+			gpumodel.het = model.het
+			gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
+			gpumodel.xi = [ones(2model.K, model.R[d]) / 2model.K for d in 1:model.M]
+			gpumodel.elbo = model.elbo
+			
+			train!(gpumodel; kwargs...)
 
-		gpumodel.corp = model.corp
+			model.topics = gpumodel.topics
+			model.scores = gpumodel.scores
+			model.drecs = gpumodel.drecs
+			model.urecs = gpumodel.urecs
+			model.alef = gpumodel.alef
+			model.bet = gpumodel.bet
+			model.gimel = gpumodel.gimel
+			model.dalet = gpumodel.dalet
+			model.he = gpumodel.he
+			model.vav = gpumodel.vav
+			model.zayin = gpumodel.zayin
+			model.het = gpumodel.het
+			model.phi = gpumodel.phi[1]
+			model.xi = gpumodel.xi[1]
+			model.elbo = gpumodel.elbo
 
-		gpumodel.batches = partition(1:model.M, batchsize)
-		gpumodel.B = length(gpumodel.batches)
+			model.phi ./= sum(model.phi, dims=1)
+			model.xi ./= sum(model.xi, dims=1)
+			nothing
 
-		gpumodel.topics = model.topics
-		gpumodel.scores = model.scores
-		gpumodel.libs = model.libs
-		gpumodel.drecs = model.drecs
-		model.urecs = model.urecs
-
-		gpumodel.K = model.K
-		gpumodel.M = model.M
-		gpumodel.V = model.V
-		gpumodel.U = model.U
-		gpumodel.N = model.N
-		gpumodel.C = model.C
-		gpumodel.R = model.R
-
-		gpumodel.a = model.a
-		gpumodel.b = model.b
-		gpumodel.c = model.c
-		gpumodel.d = model.d
-		gpumodel.e = model.e
-		gpumodel.f = model.f
-		gpumodel.g = model.g
-		gpumodel.h = model.h
-		gpumodel.alef = model.alef
-		gpumodel.bet = model.bet
-		gpumodel.gimel = model.gimel
-		gpumodel.dalet = model.dalet
-		gpumodel.he = model.he
-		gpumodel.vav = model.vav
-		gpumodel.zayin = model.zayin
-		gpumodel.het = model.het
-		gpumodel.phi = unshift!([ones(model.K, model.N[d]) / model.K for d in gpumodel.batches[1][2:end]], model.phi)
-		gpumodel.xi = unshift!([ones(2model.K, model.R[d]) / 2model.K for d in gpumodel.batches[1][2:end]], model.xi)
-		gpumodel.elbo = model.elbo
-		
-		fixmodel!(gpumodel)
-		train!(gpumodel; kwargs...)
-
-		model.topics = gpumodel.topics
-		model.scores = gpumodel.scores
-		model.drecs = gpumodel.drecs
-		model.urecs = gpumodel.urecs
-		
-		model.alef = gpumodel.alef
-		model.bet = gpumodel.bet
-		model.gimel = gpumodel.gimel
-		model.dalet = gpumodel.dalet
-		model.he = gpumodel.he
-		model.vav = gpumodel.vav
-		model.zayin = gpumodel.zayin
-		model.het = gpumodel.het
-		model.phi = gpumodel.phi[1]
-		model.xi = gpumodel.xi[1]
-		model.elbo = gpumodel.elbo
-
-		model.phi ./= sum(model.phi, 1)
-		model.xi ./= sum(model.xi, 1)
-		nothing
-
-	else
-		nothing
-	end
+		else
+			nothing
+		end
 	end
 end
 
