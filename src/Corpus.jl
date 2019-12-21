@@ -18,11 +18,11 @@ mutable struct Document
 	title::String
 
 	function Document(;terms=Int[], counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), title="")
-		all(terms .> 0 ) || throw(ArgumentError("All terms must be positive integers."))
-		all(counts .> 0) || throw(ArgumentError("All counts must be positive integers."))
-		all(readers .> 0) || throw(ArgumentError("All readers must be positive integers."))
-		all(ratings .> 0) || throw(ArgumentError("All ratings must be positive integers."))
-		isequal(length(terms), length(counts)) || throw(ArgumentError("The terms and counts vectors must have the same length."))
+		all(terms .> 0 )						|| throw(ArgumentError("All terms must be positive integers."))
+		all(counts .> 0) 						|| throw(ArgumentError("All counts must be positive integers."))
+		all(readers .> 0)						|| throw(ArgumentError("All readers must be positive integers."))
+		all(ratings .> 0)						|| throw(ArgumentError("All ratings must be positive integers."))
+		isequal(length(terms), length(counts))	|| throw(ArgumentError("The terms and counts vectors must have the same length."))
 
 		doc = new(terms, counts, readers, ratings, title)
 		return doc
@@ -31,6 +31,24 @@ end
 
 ### Document outer constructor for non-kwarg terms initialization.
 Document(terms) = Document(terms=terms)
+
+struct DocumentError <: Exception
+    msg::AbstractString
+end
+
+Base.showerror(io::IO, e::DocumentError) = print(io, "DocumentError: ", e.msg)
+
+function check_doc(doc::Document)
+	"Check Document parameters."
+
+	all(doc.terms .> 0)									|| throw(DocumentError(""))
+	all(doc.counts .> 0)								|| throw(DocumentError(""))
+	isequal(length(doc.terms), length(doc.counts))		|| throw(DocumentError(""))
+	all(doc.readers .> 0)								|| throw(DocumentError(""))
+	all(doc.ratings .> 0)								|| throw(DocumentError(""))
+	isequal(length(doc.readers), length(doc.ratings)))	|| throw(DocumentError(""))
+ 	nothing
+ end
 
 mutable struct Corpus
 	"Corpus mutable struct."
@@ -47,12 +65,33 @@ mutable struct Corpus
 		isa(vocab, Dict) || (vocab = Dict(vkey => term for (vkey, term) in enumerate(vocab)))
 		isa(users, Dict) || (users = Dict(ukey => user for (ukey, user) in enumerate(users)))
 
-		all(collect(keys(vocab)) .> 0) || throw(ArgumentError("All vocab keys must be positive integers."))
-		all(collect(keys(users)) .> 0) || throw(ArgumentError("All user keys must be positive integers."))
-
 		corp = new(docs, vocab, users)
+		check_corp(corp)
 		return corp
 	end
+end
+
+struct CorpusError <: Exception
+    msg::AbstractString
+end
+
+Base.showerror(io::IO, e::CorpusError) = print(io, "CorpusError: ", e.msg)
+
+function check_corp(corp::Corpus)
+	"Check Corpus parameters."
+
+	for (d, doc) in enumerate(corp)
+		try
+			check_doc(doc)
+		catch
+			println("Document $d failed check.")
+			check_doc(doc)
+		end
+	end
+
+	all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
+	all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
+	nothing
 end
 
 Base.show(io::IO, doc::Document) = print(io, "Document with:\n * $(length(doc.terms)) terms\n * $(length(doc.readers)) readers")

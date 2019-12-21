@@ -2,15 +2,10 @@
 ### Eric Proffitt
 ### December 3, 2019
 
-struct CorpusError <: Exception
-    msg::AbstractString
-end
-
 struct TopicModelError <: Exception
     msg::AbstractString
 end
 
-Base.showerror(io::IO, e::CorpusError) = print(io, "CorpusError: ", e.msg)
 Base.showerror(io::IO, e::TopicModelError) = print(io, "TopicModelError: ", e.msg)
 
 showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
