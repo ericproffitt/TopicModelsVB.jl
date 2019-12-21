@@ -226,7 +226,6 @@ function update_host!(model::gpuCTM)
 		$(esc(model)).invsigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).invsigmabuf), $(esc(model)).K, $(esc(model)).K)
 		end
 
-
 	elseif expr.args[2] == :(:lzeta_buffer)
 		quoteblock = 
 		quote
