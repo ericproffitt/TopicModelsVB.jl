@@ -121,238 +121,6 @@ function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
 	false
 end
 
-function check_model(model::gpuCTM)
-	@assert isequal(vcat(model.batches...), collect(1:model.M))
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert all(isfinite.(model.mu))	
-	@assert isequal(size(model.sigma), (model.K, model.K))
-	@assert isposdef(model.sigma)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(length(model.lambda), model.M)
-	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
-	@assert isequal(length(model.vsq), model.M)
-	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
-	@assert all(isfinite.(model.lzeta))	
-	@assert isequal(length(model.phi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
-
-	model.invsigma = inv(model.sigma)
-	model.newbeta = nothing
-
-	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
-	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
-
-	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	for (b, batch) in enumerate(model.batches)
-		for (n, d) in enumerate(batch)
-			model.Npsums[b][n+1] = model.Npsums[b][n] + model.N[d]
-		end
-	end
-		
-	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for in 1:model.B
-		for j in model.terms[b]
-			J[b][j+1] += 1
-		end
-	end
-
-	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for in 1:model.B
-		for j in 1:model.V
-			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
-		end
-	end
-
-	model.device, model.context, model.queue = cl.create_compute_context()
-
-	muprog = cl.Program(model.context, source=CTM_MU_cpp) |> cl.build!
-	betaprog = cl.Program(model.context, source=CTM_BETA_cpp) |> cl.build!
-	betanormprog = cl.Program(model.context, source=CTM_BETA_NORM_cpp) |> cl.build!
-	newbetaprog = cl.Program(model.context, source=CTM_NEWBETA_cpp) |> cl.build!
-	lambdaprog = cl.Program(model.context, source=CTM_LAMBDA_cpp) |> cl.build!
-	vsqprog = cl.Program(model.context, source=CTM_VSQ_cpp) |> cl.build!
-	lzetaprog = cl.Program(model.context, source=CTM_LZETA_cpp) |> cl.build!
-	phiprog = cl.Program(model.context, source=CTM_PHI_cpp) |> cl.build!
-	phinormprog = cl.Program(model.context, source=CTM_PHI_NORM_cpp) |> cl.build!
-
-	model.mukern = cl.Kernel(muprog, "updateMu")
-	model.betakern = cl.Kernel(betaprog, "updateBeta")
-	model.betanormkern = cl.Kernel(betanormprog, "normalizeBeta")
-	model.newbetakern = cl.Kernel(newbetaprog, "updateNewbeta")
-	model.lambdakern = cl.Kernel(lambdaprog, "updateLambda")
-	model.vsqkern = cl.Kernel(vsqprog, "updateVsq")
-	model.lzetakern = cl.Kernel(lzetaprog, "updateLzeta")
-	model.phikern = cl.Kernel(phiprog, "updatePhi")
-	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
-		
-	@buf model.mu
-	@buf model.sigma
-	@buf model.beta
-	@buf model.lambda
-	@buf model.vsq
-	@buf model.lzeta
-	@buf model.invsigma
-	@buf model.newbeta
-	updateBuf!(model, 0)
-
-	model.newelbo = 0
-	nothing
-end
-
-function check_model(model::gpuCTPF)
-	@assert isequal(vcat(model.batches...), collect(1:model.M))
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])
-	@assert isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])
-	@assert isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])
-	@assert ispositive(model.a)
-	@assert ispositive(model.b)
-	@assert ispositive(model.c)
-	@assert ispositive(model.d)
-	@assert ispositive(model.e)
-	@assert ispositive(model.f)
-	@assert ispositive(model.g)
-	@assert ispositive(model.h)	
-	@assert isequal(size(model.alef), (model.K, model.V))
-	@assert all(isfinite.(model.alef))
-	@assert all(ispositive.(model.alef))
-	@assert isequal(length(model.bet), model.K)
-	@assert all(isfinite.(model.bet))
-	@assert all(ispositive.(model.bet))
-	@assert isequal(length(model.gimel), model.M)
-	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gimel[d])) for d in 1:model.M])
-	@assert isequal(length(model.dalet), model.K)
-	@assert all(isfinite.(model.dalet))
-	@assert all(ispositive.(model.dalet))
-	@assert isequal(size(model.he), (model.K, model.U))	
-	@assert all(isfinite.(model.he))
-	@assert all(ispositive.(model.he))
-	@assert isequal(length(model.vav), model.K)
-	@assert all(isfinite.(model.vav))
-	@assert all(ispositive.(model.vav))
-	@assert isequal(length(model.zayin), model.M)
-	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.zayin[d])) for d in 1:model.M])
-	@assert isequal(length(model.het), model.K)
-	@assert all(isfinite.(model.het))
-	@assert all(ispositive.(model.het))
-	@assert isequal(length(model.phi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
-	@assert isequal(length(model.xi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.xi[d], 1) for d in model.batches[1]])
-
-	model.newalef = nothing
-	model.newhe = nothing
-		
-	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
-	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
-
-	model.readers = [vcat([doc.readers for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.ratings = [vcat([doc.ratings for doc in model.corp[batch]]...) for batch in model.batches]
-	model.views = [sortperm(readervec) - 1 for readervec in model.readers]
-
-	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	model.Rpsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	for (b, batch) in enumerate(model.batches)
-		for (m, d) in enumerate(batch)
-			model.Npsums[b][m+1] = model.Npsums[b][m] + model.N[d]
-			model.Rpsums[b][m+1] = model.Rpsums[b][m] + model.R[d]
-		end
-	end
-		
-	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for in 1:model.B
-		for j in model.terms[b]
-			J[b][j+1] += 1
-		end
-	end
-
-	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for in 1:model.B
-		for j in 1:model.V
-			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
-		end
-	end
-
-	Y = [zeros(Int, model.U) for _ in 1:model.B]
-	for in 1:model.B
-		for r in model.readers[b]
-			Y[b][r+1] += 1
-		end
-	end
-
-	model.Ypsums = [zeros(Int, model.U + 1) for _ in 1:model.B]
-	for in 1:model.B
-		for u in 1:model.U
-			model.Ypsums[b][u+1] = model.Ypsums[b][u] + Y[b][u]
-		end
-	end
-
-	model.device, model.context, model.queue = cl.create_compute_context()		
-
-	alefprog = cl.Program(model.context, source=CTPF_ALEF_cpp) |> cl.build!
-	newalefprog = cl.Program(model.context, source=CTPF_NEWALEF_cpp) |> cl.build!
-	betprog = cl.Program(model.context, source=CTPF_BET_cpp) |> cl.build!
-	gimelprog = cl.Program(model.context, source=CTPF_GIMEL_cpp) |> cl.build!
-	daletprog = cl.Program(model.context, source=CTPF_DALET_cpp) |> cl.build!
-	heprog = cl.Program(model.context, source=CTPF_HE_cpp) |> cl.build!
-	newheprog = cl.Program(model.context, source=CTPF_NEWHE_cpp) |> cl.build!
-	vavprog = cl.Program(model.context, source=CTPF_VAV_cpp) |> cl.build!
-	zayinprog = cl.Program(model.context, source=CTPF_ZAYIN_cpp) |> cl.build!
-	hetprog = cl.Program(model.context, source=CTPF_HET_cpp) |> cl.build!
-	phiprog = cl.Program(model.context, source=CTPF_PHI_cpp) |> cl.build!
-	phinormprog = cl.Program(model.context, source=CTPF_PHI_NORM_cpp) |> cl.build!
-	xiprog = cl.Program(model.context, source=CTPF_XI_cpp) |> cl.build!
-	xinormprog = cl.Program(model.context, source=CTPF_XI_NORM_cpp) |> cl.build!
-
-	model.alefkern = cl.Kernel(alefprog, "updateAlef")
-	model.newalefkern = cl.Kernel(newalefprog, "updateNewalef")
-	model.betkern = cl.Kernel(betprog, "updateBet")
-	model.gimelkern = cl.Kernel(gimelprog, "updateGimel")
-	model.daletkern = cl.Kernel(daletprog, "updateDalet")
-	model.hekern = cl.Kernel(heprog, "updateHe")
-	model.newhekern = cl.Kernel(newheprog, "updateNewhe")
-	model.vavkern = cl.Kernel(vavprog, "updateVav")
-	model.zayinkern = cl.Kernel(zayinprog, "updateZayin")
-	model.hetkern = cl.Kernel(hetprog, "updateHet")
-	model.phikern = cl.Kernel(phiprog, "updatePhi")
-	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
-	model.xikern = cl.Kernel(xiprog, "updateXi")
-	model.xinormkern = cl.Kernel(xinormprog, "normalizeXi")
-		
-	@buf model.alef
-	@buf model.bet
-	@buf model.gimel
-	@buf model.dalet
-	@buf model.he
-	@buf model.vav
-	@buf model.zayin
-	@buf model.het
-	@buf model.newalef
-	@buf model.newhe
-	updateBuf!(model, 0)
-
-	model.newelbo = 0
-	nothing
-end
-
 function gendoc(model::AbstractLDA, laplace_smooth::Real=0.0)
 	"Generate artificial document from LDA or gpuLDA generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
@@ -460,14 +228,13 @@ function showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Unio
 	"topics parameter controls which topics are displayed."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	@assert checkbounds(Bool, 1:model.V, N)
-	@assert checkbounds(Bool, 1:model.K, topics)
-	@assert ispositive(cols)
-	isa(topics, Vector) || (topics = [topics])
+	checkbounds(Bool, 1:model.V, N) || throw(ArgumentError("Some vocab indices are outside range."))
+	checkbounds(Bool, 1:model.K, topics) || throw(ArgumentError("Some topic indices are outside range."))
+	cols > 0 || throw(ArgumentError("cols must be a positive integer."))
 	cols = min(cols, length(topics))
 
-	lex = model.corp.lex
-	maxjspacings = [maximum([length(lex[j]) for j in topic[1:N]]) for topic in model.topics]
+	vocab = model.corp.vocab
+	maxjspacings = [maximum([length(vocab[j]) for j in topic[1:N]]) for topic in model.topics]
 
 	for block in partition(topics, cols)
 		for j in 0:N
@@ -476,8 +243,8 @@ function showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Unio
 					jspacing = max(4, maxjspacings[i] - length("$i") - 2)
 					k == cols ? yellow("topic $i") : yellow("topic $i" * " "^jspacing)
 				else
-					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(lex[model.topics[i][j]]) + 4
-					k == cols ? print(lex[model.topics[i][j]]) : print(lex[model.topics[i][j]] * " "^jspacing)
+					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(vocab[model.topics[i][j]]) + 4
+					k == cols ? print(vocab[model.topics[i][j]]) : print(vocab[model.topics[i][j]] * " "^jspacing)
 				end
 			end
 			println()
@@ -485,6 +252,8 @@ function showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Unio
 		println()
 	end
 end
+
+showtopics(model::TopicModel, N::Integer; topic::Integer, cols::Integer) = showtopics(model, N, topics=[topic], cols=cols)
 
 function showlibs(model::CTPF, users::Vector{<:Integer})
 	"Display the documents in a user(s) library."
@@ -516,8 +285,8 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 	"Display the top U user recommendations for a document(s)."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	@assert checkbounds(Bool, 1:model.M, docs)	
-	@assert checkbounds(Bool, 1:model.U, U)
+	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
+	checkbounds(Bool, 1:model.M, docs) || throw(ArgumentError("Some document indices are outside range."))
 	@assert cols > 0
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
@@ -528,8 +297,8 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 			@juliadots corp[d].title * "\n"
 		end
 
-		usercols = Iterators.partition(drecs[d][1:U], Int(ceil(U / cols)))
-		rankcols = Iterators.partition(1:U, Int(ceil(U / cols)))
+		usercols = collect(Iterators.partition(drecs[d][1:U], Int(ceil(U / cols))))
+		rankcols = collect(Iterators.partition(1:U, Int(ceil(U / cols))))
 
 		for i in 1:length(usercols[1])
 			for j in 1:length(usercols)
@@ -540,7 +309,7 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 					j == length(usercols) ? print(Crayon(foreground=:white, bold=false), users[usercols[j][i]]) : print(Crayon(foreground=:white, bold=false), users[usercols[j][i]] * " "^uspacing)
 				
 				catch
-					continue
+					nothing
 				end
 			end
 			println()
@@ -549,35 +318,42 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 	end
 end
 
-function showurecs(model::AbstractCTPF, users::Union{Integer, Vector{<:Integer}}, M::Integer=min(10, model.M); cols::Integer=1)
+function showurecs(model::CTPF, users::Union{Integer, Vector{<:Integer}}, M::Integer=min(10, model.M); cols::Integer=1)
 	"# Show the top 'M' document recommendations for a user(s)."
 	"If a document has no title, the document's index in the corpus will be shown instead."
 
-	@assert checkbounds(Bool, 1:model.U, users)
-	@assert checkbounds(Bool, 1:model.M, M)
-	@assert ispositive(cols)
+	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
+	checkbounds(Bool, 1:model.M, M) || throw(ArgumentError("Some document indices are outside range."))
+	@assert cols > 0
 	isa(users, Vector) || (users = [users])
+
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
 
 	for u in users
 		@juliadots "user $u\n"
-		try if corp.users[u][1:5] != "#user"
+		try 
+			if corp.users[u][1:5] != "#user"
 				@juliadots corp.users[u] * "\n"
 			end
-		catch @juliadots corp.users[u] * "\n"
+		
+		catch 
+			@juliadots corp.users[u] * "\n"
 		end
 
-		docucols = partition(urecs[u][1:M], Int(ceil(M / cols)))
-		rankcols = partition(1:M, Int(ceil(M / cols)))
+		docucols = collect(Iterators.partition(urecs[u][1:M], Int(ceil(M / cols))))
+		rankcols = collect(Iterators.partition(1:M, Int(ceil(M / cols))))
 
 		for i in 1:length(docucols[1])
 			for j in 1:length(docucols)
 				try
-				!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "doc $(docucols[j][i])"
-				dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(docs[d].title)) for d in docucols[j]]) - length(title) + 4
-				rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
-				yellow(string(rankcols[j][i]) * ". " * " "^rspacing)
-				j == length(docucols) ? bold(title) : bold(title * " "^dspacing)
+					!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "doc $(docucols[j][i])"
+					dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(docs[d].title)) for d in docucols[j]]) - length(title) + 4
+					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
+					yellow(string(rankcols[j][i]) * ". " * " "^rspacing)
+					j == length(docucols) ? bold(title) : bold(title * " "^dspacing)
+
+				catch
+					nothing
 				end
 			end
 			println()

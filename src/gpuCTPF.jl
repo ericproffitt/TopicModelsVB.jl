@@ -1,3 +1,148 @@
+function check_model(model::gpuCTPF)
+	@assert isequal(vcat(model.batches...), collect(1:model.M))
+	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
+	@assert isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))
+	@assert isequal(model.M, length(model.corp))
+	@assert isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])
+	@assert isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])
+	@assert isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])
+	@assert ispositive(model.a)
+	@assert ispositive(model.b)
+	@assert ispositive(model.c)
+	@assert ispositive(model.d)
+	@assert ispositive(model.e)
+	@assert ispositive(model.f)
+	@assert ispositive(model.g)
+	@assert ispositive(model.h)	
+	@assert isequal(size(model.alef), (model.K, model.V))
+	@assert all(isfinite.(model.alef))
+	@assert all(ispositive.(model.alef))
+	@assert isequal(length(model.bet), model.K)
+	@assert all(isfinite.(model.bet))
+	@assert all(ispositive.(model.bet))
+	@assert isequal(length(model.gimel), model.M)
+	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.gimel[d])) for d in 1:model.M])
+	@assert isequal(length(model.dalet), model.K)
+	@assert all(isfinite.(model.dalet))
+	@assert all(ispositive.(model.dalet))
+	@assert isequal(size(model.he), (model.K, model.U))	
+	@assert all(isfinite.(model.he))
+	@assert all(ispositive.(model.he))
+	@assert isequal(length(model.vav), model.K)
+	@assert all(isfinite.(model.vav))
+	@assert all(ispositive.(model.vav))
+	@assert isequal(length(model.zayin), model.M)
+	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.zayin[d])) for d in 1:model.M])
+	@assert isequal(length(model.het), model.K)
+	@assert all(isfinite.(model.het))
+	@assert all(ispositive.(model.het))
+	@assert isequal(length(model.phi), length(model.batches[1]))
+	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
+	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
+	@assert isequal(length(model.xi), length(model.batches[1]))
+	@assert all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in model.batches[1]])
+	@assert all(Bool[isprobvec(model.xi[d], 1) for d in model.batches[1]])
+
+	model.newalef = nothing
+	model.newhe = nothing
+		
+	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
+	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
+	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
+
+	model.readers = [vcat([doc.readers for doc in model.corp[batch]]...) - 1 for batch in model.batches]
+	model.ratings = [vcat([doc.ratings for doc in model.corp[batch]]...) for batch in model.batches]
+	model.views = [sortperm(readervec) - 1 for readervec in model.readers]
+
+	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
+	model.Rpsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
+	for (b, batch) in enumerate(model.batches)
+		for (m, d) in enumerate(batch)
+			model.Npsums[b][m+1] = model.Npsums[b][m] + model.N[d]
+			model.Rpsums[b][m+1] = model.Rpsums[b][m] + model.R[d]
+		end
+	end
+		
+	J = [zeros(Int, model.V) for _ in 1:model.B]
+	for in 1:model.B
+		for j in model.terms[b]
+			J[b][j+1] += 1
+		end
+	end
+
+	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
+	for in 1:model.B
+		for j in 1:model.V
+			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
+		end
+	end
+
+	Y = [zeros(Int, model.U) for _ in 1:model.B]
+	for in 1:model.B
+		for r in model.readers[b]
+			Y[b][r+1] += 1
+		end
+	end
+
+	model.Ypsums = [zeros(Int, model.U + 1) for _ in 1:model.B]
+	for in 1:model.B
+		for u in 1:model.U
+			model.Ypsums[b][u+1] = model.Ypsums[b][u] + Y[b][u]
+		end
+	end
+
+	model.device, model.context, model.queue = cl.create_compute_context()		
+
+	alefprog = cl.Program(model.context, source=CTPF_ALEF_cpp) |> cl.build!
+	newalefprog = cl.Program(model.context, source=CTPF_NEWALEF_cpp) |> cl.build!
+	betprog = cl.Program(model.context, source=CTPF_BET_cpp) |> cl.build!
+	gimelprog = cl.Program(model.context, source=CTPF_GIMEL_cpp) |> cl.build!
+	daletprog = cl.Program(model.context, source=CTPF_DALET_cpp) |> cl.build!
+	heprog = cl.Program(model.context, source=CTPF_HE_cpp) |> cl.build!
+	newheprog = cl.Program(model.context, source=CTPF_NEWHE_cpp) |> cl.build!
+	vavprog = cl.Program(model.context, source=CTPF_VAV_cpp) |> cl.build!
+	zayinprog = cl.Program(model.context, source=CTPF_ZAYIN_cpp) |> cl.build!
+	hetprog = cl.Program(model.context, source=CTPF_HET_cpp) |> cl.build!
+	phiprog = cl.Program(model.context, source=CTPF_PHI_cpp) |> cl.build!
+	phinormprog = cl.Program(model.context, source=CTPF_PHI_NORM_cpp) |> cl.build!
+	xiprog = cl.Program(model.context, source=CTPF_XI_cpp) |> cl.build!
+	xinormprog = cl.Program(model.context, source=CTPF_XI_NORM_cpp) |> cl.build!
+
+	model.alefkern = cl.Kernel(alefprog, "updateAlef")
+	model.newalefkern = cl.Kernel(newalefprog, "updateNewalef")
+	model.betkern = cl.Kernel(betprog, "updateBet")
+	model.gimelkern = cl.Kernel(gimelprog, "updateGimel")
+	model.daletkern = cl.Kernel(daletprog, "updateDalet")
+	model.hekern = cl.Kernel(heprog, "updateHe")
+	model.newhekern = cl.Kernel(newheprog, "updateNewhe")
+	model.vavkern = cl.Kernel(vavprog, "updateVav")
+	model.zayinkern = cl.Kernel(zayinprog, "updateZayin")
+	model.hetkern = cl.Kernel(hetprog, "updateHet")
+	model.phikern = cl.Kernel(phiprog, "updatePhi")
+	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
+	model.xikern = cl.Kernel(xiprog, "updateXi")
+	model.xinormkern = cl.Kernel(xinormprog, "normalizeXi")
+		
+	@buf model.alef
+	@buf model.bet
+	@buf model.gimel
+	@buf model.dalet
+	@buf model.he
+	@buf model.vav
+	@buf model.zayin
+	@buf model.het
+	@buf model.newalef
+	@buf model.newhe
+	updateBuf!(model, 0)
+
+	model.newelbo = 0
+	nothing
+end
+
 mutable struct gpuCTPF <: GPUTopicModel
 	K::Int
 	M::Int

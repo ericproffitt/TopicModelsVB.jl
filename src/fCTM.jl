@@ -257,9 +257,9 @@ end
 function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)	
 	"Coordinate ascent optimization procedure for filtered correlated topic model variational Bayes algorithm."
 
-	all([tol, ntol, vtol] .>= 0) || throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter, viter] .> 0) || throw(ArgumentError("Iteration parameters must be positive integers."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)  || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
+	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 
 	for k in 1:iter
 		for d in 1:model.M
@@ -283,7 +283,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		update_eta!(model)
 		check_elbo(model)
 		
-		if check_delta_elbo(model, check_elbo, k, tol)
+		if check_elbo!(model, check_elbo, k, tol)
 			break
 		end
 	end

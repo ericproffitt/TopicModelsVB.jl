@@ -1,3 +1,90 @@
+function check_model(model::gpuCTM)
+	@assert isequal(vcat(model.batches...), collect(1:model.M))
+	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
+	@assert isequal(model.M, length(model.corp))
+	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
+	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
+	@assert all(isfinite.(model.mu))	
+	@assert isequal(size(model.sigma), (model.K, model.K))
+	@assert isposdef(model.sigma)
+	@assert isequal(size(model.beta), (model.K, model.V))
+	@assert isprobvec(model.beta, 2)
+	@assert isequal(length(model.lambda), model.M)
+	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
+	@assert isequal(length(model.vsq), model.M)
+	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
+	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
+	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
+	@assert all(isfinite.(model.lzeta))	
+	@assert isequal(length(model.phi), length(model.batches[1]))
+	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
+	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
+
+	model.invsigma = inv(model.sigma)
+	model.newbeta = nothing
+
+	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
+	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
+	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
+
+	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
+	for (b, batch) in enumerate(model.batches)
+		for (n, d) in enumerate(batch)
+			model.Npsums[b][n+1] = model.Npsums[b][n] + model.N[d]
+		end
+	end
+		
+	J = [zeros(Int, model.V) for _ in 1:model.B]
+	for in 1:model.B
+		for j in model.terms[b]
+			J[b][j+1] += 1
+		end
+	end
+
+	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
+	for in 1:model.B
+		for j in 1:model.V
+			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
+		end
+	end
+
+	model.device, model.context, model.queue = cl.create_compute_context()
+
+	muprog = cl.Program(model.context, source=CTM_MU_cpp) |> cl.build!
+	betaprog = cl.Program(model.context, source=CTM_BETA_cpp) |> cl.build!
+	betanormprog = cl.Program(model.context, source=CTM_BETA_NORM_cpp) |> cl.build!
+	newbetaprog = cl.Program(model.context, source=CTM_NEWBETA_cpp) |> cl.build!
+	lambdaprog = cl.Program(model.context, source=CTM_LAMBDA_cpp) |> cl.build!
+	vsqprog = cl.Program(model.context, source=CTM_VSQ_cpp) |> cl.build!
+	lzetaprog = cl.Program(model.context, source=CTM_LZETA_cpp) |> cl.build!
+	phiprog = cl.Program(model.context, source=CTM_PHI_cpp) |> cl.build!
+	phinormprog = cl.Program(model.context, source=CTM_PHI_NORM_cpp) |> cl.build!
+
+	model.mukern = cl.Kernel(muprog, "updateMu")
+	model.betakern = cl.Kernel(betaprog, "updateBeta")
+	model.betanormkern = cl.Kernel(betanormprog, "normalizeBeta")
+	model.newbetakern = cl.Kernel(newbetaprog, "updateNewbeta")
+	model.lambdakern = cl.Kernel(lambdaprog, "updateLambda")
+	model.vsqkern = cl.Kernel(vsqprog, "updateVsq")
+	model.lzetakern = cl.Kernel(lzetaprog, "updateLzeta")
+	model.phikern = cl.Kernel(phiprog, "updatePhi")
+	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
+		
+	@buf model.mu
+	@buf model.sigma
+	@buf model.beta
+	@buf model.lambda
+	@buf model.vsq
+	@buf model.lzeta
+	@buf model.invsigma
+	@buf model.newbeta
+	updateBuf!(model, 0)
+
+	model.newelbo = 0
+	nothing
+end
+
 mutable struct gpuCTM <: GPUTopicModel
 	K::Int
 	M::Int
