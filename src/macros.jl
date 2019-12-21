@@ -6,61 +6,61 @@ macro juliadots(str::String)
 	"Print Julia dots before bolded string output."
 	"For vanilla strings."
 
-	expr = :(	
-			print(Crayon(foreground=:red, bold=true), " ●");
-			print(Crayon(foreground=:green, bold=true), "●");
-			print(Crayon(foreground=:blue, bold=true), "● ");
-			print(Crayon(foreground=:white, bold=true), $str);
-			)
+	expr_out = :(	
+				print(Crayon(foreground=:red, bold=true), " ●");
+				print(Crayon(foreground=:green, bold=true), "●");
+				print(Crayon(foreground=:blue, bold=true), "● ");
+				print(Crayon(foreground=:white, bold=true), $str);
+				)
 	
-	return expr
+	return expr_out
 end
 
 macro juliadots(expr::Expr)
 	"Print Julia dots before bolded string output."
 	"For interpolated strings."
 
-	expr = :(	
-			print(Crayon(foreground=:red, bold=true), " ●");
-			print(Crayon(foreground=:green, bold=true), "●");
-			print(Crayon(foreground=:blue, bold=true), "● ");
-			print(Crayon(foreground=:white, bold=true), :($($expr)))
-			)
+	expr_out = :(	
+				print(Crayon(foreground=:red, bold=true), " ●");
+				print(Crayon(foreground=:green, bold=true), "●");
+				print(Crayon(foreground=:blue, bold=true), "● ");
+				print(Crayon(foreground=:white, bold=true), :($($expr)))
+				)
 	
-	return expr
+	return expr_out
 end
 
 macro boink(expr::Expr)
 	"Add EPSILON to a numerical variable or array."
 
-	expr = :(:($($expr)) .+ EPSILON)
-	return expr
+	expr_out = :(:($($expr)) .+ EPSILON)
+	return expr_out
 end
 
 macro bumper(expr::Expr)
 	"Add EPSILON to a numerical variable or array during variable assignment."
 
 	if (expr.head == :.) || (expr.head == :ref)
-		expr = :(:($($expr)) .+= EPSILON)
+		expr_out = :(:($($expr)) .+= EPSILON)
 	
 	elseif expr.head == :(=)
-		expr = :(:($($(expr.args[1]))) = EPSILON .+ :($($(expr.args[2]))))
+		expr_out = :(:($($(expr.args[1]))) = EPSILON .+ :($($(expr.args[2]))))
 	end
 
-	return expr
+	return expr_out
 end
 
 macro buffer(expr::Expr)
 	"Load individual variable into buffer memory."
 
 	if expr.args[2] == :(:alpha)
-		expr_out = :($(esc(model)).alpha_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
+		expr_out = :(model.alpha_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha))
 
 	elseif expr.args[2] == :(:sigma)
-		expr_out = :($(esc(model)).sigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).sigma))
+		expr_out = :(model.sigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sigma))
 
 	elseif expr.args[2] == :(:invsigma)
-		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
+		expr_out = :(model.invsigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.invsigma))
 	end
 	
 	return expr_out
@@ -72,32 +72,32 @@ macro host(expr::Expr)
 	if expr.args[2] == :(:Elogtheta_buffer)
 		expr_out = 
 		quote
-		Elogtheta_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).Elogtheta = [Elogtheta_host[:,d] for d in 1:$(esc(model)).M]
+		Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)
+		model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
 		end
 
 	elseif expr.args[2] == :(:mu_buffer)
-		expr_out = :($(esc(model)).mu = cl.read($(esc(model)).queue, $(esc(model)).mu_buffer))
+		expr_out = :(model.mu = cl.read(model.queue, model.mu_buffer))
 
 	elseif expr.args[2] == :(:lambda_buffer)
 		expr_out =
 		quote
-		lambda_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).lambda_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).lambda = [lambda_host[:,d] for d in 1:$(esc(model)).M]
+		lambda_host = reshape(cl.read(model.queue, model.lambda_buffer), model.K, model.M + 64 - model.M % 64)
+		model.lambda = [lambda_host[:,d] for d in 1:model.M]
 		end
 
 	elseif expr.args[2] == :(:vsq_buffer)
 		expr_out = 
 		quote
-		vsq_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).vsq_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).vsq = [vsq_host[:,d] for d in 1:$(esc(model)).M]
+		vsq_host = reshape(cl.read(model.queue, model.vsq_buffer), model.K, model.M + 64 - model.M % 64)
+		model.vsq = [vsq_host[:,d] for d in 1:model.M]
 		end
 
 	elseif expr.args[2] == :(:gimel_buffer)
 		expr_out = 
 		quote
-		gimel_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimel_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).gimel = [gimel_host[:,d] for d in 1:$(esc(model)).M]
+		gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M + 64 - model.M % 64)
+		model.gimel = [gimel_host[:,d] for d in 1:model.M]
 		end
 	end
 

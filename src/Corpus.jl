@@ -41,7 +41,7 @@ function check_doc(doc::Document)
 	isequal(length(doc.terms), length(doc.counts))		|| throw(ArgumentError("The terms and counts vectors must have the same length."))
 	all(doc.readers .> 0)								|| throw(ArgumentError("All readers must be positive integers."))
 	all(doc.ratings .> 0)								|| throw(ArgumentError("All ratings must be positive integers."))
-	isequal(length(doc.readers), length(doc.ratings)))	|| throw(ArgumentError("The readers and ratings vectors must have the same length."))
+	isequal(length(doc.readers), length(doc.ratings))	|| throw(ArgumentError("The readers and ratings vectors must have the same length."))
  	nothing
  end
 

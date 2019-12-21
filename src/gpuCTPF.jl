@@ -25,6 +25,7 @@ mutable struct gpuCTPF <: TopicModel
 	bet::Vector{Float32}
 	vav::Vector{Float32}
 	gimel::VectorList{Float32}
+	gimel_old::VectorList{Float32}
 	zayin::VectorList{Float32}
 	dalet::Vector{Float32}
 	het::Vector{Float32}
@@ -94,6 +95,7 @@ mutable struct gpuCTPF <: TopicModel
 		bet = ones(K)
 		vav = ones(K)
 		gimel = [ones(K) for _ in 1:M]
+		gimel_old = copy(gimel)
 		zayin = [ones(K) for _ in 1:M]
 		dalet = ones(K)
 		het = ones(K)
@@ -129,7 +131,7 @@ mutable struct gpuCTPF <: TopicModel
 		xi_kernel = cl.Kernel(xi_program, "update_xi")
 		xi_norm_kernel = cl.Kernel(xi_norm_program, "normalize_xi")
 
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, he, he_temp, bet, bet_old, vav, gimel, gimel_old, zayin, dalet, het, phi, xi, elbo, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
 		update_elbo!(model)
 		return model
 	end
@@ -632,15 +634,15 @@ normalize_xi(	long K,
 				global float *xi)
 				
 				{
-				long dn = get_global_id(0);
+				long dr = get_global_id(0);
 
 				float normalizer = 0.0f;
 											
 				for (long i=0; i<2*K; i++)
-					normalizer += xi[2 * K * dn + i];
+					normalizer += xi[2 * K * dr + i];
 
 				for (long i=0; i<2*K; i++)
-					xi[2 * K * dn + i] /= normalizer;
+					xi[2 * K * dr + i] /= normalizer;
 				}
 				"""
 

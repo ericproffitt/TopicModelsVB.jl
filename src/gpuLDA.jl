@@ -4,11 +4,7 @@ mutable struct gpuLDA <: TopicModel
 	V::Int
 	N::Vector{Int}
 	C::Vector{Int}
-	J::Vector{Int}
 	corp::Corpus
-	terms::VectorList{Int}
-	counts::VectorList{Int}
-	terms_sortperm::VectorList{Int}
 	topics::VectorList{Int}
 	alpha::Vector{Float32}
 	beta::Matrix{Float32}
@@ -22,10 +18,10 @@ mutable struct gpuLDA <: TopicModel
 	queue::cl.CmdQueue
 	beta_kernel::cl.Kernel
 	beta_norm_kernel::cl.Kernel
+	Elogtheta_kernel::cl.Kernel
 	gamma_kernel::cl.Kernel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
-	Elogtheta_kernel::cl.Kernel
 	N_partial_sums_buffer::cl.Buffer{Int}
 	J_partial_sums_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
@@ -73,7 +69,7 @@ mutable struct gpuLDA <: TopicModel
 		phi_kernel = cl.Kernel(phi_program, "update_phi")
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 
-		model = new(K, M, V, N, C, J, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, gamma_kernel, phi_kernel, phi_norm_kernel, Elogtheta_norm_kernel)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, Elogtheta_kernel, gamma_kernel, phi_kernel, phi_norm_kernel)
 		update_elbo!(model)	
 		return model
 	end
@@ -200,7 +196,6 @@ function update_beta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
-	@buffer model.beta
 	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
