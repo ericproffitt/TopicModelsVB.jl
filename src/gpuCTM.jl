@@ -16,7 +16,7 @@ function check_model(model::gpuCTM)
 	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
 	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
 	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
-	@assert all(isfinite.(model.lzeta))	
+	@assert all(isfinite.(model.logzeta))	
 	@assert isequal(length(model.phi), length(model.batches[1]))
 	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
 	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
@@ -57,7 +57,7 @@ function check_model(model::gpuCTM)
 	newbetaprog = cl.Program(model.context, source=CTM_NEWBETA_cpp) |> cl.build!
 	lambdaprog = cl.Program(model.context, source=CTM_LAMBDA_cpp) |> cl.build!
 	vsqprog = cl.Program(model.context, source=CTM_VSQ_cpp) |> cl.build!
-	lzetaprog = cl.Program(model.context, source=CTM_LZETA_cpp) |> cl.build!
+	logzetaprog = cl.Program(model.context, source=CTM_logzeta_cpp) |> cl.build!
 	phiprog = cl.Program(model.context, source=CTM_PHI_cpp) |> cl.build!
 	phinormprog = cl.Program(model.context, source=CTM_PHI_NORM_cpp) |> cl.build!
 
@@ -67,7 +67,7 @@ function check_model(model::gpuCTM)
 	model.newbetakern = cl.Kernel(newbetaprog, "updateNewbeta")
 	model.lambdakern = cl.Kernel(lambdaprog, "updateLambda")
 	model.vsqkern = cl.Kernel(vsqprog, "updateVsq")
-	model.lzetakern = cl.Kernel(lzetaprog, "updateLzeta")
+	model.logzetakern = cl.Kernel(logzetaprog, "updatelogzeta")
 	model.phikern = cl.Kernel(phiprog, "updatePhi")
 	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
 		
@@ -76,7 +76,7 @@ function check_model(model::gpuCTM)
 	@buf model.beta
 	@buf model.lambda
 	@buf model.vsq
-	@buf model.lzeta
+	@buf model.logzeta
 	@buf model.invsigma
 	@buf model.newbeta
 	updateBuf!(model, 0)
@@ -91,56 +91,44 @@ mutable struct gpuCTM <: GPUTopicModel
 	V::Int
 	N::Vector{Int}
 	C::Vector{Int}
-	B::Int
 	corp::Corpus
-	batches::Vector{UnitRange{Int}}
 	topics::VectorList{Int}
 	mu::Vector{Float32}
 	sigma::Matrix{Float32}
 	beta::Matrix{Float32}
 	lambda::VectorList{Float32}
 	vsq::VectorList{Float32}
-	lzeta::Vector{Float32}
+	logzeta::Vector{Float32}
 	phi::MatrixList{Float32}
 	invsigma::Matrix{Float32}
-	newbeta::Void
-	Npsums::VectorList{Int}
-	Jpsums::VectorList{Int}
-	terms::VectorList{Int}
-	counts::VectorList{Int}
-	words::VectorList{Int}
+	elbo::Float32
 	device::cl.Device
 	context::cl.Context
 	queue::cl.CmdQueue
 	mukern::cl.Kernel
-	betakern::cl.Kernel
-	betanormkern::cl.Kernel
-	newbetakern::cl.Kernel
-	lambdakern::cl.Kernel
-	vsqkern::cl.Kernel
-	lzetakern::cl.Kernel
-	phikern::cl.Kernel
-	phinormkern::cl.Kernel
-	Cbuf::cl.Buffer{Int}
-	Npsumsbuf::cl.Buffer{Int}
-	Jpsumsbuf::cl.Buffer{Int}
-	termsbuf::cl.Buffer{Int}
-	countsbuf::cl.Buffer{Int}
-	wordsbuf::cl.Buffer{Int}
+	beta_kernel::cl.Kernel
+	beta_norm_kernel::cl.Kernel
+	lambda_kernel::cl.Kernel
+	vsq_kernel::cl.Kernel
+	logzeta_kernel::cl.Kernel
+	phi_kernel::cl.Kernel
+	phi_norm_kernel::cl.Kernel
+	N_partial_sums_buffer::cl.Buffer{Int}
+	J_partial_sums_buffer::cl.Buffer{Int}
+	terms_buffer::cl.Buffer{Int}
+	terms_sortperm_buffer::cl.Buffer{Int}
+	counts_buffer::cl.Buffer{Int}
+	mu_buffer::cl.Buffer{Float32}
+	sigma_buffer::cl.Buffer{Float32}
+	invsigma_buffer::cl.Buffer{Float32}
+	beta_buffer::cl.Buffer{Float32}
+	lambda_buffer::cl.Buffer{Float32}
+	vsq_buffer::cl.Buffer{Float32}
+	logzeta_buffer::cl.Buffer{Float32}
+	phi_buffer::cl.Buffer{Float32}
 	newtontempbuf::cl.Buffer{Float32}
 	newtongradbuf::cl.Buffer{Float32}
 	newtoninvhessbuf::cl.Buffer{Float32}
-	mubuf::cl.Buffer{Float32}
-	sigmabuf::cl.Buffer{Float32}
-	invsigmabuf::cl.Buffer{Float32}
-	betabuf::cl.Buffer{Float32}
-	newbetabuf::cl.Buffer{Float32}
-	lambdabuf::cl.Buffer{Float32}
-	vsqbuf::cl.Buffer{Float32}
-	lzetabuf::cl.Buffer{Float32}
-	phibuf::cl.Buffer{Float32}
-	elbo::Float32
-	newelbo::Float32
 
 	function gpuCTM(corp::Corpus, K::Integer, batchsize::Integer=length(corp))
 		@assert !isempty(corp)		
@@ -150,29 +138,21 @@ mutable struct gpuCTM <: GPUTopicModel
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
 		C = [size(doc) for doc in corp]	
-		
-		batches = partition(1:M, batchsize)
-		B = length(batches)
 
 		topics = [collect(1:V) for _ in 1:K]
 
 		mu = zeros(K)
-		sigma = eye(K)
+		sigma = Matrix(I, K, K)
+		invsigma = Matrix(I, K, K)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		lambda = [zeros(K) for _ in 1:M]
+		lambda_old = copy(lambda)
 		vsq = [ones(K) for _ in 1:M]
-		lzeta = zeros(M)
-		phi = [ones(K, N[d]) / K for d in batches[1]]
+		logzeta = fill(0.5, M)
+		phi = [ones(K, N[d]) / K for d in 1:M]
 
-		model = new(K, M, V, N, C, B, copy(corp), batches, topics, mu, sigma, beta, lambda, vsq, lzeta, phi)
-		fixmodel!(model, check=false)
-		
-		for (b, batch) in enumerate(batches)
-			model.phi = [ones(K, N[d]) / K for d in batch]
-			updateNewELBO!(model, b)
-		end
-		model.phi = [ones(K, N[d]) / K for d in batches[1]]
-		updateELBO!(model)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, lambda, lambda_old, vsq, logzeta, phi, elbo)
+		update_elbo!(model)
 		return model
 	end
 end
@@ -184,7 +164,7 @@ end
 
 function Elogpz(model::gpuCTM, d::Int, m::Int)
 	counts = model.corp[d].counts
-	x = dot(model.phi[m]' * model.lambda[d], counts) + model.C[d] * model.lzeta[d]
+	x = dot(model.phi[m]' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
 	return x
 end
 
@@ -346,7 +326,7 @@ updateLambda(long niter,
 				const global float *sigma,
 				const global float *invsigma,
 				const global float *vsq,
-				const global float *lzeta,
+				const global float *logzeta,
 				const global float *phi,
 				global float *lambda)
 	
@@ -364,13 +344,13 @@ updateLambda(long niter,
 						for (long l=0; l<K; l++)
 						{
 							acc += invsigma[K * l + i] * (mu[l] - lambda[K * (F + d) + l]);
-							A[D + K * l + i] = -C[d] * sigma[K * l + i] * exp(lambda[K * (F + d) + l] + 0.5f * vsq[K * (F + d) + l] - lzeta[F + d]);
+							A[D + K * l + i] = -C[d] * sigma[K * l + i] * exp(lambda[K * (F + d) + l] + 0.5f * vsq[K * (F + d) + l] - logzeta[F + d]);
 						}
 
 						for (long n=Npsums[d]; n<Npsums[d+1]; n++)
 							acc += phi[K * n + i] * counts[n];
 
-						lambdaGrad[K * d + i] = acc - C[d] * exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - lzeta[F + d]);
+						lambdaGrad[K * d + i] = acc - C[d] * exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - logzeta[F + d]);
 						A[D + K * i + i] -= 1.0f;
 					}
 
@@ -393,7 +373,7 @@ updateLambda(long niter,
 
 function updateLambda!(model::gpuCTM, b::Int, niter::Int, ntol::Float32)
 	batch = model.batches[b]
-	model.queue(model.lambdakern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.Npsumsbuf, model.countsbuf, model.mubuf, model.sigmabuf, model.invsigmabuf, model.vsqbuf, model.lzetabuf, model.phibuf, model.lambdabuf)
+	model.queue(model.lambdakern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.newtoninvhessbuf, model.Cbuf, model.Npsumsbuf, model.countsbuf, model.mubuf, model.sigmabuf, model.invsigmabuf, model.vsqbuf, model.logzetabuf, model.phibuf, model.lambdabuf)
 end
 
 const CTM_VSQ_cpp =
@@ -410,7 +390,7 @@ updateVsq(long niter,
 			const global long *C,
 			const global float *invsigma,
 			const global float *lambda,
-			const global float *lzeta,
+			const global float *logzeta,
 			global float *vsq)
 			
 			{
@@ -424,8 +404,8 @@ updateVsq(long niter,
 
 				for (long i=0; i<K; i++)
 				{
-					vsqGrad[K * d + i] = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - lzeta[F + d]) - 1 / vsq[K * (F + d) + i]);
-					vsqInvHess = -1 / (0.25f * C[d] * exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - lzeta[F + d]) + 0.5f / (vsq[K * (F + d) + i] * vsq[K * (F + d) + i]));
+					vsqGrad[K * d + i] = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - logzeta[F + d]) - 1 / vsq[K * (F + d) + i]);
+					vsqInvHess = -1 / (0.25f * C[d] * exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - logzeta[F + d]) + 0.5f / (vsq[K * (F + d) + i] * vsq[K * (F + d) + i]));
 				
 					p[K * d + i] = vsqGrad[K * d + i] * vsqInvHess;
 					while (vsq[K * (F + d) + i] - rho * p[K * d + i] <= 0)
@@ -447,17 +427,17 @@ updateVsq(long niter,
 
 function updateVsq!(model::gpuCTM, b::Int, niter::Int, ntol::Float32)
 	batch = model.batches[b]
-	model.queue(model.vsqkern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.Cbuf, model.invsigmabuf, model.lambdabuf, model.lzetabuf, model.vsqbuf)
+	model.queue(model.vsqkern, length(batch), nothing, niter, ntol, model.K, batch[1] - 1, model.newtontempbuf, model.newtongradbuf, model.Cbuf, model.invsigmabuf, model.lambdabuf, model.logzetabuf, model.vsqbuf)
 end
 
-const CTM_LZETA_cpp = 
+const CTM_logzeta_cpp = 
 """
 kernel void
-updateLzeta(long K,
+updatelogzeta(long K,
 			long F,
 			const global float *lambda,
 			const global float *vsq,
-			global float *lzeta)
+			global float *logzeta)
 
 			{
 			long d = get_global_id(0);
@@ -476,13 +456,13 @@ updateLzeta(long K,
 			for (long i=0; i<K; i++)
 				acc += exp(lambda[K * (F + d) + i] + 0.5f * vsq[K * (F + d) + i] - maxval);
 
-			lzeta[F + d] = maxval + log(acc);
+			logzeta[F + d] = maxval + log(acc);
 			}
 			"""
 
-function updateLzeta!(model::gpuCTM, b::Int)
+function updatelogzeta!(model::gpuCTM, b::Int)
 	batch = model.batches[b]
-	model.queue(model.lzetakern, length(batch), nothing, model.K, batch[1] - 1, model.lambdabuf, model.vsqbuf, model.lzetabuf)
+	model.queue(model.logzetakern, length(batch), nothing, model.K, batch[1] - 1, model.lambdabuf, model.vsqbuf, model.logzetabuf)
 end
 
 const CTM_PHI_cpp =
@@ -550,7 +530,7 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		for b in 1:model.B
 			for _ in 1:viter
 				oldlambda = @host model.lambdabuf
-				updateLzeta!(model, b)
+				updatelogzeta!(model, b)
 				updatePhi!(model, b)
 				updateLambda!(model, b, niter, ntol)
 				updateVsq!(model, b, niter, ntol)

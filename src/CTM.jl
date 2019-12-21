@@ -15,7 +15,7 @@ mutable struct CTM <: TopicModel
 	lambda::VectorList{Float64}
 	lambda_old::VectorList{Float64}
 	vsq::VectorList{Float64}
-	lzeta::Float64
+	logzeta::Vector{Float64}
 	phi::Matrix{Float64}
 	elbo::Float64
 
@@ -30,18 +30,18 @@ mutable struct CTM <: TopicModel
 
 		mu = zeros(K)
 		sigma = Matrix(I, K, K)
-		invsigma = copy(sigma)
+		invsigma = Matrix(I, K, K)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
 		lambda = [zeros(K) for _ in 1:M]
 		lambda_old = copy(lambda)
 		vsq = [ones(K) for _ in 1:M]
-		lzeta = 0.5
+		logzeta = fill(0.5, M)
 		phi = ones(K, N[1]) / K
 		elbo=0
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, lzeta, phi, elbo)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, logzeta, phi, elbo)
 		
 		for d in 1:model.M
 			model.phi = ones(K, N[d]) / K
@@ -63,7 +63,7 @@ function Elogpz(model::CTM, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.lzeta
+	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
 	return x
 end
 
@@ -143,8 +143,8 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta)
-		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta))) * model.sigma
+		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
+		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]))) * model.sigma
 		model.lambda[d] -= lambda_invhess * lambda_grad
 		
 		if norm(lambda_grad) < ntol
@@ -159,8 +159,8 @@ function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 
 	for _ in 1:niter
 		rho = 1.0
-		vsq_grad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta) - 1 ./ model.vsq[d])
-		vsq_invhess_diag = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.lzeta) + 0.5 ./ model.vsq[d].^2)
+		vsq_grad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]) - 1 ./ model.vsq[d])
+		vsq_invhess_diag = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]) + 0.5 ./ model.vsq[d].^2)
 		p = vsq_invhess_diag .* vsq_grad
 		
 		while minimum(model.vsq[d] - rho * p) <= 0
@@ -175,11 +175,11 @@ function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	@bumper model.vsq[d]
 end
 
-function update_lzeta!(model::CTM, d::Int)
-	"Update lzeta."
+function update_logzeta!(model::CTM, d::Int)
+	"Update logzeta."
 	"Analytic."
 
-	model.lzeta = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
+	model.logzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function update_phi!(model::CTM, d::Int)
@@ -201,7 +201,7 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		for d in 1:model.M
 			for _ in 1:viter
 				update_phi!(model, d)
-				update_lzeta!(model, d)
+				update_logzeta!(model, d)
 				update_vsq!(model, d, niter, ntol)
 				update_lambda!(model, d, niter, ntol)
 				if norm(model.lambda[d] - model.lambda_old[d]) < vtol
