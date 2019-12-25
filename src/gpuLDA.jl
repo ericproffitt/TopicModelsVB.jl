@@ -234,10 +234,10 @@ function update_Elogtheta!(model::gpuLDA)
 
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.gamma_buffer, model.Elogtheta_buffer)
 
-	Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)[:,1:model.M]
+	#Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)[:,1:model.M]
 	#model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
-	return Elogtheta_host
-	#@host model.Elogtheta_buffer
+	#return Elogtheta_host
+	@host model.Elogtheta_buffer
 end
 
 const LDA_GAMMA_c =
@@ -332,14 +332,15 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		for _ in 1:viter
 			update_phi!(model)			
 			update_gamma!(model)
-			Elogtheta_host = update_Elogtheta!(model)
+			update_Elogtheta!(model)
+			#Elogtheta_host = update_Elogtheta!(model)
 
-			if sum(sqrt.(sum((Elogtheta_host - Elogtheta_host_old).^2, dims=1))) < model.M * vtol
-				Elogtheta_host_old = Elogtheta_host
-			#if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
+			#if sum(sqrt.(sum((Elogtheta_host - Elogtheta_host_old).^2, dims=1))) < model.M * vtol
+			#	Elogtheta_host_old = Elogtheta_host
+			if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
 				break
 			end
-			Elogtheta_host_old = Elogtheta_host
+			#Elogtheta_host_old = Elogtheta_host
 		end
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)

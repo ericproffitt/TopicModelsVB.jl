@@ -713,20 +713,20 @@ VectorList{T}
 MatrixList{T}
 # Array{Array{T,2},1}
 
-Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), stamp::Real=-Inf, title::UTF8String="")
+Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), stamp::Real=-Inf, title::String="")
 # FIELDNAMES:
 # terms::Vector{Int}
 # counts::Vector{Int}
 # readers::Vector{Int}
 # ratings::Vector{Int}
 # stamp::Float64
-# title::UTF8String
+# title::String
 
-Corpus(;docs::Vector{Document}=Document[], lex::Union{Vector{UTF8String}, Dict{Integer, UTF8String}}=[], users::Union{Vector{UTF8String}, Dict{Integer, UTF8String}}=[])
+Corpus(;docs::Vector{Document}=Document[], lex::Union{Vector{String}, Dict{Integer, String}}=[], users::Union{Vector{String}, Dict{Integer, String}}=[])
 # FIELDNAMES:
 # docs::Vector{Document}
-# lex::Dict{Int, UTF8String}
-# users::Dict{Int, UTF8String}
+# lex::Dict{Int, String}
+# users::Dict{Int, String}
 
 TopicModel
 # abstract
@@ -822,13 +822,13 @@ checkdoc(doc::Document)
 checkcorp(corp::Corpus)
 # Verify that all Corpus fields have legal values.
 
-readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
+readcorp(;docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Read corpus from plaintext files.
 # readcorp(:nsf)   - National Science Foundation corpus.
 # readcorp(:citeu) - CiteULike corpus.
 # readcorp(:mac)   - Macintosh Magazine corpus.
 
-writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
+writecorp(corp::Corpus; docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
 # Write corpus to plaintext files.
 
 abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)

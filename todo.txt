@@ -1,34 +1,40 @@
 1. CTPF goes negative on first iteration
-3. decide on fixmodel! function
+2. change UTF8String in README to String
+3. put package back in official listing
+4. smooth out fLDA and fCTM
+5. figure out way to preserve ordering of documents so showdocs() is comprehensible
+6. Use feather or paraquet or some fead read-in binary file format for default corpora in order to speed up their loading times.
+7. write run tests for package, see issue #3
+8. pre-compute ELBOs, or derive formula for various M and K
+9. deal with counts situation
+10. why is nu variable used in Newton's method for alpha in LDA but not vsq in CTM?
+11. when different lex keys map to the same word, need to merge these in fixcorp functions
+12. write detect topic code, see issue #2
+13. save/load trained models see issue #13
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 5. new to temp
 4. camelCase to under_score
-6. change UTF8String in README to String
-7. put package back in official listing
-8. smooth out fLDA and fCTM
-9. figure out way to preserve ordering of documents so showdocs() is comprehensible
-10. Use feather or paraquet or some fead read-in binary file format for default corpora in order to speed up their loading times.
 11. tab align C code
-12. write run tests for package, see issue #3
+3. decide on fixmodel! function
 13. include perplexity function (possibly, not sure if I want to do this)
-
-2. pre-compute ELBOs, or derive formula for various M and K
-21. deal with counts situation
-22. what to do with empty documents in corpus.
-17. make extended integers datatype so that chkelbo can be Z U {Inf}
-18. why is nu variable used in Newton's method for alpha in LDA but not vsq in CTM?
-19. make sure elbo is matched to model data when it goes into training
-
-
-
-
-
-
-13. write detect topic code, see issue #2
-14. save/load trained models see issue #13
 15. change comments to new style formatting
 16. fix checkcorp! situation
-
-18. when different lex keys map to the same word, need to merge these in fixcorp functions
+17. make extended integers datatype so that chkelbo can be Z U {Inf}
 19. fix DTM
+19. make sure elbo is matched to model data when it goes into training
 
 

@@ -28,7 +28,7 @@ end
 Document(terms) = Document(terms=terms)
 
 struct DocumentError <: Exception
-    msg::AbstractString
+    msg::String
 end
 
 Base.showerror(io::IO, e::DocumentError) = print(io, "DocumentError: ", e.msg)
@@ -71,7 +71,7 @@ Corpus(docs) = Corpus(docs=docs)
 Corpus(doc) = Corpus(docs=[doc])
 
 struct CorpusError <: Exception
-    msg::AbstractString
+    msg::String
 end
 
 Base.showerror(io::IO, e::CorpusError) = print(io, "CorpusError: ", e.msg)
@@ -154,7 +154,7 @@ showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
 getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
 getusers(corp::Corpus) = sort(collect(values(corp.users)))
 
-function readcorp(;docfile::AbstractString="", vocabfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+function readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	"Load a Corpus object from text file(s)."
 
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
@@ -248,7 +248,7 @@ function readcorp(corp_symbol::Symbol)
 	return corp
 end
 
-function writecorp(corp::Corpus; docfile::AbstractString="", vocabfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
 
 	if !isempty(docfile)
