@@ -11,6 +11,7 @@ mutable struct gpuCTM <: TopicModel
 	invsigma::Matrix{Float32}
 	beta::Matrix{Float32}
 	lambda::VectorList{Float32}
+	lambda_old::VectorList{Float32}
 	vsq::VectorList{Float32}
 	logzeta::Vector{Float32}
 	phi::MatrixList{Float32}
@@ -26,6 +27,7 @@ mutable struct gpuCTM <: TopicModel
 	logzeta_kernel::cl.Kernel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
+	C_buffer::cl.Buffer{Int}
 	N_partial_sums_buffer::cl.Buffer{Int}
 	J_partial_sums_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
@@ -142,7 +144,7 @@ end
 const CTM_MU_c =
 """
 kernel void
-updateMu(	long K,
+update_mu(	long K,
 			long M,
 			const global float *lambda,
 			global float *mu)
@@ -183,30 +185,30 @@ end
 const CTM_BETA_c =
 """
 kernel void
-updateNewbeta(	long K,
-				const global long *J_partial_sums,
-				const global long *terms_sortperm
-				const global long *counts,
-				const global float *phi,
-				global float *beta)
-								
-				{
-				long i = get_global_id(0);
-				long j = get_global_id(1);	
+update_beta(long K,
+			const global long *J_partial_sums,
+			const global long *terms_sortperm,
+			const global long *counts,
+			const global float *phi,
+			global float *beta)
+						
+			{
+			long i = get_global_id(0);
+			long j = get_global_id(1);
 
-				float acc = 0.0f;
+			float acc = 0.0f;
 
-				for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
-					acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
+			for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
+				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
-				beta[K * j + i] = acc;
-				}
-				"""
+			beta[K * j + i] = acc;
+			}
+			"""
 
 const CTM_BETA_NORM_c =
 """
 kernel void
-normalizeBeta(	long K,
+normalize_beta(	long K,
 				long V,
 				global float *beta)
 
@@ -359,7 +361,7 @@ function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update vsq."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.newton_grad_buffer, model.Cbuf, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
+	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.newton_grad_buffer, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
 const CTM_logzeta_c = 
@@ -456,6 +458,7 @@ end
 function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for GPU accelerated correlated topic model variational Bayes algorithm."
 
+	ntol = Float32(ntol)
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))

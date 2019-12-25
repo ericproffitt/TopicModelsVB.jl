@@ -14,7 +14,7 @@ showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, co
 showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
 showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
 
-getlex(model::TopicModel) = sort(collect(values(model.corp.vocab)))
+getvocab(model::TopicModel) = sort(collect(values(model.corp.vocab)))
 getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
 
 ### Display output for TopicModel objects.
@@ -30,7 +30,7 @@ Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative top
 function check_model(model::LDA)
 	"Check latent Dirichlet allocation model parameters."
 
-	#check_corp(model.corp) 
+	check_corp(model.corp) 
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))											|| throw(TopicModelError(""))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError(""))
@@ -59,12 +59,10 @@ function check_model(model::LDA)
 	nothing
 end
 
-max(model.M, model.M - 1):-1:model.M
-
 function check_model(model::fLDA)
 	"Check filtered latent Dirichlet allocation model parameters."
 
-	#check_corp(model.corp)
+	check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))											|| throw(TopicModelError(""))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError(""))
@@ -107,8 +105,8 @@ end
 function check_model(model::CTM)
 	"Check correlated topic model parameters."
 
-	#check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))			|| throw(TopicModelError(""))	
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError(""))	
 	isequal(model.M, length(model.corp))										|| throw(TopicModelError(""))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError(""))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError(""))	
@@ -138,8 +136,8 @@ end
 function check_model(model::fCTM)
 	"Check filtered correlated topic model parameters."
 
-	#check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))			|| throw(TopicModelError(""))
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))										|| throw(TopicModelError(""))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError(""))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError(""))
@@ -180,8 +178,8 @@ end
 function check_model(model::CTPF)
 	"Check collaborative topic Poisson factorization model parameters."
 
-	#check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))
 	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))							|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
 	isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])							|| throw(TopicModelError(""))
@@ -232,7 +230,7 @@ end
 function check_model(model::gpuLDA)
 	"Check GPU accelerated latent Dirichlet allocation model parameters."
 
-	#check_corp(model.corp) 
+	check_corp(model.corp) 
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError(""))
@@ -263,8 +261,8 @@ end
 function check_model(model::gpuCTM)
 	"Check GPU accelerated correlated topic model parameters."
 
-	#check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))	
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))	
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError(""))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError(""))	
@@ -293,8 +291,8 @@ end
 function check_model(model::gpuCTPF)
 	"Check GPU accelerated collaborative topic Poisson factorization model parameters."
 
-	#check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))							|| throw(TopicModelError(""))
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))
 	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))							|| throw(TopicModelError(""))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
 	isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])							|| throw(TopicModelError(""))
@@ -400,6 +398,7 @@ function update_buffer!(model::gpuCTM)
 		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
 	end
 
+	model.C_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=model.C)
 	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
@@ -407,14 +406,15 @@ function update_buffer!(model::gpuCTM)
 	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
 	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
 
-	model.newton_temp_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64)))
-	model.newton_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64)))
-	model.newton_invhess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64)))
+	model.newton_temp_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
+	model.newton_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
+	model.newton_invhess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
 
 	@buffer model.sigma
 	@buffer model.invsigma
-	model.mu_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.mu))
-	model.lambda_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64))))
+	model.mu_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.mu)
+	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
+	model.lambda_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64)))
 	model.vsq_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
 	model.logzeta_buffer = cl.Buffer(Float32, model.context, :rw, model.M + 64 - model.M % 64)
 	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
@@ -422,22 +422,13 @@ end
 
 function update_buffer!(model::gpuCTPF)
 	"Update gpuCTPF model data in GPU RAM."
-
-	elseif expr.args[2] == :(:readers)
-		expr_out = :($(esc(model)).readers_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).readers))
-
-	elseif expr.args[2] == :(:ratings)
-		expr_out = :($(esc(model)).ratings_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).ratings))
-
-	elseif expr.args[2] == :(:views)
-		expr_out = :($(esc(model)).views_buffer = cl.Buffer(Int, $(esc(model)).context, (:r, :copy), hostbuf=$(esc(model)).views))
 		
-	terms = vcat([doc.terms for doc in model.corp) .- 1
+	terms = vcat([doc.terms for doc in model.corp]...) .- 1
 	terms_sortperm = sortperm(terms) .- 1
-	counts = vcat([doc.counts for doc in model.corp)
+	counts = vcat([doc.counts for doc in model.corp]...)
 
-	readers = vcat([doc.readers for doc in model.corp]) .- 1
-	ratings = vcat([doc.ratings for doc in model.corp])
+	readers = vcat([doc.readers for doc in model.corp]...) .- 1
+	ratings = vcat([doc.ratings for doc in model.corp]...)
 	ratings_sortperm = sortperm(ratings) .- 1
 
 	J = zeros(Int, model.V)
@@ -460,8 +451,8 @@ function update_buffer!(model::gpuCTPF)
 		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
 	end
 
-	R_partial_sums = zeros(Int, model.R + 1)
-	for d in 1:model.R
+	R_partial_sums = zeros(Int, model.M + 1)
+	for d in 1:model.M
 		R_partial_sums[d+1] = R_partial_sums[d] + model.R[d]
 	end
 		
@@ -470,11 +461,11 @@ function update_buffer!(model::gpuCTPF)
 		Y_partial_sums[u+1] = Y_partial_sums[u] + Y[u]
 	end
 
-	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms))
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
-	model.readers_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers))
+	model.readers_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers)
 	model.ratings_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings)
 	model.ratings_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings_sortperm)
 
@@ -489,9 +480,9 @@ function update_buffer!(model::gpuCTPF)
 	model.vav_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
 	model.gimel_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel..., zeros(Float32, model.K, 64 - model.M % 64)))
 	mdoel.zayin_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.dalet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet))
-	model.het_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het))
-	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, zeros(Float32, model.K, sum(model.N) + 64 - sum(model.N) % 64))
+	model.dalet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet)
+	model.het_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het)
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
 	model.xi_buffer = cl.Buffer(Float32, model.context, :rw, 2 * model.K * (sum(model.R) + 64 - sum(model.R) % 64))
 end
 
@@ -527,7 +518,7 @@ function update_host!(model::gpuCTM)
 	end
 
 	@host model.mu_buffer
-	model.sigma = reshape(cl.read(model.queue, $model.sigma_buffer), model.K, model.K)
+	model.sigma = reshape(cl.read(model.queue, model.sigma_buffer), model.K, model.K)
 	model.invsigma = reshape(cl.read(model.queue, model.invsigma_buffer), model.K, model.K)
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
 	@host model.lambda_buffer
@@ -547,27 +538,27 @@ function update_host!(model::gpuCTPF)
 	end
 
 	R_partial_sums = zeros(Int, model.R + 1)
-	for d in 1:model.R
-		R_partial_sums[d+1] = R_partial_sums[d] + model.R[d]
+	for r in 1:model.R
+		R_partial_sums[r+1] = R_partial_sums[r] + model.R[r]
 	end
 
 	model.alef = reshape(cl.read(model.queue, model.alef_buffer), model.K, model.V)
-	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U))
-	model.bet = cl.read(model.queue, model.beta_buffer)
-	model.vav = cl.read(model.queue, model.vav_buffer))
+	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U)
+	model.bet = cl.read(model.queue, model.bet_buffer)
+	model.vav = cl.read(model.queue, model.vav_buffer)
 	@host model.gimel_buffer
 	
 	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, mdoel.M + 64 - model.M % 64)
 	model.zayin = [zayin_host[:,d] for d in 1:model.M]
 		
-	model.dalet = cl.read(model.queue, model.dalet_buffer))
+	model.dalet = cl.read(model.queue, model.dalet_buffer)
 	model.het = cl.read(model.queue, model.het_buffer)
-	
-	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R) + 64 - sum(model.R) % 64)
-	model.xi = [xi_host[:,R_partial_sums[d]+1:R_partial_sums[d+1]] for d in 1:model.M]
 	
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
 	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
+
+	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R) + 64 - sum(model.R) % 64)
+	model.xi = [xi_host[:,R_partial_sums[d]+1:R_partial_sums[d+1]] for d in 1:model.M]
 end
 
 function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
@@ -586,7 +577,7 @@ function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
 	false
 end
 
-function gendoc(model::AbstractLDA, laplace_smooth::Real=0.0)
+function gendoc(model::Union{LDA, gpuLDA}, laplace_smooth::Real=0.0)
 	"Generate artificial document from LDA or gpuLDA generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
@@ -608,7 +599,7 @@ function gendoc(model::AbstractLDA, laplace_smooth::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gendoc(model::AbstractfLDA, laplace_smooth::Real=0.0)
+function gendoc(model::fLDA, laplace_smooth::Real=0.0)
 	"Generate artificial document from fLDA generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
@@ -630,7 +621,7 @@ function gendoc(model::AbstractfLDA, laplace_smooth::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gendoc(model::AbstractCTM, laplace_smooth::Real=0.0)
+function gendoc(model::Union{CTM, gpuCTM}, laplace_smooth::Real=0.0)
 	"Generate artificial document from CTM or gpuCTM generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
@@ -653,7 +644,7 @@ function gendoc(model::AbstractCTM, laplace_smooth::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gendoc(model::AbstractfCTM, laplace_smooth::Real=0.0)
+function gendoc(model::fCTM, laplace_smooth::Real=0.0)
 	"Generate artificial document from fCTM generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
@@ -676,12 +667,12 @@ function gendoc(model::AbstractfCTM, laplace_smooth::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gencorp(model::Union{AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfCTM}, corp_size::Integer, laplace_smooth::Real=0.0)
+function gencorp(model::TopicModel, corp_size::Integer, laplace_smooth::Real=0.0)
 	"Generate artificial corpus using specified generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
-	corp_size > 0 || throw(ArgumentError("corp_size parameter must be a positive integer."))
-	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
+	corp_size > 0 		|| throw(ArgumentError("corp_size parameter must be a positive integer."))
+	laplace_smooth >= 0	|| throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	corp = Corpus(vocab=model.corp.vocab, users=model.corp.users)
 	corp.docs = [gendoc(model, laplace_smooth) for d in 1:corp_size]
@@ -700,7 +691,7 @@ function showtopics(model::TopicModel, top_n_terms::Integer=min(15, model.V); to
 	cols = min(cols, length(topics))
 
 	vocab = model.corp.vocab
-	maxjspacings = [maximum(push!([length(vocab[j]) for j in topic[1:top_n_terms]], -Inf)) for topic in model.topics]
+	maxjspacings = [maximum([length(vocab[j]) for j in topic[1:top_n_terms]]) for topic in model.topics]
 
 	for block in Iterators.partition(topics, cols)
 		for j in 0:top_n_terms
@@ -718,8 +709,6 @@ function showtopics(model::TopicModel, top_n_terms::Integer=min(15, model.V); to
 		println()
 	end
 end
-
-showtopics(model::TopicModel, N::Integer; topic::Integer, cols::Integer) = showtopics(model, N, topics=[topic], cols=cols)
 
 function showlibs(model::CTPF, users::Vector{<:Integer})
 	"Display the documents in a user(s) library."

@@ -381,7 +381,7 @@ function update_gimel!(model::gpuCTPF)
 	model.gimel_old[d] = model.gimel[d]
 
 	model.queue(model.gimel_kernel, (model.K, model.M), nothing, model.K, model.c, model.N_partial_sums_buffer, model.R_partial_sums_buffer, model.counts_buffer, model.ratings_buffer, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
-	@host model.gimel
+	@host model.gimel_buffer
 end
 
 const CTPF_DALET_c =
@@ -426,7 +426,7 @@ kernel void
 update_he(	long K,
 			const global long *Y_partial_sums,
 			const global long *ratings,
-			const global long *views,
+			const global long *ratings_sortperm,
 			const global float *xi,
 			global float *he)
 

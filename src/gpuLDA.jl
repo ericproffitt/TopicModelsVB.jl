@@ -120,7 +120,7 @@ function update_elbo!(model::gpuLDA)
 	for d in 1:model.M
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 	end
-	
+
 	return model.elbo
 end
 
@@ -137,7 +137,7 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 		alpha_invhess_diag = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
 		p = (alpha_grad .- dot(alpha_grad, alpha_invhess_diag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alpha_invhess_diag))) .* alpha_invhess_diag
 		
-		while minimum(push!(model.alpha - rho * p, Inf)) < 0
+		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
 		end	
 		model.alpha -= rho * p
@@ -233,7 +233,11 @@ function update_Elogtheta!(model::gpuLDA)
 	model.Elogtheta_old = model.Elogtheta
 
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.gamma_buffer, model.Elogtheta_buffer)
-	@host model.Elogtheta_buffer
+
+	Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)[:,1:model.M]
+	#model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
+	return Elogtheta_host
+	#@host model.Elogtheta_buffer
 end
 
 const LDA_GAMMA_c =
@@ -322,14 +326,20 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	update_elbo!(model)
 
+	Elogtheta_host_old = hcat(model.Elogtheta...)
+
 	for k in 1:iter
 		for _ in 1:viter
 			update_phi!(model)			
 			update_gamma!(model)
-			update_Elogtheta!(model)
-			if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
+			Elogtheta_host = update_Elogtheta!(model)
+
+			if sum(sqrt.(sum((Elogtheta_host - Elogtheta_host_old).^2, dims=1))) < model.M * vtol
+				Elogtheta_host_old = Elogtheta_host
+			#if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
 				break
 			end
+			Elogtheta_host_old = Elogtheta_host
 		end
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)
@@ -343,14 +353,3 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
-
-
-
-
-
-
-
-
-
-
-
