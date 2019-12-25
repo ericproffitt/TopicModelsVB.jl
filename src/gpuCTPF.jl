@@ -712,4 +712,3 @@ function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer
 	end
 	nothing
 end
-

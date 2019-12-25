@@ -226,7 +226,3 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
-
-Base.show(io::IO, model::CTM) = print(io, "Correlated topic model with $(model.K) topics.")
-
-

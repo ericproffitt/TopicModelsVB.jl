@@ -489,4 +489,3 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
-

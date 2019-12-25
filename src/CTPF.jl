@@ -393,7 +393,6 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 			break
 		end
 	end
-	return nothing
 	
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]
@@ -418,5 +417,3 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 	end
 	nothing
 end
-
-Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")
