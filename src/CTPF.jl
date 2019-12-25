@@ -87,13 +87,7 @@ mutable struct CTPF <: TopicModel
 		elbo = 0
 
 		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, alef_old, alef_temp, he, he_old, he_temp, bet, bet_old, vav, vav_old, gimel, gimel_old, zayin, zayin_old, dalet, dalet_old, het, het_old, phi, xi, elbo)
-
-		for d in 1:model.M
-			model.phi[1] = ones(K, N[d]) / K
-			model.xi[1] = ones(2K, R[d]) / 2K
-			model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
-		end
-
+		update_elbo!(model)
 		return model
 	end
 end
