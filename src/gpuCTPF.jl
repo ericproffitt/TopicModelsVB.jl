@@ -663,7 +663,6 @@ function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vto
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 	update_elbo!(model)
-
 	update_buffer!(model)
 
 	for k in 1:iter
