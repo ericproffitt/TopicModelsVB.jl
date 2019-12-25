@@ -97,6 +97,7 @@ Base.show(io::IO, doc::Document) = print(io, "Document with:\n * $(length(doc.te
 Base.length(doc::Document) = length(doc.terms)
 Base.size(doc::Document) = sum(doc.counts)
 Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
+Base.isempty(doc::Document) = length(doc) == 0
 
 Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.vocab)) vocab\n * $(length(corp.users)) users")
 Base.iterate(corp::Corpus, d=1) = Base.iterate(corp.docs, d)
