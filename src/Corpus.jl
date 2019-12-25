@@ -66,6 +66,10 @@ mutable struct Corpus
 	end
 end
 
+### Corpus outer constructors for non-kwarg Document(s) initialization.
+Corpus(docs) = Corpus(docs=docs)
+Corpus(doc) = Corpus(docs=[doc])
+
 struct CorpusError <: Exception
     msg::AbstractString
 end
