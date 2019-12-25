@@ -116,6 +116,18 @@ function Elogpyb(model::CTPF, d::Int)
 	return x
 end
 
+function Elogpyb_old(model::CTPF, d::Int)
+	"Compute E[log(P(yb))]."
+
+	x = 0
+	readers, ratings = model.corp[d].readers, model.corp[d].ratings
+	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
+		binom = Binomial(ra, model.xi[1][model.K+i,u])
+		x += (ra * model.xi[1][model.K+i,u] * (digamma(model.zayin_old[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.zayin_old[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
+	end
+	return x
+end
+
 function Elogpz(model::CTPF, d::Int)
 	"Compute E[log(P(z))]."
 
@@ -131,7 +143,7 @@ end
 function Elogpbeta(model::CTPF)
 	"Compute E[log(P(beta))]."
 
-	x = model.V * model.K * (model.a * log(model.b) -  loggamma(model.a))
+	x = model.V * model.K * (model.a * log(model.b) - loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
 		x += (model.a - 1) * (digamma(model.alef[i,j]) - log(model.bet[i])) - model.b * model.alef[i,j] / model.bet[i]
 	end
@@ -141,7 +153,7 @@ end
 function Elogptheta(model::CTPF, d::Int)
 	"Compute E[log(P(theta))]."
 
-	x = model.K * (model.c * log(model.d) -  loggamma(model.c))
+	x = model.K * (model.c * log(model.d) - loggamma(model.c))
 	for i in 1:model.K
 		x += (model.c - 1) * (digamma(model.gimel[d][i]) - log(model.dalet[i])) - model.d * model.gimel[d][i] / model.dalet[i]
 	end
@@ -151,7 +163,7 @@ end
 function Elogpeta(model::CTPF)
 	"Compute E[log(P(eta))]."
 
-	x = model.U * model.K * (model.e * log(model.f) -  loggamma(model.e))
+	x = model.U * model.K * (model.e * log(model.f) - loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
 		x += (model.e - 1) * (digamma(model.he[i,u]) - log(model.vav[i])) - model.f * model.he[i,u] / model.vav[i]
 	end
@@ -161,9 +173,19 @@ end
 function Elogpepsilon(model::CTPF, d::Int)
 	"Compute E[log(P(epsilon))]."
 
-	x = model.K * (model.g * log(model.h) -  loggamma(model.g))
+	x = model.K * (model.g * log(model.h) - loggamma(model.g))
 	for i in 1:model.K
 		x += (model.g - 1) * (digamma(model.zayin[d][i]) - log(model.het[i])) - model.h * model.zayin[d][i] / model.het[i]
+	end
+	return x
+end
+
+function Elogpepsilon_old(model::CTPF, d::Int)
+	"Compute E[log(P(epsilon))]."
+
+	x = model.K * (model.g * log(model.h) - loggamma(model.g))
+	for i in 1:model.K
+		x += (model.g - 1) * (digamma(model.zayin_old[d][i]) - log(model.het[i])) - model.h * model.zayin_old[d][i] / model.het[i]
 	end
 	return x
 end
@@ -224,6 +246,16 @@ function Elogqepsilon(model::CTPF, d::Int)
 	x = 0
 	for i in 1:model.K
 		x -= entropy(Gamma(model.zayin[d][i], 1 / model.het[i]))
+	end
+	return x
+end
+
+function Elogqepsilon_old(model::CTPF, d::Int)
+	"Compute E[log(q(epsilon))]."
+
+	x = 0
+	for i in 1:model.K
+		x -= entropy(Gamma(model.zayin_old[d][i], 1 / model.het[i]))
 	end
 	return x
 end
@@ -368,25 +400,26 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 				update_xi!(model, d)
 				update_phi!(model, d)
 				update_zayin!(model, d)
-				update_gimel!(model, d)
+				#update_gimel!(model, d)
 				if norm(model.gimel[d] - model.gimel_old[d]) < vtol
 					break
 				end
 			end
-			update_alef!(model, d)
-			update_he!(model, d)
+			#update_alef!(model, d)
+			#update_he!(model, d)
 		end
-		update_dalet!(model)
-		update_het!(model)
-		update_alef!(model)
-		update_bet!(model)
-		update_he!(model)
-		update_vav!(model)
+		#update_dalet!(model)
+		#update_het!(model)
+		#update_alef!(model)
+		#update_bet!(model)
+		#update_he!(model)
+		#update_vav!(model)
 
 		if check_elbo!(model, check_elbo, k, tol)
 			break
 		end
 	end
+	return nothing
 	
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]

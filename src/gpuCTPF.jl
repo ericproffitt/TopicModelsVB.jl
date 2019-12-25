@@ -176,7 +176,7 @@ end
 function Elogpbeta(model::gpuCTPF)
 	"Compute E[log(P(beta))]."
 
-	x = model.V * model.K * (model.a * log(model.b) -  loggamma(model.a))
+	x = model.V * model.K * (model.a * log(model.b) - loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
 		x += (model.a - 1) * (digamma(model.alef[i,j]) - log(model.bet[i])) - model.b * model.alef[i,j] / model.bet[i]
 	end
@@ -186,7 +186,7 @@ end
 function Elogptheta(model::gpuCTPF, d::Int)
 	"Compute E[log(P(theta))]."
 
-	x = model.K * (model.c * log(model.d) -  loggamma(model.c))
+	x = model.K * (model.c * log(model.d) - loggamma(model.c))
 	for i in 1:model.K
 		x += (model.c - 1) * (digamma(model.gimel[d][i]) - log(model.dalet[i])) - model.d * model.gimel[d][i] / model.dalet[i]
 	end
@@ -196,7 +196,7 @@ end
 function Elogpeta(model::gpuCTPF)
 	"Compute E[log(P(eta))]."
 
-	x = model.U * model.K * (model.e * log(model.f) -  loggamma(model.e))
+	x = model.U * model.K * (model.e * log(model.f) - loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
 		x += (model.e - 1) * (digamma(model.he[i,u]) - log(model.vav[i])) - model.f * model.he[i,u] / model.vav[i]
 	end
@@ -206,7 +206,7 @@ end
 function Elogpepsilon(model::gpuCTPF, d::Int)
 	"Compute E[log(P(epsilon))]."
 
-	x = model.K * (model.g * log(model.h) -  loggamma(model.g))
+	x = model.K * (model.g * log(model.h) - loggamma(model.g))
 	for i in 1:model.K
 		x += (model.g - 1) * (digamma(model.zayin[d][i]) - log(model.het[i])) - model.h * model.zayin[d][i] / model.het[i]
 	end
