@@ -656,7 +656,7 @@ function update_xi!(model::gpuCTPF)
 	model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
 end
 
-function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
+function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for GPU accelerated collaborative topic Poisson factorization variational Bayes algorithm."
 
 	check_model(model)
