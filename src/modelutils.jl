@@ -368,8 +368,8 @@ function update_buffer!(model::gpuLDA)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
-	N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
-	J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
+	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
+	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
 
 	@buffer model.alpha
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
@@ -404,8 +404,8 @@ function update_buffer!(model::gpuCTM)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
-	N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
-	J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
+	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
+	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
 
 	model.newton_temp_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64)))
 	model.newton_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64)))
@@ -478,10 +478,10 @@ function update_buffer!(model::gpuCTPF)
 	model.ratings_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings)
 	model.ratings_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings_sortperm)
 
-	N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
-	J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
-	R_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=R_partial_sums)
-	Y_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=Y_partial_sums)
+	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
+	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
+	model.R_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=R_partial_sums)
+	model.Y_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=Y_partial_sums)
 
 	model.alef_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alef)
 	model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
