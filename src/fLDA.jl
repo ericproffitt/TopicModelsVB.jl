@@ -51,12 +51,7 @@ mutable struct fLDA <: TopicModel
 		elbo = 0
 	
 		model = new(K, M, V, N, C, copy(corp), topics, eta, alpha, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, fbeta, Elogtheta, Elogtheta_old, gamma, tau, tau_old, phi, elbo)
-		
-		for d in 1:model.M
-			model.phi = ones(K, N[d]) / K
-			model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqc(model, d) - Elogqz(model, d)
-		end
-
+		update_elbo!(model)
 		return model
 	end
 end
@@ -233,10 +228,11 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 	"Coordinate ascent optimization procedure for filtered latent Dirichlet allocation variational Bayes algorithm."
 
 	check_model(model)
-	isempty(model.corp) && (iter = 0)
+	((model.M == 0) | all([isempty(doc) for doc in corp])) && (iter = 0)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	update_elbo!(model)
 
 	for k in 1:iter
 		for d in 1:model.M	

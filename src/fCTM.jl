@@ -57,12 +57,7 @@ mutable struct fCTM <: TopicModel
 		elbo = 0
 
 		model = new(K, M, V, N, C, copy(corp), topics, eta, mu, sigma, invsigma, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, fbeta, lambda, lambda_old, vsq, logzeta, tau, tau_old, phi, elbo)
-
-		for d in 1:model.M
-			model.phi = ones(K, N[d]) / K
-			model.elbo += Elogpeta(model, d) + Elogpc(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqc(model, d) - Elogqz(model, d)
-		end
-
+		update_elbo!(model)
 		return model
 	end
 end
@@ -259,10 +254,11 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 	"Coordinate ascent optimization procedure for filtered correlated topic model variational Bayes algorithm."
 
 	check_model(model)
-	isempty(model.corp) && (iter = 0)
+	((model.M == 0) | all([isempty(doc) for doc in corp])) && (iter = 0)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	update_elbo!(model)
 
 	for k in 1:iter
 		for d in 1:model.M
