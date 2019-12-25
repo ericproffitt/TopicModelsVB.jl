@@ -101,7 +101,7 @@ function Elogpz(model::gpuCTM, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
+	x = dot(model.phi[d]' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
 	return x
 end
 
@@ -109,7 +109,7 @@ function Elogpw(model::gpuCTM, d::Int)
 	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * counts)
+	x = sum(model.phi[d] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
@@ -124,7 +124,7 @@ function Elogqz(model::gpuCTM, d::Int)
 	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
@@ -455,12 +455,11 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	"Coordinate ascent optimization procedure for GPU accelerated correlated topic model variational Bayes algorithm."
 
 	check_model(model)
-	all([isempty(doc) for doc in corp]) && (iter = 0)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	all([isempty(doc) for doc in corp]) ? (iter = 0) | update_buffer!(model)
 	update_elbo!(model)
-	update_buffer!(model)
 
 	for k in 1:iter
 		for _ in 1:viter
@@ -481,7 +480,7 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		end
 	end
 
-	update_host!(model)
+	(iter > 0) && update_host!(model)
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end

@@ -86,7 +86,7 @@ function Elogpz(model::gpuLDA, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi * counts, model.Elogtheta[d])
+	x = dot(model.phi[d] * counts, model.Elogtheta[d])
 	return x
 end
 
@@ -314,12 +314,11 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
 
 	check_model(model)
-	all([isempty(doc) for doc in corp]) && (iter = 0)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	all([isempty(doc) for doc in corp]) ? (iter = 0) | update_buffer!(model)
 	update_elbo!(model)
-	update_buffer!(model)
 
 	for k in 1:iter
 		for _ in 1:viter
@@ -338,7 +337,7 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		end
 	end
 
-	update_host!(model)
+	(iter > 0) && update_host!(model)
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end

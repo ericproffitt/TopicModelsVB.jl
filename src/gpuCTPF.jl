@@ -99,8 +99,8 @@ mutable struct gpuCTPF <: TopicModel
 		zayin = [ones(K) for _ in 1:M]
 		dalet = ones(K)
 		het = ones(K)
-		phi = ones(K, N[1]) / K
-		xi = ones(2K, R[1]) / 2K
+		phi = [ones(K, N[d]) / K for d in 1:M]
+		xi = [ones(2K, R[d]) / 2K for d in 1:M]
 		elbo = 0
 
 		device, context, queue = cl.create_compute_context()		
@@ -658,12 +658,11 @@ function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vto
 	"Coordinate ascent optimization procedure for GPU accelerated collaborative topic Poisson factorization variational Bayes algorithm."
 
 	check_model(model)
-	all([isempty(doc) for doc in corp]) && (iter = 0)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	all([isempty(doc) for doc in corp]) ? (iter = 0) | update_buffer!(model)
 	update_elbo!(model)
-	update_buffer!(model)
 
 	for k in 1:iter
 		for _ in 1:viter
@@ -687,7 +686,7 @@ function train!(model::gpuCTPF; iter::Int=150, tol::Real=1.0, viter::Int=10, vto
 		end
 	end
 
-	update_host!(model)
+	(iter > 0) && update_host!(model)
 	Ebeta = model.alef ./ model.bet
 	model.topics = [reverse(sortperm(vec(Ebeta[i,:]))) for i in 1:model.K]
 
