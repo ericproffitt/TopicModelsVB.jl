@@ -345,7 +345,7 @@ end
 function update_buffer!(model::gpuLDA)
 	"Update gpuLDA model data in GPU RAM."
 
-	terms = convert(Vector{Int}, vcat(Int[doc.terms for doc in model.corp]...) .- 1)
+	terms = convert(Vector{Int}, vcat([doc.terms for doc in model.corp]...) .- 1)
 	terms_sortperm = sortperm(terms) .- 1
 	counts = convert(Vector{Int}, vcat([doc.counts for doc in model.corp]...))
 		
@@ -359,7 +359,7 @@ function update_buffer!(model::gpuLDA)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	J_partial_sums = zeros(Int, model.M + 1)
+	J_partial_sums = zeros(Int, model.V + 1)
 	for j in 1:model.V
 		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
 	end
@@ -373,9 +373,9 @@ function update_buffer!(model::gpuLDA)
 
 	@buffer model.alpha
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
-	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, :rw, hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, zeros(Float32, model.K * model.M + 64 - model.M % 64))
-	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, zeros(Float32, model.K, sum(model.N) + 64 - sum(model.N) % 64))
+	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, model.K * model.M + 64 - model.M % 64)
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * sum(model.N) + 64 - sum(model.N) % 64)
 end
 
 function update_buffer!(model::gpuCTM)
@@ -508,6 +508,7 @@ function update_host!(model::gpuLDA)
 	end
 
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
+	
 	@host model.Elogtheta_buffer
 
 	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
