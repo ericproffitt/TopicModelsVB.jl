@@ -120,13 +120,15 @@ function update_elbo!(model::gpuLDA)
 	for d in 1:model.M
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 	end
+	
+	return model.elbo
 end
 
 function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	"Update alpha."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	Elogtheta_sum = sum(Float64[model.Elogtheta[d] for d in 1:model.M])
+	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
 	nu = model.K
 	for _ in 1:niter
@@ -306,7 +308,7 @@ function update_phi!(model::gpuLDA)
 	"Update phi."
 	"Analytic."
 
-	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.N_partial_sums_buffer, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 

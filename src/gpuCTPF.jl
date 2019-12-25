@@ -280,6 +280,8 @@ function update_elbo!(model::gpuCTPF)
 	for d in 1:model.M
 		model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
 	end
+
+	return model.elbo
 end
 
 const CTPF_ALEF_c =

@@ -134,7 +134,9 @@ function update_elbo!(model::gpuCTM)
 	model.elbo = 0
 	for d in 1:model.M
 		model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)			 
-	end		
+	end
+
+	return model.elbo
 end
 
 const CTM_MU_c =
