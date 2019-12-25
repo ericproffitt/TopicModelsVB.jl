@@ -345,9 +345,9 @@ end
 function update_buffer!(model::gpuLDA)
 	"Update gpuLDA model data in GPU RAM."
 
-	terms = convert(Vector{Int}, vcat([doc.terms for doc in model.corp]...) .- 1)
+	terms = vcat([doc.terms for doc in model.corp]...) .- 1
 	terms_sortperm = sortperm(terms) .- 1
-	counts = convert(Vector{Int}, vcat([doc.counts for doc in model.corp]...))
+	counts = vcat([doc.counts for doc in model.corp]...)
 		
 	J = zeros(Int, model.V)
 	for j in terms
@@ -374,8 +374,8 @@ function update_buffer!(model::gpuLDA)
 	@buffer model.alpha
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
 	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, model.K * model.M + 64 - model.M % 64)
-	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * sum(model.N) + 64 - sum(model.N) % 64)
+	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
 end
 
 function update_buffer!(model::gpuCTM)
@@ -416,8 +416,8 @@ function update_buffer!(model::gpuCTM)
 	model.mu_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).mu))
 	model.lambda_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64))))
 	model.vsq_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.logzeta_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=model.logzeta))
-	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, zeros(Float32, model.K, sum(model.N) + 64 - sum(model.N) % 64))
+	model.logzeta_buffer = cl.Buffer(Float32, $(esc(model)).context, :rw, model.M + 64 - model.M % 64)
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
 end
 
 function update_buffer!(model::gpuCTPF)
