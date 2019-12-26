@@ -131,7 +131,7 @@ mutable struct gpuCTPF <: TopicModel
 		xi_kernel = cl.Kernel(xi_program, "update_xi")
 		xi_norm_kernel = cl.Kernel(xi_norm_program, "normalize_xi")
 
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, he, bet, vav, gimel, gimel_old, zayin, dalet, het, phi, xi, elbo, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, he, bet, vav, gimel, gimel_old, zayin, dalet, het, phi, xi, elbo, device, context, queue, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
 		update_elbo!(model)
 		return model
 	end
@@ -143,8 +143,8 @@ function Elogpya(model::gpuCTPF, d::Int)
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[i,u])
-		x += (ra * model.xi[i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
+		binom = Binomial(ra, model.xi[d][i,u])
+		x += (ra * model.xi[d][i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
@@ -155,8 +155,8 @@ function Elogpyb(model::gpuCTPF, d::Int)
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
-		binom = Binomial(ra, model.xi[model.K+i,u])
-		x += (ra * model.xi[model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.zayin[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
+		binom = Binomial(ra, model.xi[d][model.K+i,u])
+		x += (ra * model.xi[d][model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.zayin[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
@@ -167,8 +167,8 @@ function Elogpz(model::gpuCTPF, d::Int)
 	x = 0
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
-		binom = Binomial(c, model.phi[i,n])
-		x += (c * model.phi[i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.alef[i,j] / model.bet[i]) - sum([pdf(binom, z) * loggamma(z + 1) for z in 0:c]))
+		binom = Binomial(c, model.phi[d][i,n])
+		x += (c * model.phi[d][i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.alef[i,j] / model.bet[i]) - sum([pdf(binom, z) * loggamma(z + 1) for z in 0:c]))
 	end
 	return x
 end
@@ -218,7 +218,7 @@ function Elogqy(model::gpuCTPF, d::Int)
 
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
-		x -= entropy(Multinomial(ra, model.xi[:,u]))
+		x -= entropy(Multinomial(ra, model.xi[d][:,u]))
 	end
 	return x
 end
@@ -228,7 +228,7 @@ function Elogqz(model::gpuCTPF, d::Int)
 
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
-		x -= entropy(Multinomial(c, model.phi[:,n]))
+		x -= entropy(Multinomial(c, model.phi[d][:,n]))
 	end
 	return x
 end
