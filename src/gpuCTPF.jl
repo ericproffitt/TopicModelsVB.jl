@@ -288,6 +288,7 @@ const CTPF_ALEF_c =
 """
 kernel void
 update_alef(long K,
+			float a,
 			const global long *J_partial_sums,
 			const global long *terms_sortperm,
 			const global long *counts,
@@ -303,7 +304,7 @@ update_alef(long K,
 			for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
 				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
-			alef[K * j + i] = acc;
+			alef[K * j + i] = a + acc;
 			}
 			"""
 
@@ -311,7 +312,7 @@ function update_alef!(model::gpuCTPF)
 	"Update alef."
 	"Analytic."
 
-	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.alef_buffer)
+	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.a, model.J_partial_sums_buffer, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.alef_buffer)
 end
 
 const CTPF_BET_c = 
@@ -424,6 +425,7 @@ const CTPF_HE_c =
 """
 kernel void
 update_he(	long K,
+			float e,
 			const global long *Y_partial_sums,
 			const global long *ratings,
 			const global long *ratings_sortperm,
@@ -439,7 +441,7 @@ update_he(	long K,
 			for (long r=Y_partial_sums[u]; r<Y_partial_sums[u+1]; r++)
 				acc += ratings[ratings_sortperm[r]] * (xi[2 * K * ratings_sortperm[r] + i] + xi[K * (2 * ratings_sortperm[r] + 1) + i]);
 
-			he[K * u + i] = acc;
+			he[K * u + i] = e + acc;
 			}
 			"""
 
@@ -447,7 +449,7 @@ function update_he!(model::gpuCTPF)
 	"Update he."
 	"Analytic."
 
-	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.Y_partial_sums_buffer, model.ratings_buffer, model.ratings_sortperm_buffer, model.xi_buffer, model.he_buffer)
+	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_partial_sums_buffer, model.ratings_buffer, model.ratings_sortperm_buffer, model.xi_buffer, model.he_buffer)
 end
 
 const CTPF_VAV_c = 
