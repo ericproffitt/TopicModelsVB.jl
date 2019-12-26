@@ -290,8 +290,8 @@ kernel void
 update_alef(long K,
 			float a,
 			const global long *J_partial_sums,
-			const global long *terms_sortperm,
 			const global long *counts,
+			const global long *terms_sortperm,
 			const global float *phi,
 			global float *alef)
 						
