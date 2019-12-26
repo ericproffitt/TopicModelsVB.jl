@@ -378,7 +378,7 @@ function update_gimel!(model::gpuCTPF)
 	"Update gimel."
 	"Analytic."
 
-	model.gimel_old[d] = model.gimel[d]
+	model.gimel_old = model.gimel
 
 	model.queue(model.gimel_kernel, (model.K, model.M), nothing, model.K, model.c, model.N_partial_sums_buffer, model.R_partial_sums_buffer, model.counts_buffer, model.ratings_buffer, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
 	@host model.gimel_buffer
@@ -660,8 +660,8 @@ function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer
 	"Coordinate ascent optimization procedure for GPU accelerated collaborative topic Poisson factorization variational Bayes algorithm."
 
 	check_model(model)
-	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter, viter] .> 0)										|| throw(ArgumentError("Iteration parameters must be positive integers."))
+	all([tol, vtol] .>= 0)												|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, viter] .> 0)												|| throw(ArgumentError("Iteration parameters must be positive integers."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	update_elbo!(model)
