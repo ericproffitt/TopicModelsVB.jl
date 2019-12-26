@@ -105,7 +105,7 @@ mutable struct gpuCTPF <: TopicModel
 
 		device, context, queue = cl.create_compute_context()		
 
-		alef_prog = cl.Program(context, source=CTPF_ALEF_c) |> cl.build!
+		alef_program = cl.Program(context, source=CTPF_ALEF_c) |> cl.build!
 		he_program = cl.Program(context, source=CTPF_HE_c) |> cl.build!
 		bet_program = cl.Program(context, source=CTPF_BET_c) |> cl.build!
 		vav_program = cl.Program(context, source=CTPF_VAV_c) |> cl.build!
