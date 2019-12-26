@@ -774,7 +774,7 @@ function showurecs(model::CTPF, users::Union{Integer, Vector{<:Integer}}, M::Int
 	"If a document has no title, the document's index in the corpus will be shown instead."
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
-	checkbounds(Bool, 1:model.M, M) || throw(ArgumentError("Some document indices are outside range."))
+	checkbounds(Bool, 1:model.M, M) 	|| throw(ArgumentError("Some document indices are outside range."))
 	cols > 0
 	isa(users, Vector) || (users = [users])
 
@@ -800,8 +800,8 @@ function showurecs(model::CTPF, users::Union{Integer, Vector{<:Integer}}, M::Int
 					!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "doc $(docucols[j][i])"
 					dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(docs[d].title)) for d in docucols[j]]) - length(title) + 4
 					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
-					yellow(string(rankcols[j][i]) * ". " * " "^rspacing)
-					j == length(docucols) ? bold(title) : bold(title * " "^dspacing)
+					print(Crayon(foreground=:yellow, bold=true), string(rankcols[j][i]) * ". " * " "^rspacing)
+					j == length(docucols) ? print(Crayon(foreground=:white, bold=false), title) : print(Crayon(foreground=:white, bold=false), title * " "^dspacing)
 
 				catch
 					nothing
