@@ -131,7 +131,7 @@ mutable struct gpuCTPF <: TopicModel
 		xi_kernel = cl.Kernel(xi_program, "update_xi")
 		xi_norm_kernel = cl.Kernel(xi_norm_program, "normalize_xi")
 
-		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, he, he_temp, bet, bet_old, vav, gimel, gimel_old, zayin, dalet, het, phi, xi, elbo, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
+		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, he, bet, vav, gimel, gimel_old, zayin, dalet, het, phi, xi, elbo, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
 		update_elbo!(model)
 		return model
 	end
@@ -347,32 +347,32 @@ end
 const CTPF_GIMEL_c = 
 """
 kernel void
-updateGimel(long K,
-			float c,
-			const global long *N_partial_sums,
-			const global long *R_partial_sums,
-			const global long *counts,
-			const global long *ratings,
-			const global float *phi,
-			const global float *xi,
-			global float *gimel)
+update_gimel(	long K,
+				float c,
+				const global long *N_partial_sums,
+				const global long *R_partial_sums,
+				const global long *counts,
+				const global long *ratings,
+				const global float *phi,
+				const global float *xi,
+				global float *gimel)
 
-			{   
-			long i = get_global_id(0);
-			long d = get_global_id(1);
+				{   
+				long i = get_global_id(0);
+				long d = get_global_id(1);
 
-			float acc_phi = 0.0f;
-			float acc_xi = 0.0f;
+				float acc_phi = 0.0f;
+				float acc_xi = 0.0f;
 
-			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
-				acc_phi += phi[K * n + i] * counts[n];
+				for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+					acc_phi += phi[K * n + i] * counts[n];
 
-			for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
-				acc_xi += xi[2 * K * r + i] * ratings[r]; 
+				for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
+					acc_xi += xi[2 * K * r + i] * ratings[r]; 
 
-			gimel[K * d + i] = c + acc_phi + acc_xi;
-			}
-			"""
+				gimel[K * d + i] = c + acc_phi + acc_xi;
+				}
+				"""
 
 function update_gimel!(model::gpuCTPF)
 	"Update gimel."
@@ -387,31 +387,31 @@ end
 const CTPF_DALET_c =
 """
 kernel void
-updateDalet(long K,
-			long V,
-			long U,
-			float d,
-			const global float *alef,
-			const global float *bet,
-			const global float *he,
-			const global float *vav,
-			global float *dalet)
-			
-			{
-			long i = get_global_id(0);
-			
-			float acc_alef = 0.0f;
-			float acc_he = 0.0f;
+update_dalet(	long K,
+				long V,
+				long U,
+				float d,
+				const global float *alef,
+				const global float *bet,
+				const global float *he,
+				const global float *vav,
+				global float *dalet)
 				
-			for (long j=0; j<V; j++)
-				acc_alef += alef[K * j + i];
+				{
+				long i = get_global_id(0);
+				
+				float acc_alef = 0.0f;
+				float acc_he = 0.0f;
+					
+				for (long j=0; j<V; j++)
+					acc_alef += alef[K * j + i];
 
-			for (long u=0; u<U; u++)
-				acc_he += he[K * u + i];
+				for (long u=0; u<U; u++)
+					acc_he += he[K * u + i];
 
-			dalet[i] = d + acc_alef / bet[i] + acc_he / vav[i];
-			}
-			"""
+				dalet[i] = d + acc_alef / bet[i] + acc_he / vav[i];
+				}
+				"""
 
 function update_dalet!(model::gpuCTPF)
 	"Update dalet."
