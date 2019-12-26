@@ -331,7 +331,7 @@ function check_model(model::gpuCTPF)
 	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])	|| throw(TopicModelError(""))
 	all(Bool[isstochastic(model.phi[d], dims=1) for d in 1:model.M])					|| throw(TopicModelError(""))
 	all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in 1:model.M])	|| throw(TopicModelError(""))
-	all(Bool[isstochastic(model.xi[d], dims=1) for d in 1:mmodel.M])					|| throw(TopicModelError(""))
+	all(Bool[isstochastic(model.xi[d], dims=1) for d in 1:model.M])						|| throw(TopicModelError(""))
 	isfinite(model.elbo)																|| throw(TopicModelError(""))
 	nothing	
 end
@@ -475,7 +475,7 @@ function update_buffer!(model::gpuCTPF)
 	model.bet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.bet)
 	model.vav_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
 	model.gimel_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel..., zeros(Float32, model.K, 64 - model.M % 64)))
-	mdoel.zayin_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.zayin_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin..., zeros(Float32, model.K, 64 - model.M % 64)))
 	model.dalet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet)
 	model.het_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het)
 	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
@@ -533,9 +533,9 @@ function update_host!(model::gpuCTPF)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	R_partial_sums = zeros(Int, model.R + 1)
-	for r in 1:model.R
-		R_partial_sums[r+1] = R_partial_sums[r] + model.R[r]
+	R_partial_sums = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		R_partial_sums[d+1] = R_partial_sums[d] + model.R[d]
 	end
 
 	model.alef = reshape(cl.read(model.queue, model.alef_buffer), model.K, model.V)
@@ -544,7 +544,7 @@ function update_host!(model::gpuCTPF)
 	model.vav = cl.read(model.queue, model.vav_buffer)
 	@host model.gimel_buffer
 	
-	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, mdoel.M + 64 - model.M % 64)
+	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, model.M + 64 - model.M % 64)
 	model.zayin = [zayin_host[:,d] for d in 1:model.M]
 		
 	model.dalet = cl.read(model.queue, model.dalet_buffer)
