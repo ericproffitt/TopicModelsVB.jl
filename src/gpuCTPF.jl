@@ -443,7 +443,7 @@ update_he(	long K,
 			}
 			"""
 
-function udpate_he!(model::gpuCTPF)
+function update_he!(model::gpuCTPF)
 	"Update he."
 	"Analytic."
 
