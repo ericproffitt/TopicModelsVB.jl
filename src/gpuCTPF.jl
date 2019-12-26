@@ -698,7 +698,7 @@ function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer
 	for d in 1:model.M
 		Etheta = model.gimel[d] ./ model.dalet
 		Eepsilon = model.zayin[d] ./ model.het
-		model.scores[d,:] = sum(Eeta .* (Etheta + Eepsilon), 1)
+		model.scores[d,:] = sum(Eeta .* (Etheta + Eepsilon), dims=1)
 	end
 
 	model.drecs = Vector{Int}[]
