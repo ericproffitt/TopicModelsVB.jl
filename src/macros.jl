@@ -53,14 +53,16 @@ end
 macro buffer(expr::Expr)
 	"Load individual variable into buffer memory."
 
+	model = expr.args[1]
+
 	if expr.args[2] == :(:alpha)
-		expr_out = :(model.alpha_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha))
+		expr_out = :($(esc(model)).alpha_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
 
 	elseif expr.args[2] == :(:sigma)
-		expr_out = :(model.sigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sigma))
+		expr_out = :($(esc(model)).sigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).sigma))
 
 	elseif expr.args[2] == :(:invsigma)
-		expr_out = :(model.invsigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.invsigma))
+		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
 	end
 	
 	return expr_out
@@ -69,35 +71,37 @@ end
 macro host(expr::Expr)
 	"Load individual variable into host memory."
 
+	model = expr.args[1]
+
 	if expr.args[2] == :(:Elogtheta_buffer)
 		expr_out = 
 		quote
-		Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)
-		model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
+		Elogtheta_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).Elogtheta = [Elogtheta_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:mu_buffer)
-		expr_out = :(model.mu = cl.read(model.queue, model.mu_buffer))
+		expr_out = :($(esc(model)).mu = cl.read($(esc(model)).queue, $(esc(model)).mu_buffer))
 
 	elseif expr.args[2] == :(:lambda_buffer)
 		expr_out =
 		quote
-		lambda_host = reshape(cl.read(model.queue, model.lambda_buffer), model.K, model.M + 64 - model.M % 64)
-		model.lambda = [lambda_host[:,d] for d in 1:model.M]
+		lambda_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).lambda_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).lambda = [lambda_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:vsq_buffer)
 		expr_out = 
 		quote
-		vsq_host = reshape(cl.read(model.queue, model.vsq_buffer), model.K, model.M + 64 - model.M % 64)
-		model.vsq = [vsq_host[:,d] for d in 1:model.M]
+		vsq_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).vsq_buffer), $(esc(model)).K, model.M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).vsq = [vsq_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
 	elseif expr.args[2] == :(:gimel_buffer)
 		expr_out = 
 		quote
-		gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M + 64 - model.M % 64)
-		model.gimel = [gimel_host[:,d] for d in 1:model.M]
+		gimel_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimel_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		$(esc(model)).gimel = [gimel_host[:,d] for d in 1:$(esc(model)).M]
 		end
 	end
 
