@@ -706,7 +706,7 @@ function showtopics(model::TopicModel, top_n_terms::Integer=min(15, model.V); to
 	end
 end
 
-function showlibs(model::CTPF, users::Vector{<:Integer})
+function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 	"Display the documents in a user(s) library."
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
@@ -730,9 +730,9 @@ function showlibs(model::CTPF, users::Vector{<:Integer})
 	end
 end
 
-showlibs(model::CTPF, user::Integer) = showlibs(model, [user])
+showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
 
-function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Integer=min(16, model.U); cols::Integer=4)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}}, U::Integer=min(16, model.U); cols::Integer=4)
 	"Display the top U user recommendations for a document(s)."
 	"cols parameter controls the number of topic columns displayed per line."
 
@@ -769,7 +769,7 @@ function showdrecs(model::CTPF, docs::Union{Integer, Vector{<:Integer}}, U::Inte
 	end
 end
 
-function showurecs(model::CTPF, users::Union{Integer, Vector{<:Integer}}, M::Integer=min(10, model.M); cols::Integer=1)
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}}, M::Integer=min(10, model.M); cols::Integer=1)
 	"# Show the top 'M' document recommendations for a user(s)."
 	"If a document has no title, the document's index in the corpus will be shown instead."
 
@@ -812,4 +812,3 @@ function showurecs(model::CTPF, users::Union{Integer, Vector{<:Integer}}, M::Int
 		println()
 	end
 end
-
