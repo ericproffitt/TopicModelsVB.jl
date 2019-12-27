@@ -736,9 +736,9 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:In
 	"Display the top U user recommendations for a document(s)."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
-	checkbounds(Bool, 1:model.M, docs) || throw(ArgumentError("Some document indices are outside range."))
-	cols > 0
+	checkbounds(Bool, 1:model.U, U) 	|| throw(ArgumentError("Some user indices are outside range."))
+	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("Some document indices are outside range."))
+	cols > 0							|| throw(ArgumentError("cols must be a positive integer."))
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
