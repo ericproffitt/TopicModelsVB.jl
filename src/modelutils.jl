@@ -424,8 +424,9 @@ function update_buffer!(model::gpuCTPF)
 	counts = vcat([doc.counts for doc in model.corp]...)
 
 	readers = vcat([doc.readers for doc in model.corp]...) .- 1
+	readers_sortperm = sortperm(readers) .- 1
 	ratings = vcat([doc.ratings for doc in model.corp]...)
-	ratings_sortperm = sortperm(ratings) .- 1
+	
 
 	J = zeros(Int, model.V)
 	for j in terms
@@ -463,7 +464,7 @@ function update_buffer!(model::gpuCTPF)
 
 	model.readers_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers)
 	model.ratings_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings)
-	model.ratings_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings_sortperm)
+	model.readers_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers_sortperm)
 
 	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
 	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)

@@ -56,7 +56,7 @@ mutable struct gpuCTPF <: TopicModel
 	counts_buffer::cl.Buffer{Int}
 	readers_buffer::cl.Buffer{Int}
 	ratings_buffer::cl.Buffer{Int}
-	ratings_sortperm_buffer::cl.Buffer{Int}
+	readers_sortperm_buffer::cl.Buffer{Int}
 	alef_buffer::cl.Buffer{Float32}
 	he_buffer::cl.Buffer{Float32}
 	bet_buffer::cl.Buffer{Float32}
@@ -428,7 +428,7 @@ update_he(	long K,
 			float e,
 			const global long *Y_partial_sums,
 			const global long *ratings,
-			const global long *ratings_sortperm,
+			const global long *readers_sortperm,
 			const global float *xi,
 			global float *he)
 
@@ -439,7 +439,7 @@ update_he(	long K,
 			float acc = 0.0f;
 
 			for (long r=Y_partial_sums[u]; r<Y_partial_sums[u+1]; r++)
-				acc += ratings[ratings_sortperm[r]] * (xi[2 * K * ratings_sortperm[r] + i] + xi[K * (2 * ratings_sortperm[r] + 1) + i]);
+				acc += ratings[readers_sortperm[r]] * (xi[2 * K * readers_sortperm[r] + i] + xi[K * (2 * readers_sortperm[r] + 1) + i]);
 
 			he[K * u + i] = e + acc;
 			}
@@ -449,7 +449,7 @@ function update_he!(model::gpuCTPF)
 	"Update he."
 	"Analytic."
 
-	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_partial_sums_buffer, model.ratings_buffer, model.ratings_sortperm_buffer, model.xi_buffer, model.he_buffer)
+	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_partial_sums_buffer, model.ratings_buffer, model.readers_sortperm_buffer, model.xi_buffer, model.he_buffer)
 end
 
 const CTPF_VAV_c = 
