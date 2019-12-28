@@ -597,46 +597,44 @@ Note, it's expected that your computer will lag when training on the GPU, since 
 
 ```julia
 Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), title::String="")
-FIELDNAMES:
-terms::Vector{Int}
-counts::Vector{Int}
-readers::Vector{Int}
-ratings::Vector{Int}
-title::String
+FIELD NAMES:
+terms
+counts
+readers
+ratings
+title
 
 Corpus(;docs::Vector{Document}=Document[], vocab::Union{Vector{String}, Dict{Integer, String}}=[], users::Union{Vector{String}, Dict{Integer, String}}=[])
-### FIELDNAMES:
-# docs::Vector{Document}
-# vocab::Dict{Int, String}
-# users::Dict{Int, String}
+FIELD NAMES:
+docs
+vocab
+users
 
 TopicModel
-### TopicModel.
 
 LDA(corp::Corpus, K::Integer) <: TopicModel
-# Latent Dirichlet allocation model with K topics.
-### 'K' - number of topics.
+Latent Dirichlet allocation model with K topics.
 
 fLDA(corp::Corpus, K::Integer) <: TopicModel
-### Filtered latent Dirichlet allocation model with K topics.
+Filtered latent Dirichlet allocation model with K topics.
 
 CTM(corp::Corpus, K::Integer) <: TopicModel
-### Correlated topic model with K topics.
+Correlated topic model with K topics.
 
 fCTM(corp::Corpus, K::Integer) <: TopicModel
-### Filtered correlated topic model with K topics.
+Filtered correlated topic model with K topics.
 
 CTPF(corp::Corpus, K::Integer) <: TopicModel
-### Collaborative topic Poisson factorization model with K topics.
+Collaborative topic Poisson factorization model with K topics.
 
 gpuLDA(corp::Corpus, K::Integer, batchsize::Integer) <: TopicModel
-### GPU accelerated latent Dirichlet allocation model with K topics.
+GPU accelerated latent Dirichlet allocation model with K topics.
 
 gpuCTM(corp::Corpus, K::Integer, batchsize::Integer) <: TopicModel
-### GPU accelerated correlated topic model with K topics.
+GPU accelerated correlated topic model with K topics.
 
 gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer, basemodel::BaseTopicModel) <: TopicModel
-### GPU accelerated collaborative topic Poission factorization model with K topics.
+GPU accelerated collaborative topic Poission factorization model with K topics.
 ```
 
 ### Document/Corpus Functions
