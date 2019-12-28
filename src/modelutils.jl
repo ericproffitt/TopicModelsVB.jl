@@ -664,7 +664,7 @@ function gendoc(model::fCTM, laplace_smooth::Real=0.0)
 	return Document(terms, counts=counts)
 end
 
-function gencorp(model::TopicModel, corp_size::Integer, laplace_smooth::Real=0.0)
+function gencorp(model::TopicModel, corp_size::Integer; laplace_smooth::Real=0.0)
 	"Generate artificial corpus using specified generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
