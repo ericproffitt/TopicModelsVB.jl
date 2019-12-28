@@ -596,19 +596,31 @@ Note, it's expected that your computer will lag when training on the GPU, since 
 ## Types
 
 ```julia
-Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), title::String="")
-FIELD NAMES:
-terms
-counts
-readers
-ratings
-title
+mutable struct Document
+	"Document mutable struct"
 
-Corpus(;docs::Vector{Document}=Document[], vocab::Union{Vector{String}, Dict{Integer, String}}=[], users::Union{Vector{String}, Dict{Integer, String}}=[])
-FIELD NAMES:
-docs
-vocab
-users
+	"terms:   A vector{Int} containing keys for the Corpus vocab Dict."
+	"counts:  A Vector{Int} denoting the counts of each term in the Document."
+	"readers: A Vector{Int} denoting the keys for the Corpus users Dict."
+	"ratings: A Vector{Int} denoting the ratings for each reader in the Document."
+	"title:   The title of the document (String)."
+
+	terms::Vector{Int}
+	counts::Vector{Int}
+	readers::Vector{Int}
+	ratings::Vector{Int}
+	title::String
+
+mutable struct Corpus
+	"Corpus mutable struct."
+
+	"docs:  A Vector{Document} containing the documents which belong to the Corpus."
+	"vocab: A Dict{Int, String} containing a mapping term Int (key) => term String (value)."
+	"users: A Dict{Int, String} containing a mapping user Int (key) => user String (value)."
+
+	docs::Vector{Document}
+	vocab::Dict{Int, String}
+	users::Dict{Int, String}
 
 abstract type TopicModel end
 
