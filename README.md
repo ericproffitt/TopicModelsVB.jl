@@ -691,8 +691,8 @@ function check_corp(corp::Corpus)
 function readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	"Load a Corpus object from text file(s)."
 
-	### readcorp(:nsf)   - National Science Foundation Corpus.
-	### readcorp(:citeu) - CiteULike Corpus.
+	### readcorp(:nsf)   	- National Science Foundation Corpus.
+	### readcorp(:citeu)	- CiteULike Corpus.
 
 function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	"Write a corpus."
