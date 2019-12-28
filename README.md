@@ -4,11 +4,11 @@
 
 A Julia package for variational Bayesian topic modeling.
 
-Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora.  Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
+Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora. Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
 
-Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly.  Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
+Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability.  Fortunately, variational Bayesian methods, being numerical optimization procedures, are naturally equipped in the assessment of convergence to local optima.
+Contrarily, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods, being numerical optimization procedures, are naturally equipped in the assessment of convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
@@ -43,7 +43,7 @@ Included in TopicModelsVB.jl are three datasets:
   * 15113 lexicon
 
 ## Corpus
-Let's begin with the Corpus data structure.  The Corpus data structure has been designed for maximum ease-of-use.  Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be modified to meet the user's needs.
+Let's begin with the Corpus data structure. The Corpus data structure has been designed for maximum ease-of-use. Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be modified to meet the user's needs.
 
 There are four plaintext files that make up a corpus:
  * docfile
@@ -51,9 +51,9 @@ There are four plaintext files that make up a corpus:
  * userfile
  * titlefile
  
-None of these files are mandatory to read a corpus, and in fact reading no files will result in an empty corpus.  However in order to train a model a docfile will be necessary, since it contains all quantitative data known about the documents.  On the other hand, the lex, user and title files are used solely for interpreting output.
+None of these files are mandatory to read a corpus, and in fact reading no files will result in an empty corpus. However in order to train a model a docfile will be necessary, since it contains all quantitative data known about the documents. On the other hand, the lex, user and title files are used solely for interpreting output.
 
-The docfile should be a plaintext file containing lines of delimited numerical values.  Each document is a block of lines, the number of which depends on what information is known about the documents.  Since a document is at its essence a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms of which it is composed.  Any further lines in a document block are optional, however if they are present they must be present for all documents and must come in the following order:
+The docfile should be a plaintext file containing lines of delimited numerical values. Each document is a block of lines, the number of which depends on what information is known about the documents. Since a document is at its essence a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms of which it is composed. Any further lines in a document block are optional, however if they are present they must be present for all documents and must come in the following order:
 
 ##### terms - A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory)
 ##### counts - A line of delimited positive integers, equal in length to the term line, corresponding to the number of times a term appears in a document.
@@ -73,7 +73,7 @@ An example of a single doc block from a docfile with all possible lines included
 ...
 ```
 
-The lex and user files are tab delimited dictionaries mapping positive integers to terms and usernames (resp.).  For example,
+The lex and user files are tab delimited dictionaries mapping positive integers to terms and usernames (resp.). For example,
 
 ```
 1    this
@@ -105,7 +105,7 @@ readcorp(;docfile="", lexfile="", userfile="", titlefile="", delim=',', counts=f
 
 The ```file``` keyword arguments indicate the path where the respective file is located.
 
-It is often the case that even once files are correctly formatted and read, the corpus will still contain formatting defects which prevent it from being loaded into a model.  Therefore, before loading a corpus into a model, it is **very important** that one of the following is run:
+It is often the case that even once files are correctly formatted and read, the corpus will still contain formatting defects which prevent it from being loaded into a model. Therefore, before loading a corpus into a model, it is **very important** that one of the following is run:
 
 ```julia
 fixcorp!(corp; kwargs...)
@@ -118,15 +118,15 @@ padcorp!(corp; kwargs...)
 fixcorp!(corp; kwargs...)
 ```
 
-Padding a corpus before fixing it will ensure that any documents which contain lex or user keys not in the lex or user dictionaries are not removed.  Instead, generic lex and user keys will be added as necessary to the lex and user dictionaries (resp.).
+Padding a corpus before fixing it will ensure that any documents which contain lex or user keys not in the lex or user dictionaries are not removed. Instead, generic lex and user keys will be added as necessary to the lex and user dictionaries (resp.).
 
-**Important:** A corpus is only a container for documents.  
+**Important:** A corpus is only a container for documents. 
 
-Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model.  However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it.  Therefore:
+Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model. However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it. Therefore:
 
 **1. Using `corp!` functions to modify the documents of a corpus will not result in corpus defects, but will cause them also to be changed in all other corpora which contain them.**
 
-**2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`.  It's advised that you don't do this with out a good reason.**
+**2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`. It's advised that you don't do this with out a good reason.**
 
 ## Models
 The available models are as follows:
@@ -207,7 +207,7 @@ models          properties      relationships    problems       national      st
 program         dynamics        important        models         projects      important    policy           space           molecules
 ```
 
-Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.  For instance, document 1 has topic breakdown:
+Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown:
 
 ```julia
 model.gamma[1] # = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
@@ -226,7 +226,7 @@ populations prior minimal population size current permit analyses effects
 differing levels species distributions life history...
 ```
 
-On the other hand, some documents will be a combination of topics.  Consider the topic breakdown for document 25:
+On the other hand, some documents will be a combination of topics. Consider the topic breakdown for document 25:
 
 ```julia
 model.gamma[25] # = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
@@ -245,7 +245,7 @@ internal presence vortex rings arise density stratification due salinity tempera
 
 We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 1, 2 and 8.
 
-Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.  Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
+Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function. Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
 
 ```julia
 artifcorp = gencorp(model, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0).
@@ -277,7 +277,7 @@ techniques    phenomena       groups          important        understanding    
 methods       work            mathematical    patterns         study            provide       analysis        provide          reaction
 ```
 
-One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc.  While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts.  Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training.  Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
+One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc. While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts. Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training. Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
 
 ```julia
 srand(2)
@@ -389,103 +389,18 @@ Furthermore, as expected, the topic which is least correlated with all other top
 indmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
 ```
 
-### DTM
-Now that we have covered static topic models, let's transition to the dynamic topic model (DTM).  The dynamic topic model discovers the temporal-dynamics of topics which, nevertheless, remain thematically static.  A good example of a topic which is thematically-static, yet exhibits an evolving lexicon, is *Computer Storage*.  Methods of data storage have evolved rapidly in the last 40 years, evolving from punch cards, to 5-inch floppy disks, to smaller hard disks, to zip drives and cds, to dvds and platter hard drives, and now to flash drives, solid-state drives and cloud storage, all accompanied by the rise and fall of computer companies which manufacture (or at one time manufactured) these products.
-
-As an example, let's load the Macintosh corpus of articles, drawn from the magazines *MacWorld* and *MacAddict*, published between the years 1984 - 2005.  We sample 400 articles randomly from each year, and break time periods into 2 year intervals.
-
-```julia
-import Distributions.sample
-
-srand(1)
-
-corp = readcorp(:mac)
-
-corp.docs = vcat([sample(filter(doc -> round(doc.stamp / 100) == y, corp.docs), 400, replace=false) for y in 1984:2005]...)
-
-fixcorp!(corp, abr=100, len=10) # Remove words which appear < 100 times and documents of length < 10.
-
-basemodel = LDA(corp, 9)
-train!(basemodel, iter=150, chkelbo=151)
-
-# training...
-
-model = DTM(corp, 9, 200, basemodel)
-train!(model, iter=10) # This will likely take about an hour on a personal computer.
-                       # Convergence for all other models is worst-case quadratic,
-                       # while DTM convergence is linear or at best super-linear.
-# training...
-```
-
-We can look at a particular topic slice, in this case the *Macintosh Hardware* topic, by writing:
-
-```julia
-showtopics(model, topics=8, cols=11)
-```
-
-```
- ●●● Topic: 8
-time 1       time 2       time 3       time 4        time 5         time 6         time 7        time 8         time 9       time 10      time 11
-disk         macintosh    color        drive         mac            power          drive         drive          usb          mac          ipod
-memory       disk         drive        mac           drive          drive          ram           scsi           drive        usb          usb
-hard         drive        disk         drives        powerbook      quadra         memory        g3             ram          firewire     power
-ram          memory       scsi         hard_drive    color          apple          power         ram            firewire     g4           mini
-disks        scsi         drives       simms         board          scsi           hard_drive    drives         scsi         drive        memory
-macintosh    hard         hard         board         drives         drives         processor     power          g4           power        drive
-port         drives       board        meg           scsi           ram            disk          usb            power        ram          ram
-board        ncp          macintosh    removable     ram            video          speed         speed          g3           apple        airport
-power        color        ram          system        power          powerbook      faster        powerbook      memory       memory       firewire
-drives       ram          meg          power         quadra         performance    pci           apple          port         port         performance
-external     port         software     external      memory         data           monitor       memory         hardware     imac         g5
-serial       internal     memory       memory        system         speed          drives        external       faster       drives       mac
-software     software     speed        ram           speed          upgrade        video         performance    processor    powerbook    faster
-speed        external     system       storage       port           modem          macs          processor      drives       storage      models
-internal     power        external     data          accelerator    duo            slots         serial         speed        dual         apple
-```
-
-or a particular time slice, by writing:
-
-```julia
-showtopics(model, times=11, cols=9)
-```
-
-```
- ●●● Time: 11
- ●●● Span: 200405.0 - 200512.0
-topic 1    topic 2      topic 3     topic 4       topic 5        topic 6      topic 7     topic 8       topic 9
-file       color        system      ipod          demo           click        apple       drive         mac
-select     image        files       mini          manager        video        site        express       mouse
-folder     images       disk        power         future         software     price       backup        cover
-set        photo        osx         usb           director       music        web         drives        fax
-open       photoshop    utility     apple         usa            audio        products    buffer        software
-menu       print        install     g5            network        good         contest     prices        ea
-choose     light        finder      firewire      shareware      game         smart       subject       pad
-text       photos       user        g4            charts         itunes       year        data          laserwriter
-button     printer      terminal    ram           accounts       play         computer    warranty      kensington
-find       mode         run         models        editor         time         world       mac           stylewriter
-window     digital      folders     display       advertising    effects      phone       disk          turbo
-type       quality      network     memory        entries        pro          group       retrospect    apple
-create     elements     classic     hard_drive    production     dvd          product     orders        printer
-press      lens         desktop     speed         california     makes        service     notice        modem
-line       printing     windows     port          marketing      interface    people      shipping      ext
-```
-
-As you may have noticed, the dynamic topic model is *extremely* computationally intensive, it is likely that running the DTM model on an industry-sized dataset will always require more computational power than can be provided by your standard personal computer.
-
 ### CTPF
-For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.  CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone.  This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents.  As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
+For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model. CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
-import Distributions.sample
-
-srand(1)
+Random.seed!(2);
 
 corp = readcorp(:citeu)
 
-testukeys = Int[]
+ukeys_test = Int[]
 for doc in corp
     index = sample(1:length(doc.readers), 1)[1]
-    push!(testukeys, doc.readers[index])
+    push!(ukeys_test, doc.readers[index])
     deleteat!(doc.readers, index)
     deleteat!(doc.ratings, index)
 end
@@ -503,13 +418,13 @@ sum([isempty(doc.readers) for doc in corp]) # = 158
 
 Fortunately, since CTPF can if need be depend entirely on thematic structure when making recommendations, this poses no problem for the model.
 
-Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus.  Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=20).
+Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus. Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=20).
 
 ```julia
-srand(1)
+Random.seed!(2)
 
-model = CTPF(corp, 30) # Note: If no 'basemodel' is entered then parameters will be initialized at random.
-train!(model, iter=20)
+model = gpuCTPF(corp, 30)
+train!(model, iter=20, check_elbo=5)
 
 # training...
 ```
@@ -517,85 +432,39 @@ train!(model, iter=20)
 Finally, we evaluate the accuracy of our model against the test set, where baseline for mean accuracy is 0.5.
 
 ```julia
-acc = Float64[]
-for (d, u) in enumerate(testukeys)
-    rank = findin(model.drecs[d], u)[1]
+accuracy = Float64[]
+for (d, u) in enumerate(ukeys_test)
+    urank = findall(model.drecs[d] .== u)[1]
     nrlen = length(model.drecs[d])
-    push!(acc, (nrlen - rank) / (nrlen - 1))
+    push!(accuracy, (nrlen - urank) / (nrlen - 1))
 end
 
-@show mean(acc) # mean(acc) = 0.910
+@show mean(accuracy) # mean(accuracy) = 0.903
 ```
 
-Not bad, but let's see if we can't improve our accuracy at least a bit by priming our CTPF model with a 100 iteration LDA model.
+We can see that, on average, our model ranks the true hidden reader in the top 9.7% of all non-readers for each document.
 
-In the interest of time, let's use the GPU accelerated verions of LDA and CTPF:
-
-
-```julia
-srand(1)
-
-basemodel = gpuLDA(corp, 30)
-train!(basemodel, iter=100, chkelbo=101)
-
-# training...
-
-model = gpuCTPF(corp, 30, basemodel)
-train!(model, iter=20, chkelbo=21)
-
-# training...
-```
-
-Again we evaluate the accuracy of our model against the test set:
+Let's also take a look at the top recommendations for a particular document:
 
 ```julia
-acc = Float64[]
-for (d, u) in enumerate(testukeys)
-    rank = findin(model.drecs[d], u)[1]
-    nrlen = length(model.drecs[d])
-    push!(acc, (nrlen - rank) / (nrlen - 1))
-end
+ukeys_test[1] # = 3741
+accuracy[1] # = 0.965
+# user3741's library test document was placed in the top 3.5% of his or her recommendations.
 
-@show mean(acc) # mean(acc) = 0.916
-```
-
-We can see that, on average, our model ranks the true hidden reader in the top 8.4% of all non-readers for each document.
-
-Let's also take a look at the top recommendations for a particular document(s):
-
-```julia
-testukeys[1] # = 997
-acc[1] # = 0.981
-# user997's library test document was placed in the top 2% of his or her recommendations.
-
-showdrecs(model, 1, 106, cols=1)
+showdrecs(model, 1, 192)
 ```
 ```
  ●●● doc 1
  ●●● The metabolic world of Escherichia coli is not small
 ...
-102. #user1658
-103. #user2725
-104. #user1481
-105. #user5380
-106. #user997
-```
-as well as those for a particular user(s):
-
-```julia
-showurecs(model, 997, 578)
-```
-```
- ●●● user 997
-...
-574.  Life-history trade-offs favour the evolution of animal personalities
-575.  Coupling and coordination in gene expression processes: a systems biology view.
-576.  Principal components analysis to summarize microarray experiments: application to sporulation time series
-577.  Rich Probabilistic Models for Gene Expression
-578.  The metabolic world of Escherichia coli is not small
+188. #user4803
+189. #user3652
+190. #user1254
+191. #user5052
+192. #user3741
 ```
 
-We can also take a more holistic approach to evaluating model quality.
+For evaluating user recommendations, let's take a more holistic approach.
 
 Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library:
 
@@ -627,9 +496,9 @@ showlibs(model, 1741)
  • An Introduction to Category Theory, Category Theory Monads, and Their Relationship to Functional Programming
 ```
  
- The 20 articles in user 1741's library suggest that his or her interests lie at the intersection of programming language theory and foundational mathematics.  
+ The 20 articles in user 1741's library suggest that he or she is interested in programming language theory. 
  
- Now compare this with the top 20 recommendations made by our model:
+ Now compare this with the top 50 recommendations (the top 0.3%) made by our model,
  
 ```julia
 showurecs(model, 1741, 20)
@@ -637,26 +506,56 @@ showurecs(model, 1741, 20)
 
 ```
  ●●● user 1741
-1.  Sets for Mathematics
-2.  On Understanding Types, Data Abstraction, and Polymorphism
-3.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-4.  Haskell's overlooked object system
-5.  Contracts for higher-order functions
-6.  Principles of programming with complex objects and collection types
-7.  Ownership types for safe programming: preventing data races and deadlocks
-8.  Modern {C}ompiler {I}mplementation in {J}ava
-9.  Functional pearl: implicit configurations--or, type classes reflect the values of types
-10. Featherweight Java: A Minimal Core Calculus for Java and GJ
-11. On the expressive power of programming languages
-12. Typed Memory Management in a Calculus of Capabilities
-13. Dependent Types in Practical Programming
-14. Functional programming with bananas, lenses, envelopes and barbed wire
-15. The essence of compiling with continuations
-16. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
-17. Visual Programming
-18. Dynamic optimization for functional reactive programming using generalized algebraic data types
-19. Why Dependent Types Matter
-20. Types and programming languages
+1.  On Understanding Types, Data Abstraction, and Polymorphism
+2.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
+3.  Haskell's overlooked object system
+4.  Contracts for higher-order functions
+5.  Why Dependent Types Matter
+6.  Modern {C}ompiler {I}mplementation in {J}ava
+7.  Generalising monads to arrows
+8.  Functional programming with bananas, lenses, envelopes and barbed wire
+9.  Featherweight Java: A Minimal Core Calculus for Java and GJ
+10. On the expressive power of programming languages
+11. Ownership types for safe programming: preventing data races and deadlocks
+12. Dependent Types in Practical Programming
+13. The essence of compiling with continuations
+14. Types and programming languages
+15. A {S}yntactic {T}heory of {D}ynamic {B}inding
+16. Principles of programming with complex objects and collection types
+17. Functional pearl: implicit configurations--or, type classes reflect the values of types
+18. Typed Memory Management in a Calculus of Capabilities
+19. Type Classes with Functional Dependencies
+20. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
+21. Dynamic optimization for functional reactive programming using generalized algebraic data types
+22. Monadic Parsing in Haskell
+23. Monadic Parser Combinators
+24. Types, abstraction and parametric polymorphism
+25. Fast and Loose Reasoning Is Morally Correct
+26. Scrap your boilerplate: a practical design pattern for generic programming
+27. A comparative study of language support for generic programming
+28. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
+29. Definitional interpreters for higher-order programming languages
+30. A new notation for arrows
+31. The design and implementation of typed scheme
+32. A theory of type polymorphism in programming
+33. Sets for Mathematics
+34. Adoption and focus: practical linear types for imperative programming
+35. Languages of the Future
+36. The {Calculus of Constructions}
+37. Scrap your nameplate: (functional pearl)
+38. Foundations for structured programming with GADTs
+39. Synthesizing Object-Oriented and Functional Design to Promote Re-Use
+40. A Tutorial on (Co)Algebras and (Co)Induction
+41. The next 700 programming languages
+42. Visual Programming
+43. The Definition of Standard ML - Revised
+44. Call-by-name, call-by-value, and the $\lambda$-calculus
+45. Stack-Based Typed Assembly Language
+46. Associated types with class
+47. Programming Languages: Application and Interpretation
+48. Type Systems
+49. Ott: Effective Tool Support for the Working Semanticist
+50. Typed Contracts for Functional Programming
 ```
 
 ## GPU Acceleration
@@ -678,14 +577,14 @@ model = LDA(corp, 16)
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 3 minutes.
 
-**Important:** Notice that we didn't check the ELBO at all during training.  While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
+**Important:** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
 Here is the benchmark of our above model against the equivalent model run on the CPU:
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar2.png)
 
 As we can see, running the LDA model on the GPU is approximatey 1.32 orders of magnitude faster than running it on the CPU.
 
-It's often the case that one does not have sufficient VRAM to hold the entire model in GPU memory at one time.  Thus we provide the option of batching GPU models in order to train much larger models than would otherwise be possible:
+It's often the case that one does not have sufficient VRAM to hold the entire model in GPU memory at one time. Thus we provide the option of batching GPU models in order to train much larger models than would otherwise be possible:
 
 ```julia
 corp = readcorp(:citeu)
@@ -696,9 +595,9 @@ model = CTM(corp, 7)
 # training...
 ```
 
-It's important to understand that GPGPU is still the wild west of computer programming.  The performance of batched models depends on many architecture dependent factors, including but not limited to the memory, the GPU, the manufacturer, the type of computer, what other applications are running, whether a display is connected, etc.
+It's important to understand that GPGPU is still the wild west of computer programming. The performance of batched models depends on many architecture dependent factors, including but not limited to the memory, the GPU, the manufacturer, the type of computer, what other applications are running, whether a display is connected, etc.
 
-While non-batched models will usually be the fastest (for those GPUs which can handle them), it's not necessarily the case that reducing the batch size will result in a degredation in performance.  Thus it's always a good idea to experiment with different batch sizes, to see which sizes work best for your computer.
+While non-batched models will usually be the fastest (for those GPUs which can handle them), it's not necessarily the case that reducing the batch size will result in a degredation in performance. Thus it's always a good idea to experiment with different batch sizes, to see which sizes work best for your computer.
 
 **Important:** If Julia crashes or throws an error when trying to run one of the models on your GPU, then your best course of action is to reduce the batch size and retrain your model.
 
@@ -707,152 +606,106 @@ Finally, expect your computer to lag when training on the GPU, since you're effe
 ## Types
 
 ```julia
-VectorList{T}
-# Array{Array{T,1},1}
-
-MatrixList{T}
-# Array{Array{T,2},1}
-
-Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), stamp::Real=-Inf, title::String="")
-# FIELDNAMES:
+Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), title::String="")
+### FIELDNAMES:
 # terms::Vector{Int}
 # counts::Vector{Int}
 # readers::Vector{Int}
 # ratings::Vector{Int}
-# stamp::Float64
 # title::String
 
-Corpus(;docs::Vector{Document}=Document[], lex::Union{Vector{String}, Dict{Integer, String}}=[], users::Union{Vector{String}, Dict{Integer, String}}=[])
-# FIELDNAMES:
+Corpus(;docs::Vector{Document}=Document[], vocab::Union{Vector{String}, Dict{Integer, String}}=[], users::Union{Vector{String}, Dict{Integer, String}}=[])
+### FIELDNAMES:
 # docs::Vector{Document}
-# lex::Dict{Int, String}
+# vocab::Dict{Int, String}
 # users::Dict{Int, String}
 
 TopicModel
-# abstract
-
-GPUTopicModel <: TopicModel
-# abstract
-
-BaseTopicModel
-# Union{LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM}
-
-AbstractLDA
-# Union{LDA, gpuLDA}
-
-AbstractfLDA
-# Union{fLDA}
-
-AbstractCTM
-# Union{CTM, gpuCTM}
-
-AbstractfCTM
-# Union{fCTM}
-
-AbstractDTM
-# Union{DTM}
-
-AbstractCTPF
-# Union{CTPF, gpuCTPF}
+### TopicModel.
 
 LDA(corp::Corpus, K::Integer) <: TopicModel
-# Latent Dirichlet allocation
-# 'K' - number of topics.
+# Latent Dirichlet allocation model with K topics.
+### 'K' - number of topics.
 
 fLDA(corp::Corpus, K::Integer) <: TopicModel
-# Filtered latent Dirichlet allocation
+### Filtered latent Dirichlet allocation model with K topics.
 
 CTM(corp::Corpus, K::Integer) <: TopicModel
-# Correlated topic model
+### Correlated topic model with K topics.
 
 fCTM(corp::Corpus, K::Integer) <: TopicModel
-# Filtered correlated topic model
+### Filtered correlated topic model with K topics.
 
-DTM(corp::Corpus, K::Integer, delta::Real, basemodel::BaseTopicModel) <: TopicModel
-# Dynamic topic model
-# 'delta'     - time-interval size.
-# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
+CTPF(corp::Corpus, K::Integer) <: TopicModel
+### Collaborative topic Poisson factorization model with K topics.
 
-CTPF(corp::Corpus, K::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
-# Collaborative topic Poisson factorization
-# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
+gpuLDA(corp::Corpus, K::Integer, batchsize::Integer) <: TopicModel
+### GPU accelerated latent Dirichlet allocation model with K topics.
 
-gpuLDA(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
-# GPU accelerated latent Dirichlet allocation
-# 'batchsize' defaults to 'length(corp)'.
+gpuCTM(corp::Corpus, K::Integer, batchsize::Integer) <: TopicModel
+### GPU accelerated correlated topic model with K topics.
 
-gpuCTM(corp::Corpus, K::Integer, batchsize::Integer) <: GPUTopicModel
-# GPU accelerated correlated topic model
-# 'batchsize' defaults to 'length(corp)'.
-
-gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer, basemodel::BaseTopicModel) <: GPUTopicModel
-# GPU accelerated collaborative topic Poission factorization
-# 'batchsize' defaults to 'length(corp)'.
-# 'basemodel' - pre-trained model of type BaseTopicModel (optional).
-```
-
-## Functions
-### Generic Functions
-
-```julia
-isnegative(x::Union{Real, Array{Real}})
-# Take Real or Array{Real} and return Bool or Array{Bool} (resp.).
-
-ispositive(x::Union{Real, Array{Real}})
-# Take Real or Array{Real} and return Bool or Array{Bool} (resp.).
-
-logsumexp(x::Array{Real})
-# Overflow safe log(sum(exp(x))).
-
-addlogistic(x::Array{Real}, region::Integer)
-# Overflow safe additive logistic function.
-# 'region' is optional, across columns: 'region' = 1, rows: 'region' = 2.
-
-partition(xs::Union{Vector, UnitRange}, n::Integer)
-# 'n' must be positive.
-# Return VectorList containing contiguous portions of xs of length n (includes remainder).
-# e.g. partition([1,-7.1,"HI",5,5], 2) == Vector[[1,-7.1],["HI",5],[5]]
+gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer, basemodel::BaseTopicModel) <: TopicModel
+### GPU accelerated collaborative topic Poission factorization model with K topics.
 ```
 
 ### Document/Corpus Functions
 ```julia
-checkdoc(doc::Document)
+check_doc(doc::Document)
 # Verify that all Document fields have legal values.
 
-checkcorp(corp::Corpus)
+check_corp(corp::Corpus)
 # Verify that all Corpus fields have legal values.
 
-readcorp(;docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
-# Read corpus from plaintext files.
-# readcorp(:nsf)   - National Science Foundation corpus.
-# readcorp(:citeu) - CiteULike corpus.
-# readcorp(:mac)   - Macintosh Magazine corpus.
+readcorp(;docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
+### Read corpus from plaintext files.
+# readcorp(:nsf)   - National Science Foundation Corpus.
+# readcorp(:citeu) - CiteULike Corpus.
 
-writecorp(corp::Corpus; docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)
+writecorp(corp::Corpus; docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
 # Write corpus to plaintext files.
 
-abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
-# Abridge corpus.
-# If 'stop' = true, stop words are removed.
-# If 'order' = false, order is ignored and multiple seperate occurrences of words are stacked and the associated counts increased.
-# All terms which appear < 'abr' times are removed from documents.
+abridge_corp!(corp::Corpus; n::Integer=1)
+### All terms which appear less than or equal to n times in the corpus are removed from all documents.
+### All terms which appear ≤ n times are removed from documents.
 
-trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
-# Those values which appear in the indicated fields of documents, yet don't appear in the corpus dictionaries, are removed.
+alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+### Alphabetize vocab and/or user dictionaries.
 
-compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetize::Bool=true)
-# Compact a corpus by relabeling lex and/or userkeys so that they form a unit range.
-# If alphabetize=true the lex and/or user dictionaries are alphabetized.
+compact_corp!(corp::Corpus; voacb::Bool=true, users::Bool=true)
+### Relabel vocab and/or user keys so that they form a unit range.
 
-padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
-# Pad a corpus by entering generic values for lex and/or userkeys which appear in documents but not in the lex/user dictionaries.
+condense_docs!(corp::Corpus)
+### Ignore term order in documents.
+### Multiple seperate occurrences of terms are stacked and their associated counts increased.
 
-cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Integer=1)
-# Culls the corpus of documents which contain lex and/or user keys in a document's terms/readers (resp.) fields yet don't appear in the corpus dictionaries.
-# All documents of length < len are removed.
+pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+### Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries.
 
-fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, abr::Int=1, len::Int=1, alphabetize::Bool=true)
-# Fixes a corp by running the following four functions in order:
+remove_empty_docs!(corp::Corpus)
+### Documents with no terms are removed from the corpus.
+
+stop_corp!(corp::Corpus)
+### Filter stop words in the associated corpus.
+
+trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+### Those keys which appear in the corpus vocab and/or user dictionaries but not in any of the documents are removed from the corpus.
+
+trim_docs!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+### Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents.
+
+fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
+### Generic function to ensure that a Corpus object can be loaded ino a TopicModel object.
+### Contains optional keyword arguments.
+# pad_corp ? pad_corp!(corp) : trim_docs!(corp)
+# remove_empty_docs 	&& remove_empty_docs!(corp)
+# condense_corp 		&& condense_corp!(corp)
+# abridge_corp > 0 		&& abridge_corp!(corp)
+# pad_corp 				&& pad_corp!(corp, vocab=vocab, users=users)
+# trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
+# stop_corp 			&& stop_corp!(corp)
+# alphabetize_corp 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
+
 # abridgecorp!(corp, stop=stop, order=order, abr=abr)
 # trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
 # cullcorp!(corp, len=len)	
@@ -872,63 +725,50 @@ getusers(corp::Corpus)
 
 ```julia
 showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
-# Display the text and title of a document(s).
+### Display the text and title of a document(s).
 
-fixmodel!(model::TopicModel; check::Bool=true)
-# If 'check == true', verify the legality of the model's primary data.
-# Align any auxiliary parameters with their associated parent parameters.
+check_model(model::TopicModel)
+### Verify the correctness of TopicModel data.
 
-train!(model::BaseTopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
-# Train one of the following models: LDA, fLDA, CTM, fCTM.
+train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+### Train a model of type TopicModel.
 # 'iter'    - maximum number of iterations through the corpus.
 # 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
-# 'niter'   - maximum number of iterations for Newton's and interior-point Newton's methods.
-# 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods.
+# 'niter'   - maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
+# 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
 # 'viter'   - maximum number of iterations for optimizing variational parameters (at the document level).
 # 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
 # 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
 
-train!(dtm::AbstractDTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/dtm.K^2, cgiter::Integer=10, cgtol::Real=1/dtm.T^2, chkelbo::Integer=1)
-# Train DTM.
-# 'cgiter' - maximum number of iterations for the Polak-Ribière conjugate gradient method.
-# 'cgtol'  - tolerance for change in function value as a stopping criterion for the Polak-Ribière conjugate gradient method.
-
-train!(ctpf::AbstractCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/ctpf.K^2, chkelbo::Integer=1)
-# Train CTPF.
-
 @gpu train!(model; kwargs...)
-# Train model on GPU.
+### Train model on GPU.
 
-gendoc(model::BaseTopicModel, a::Real=0.0)
-# Generate a generic document from model parameters by running the associated graphical model as a generative process.
+gendoc(model::TopicModel, laplace_smooth::Real=0.0)
+### Generate a generic document from model parameters by running the associated graphical model as a generative process.
 # 'a' - amount of Laplace smoothing to apply to the topic-term distributions ('a' must be nonnegative).
 
-gencorp(model::BaseTopicModel, corpsize::Int, a::Real=0.0)
-# Generate a generic corpus of size 'corpsize' from model parameters.
+gencorp(model::TopicModel, corpsize::Int, laplace_smooth::Real=0.0)
+### Generate a generic corpus of size 'corpsize' from model parameters.
 
 showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Union{Integer, Vector{Integer}}=collect(1:model.K), cols::Integer=4)
-# Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
+### Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
 
-showtopics(dtm::AbstractDTM, N::Integer=min(15, dtm.V); topics::Union{Integer, Vector{Integer}}=collect(1:dtm.K), times::Union{Integer, Vector{Integer}}=collect(1:dtm.T), cols::Integer=4)
-# Display the top 'N' words for each topic in 'topics' and each time interval in 'times', defaults to 4 columns per line.
+showlibs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}})
+### Show the document(s) in a user's library.
 
-showlibs(ctpf::AbstractCTPF, users::Union{Integer, Vector{Integer}})
-# Show the document(s) in a user's library.
+showdrecs(ctpf::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{Integer}}, U::Integer=min(16, ctpf.U); cols::Integer=4)
+### Show the top 'U' user recommendations for a document(s), defaults to 4 columns per line.
 
-showdrecs(ctpf::AbstractCTPF, docs::Union{Integer, Vector{Integer}}, U::Integer=min(16, ctpf.U); cols::Integer=4)
-# Show the top 'U' user recommendations for a document(s), defaults to 4 columns per line.
-
-showurecs(ctpf::AbstractCTPF, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M); cols::Integer=1)
-# Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
-# If a document has no title, the document's index in the corpus will be shown instead.
+showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M); cols::Integer=1)
+### Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
+### If a document has no title, the document's index in the corpus will be shown instead.
 ```
 
 ## Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
 2. Filtered Latent Dirichlet Allocation: Variational Bayes Algorithm (2016); Proffitt. [pdf](https://github.com/esproff/TopicModelsVB.jl/blob/master/fLDAVB.pdf)
 3. Correlated Topic Models (2006); Blei, Lafferty. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiLafferty2006.pdf)
-4. Dynamic Topic Models (2006); Blei, Lafferty. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiLafferty2006a.pdf)
-5. Content-based Recommendations with Poisson Factorization (2014); Gopalan, Charlin, Blei. [pdf](http://www.cs.columbia.edu/~blei/papers/GopalanCharlinBlei2014.pdf)
-6. Numerical Optimization (2006); Nocedal, Wright. [Amazon](https://www.amazon.com/Numerical-Optimization-Operations-Financial-Engineering/dp/0387303030)
-7. Machine Learning: A Probabilistic Perspective (2012); Murphy. [Amazon](https://www.amazon.com/Machine-Learning-Probabilistic-Perspective-Computation/dp/0262018020/ref=tmm_hrd_swatch_0?_encoding=UTF8&qid=&sr=)
-8. OpenCL in Action: How to Accelerate Graphics and Computation (2011); Scarpino. [Amazon](https://www.amazon.com/OpenCL-Action-Accelerate-Graphics-Computations/dp/1617290173)
+4. Content-based Recommendations with Poisson Factorization (2014); Gopalan, Charlin, Blei. [pdf](http://www.cs.columbia.edu/~blei/papers/GopalanCharlinBlei2014.pdf)
+5. Numerical Optimization (2006); Nocedal, Wright. [Amazon](https://www.amazon.com/Numerical-Optimization-Operations-Financial-Engineering/dp/0387303030)
+6. Machine Learning: A Probabilistic Perspective (2012); Murphy. [Amazon](https://www.amazon.com/Machine-Learning-Probabilistic-Perspective-Computation/dp/0262018020/ref=tmm_hrd_swatch_0?_encoding=UTF8&qid=&sr=)
+7. OpenCL in Action: How to Accelerate Graphics and Computation (2011); Scarpino. [Amazon](https://www.amazon.com/OpenCL-Action-Accelerate-Graphics-Computations/dp/1617290173)
