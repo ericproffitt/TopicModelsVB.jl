@@ -631,26 +631,54 @@ mutable struct LDA <: TopicModel
 	K::Int
 	...
 
-fLDA(corp::Corpus, K::Integer) <: TopicModel
-Filtered latent Dirichlet allocation model with K topics.
+mutable struct fLDA <: TopicModel
+	"fLDA mutable struct."
 
-CTM(corp::Corpus, K::Integer) <: TopicModel
-Correlated topic model with K topics.
+	corpus::Corpus
+	K::Int
+	...
 
-fCTM(corp::Corpus, K::Integer) <: TopicModel
-Filtered correlated topic model with K topics.
+mutable struct CTM <: TopicModel
+	"CTM mutable struct."
 
-CTPF(corp::Corpus, K::Integer) <: TopicModel
-Collaborative topic Poisson factorization model with K topics.
+	corpus::Corpus
+	K::Int
+	...
 
-gpuLDA(corp::Corpus, K::Integer) <: TopicModel
-GPU accelerated latent Dirichlet allocation model with K topics.
+mutable struct fCTM <: TopicModel
+	"fCTM mutable struct."
 
-gpuCTM(corp::Corpus, K::Integer) <: TopicModel
-GPU accelerated correlated topic model with K topics.
+	corpus::Corpus
+	K::Int
+	...
 
-gpuCTPF(corp::Corpus, K::Integer) <: TopicModel
-GPU accelerated collaborative topic Poission factorization model with K topics.
+mutable struct CTPF <: TopicModel
+	"CTPF mutable struct."
+
+	corpus::Corpus
+	K::Int
+	...
+
+mutable struct gpuLDA <: TopicModel
+	"gpuLDA mutable struct."
+
+	corpus::Corpus
+	K::Int
+	...
+
+mutable struct gpuCTM <: TopicModel
+	"gpuCTM mutable struct."
+
+	corpus::Corpus
+	K::Int
+	...
+
+mutable struct gpuCTPF <: TopicModel
+	"gpuCTPF mutable struct."
+
+	corpus::Corpus
+	K::Int
+	...
 ```
 
 ### Document/Corpus Functions
