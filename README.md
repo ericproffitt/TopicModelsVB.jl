@@ -139,9 +139,6 @@ CTM(corp, K)
 fCTM(corp, K)
 # Filtered correlated topic model with K topics.
 
-DTM(corp, K, delta, basemodel)
-# Dynamic topic model with K topics and ∆ = delta.
-
 CTPF(corp, K, basemodel)
 # Collaborative topic Poisson factorization model with K topics.
 ```
