@@ -756,7 +756,7 @@ function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Inte
 	# 'vtol'    	- tolerance for change in variational parameter values as stopping criterion.
 	# 'check_elbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
 
-@gpu train!(model; kwargs...)
+@gpu train!
 	"Train model on GPU."
 
 function gendoc(model::TopicModel, laplace_smooth::Real=0.0)
