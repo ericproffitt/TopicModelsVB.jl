@@ -55,7 +55,7 @@ None of these files are mandatory to read a corpus, and in fact reading no files
 
 The docfile should be a plaintext file containing lines of delimited numerical values. Each document is a block of lines, the number of which depends on what information is known about the documents. Since a document is at its essence a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms of which it is composed. Any further lines in a document block are optional, however if they are present they must be present for all documents and must come in the following order:
 
-##### terms - A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory)
+##### terms - A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).
 ##### counts - A line of delimited positive integers, equal in length terms, corresponding to the number of times a term appears in a document.
 ##### readers - A line of delimited positive integers corresponding to those users which have read the document.
 ##### ratings - A line of delimited positive integers, equal in length readers, corresponding to the rating each reader gave the document.
@@ -68,7 +68,6 @@ An example of a single doc block from a docfile with all possible lines included
 1,1,2,1,3
 1,9,10
 1,1,5
-19990112.0
 ...
 ```
 
@@ -99,7 +98,7 @@ The order of these titles correspond to the order of document blocks in the asso
 To read a corpus into TopicModelsVB.jl, use the following function:
 
 ```julia
-readcorp(;docfile="", vocabfile="", userfile="", titlefile="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
+readcorp(;docfile="", vocabfile="", userfile="", titlefile="", delim=',', counts=false, readers=false, ratings=false)
 ```
 
 The ```file``` keyword arguments indicate the path where the respective file is located.
@@ -683,74 +682,59 @@ mutable struct gpuCTPF <: TopicModel
 
 ### Document/Corpus Functions
 ```julia
-check_doc(doc::Document)
-Verify that all Document fields have legal values.
+function check_doc(doc::Document)
+	"Check Document parameters."
 
-check_corp(corp::Corpus)
-Verify that all Corpus fields have legal values.
+function check_corp(corp::Corpus)
+	"Check Corpus parameters."
 
-readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
-### Read corpus from plaintext files.
-# readcorp(:nsf)   - National Science Foundation Corpus.
-# readcorp(:citeu) - CiteULike Corpus.
+function readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+	"Load a Corpus object from text file(s)."
 
-writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
-# Write corpus to plaintext files.
+### readcorp(:nsf)   - National Science Foundation Corpus.
+### readcorp(:citeu) - CiteULike Corpus.
 
-abridge_corp!(corp::Corpus; n::Integer=1)
-### All terms which appear less than or equal to n times in the corpus are removed from all documents.
-### All terms which appear ≤ n times are removed from documents.
+function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+	"Write a corpus."
 
-alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-### Alphabetize vocab and/or user dictionaries.
+function abridge_corp!(corp::Corpus, n::Integer=0)
+	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
 
-compact_corp!(corp::Corpus; voacb::Bool=true, users::Bool=true)
-### Relabel vocab and/or user keys so that they form a unit range.
+function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Alphabetize vocab and/or user dictionaries."
 
-condense_docs!(corp::Corpus)
-### Ignore term order in documents.
-### Multiple seperate occurrences of terms are stacked and their associated counts increased.
+function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Relabel vocab and/or user keys so that they form a unit range."
 
-pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-### Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries.
+function condense_docs!(corp::Corpus)
+	"Ignore term order in documents."
+	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
 
-remove_empty_docs!(corp::Corpus)
-### Documents with no terms are removed from the corpus.
+function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries."
 
-stop_corp!(corp::Corpus)
-### Filter stop words in the associated corpus.
+function remove_empty_docs!(corp::Corpus)
+	"Documents with no terms are removed from the corpus."
 
-trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-### Those keys which appear in the corpus vocab and/or user dictionaries but not in any of the documents are removed from the corpus.
+function stop_corp!(corp::Corpus)
+	"Filter stop words in the associated corpus."
 
-trim_docs!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-### Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents.
+function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Those keys which appear in the corpus vocab and/or user dictionaries but not in any of the documents are removed from the corpus."
 
-fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
-### Generic function to ensure that a Corpus object can be loaded ino a TopicModel object.
-### Contains optional keyword arguments.
-# pad_corp ? pad_corp!(corp) : trim_docs!(corp)
-# remove_empty_docs 	&& remove_empty_docs!(corp)
-# condense_corp 		&& condense_corp!(corp)
-# abridge_corp > 0 		&& abridge_corp!(corp)
-# pad_corp 				&& pad_corp!(corp, vocab=vocab, users=users)
-# trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
-# stop_corp 			&& stop_corp!(corp)
-# alphabetize_corp 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
+function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
+	"Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents."
 
-# abridgecorp!(corp, stop=stop, order=order, abr=abr)
-# trimcorp!(corp, vocab=vocab, terms=terms, users=users, readers=readers)
-# cullcorp!(corp, len=len)	
-# compactcorp!(corp, vocab=vocab, users=users, alphabetize=alphabetize)
+function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
+	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
+	"Contains optional keyword arguments."
 
-showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Integer, Vector{Integer}, UnitRange{Integer}})
-# Display the text and title of a document(s).
+function showdocs(corp::Corpus, doc_indices)
+	"Display document(s) in readable format."
 
 getvocab(corp::Corpus)
-# Collect sorted values from the vocab dictionary.
 
 getusers(corp::Corpus)
-# Collect sorted values from the user dictionary.
 ```
 
 ### Model Functions
