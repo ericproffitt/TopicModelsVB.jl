@@ -1,8 +1,8 @@
 module TopicModelsVB
 
-using Random
 using DelimitedFiles
 using Crayons
+using Random
 using SpecialFunctions
 using LinearAlgebra
 using Distributions

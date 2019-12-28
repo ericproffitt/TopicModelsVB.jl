@@ -15,7 +15,11 @@ This package takes the latter approach to topic modeling.
 ## Dependencies
 
 ```julia
+DelimitedFiles
+Crayons
+Random
 SpecialFunctions
+LinearAlgebra
 Distributions
 OpenCL
 ```
@@ -169,12 +173,15 @@ corp = readcorp(:nsf)
 corp.docs = corp[1:5000]
 fixcorp!(corp)
 
-# Notice that the post-fix vocabulary is smaller after removing all but the first 5000 docs.
+### Notice that the post-fix vocabulary is smaller after removing all but the first 5000 docs.
 
 model = LDA(corp, 9)
-train!(model, iter=150, tol=0) # Setting tol=0 will ensure that all 150 iterations are completed.
-                               # If you don't want to watch the ∆elbo, set chkelbo=151.
-# training...
+
+### Setting tol=0 will ensure that all 150 iterations are completed.
+### If you don't want to watch the ∆elbo, set check_elbo=Inf.
+train!(model, iter=150, tol=0)
+
+### training...
 
 showtopics(model, cols=9)
 ```
@@ -210,7 +217,7 @@ showdocs(model, 1) ### Could also have done showdocs(corp, 1).
 ```
 
 ```
- ●●● doc 1
+ ●●● Document 1
  ●●● CRB: Genetic Diversity of Endangered Populations of Mysticete Whales: Mitochondrial DNA and Historical Demography
 commercial exploitation past hundred years great extinction variation sizes
 populations prior minimal population size current permit analyses effects 
@@ -226,7 +233,7 @@ showdocs(model, 25)
 ```
 
 ```
- ●●● doc 25
+ ●●● Document 25
  ●●● Mathematical Sciences: Nonlinear Partial Differential Equations from Hydrodynamics
 work project continues mathematical research nonlinear elliptic problems arising perfect
 fluid hydrodynamics emphasis analytical study propagation waves stratified media techniques
@@ -236,17 +243,20 @@ internal presence vortex rings arise density stratification due salinity tempera
 
 We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 1, 2 and 8.
 
-Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function. Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out:
+Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.
+
+Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out,
 
 ```julia
-artifcorp = gencorp(model, 5000, 1e-5) # The third argument governs the amount of Laplace smoothing (defaults to 0).
+artificial_corp = gencorp(model, 5000, laplace_smooth=1e-5)
+### The laplace_smooth argument governs the amount of Laplace smoothing (defaults to 0).
 
-artifmodel = LDA(artifcorp, 9)
-train!(artifmodel, iter=150, tol=0, chkelbo=15)
+artificial_model = LDA(artificial_corp, 9)
+train!(artificial_model, iter=150, tol=0, check_elbo=15)
 
-# training...
+### training...
 
-showtopics(artifmodel, cols=9)
+showtopics(artificial_model, cols=9)
 ```
 
 ```
@@ -276,7 +286,7 @@ Random.seed!(2)
 model = fLDA(corp, 9)
 train!(model, iter=150, tol=0)
 
-# training...
+### training...
 
 showtopics(model, cols=9)
 ```
@@ -311,7 +321,7 @@ Random.seed!(2)
 model = fCTM(corp, 9)
 train!(model, iter=150, tol=0)
 
-# training...
+### training...
 
 showtopics(model, 20, cols=9)
 ```
@@ -359,12 +369,12 @@ Now let's take a look at the topic-covariance matrix:
 ```julia
 model.sigma
 
-# Top 3 off-diagonal positive entries, sorted in descending order:
+### Top 3 off-diagonal positive entries, sorted in descending order:
 model.sigma[4,8] # 9.520
 model.sigma[3,6] # 7.369
 model.sigma[1,3] # 5.763
 
-# Top 3 negative entries, sorted in ascending order:
+### Top 3 negative entries, sorted in ascending order:
 model.sigma[7,9] # -14.572
 model.sigma[3,8] # -12.472
 model.sigma[1,8] # -11.776
