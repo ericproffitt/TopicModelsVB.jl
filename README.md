@@ -754,7 +754,7 @@ function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Inte
 	### 'ntol'			- tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
 	### 'viter'			- maximum number of iterations for optimizing variational parameters (at the document level).
 	### 'vtol'			- tolerance for change in variational parameter values as stopping criterion.
-	### 'check_elbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
+	### 'check_elbo'		- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
 
 @gpu train!
 	"Train model on GPU."
