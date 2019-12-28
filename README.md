@@ -60,7 +60,7 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 ##### readers - A line of delimited positive integers corresponding to those users which have read the document.
 ##### ratings - A line of delimited positive integers, equal in length readers, corresponding to the rating each reader gave the document.
 
-An example of a single doc block from a docfile with all possible lines included:
+An example of a single doc block from a docfile with all possible lines included,
 
 ```
 ...
@@ -83,7 +83,7 @@ The vocab and user files are tab delimited dictionaries mapping positive integer
 
 A userfile is identitcal to a vocabfile, except usernames will appear in place of vocabulary terms.
 
-Finally, a titlefile is simply a list of titles, not a dictionary, and is of the form:
+Finally, a titlefile is simply a list of titles, not a dictionary, and is of the form,
 
 ```
 title1
@@ -95,7 +95,7 @@ title5
 
 The order of these titles correspond to the order of document blocks in the associated docfile.
 
-To read a corpus into TopicModelsVB.jl, use the following function:
+To read a corpus into TopicModelsVB.jl, use the following function,
 
 ```julia
 readcorp(;docfile="", vocabfile="", userfile="", titlefile="", delim=',', counts=false, readers=false, ratings=false)
@@ -117,7 +117,7 @@ fixcorp!(corp; pad_corp=true)
 
 Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
 
-**Important:** A corpus is only a container for documents. 
+**Important** A corpus is only a container for documents. 
 
 Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order vocab keys, etc.), this will not affect any corpus attached to a model. However! Since corpora are containers for their documents, modifying an individual document will affect it in all corpora which contain it. Therefore,
 
@@ -204,12 +204,12 @@ models          properties      relationships    problems       national      st
 program         dynamics        important        models         projects      important    policy           space           molecules
 ```
 
-Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown:
+Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown,
 
 ```julia
 model.gamma[1] ### = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
 ```
-This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
+This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation,
 
 ```julia
 showdocs(model, 1) # Could also have done showdocs(corp, 1).
@@ -223,7 +223,7 @@ populations prior minimal population size current permit analyses effects
 differing levels species distributions life history...
 ```
 
-On the other hand, some documents will be a combination of topics. Consider the topic breakdown for document 25:
+On the other hand, some documents will be a combination of topics. Consider the topic breakdown for document 25,
 
 ```julia
 model.gamma[25] # = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
@@ -363,7 +363,7 @@ Based on the top 20 terms in each topic, we might tentatively assign the followi
 * topic 8: *Mathematics*
 * topic 9: *Chemistry*
 
-Now let's take a look at the topic-covariance matrix:
+Now let's take a look at the topic-covariance matrix,
 
 ```julia
 model.sigma
@@ -383,7 +383,7 @@ According to the list above, the most closely related topics are topics 4 and 8,
 
 As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed by topics 3 and 8, corresponding to *Ecology* and *Mathematics*, and then third are topics 1 and 8, corresponding to *Earth Science* and *Mathematics*.
 
-Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic:
+Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic,
 
 ```julia
 indmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
@@ -406,11 +406,11 @@ for doc in corp
 end
 ```
 
-**Important:** We refrain from fixing our corpus in this case, first because the CiteULike dataset is pre-packaged and thus pre-fixed, but more importantly, because removing user keys from documents and then fixing a corpus may result in a re-ordering of its user dictionary, which would in turn invalidate our test set.
+**Important** We refrain from fixing our corpus in this case, first because the CiteULike dataset is pre-packaged and thus pre-fixed, but more importantly, because removing user keys from documents and then fixing a corpus may result in a re-ordering of its user dictionary, which would in turn invalidate our test set.
 
 After training, we will evaluate model quality by measuring our model's success at imputing the correct user back into each of the document libraries.
 
-It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers:
+It's also worth noting that after removing a single reader from each document, 158 of the documents now have 0 readers,
 
 ```julia
 sum([isempty(doc.readers) for doc in corp]) # = 158
@@ -426,7 +426,7 @@ Random.seed!(2)
 model = gpuCTPF(corp, 30)
 train!(model, iter=20, check_elbo=5)
 
-# training...
+### training...
 ```
 
 Finally, we evaluate the accuracy of our model against the test set, where baseline for mean accuracy is 0.5.
@@ -444,12 +444,12 @@ end
 
 We can see that, on average, our model ranks the true hidden reader in the top 9.7% of all non-readers for each document.
 
-Let's also take a look at the top recommendations for a particular document:
+Let's also take a look at the top recommendations for a particular document,
 
 ```julia
 ukeys_test[1] # = 3741
 accuracy[1] # = 0.965
-# user3741's library test document was placed in the top 3.5% of his or her recommendations.
+### user3741's library test document was placed in the top 3.5% of his or her recommendations.
 
 showdrecs(model, 1, 192)
 ```
@@ -466,7 +466,7 @@ showdrecs(model, 1, 192)
 
 For evaluating user recommendations, let's take a more holistic approach.
 
-Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library:
+Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library,
 
 ```julia
 showlibs(model, 1741)
@@ -568,7 +568,7 @@ ctpf_model.alef = exp.(model.beta)
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
 
-There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU:
+There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU,
 
 ```julia
 corp = readcorp(:nsf)
@@ -585,9 +585,9 @@ model = LDA(corp, 16)
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 3 minutes.
 
-**Important:** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
+**Important** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
-Here is the benchmark of our above model against the equivalent model run on the CPU:
+Here is the benchmark of our above model against the equivalent model run on the CPU,
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar2.png)
 
 As we can see, running the LDA model on the GPU is approximatey 1.32 orders of magnitude faster than running it on the CPU.
