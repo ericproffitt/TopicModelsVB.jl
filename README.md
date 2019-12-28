@@ -691,8 +691,8 @@ function check_corp(corp::Corpus)
 function readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	"Load a Corpus object from text file(s)."
 
-### readcorp(:nsf)   - National Science Foundation Corpus.
-### readcorp(:citeu) - CiteULike Corpus.
+	### readcorp(:nsf)   - National Science Foundation Corpus.
+	### readcorp(:citeu) - CiteULike Corpus.
 
 function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	"Write a corpus."
@@ -748,13 +748,13 @@ function check_model(model::TopicModel)
 function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	"Train TopicModel."
 
-	# 'iter'   	 - maximum number of iterations through the corpus.
-	# 'tol'     	- absolute tolerance for ∆elbo as a stopping criterion.
-	# 'niter'   	- maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-	# 'ntol'    	- tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-	# 'viter'   	- maximum number of iterations for optimizing variational parameters (at the document level).
-	# 'vtol'    	- tolerance for change in variational parameter values as stopping criterion.
-	# 'check_elbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
+	### 'iter'			- maximum number of iterations through the corpus.
+	### 'tol'     		- absolute tolerance for ∆elbo as a stopping criterion.
+	### 'niter'   		- maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
+	### 'ntol'    		- tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
+	### 'viter'   		- maximum number of iterations for optimizing variational parameters (at the document level).
+	### 'vtol'    		- tolerance for change in variational parameter values as stopping criterion.
+	### 'check_elbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
 
 @gpu train!
 	"Train model on GPU."
