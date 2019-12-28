@@ -760,7 +760,7 @@ function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Inte
 	"Train model on GPU."
 
 function gendoc(model::TopicModel, laplace_smooth::Real=0.0)
-"Generate a generic document from model parameters by running the associated graphical model as a generative process."
+	"Generate a generic document from model parameters by running the associated graphical model as a generative process."
 
 function gencorp(model::TopicModel, corpsize::Int, laplace_smooth::Real=0.0)
 	"Generate a generic corpus of size 'corpsize' from model parameters."
