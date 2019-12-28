@@ -813,3 +813,18 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 		println()
 	end
 end
+
+function predict(corp::Corpus, model_train::TopicModel)
+	push!(model_train.corp, deepcopy(corp)...)
+	fixcorp!(model_train.corp)
+
+	model_test.beta = copy(model_train.beta)
+
+end
+
+
+
+
+
+
+
