@@ -117,7 +117,7 @@ fixcorp!(corp; pad_corp=true)
 
 Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
 
-**Important** A corpus is only a container for documents. 
+**Important.** A corpus is only a container for documents. 
 
 Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order vocab keys, etc.), this will not affect any corpus attached to a model. However! Since corpora are containers for their documents, modifying an individual document will affect it in all corpora which contain it. Therefore,
 
@@ -585,7 +585,7 @@ model = LDA(corp, 16)
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 3 minutes.
 
-**Important** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
+**Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
 Here is the benchmark of our above model against the equivalent model run on the CPU,
 ![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar2.png)
