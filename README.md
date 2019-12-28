@@ -624,8 +624,12 @@ mutable struct Corpus
 
 abstract type TopicModel end
 
-LDA(corp::Corpus, K::Integer) <: TopicModel
-Latent Dirichlet allocation model with K topics.
+mutable struct LDA <: TopicModel
+	"LDA mutable struct."
+
+	corpus::Corpus
+	K::Int
+	...
 
 fLDA(corp::Corpus, K::Integer) <: TopicModel
 Filtered latent Dirichlet allocation model with K topics.

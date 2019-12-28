@@ -1,4 +1,6 @@
 mutable struct LDA <: TopicModel
+	"LDA mutable struct."
+
 	K::Int
 	M::Int
 	V::Int
