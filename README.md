@@ -610,7 +610,7 @@ docs
 vocab
 users
 
-TopicModel
+abstract type TopicModel end
 
 LDA(corp::Corpus, K::Integer) <: TopicModel
 Latent Dirichlet allocation model with K topics.
@@ -627,23 +627,23 @@ Filtered correlated topic model with K topics.
 CTPF(corp::Corpus, K::Integer) <: TopicModel
 Collaborative topic Poisson factorization model with K topics.
 
-gpuLDA(corp::Corpus, K::Integer, batchsize::Integer) <: TopicModel
+gpuLDA(corp::Corpus, K::Integer) <: TopicModel
 GPU accelerated latent Dirichlet allocation model with K topics.
 
-gpuCTM(corp::Corpus, K::Integer, batchsize::Integer) <: TopicModel
+gpuCTM(corp::Corpus, K::Integer) <: TopicModel
 GPU accelerated correlated topic model with K topics.
 
-gpuCTPF(corp::Corpus, K::Integer, batchsize::Integer, basemodel::BaseTopicModel) <: TopicModel
+gpuCTPF(corp::Corpus, K::Integer) <: TopicModel
 GPU accelerated collaborative topic Poission factorization model with K topics.
 ```
 
 ### Document/Corpus Functions
 ```julia
 check_doc(doc::Document)
-# Verify that all Document fields have legal values.
+Verify that all Document fields have legal values.
 
 check_corp(corp::Corpus)
-# Verify that all Corpus fields have legal values.
+Verify that all Corpus fields have legal values.
 
 readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
 ### Read corpus from plaintext files.
