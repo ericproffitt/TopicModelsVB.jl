@@ -746,7 +746,7 @@ function check_model(model::TopicModel)
 	"Check model parameters."
 
 function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
-	"Train a model of type TopicModel."
+	"Train TopicModel."
 
 	# 'iter'   	 - maximum number of iterations through the corpus.
 	# 'tol'     	- absolute tolerance for ∆elbo as a stopping criterion.
