@@ -747,7 +747,7 @@ function check_model(model::TopicModel)
 
 function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
 	"Train a model of type TopicModel."
-	
+
 	# 'iter'    - maximum number of iterations through the corpus.
 	# 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
 	# 'niter'   - maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
@@ -757,7 +757,7 @@ function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Inte
 	# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
 
 @gpu train!(model; kwargs...)
-	"Train model on GPU.""
+	"Train model on GPU."
 
 function gendoc(model::TopicModel, laplace_smooth::Real=0.0)
 "Generate a generic document from model parameters by running the associated graphical model as a generative process."
