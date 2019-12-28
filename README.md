@@ -128,31 +128,31 @@ The available models are as follows:
 ### CPU Models
 ```julia
 LDA(corp, K)
-### Latent Dirichlet Allocation model with K topics.
+"Latent Dirichlet Allocation model with K topics."
 
 fLDA(corp, K)
-### Filtered latent Dirichlet allocation model with K topics.
+"Filtered latent Dirichlet allocation model with K topics."
 
 CTM(corp, K)
-### Correlated topic model with K topics.
+"Correlated topic model with K topics."
 
 fCTM(corp, K)
-### Filtered correlated topic model with K topics.
+"Filtered correlated topic model with K topics."
 
 CTPF(corp, K, basemodel)
-### Collaborative topic Poisson factorization model with K topics.
+"Collaborative topic Poisson factorization model with K topics."
 ```
 
 ### GPU Models
 ```julia
 gpuLDA(corp, K, batchsize)
-### GPU accelerated latent Dirichlet allocation model with K topics.
+"GPU accelerated latent Dirichlet allocation model with K topics."
 
 gpuCTM(corp, K, batchsize)
-### GPU accelerated correlated topic model with K topics.
+"GPU accelerated correlated topic model with K topics."
 
 gpuCTPF(corp, K, batchsize, basemodel)
-### GPU accelerated collaborative topic Poisson factorization model with K topics.
+"GPU accelerated collaborative topic Poisson factorization model with K topics."
 ```
 
 ## Tutorial
