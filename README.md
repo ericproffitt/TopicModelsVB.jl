@@ -1,14 +1,14 @@
 # TopicModelsVB.jl
 
-**v0.6 compatible**
+**v1.x compatible**
 
 A Julia package for variational Bayesian topic modeling.
 
 Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora. Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VB) methods.
 
-Markov chain Monte Carlo methods are slower but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that within any finite time horizon it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
+Markov chain Monte Carlo methods are slow but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian methods are faster but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods, being numerical optimization procedures, are naturally equipped in the assessment of convergence to local optima.
+Contrarily, variational Bayesian methods are fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods are optimization algorithms, and are thus naturally equipped in the assessment of convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
@@ -31,27 +31,23 @@ Included in TopicModelsVB.jl are three datasets:
 
 1. National Science Foundation Abstracts 1989 - 2003:
   * 128804 documents
-  * 25319 lexicon
+  * 25319 vocabulary
 
 2. CiteULike Science Article Database:
   * 16980 documents
-  * 8000 lexicon
+  * 8000 vocabulary
   * 5551 users
-
-3. Macintosh Magazine Article Collection 1984 - 2005:
-  * 75011 documents
-  * 15113 lexicon
 
 ## Corpus
 Let's begin with the Corpus data structure. The Corpus data structure has been designed for maximum ease-of-use. Datasets must still be cleaned and put into the appropriate format, but once a dataset is in the proper format and read into a corpus, it can easily be modified to meet the user's needs.
 
 There are four plaintext files that make up a corpus:
  * docfile
- * lexfile
+ * vocabfile
  * userfile
  * titlefile
  
-None of these files are mandatory to read a corpus, and in fact reading no files will result in an empty corpus. However in order to train a model a docfile will be necessary, since it contains all quantitative data known about the documents. On the other hand, the lex, user and title files are used solely for interpreting output.
+None of these files are mandatory to read a corpus, and in fact reading no files will result in an empty corpus. However in order to train a model a docfile will be necessary, since it contains all quantitative data known about the documents. On the other hand, the vocab, user and title files are used solely for interpreting output.
 
 The docfile should be a plaintext file containing lines of delimited numerical values. Each document is a block of lines, the number of which depends on what information is known about the documents. Since a document is at its essence a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms of which it is composed. Any further lines in a document block are optional, however if they are present they must be present for all documents and must come in the following order:
 
@@ -59,7 +55,6 @@ The docfile should be a plaintext file containing lines of delimited numerical v
 ##### counts - A line of delimited positive integers, equal in length to the term line, corresponding to the number of times a term appears in a document.
 ##### readers - A line of delimited positive integers corresponding to those users which have read the document.
 ##### ratings - A line of delimited positive integers, equal in length to the readers line, corresponding to the rating each reader gave the document.
-##### stamp - A numerical value in the range [-Inf, Inf] denoting the timestamp of the document.
 
 An example of a single doc block from a docfile with all possible lines included:
 
@@ -73,17 +68,17 @@ An example of a single doc block from a docfile with all possible lines included
 ...
 ```
 
-The lex and user files are tab delimited dictionaries mapping positive integers to terms and usernames (resp.). For example,
+The vocab and user files are tab delimited dictionaries mapping positive integers to terms and usernames (resp.). For example,
 
 ```
 1    this
 2    is
 3    a
-4    lex
+4    vocab
 5    file
 ```
 
-A userfile is identitcal to a lexfile, except usernames will appear in place of vocabulary terms.
+A userfile is identitcal to a vocabfile, except usernames will appear in place of vocabulary terms.
 
 Finally, a titlefile is simply a list of titles, not a dictionary, and is of the form:
 
@@ -100,33 +95,32 @@ The order of these titles correspond to the order of document blocks in the asso
 To read a corpus into TopicModelsVB.jl, use the following function:
 
 ```julia
-readcorp(;docfile="", lexfile="", userfile="", titlefile="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
+readcorp(;docfile="", vocabfile="", userfile="", titlefile="", delim=',', counts=false, readers=false, ratings=false, stamps=false)
 ```
 
 The ```file``` keyword arguments indicate the path where the respective file is located.
 
-It is often the case that even once files are correctly formatted and read, the corpus will still contain formatting defects which prevent it from being loaded into a model. Therefore, before loading a corpus into a model, it is **very important** that one of the following is run:
+It is often the case that even once files are correctly formatted and read, the corpus will still contain formatting defects which prevent it from being loaded into a model. Therefore, before loading a corpus into a model, it is **very important** that one of the following is run,
 
 ```julia
-fixcorp!(corp; kwargs...)
+fixcorp!(corp)
 ```
 
 or
 
 ```julia
-padcorp!(corp; kwargs...)
-fixcorp!(corp; kwargs...)
+fixcorp!(corp; pad_corp=true)
 ```
 
-Padding a corpus before fixing it will ensure that any documents which contain lex or user keys not in the lex or user dictionaries are not removed. Instead, generic lex and user keys will be added as necessary to the lex and user dictionaries (resp.).
+Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
 
 **Important:** A corpus is only a container for documents. 
 
-Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order lex keys, etc.), this will not affect any corpus attached to a model. However!  Since corpora are containers for their documents, modifying an individual document will affect this document in all corpora which contain it. Therefore:
+Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order vocab keys, etc.), this will not affect any corpus attached to a model. However! Since corpora are containers for their documents, modifying an individual document will affect it in all corpora which contain it. Therefore,
 
-**1. Using `corp!` functions to modify the documents of a corpus will not result in corpus defects, but will cause them also to be changed in all other corpora which contain them.**
+**1. Using `fixcorp!` to modify the documents of a corpus will not result in corpus defects, but will cause them also to be changed in all other corpora which contain them.**
 
-**2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`. It's advised that you don't do this with out a good reason.**
+**2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`. It is advised that you don't do this with out good reason.**
 
 ## Models
 The available models are as follows:
@@ -171,14 +165,14 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 ```julia
 using TopicModelsVB
 
-srand(2)
+Random.seed!(2)
 
 corp = readcorp(:nsf) 
 
 corp.docs = corp[1:5000]
 fixcorp!(corp)
 
-# Notice that the post-fix lexicon is smaller after removing all but the first 5000 docs.
+# Notice that the post-fix vocabulary is smaller after removing all but the first 5000 docs.
 
 model = LDA(corp, 9)
 train!(model, iter=150, tol=0) # Setting tol=0 will ensure that all 150 iterations are completed.
@@ -210,12 +204,12 @@ program         dynamics        important        models         projects      im
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown:
 
 ```julia
-model.gamma[1] # = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
+model.gamma[1] ### = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
 ```
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
 
 ```julia
-showdocs(model, 1) # Could also have done showdocs(corp, 1).
+showdocs(model, 1) ### Could also have done showdocs(corp, 1).
 ```
 
 ```
@@ -229,7 +223,7 @@ differing levels species distributions life history...
 On the other hand, some documents will be a combination of topics. Consider the topic breakdown for document 25:
 
 ```julia
-model.gamma[25] # = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
+model.gamma[25] ### = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
 
 showdocs(model, 25)
 ```
@@ -280,7 +274,7 @@ methods       work            mathematical    patterns         study            
 One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc. While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts. Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training. Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
 
 ```julia
-srand(2)
+Random.seed!(2)
 
 model = fLDA(corp, 9)
 train!(model, iter=150, tol=0)
@@ -305,7 +299,7 @@ global          numerical       effects          software         conference    
 sea             measurements    food             computational    national       regulation    people         solutions       university
 surface         experiments     environmental    efficient        projects       expression    effects        spaces          reaction
 response        award           ecology          program          engineering    plants        labor          dimensional     synthesis
-solar           liquid          ecological       distributed      year           mechanisms    market         functions       complexes
+solar           liquid          ecological       distributed      year           mechanisms    market         functions       compvocabes
 earth           particle        test             power            workshop       membrane      theoretical    questions       professor
 ```
 
@@ -315,7 +309,7 @@ We can now see that many of the most troublesome corpus-specific stop words have
 For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).
 
 ```julia
-srand(2)
+Random.seed!(2)
 
 model = fCTM(corp, 9)
 train!(model, iter=150, tol=0)
@@ -501,7 +495,7 @@ showlibs(model, 1741)
  Now compare this with the top 50 recommendations (the top 0.3%) made by our model,
  
 ```julia
-showurecs(model, 1741, 20)
+showurecs(model, 1741, 50)
 ```
 
 ```
@@ -521,7 +515,7 @@ showurecs(model, 1741, 20)
 13. The essence of compiling with continuations
 14. Types and programming languages
 15. A {S}yntactic {T}heory of {D}ynamic {B}inding
-16. Principles of programming with complex objects and collection types
+16. Principles of programming with compvocab objects and collection types
 17. Functional pearl: implicit configurations--or, type classes reflect the values of types
 18. Typed Memory Management in a Calculus of Capabilities
 19. Type Classes with Functional Dependencies
@@ -557,6 +551,12 @@ showurecs(model, 1741, 20)
 49. Ott: Effective Tool Support for the Working Semanticist
 50. Typed Contracts for Functional Programming
 ```
+
+Note, as was done by Blei et al. in their original paper, if you would like to warm start your CTPF model using the topic distributions generated by one of the other models, simply do the following prior to training your model,
+
+```julia
+ctpf_model.alef = exp.(model.beta) ### for model of type: LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM.
+```   
 
 ## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
@@ -657,12 +657,12 @@ check_doc(doc::Document)
 check_corp(corp::Corpus)
 # Verify that all Corpus fields have legal values.
 
-readcorp(;docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
+readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
 ### Read corpus from plaintext files.
 # readcorp(:nsf)   - National Science Foundation Corpus.
 # readcorp(:citeu) - CiteULike Corpus.
 
-writecorp(corp::Corpus; docfile::String="", lexfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
+writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)
 # Write corpus to plaintext files.
 
 abridge_corp!(corp::Corpus; n::Integer=1)
@@ -707,15 +707,15 @@ fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer
 # alphabetize_corp 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
 
 # abridgecorp!(corp, stop=stop, order=order, abr=abr)
-# trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
+# trimcorp!(corp, vocab=vocab, terms=terms, users=users, readers=readers)
 # cullcorp!(corp, len=len)	
-# compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
+# compactcorp!(corp, vocab=vocab, users=users, alphabetize=alphabetize)
 
 showdocs(corp::Corpus, docs::Union{Document, Vector{Document}, Integer, Vector{Integer}, UnitRange{Integer}})
 # Display the text and title of a document(s).
 
-getlex(corp::Corpus)
-# Collect sorted values from the lex dictionary.
+getvocab(corp::Corpus)
+# Collect sorted values from the vocab dictionary.
 
 getusers(corp::Corpus)
 # Collect sorted values from the user dictionary.
