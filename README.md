@@ -1,6 +1,6 @@
 # TopicModelsVB.jl
 
-**v1.x compatible**
+**v1.x compatible.**
 
 A Julia package for variational Bayesian topic modeling.
 
@@ -8,7 +8,7 @@ Topic models are Bayesian hierarchical models designed to discover the latent lo
 
 Markov chain Monte Carlo methods are slow but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian methods are fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods are optimization algorithms, and are thus naturally equipped in the assessment of convergence to local optima.
+Contrarily, variational Bayesian methods are fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods, being optimization procedures, are naturally equipped in the assessment of convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
@@ -213,7 +213,7 @@ model.gamma[1] ### = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation:
 
 ```julia
-showdocs(model, 1) ### Could also have done showdocs(corp, 1).
+showdocs(model, 1) # Could also have done showdocs(corp, 1).
 ```
 
 ```
@@ -227,7 +227,7 @@ differing levels species distributions life history...
 On the other hand, some documents will be a combination of topics. Consider the topic breakdown for document 25:
 
 ```julia
-model.gamma[25] ### = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
+model.gamma[25] # = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
 
 showdocs(model, 25)
 ```
@@ -576,10 +576,10 @@ corp = readcorp(:nsf)
 model = LDA(corp, 16)
 @time @gpu train!(model, iter=150, tol=0, chkelbo=151) # Let's time it as well to get an exact benchmark. 
 
-# training...
+### training...
 
-# 156.591258 seconds (231.34 M allocations: 25.416 GiB, 37.82% gc time)
-# On an Intel Iris Plus Graphics 640 1536 MB GPU.
+### 156.591258 seconds (231.34 M allocations: 25.416 GiB, 37.82% gc time)
+### On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 3 minutes.
@@ -591,35 +591,18 @@ Here is the benchmark of our above model against the equivalent model run on the
 
 As we can see, running the LDA model on the GPU is approximatey 1.32 orders of magnitude faster than running it on the CPU.
 
-It's often the case that one does not have sufficient VRAM to hold the entire model in GPU memory at one time. Thus we provide the option of batching GPU models in order to train much larger models than would otherwise be possible:
-
-```julia
-corp = readcorp(:citeu)
-
-model = CTM(corp, 7)
-@gpu 4250 train!(model, iter=150, chkelbo=25) # batchsize = 4250 documents.
-
-# training...
-```
-
-It's important to understand that GPGPU is still the wild west of computer programming. The performance of batched models depends on many architecture dependent factors, including but not limited to the memory, the GPU, the manufacturer, the type of computer, what other applications are running, whether a display is connected, etc.
-
-While non-batched models will usually be the fastest (for those GPUs which can handle them), it's not necessarily the case that reducing the batch size will result in a degredation in performance. Thus it's always a good idea to experiment with different batch sizes, to see which sizes work best for your computer.
-
-**Important:** If Julia crashes or throws an error when trying to run one of the models on your GPU, then your best course of action is to reduce the batch size and retrain your model.
-
-Finally, expect your computer to lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
+Note, it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
 ## Types
 
 ```julia
 Document(terms::Vector{Integer}; counts::Vector{Integer}=ones(length(terms)), readers::Vector{Integer}=Int[], ratings::Vector{Integer}=ones(length(readers)), title::String="")
-### FIELDNAMES:
-# terms::Vector{Int}
-# counts::Vector{Int}
-# readers::Vector{Int}
-# ratings::Vector{Int}
-# title::String
+FIELDNAMES:
+terms::Vector{Int}
+counts::Vector{Int}
+readers::Vector{Int}
+ratings::Vector{Int}
+title::String
 
 Corpus(;docs::Vector{Document}=Document[], vocab::Union{Vector{String}, Dict{Integer, String}}=[], users::Union{Vector{String}, Dict{Integer, String}}=[])
 ### FIELDNAMES:
