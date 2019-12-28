@@ -732,52 +732,50 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp
 function showdocs(corp::Corpus, doc_indices)
 	"Display document(s) in readable format."
 
-getvocab(corp::Corpus)
+function getvocab(corp::Corpus)
 
-getusers(corp::Corpus)
+function getusers(corp::Corpus)
 ```
 
 ### Model Functions
 
 ```julia
-showdocs(model::TopicModel, docs::Union{Document, Vector{Document}, Int, Vector{Int}, UnitRange{Int}})
-### Display the text and title of a document(s).
+function showdocs(model::TopicModel, docs)
 
-check_model(model::TopicModel)
-### Verify the correctness of TopicModel data.
+function check_model(model::TopicModel)
+	"Check model parameters."
 
-train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
-### Train a model of type TopicModel.
-# 'iter'    - maximum number of iterations through the corpus.
-# 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
-# 'niter'   - maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-# 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-# 'viter'   - maximum number of iterations for optimizing variational parameters (at the document level).
-# 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
-# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
+function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+	"Train a model of type TopicModel."
+	
+	# 'iter'    - maximum number of iterations through the corpus.
+	# 'tol'     - absolute tolerance for ∆elbo as a stopping criterion.
+	# 'niter'   - maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
+	# 'ntol'    - tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
+	# 'viter'   - maximum number of iterations for optimizing variational parameters (at the document level).
+	# 'vtol'    - tolerance for change in variational parameter values as stopping criterion.
+	# 'chkelbo' - number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
 
 @gpu train!(model; kwargs...)
-### Train model on GPU.
+	"Train model on GPU.""
 
-gendoc(model::TopicModel, laplace_smooth::Real=0.0)
-### Generate a generic document from model parameters by running the associated graphical model as a generative process.
-# 'a' - amount of Laplace smoothing to apply to the topic-term distributions ('a' must be nonnegative).
+function gendoc(model::TopicModel, laplace_smooth::Real=0.0)
+"Generate a generic document from model parameters by running the associated graphical model as a generative process."
 
-gencorp(model::TopicModel, corpsize::Int, laplace_smooth::Real=0.0)
-### Generate a generic corpus of size 'corpsize' from model parameters.
+function gencorp(model::TopicModel, corpsize::Int, laplace_smooth::Real=0.0)
+	"Generate a generic corpus of size 'corpsize' from model parameters."
 
-showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Union{Integer, Vector{Integer}}=collect(1:model.K), cols::Integer=4)
-### Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line.
+function showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Union{Integer, Vector{Integer}}=collect(1:model.K), cols::Integer=4)
+	"Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line."
 
-showlibs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}})
-### Show the document(s) in a user's library.
+function showlibs(model::Union{CTPF, gpuCTPF}, users)
+	"Show the document(s) in a user's library."
 
-showdrecs(ctpf::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{Integer}}, U::Integer=min(16, ctpf.U); cols::Integer=4)
-### Show the top 'U' user recommendations for a document(s), defaults to 4 columns per line.
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs, U)
+	"Show the top 'U' user recommendations for a document(s)."
 
-showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M); cols::Integer=1)
-### Show the top 'M' document recommendations for a user(s), defaults to 1 column per line.
-### If a document has no title, the document's index in the corpus will be shown instead.
+function showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M))
+	"Show the top 'M' document recommendations for a user(s)."
 ```
 
 ## Bibliography
