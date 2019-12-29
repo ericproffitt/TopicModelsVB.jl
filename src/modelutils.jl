@@ -28,7 +28,7 @@ Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic m
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 function check_model(model::LDA)
-	"Check LDA model parameters."
+	"Check LDA parameters."
 
 	check_corp(model.corp) 
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
@@ -60,7 +60,7 @@ function check_model(model::LDA)
 end
 
 function check_model(model::fLDA)
-	"Check filtered latent Dirichlet allocation model parameters."
+	"Check fLDA parameters."
 
 	check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
@@ -103,7 +103,7 @@ function check_model(model::fLDA)
 end
 
 function check_model(model::CTM)
-	"Check correlated topic model parameters."
+	"Check CTM parameters."
 
 	check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))	
@@ -135,7 +135,7 @@ function check_model(model::CTM)
 end
 
 function check_model(model::fCTM)
-	"Check filtered correlated topic model parameters."
+	"Check fCTM parameters."
 
 	check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
@@ -178,7 +178,7 @@ function check_model(model::fCTM)
 end
 
 function check_model(model::CTPF)
-	"Check collaborative topic Poisson factorization model parameters."
+	"Check CTPF parameters."
 
 	check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))		|| throw(TopicModelError(""))
@@ -226,68 +226,85 @@ function check_model(model::CTPF)
 end
 
 function check_model(model::gpuLDA)
-	"Check GPU accelerated latent Dirichlet allocation model parameters."
+	"Check gpuLDA parameters."
 
 	check_corp(model.corp) 
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))
-	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
-	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError(""))
-	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError(""))
-	all(isfinite.(model.alpha))																	|| throw(TopicModelError(""))
-	all(model.alpha .> 0)																		|| throw(TopicModelError(""))
-	isequal(length(model.alpha), model.K)														|| throw(TopicModelError(""))
-	isequal(size(model.beta), (model.K, model.V))												|| throw(TopicModelError(""))
-	(isstochastic(model.beta, dims=2) | isempty(model.beta))									|| throw(TopicModelError(""))
-	isequal(length(model.Elogtheta), model.M)													|| throw(TopicModelError(""))
-	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])					|| throw(TopicModelError(""))
-	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])							|| throw(TopicModelError(""))
-	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])									|| throw(TopicModelError(""))
-	isequal(length(model.Elogtheta_old), model.M)												|| throw(TopicModelError(""))
-	all(Bool[isequal(length(model.Elogtheta_old[d]), model.K) for d in 1:model.M])				|| throw(TopicModelError(""))
-	all(Bool[all(isfinite.(model.Elogtheta_old[d])) for d in 1:model.M])						|| throw(TopicModelError(""))
-	all(Bool[all(model.Elogtheta_old[d] .<= 0) for d in 1:model.M])								|| throw(TopicModelError(""))
-	isequal(length(model.gamma), model.M)														|| throw(TopicModelError(""))
-	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError(""))
-	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])								|| throw(TopicModelError(""))
-	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])										|| throw(TopicModelError(""))
-	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:min(model.M, 1)])	|| throw(TopicModelError(""))
-	all(Bool[isstochastic(model.phi[d], dims=1) | isempty(model.phi[d]) for d in 1:model.M])	|| throw(TopicModelError(""))
-	isfinite(model.elbo)																		|| throw(TopicModelError(""))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(model.M, length(model.corp))														|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError("C must contain sums of document counts."))
+	isequal(length(model.alpha), model.K)														|| throw(TopicModelError("alpha must be of length K."))
+	all(isfinite.(model.alpha))																	|| throw(TopicModelError("alpha must be finite."))
+	all(model.alpha .> 0)																		|| throw(TopicModelError("alpha must be positive."))
+	isequal(size(model.beta), (model.K, model.V))												|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))									|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(length(model.Elogtheta), model.M)													|| throw(TopicModelError("Elogtheta must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])					|| throw(TopicModelError("Elogtheta must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])							|| throw(TopicModelError("Elogtheta must be finite."))
+	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])									|| throw(TopicModelError("Elogtheta must be nonpositive."))
+	isequal(length(model.Elogtheta_old), model.M)												|| throw(TopicModelError("Elogtheta_old must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta_old[d]), model.K) for d in 1:model.M])				|| throw(TopicModelError("Elogtheta_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta_old[d])) for d in 1:model.M])						|| throw(TopicModelError("Elogtheta_old must be finite."))
+	all(Bool[all(model.Elogtheta_old[d] .<= 0) for d in 1:model.M])								|| throw(TopicModelError("Elogtheta_old must be nonpositive."))
+	isequal(length(model.gamma), model.M)														|| throw(TopicModelError("gamma must be of length M."))
+	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError("gamma must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])								|| throw(TopicModelError("gamma must be finite."))
+	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])										|| throw(TopicModelError("gamma must be positive."))
+	isequal(length(model.phi), model.M)															|| throw(TopicModelError("phi must be of length M."))
+	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])			|| throw(TopicModelError("phi must contain matrices of sizes (K, N)."))
+	all(Bool[isstochastic(model.phi[d], dims=1) | isempty(model.phi[d]) for d in 1:model.M])	|| throw(TopicModelError("phi must contain left stochastic matrices."))
+	isfinite(model.elbo)																		|| throw(TopicModelError("elbo must be finite."))
 	nothing
 end
 
 function check_model(model::gpuCTM)
-	"Check GPU accelerated correlated topic model parameters."
+	"Check gpuCTM parameters."
 
 	check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError(""))	
-	isequal(model.M, length(model.corp))														|| throw(TopicModelError(""))
-	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError(""))
-	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError(""))	
-	all(isfinite.(model.mu))																	|| throw(TopicModelError(""))
-	isequal(size(model.sigma), (model.K, model.K))												|| throw(TopicModelError(""))
-	isposdef(model.sigma)																		|| throw(TopicModelError(""))
-	isequal(size(model.beta), (model.K, model.V))												|| throw(TopicModelError(""))
-	(isstochastic(model.beta, dims=2) | isempty(model.beta))									|| throw(TopicModelError(""))
-	isequal(length(model.lambda), model.M)														|| throw(TopicModelError(""))
-	all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError(""))
-	all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])								|| throw(TopicModelError(""))
-	isequal(length(model.lambda_old), model.M)													|| throw(TopicModelError(""))
-	all(Bool[isequal(length(model.lambda_old[d]), model.K) for d in 1:model.M])					|| throw(TopicModelError(""))
-	all(Bool[all(isfinite.(model.lambda_old[d])) for d in 1:model.M])							|| throw(TopicModelError(""))
-	isequal(length(model.vsq), model.M)															|| throw(TopicModelError(""))
-	all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError(""))
-	all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])									|| throw(TopicModelError(""))
-	all(Bool[all(model.vsq[d] .> 0) for d in 1:model.M])										|| throw(TopicModelError(""))
-	all(isfinite.(model.logzeta))																|| throw(TopicModelError(""))
-	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:min(model.M, 1)])	|| throw(TopicModelError(""))
-	all(Bool[isstochastic(model.phi[d], dims=1) | isempty(model.phi[d]) for d in 1:model.M])	|| throw(TopicModelError(""))
-	isfinite(model.elbo)																		|| throw(TopicModelError(""))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(model.M, length(model.corp))														|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError("C must contain sums of document counts."))
+	(0 <= model.eta <= 1)																		|| throw(TopicModelError("eta must belong to the interval [0,1]."))
+	isequal(length(model.alpha), model.K)														|| throw(TopicModelError("alpha must be of length K."))
+	all(isfinite.(model.alpha))																	|| throw(TopicModelError("alpha must be finite."))
+	all(model.alpha .> 0)																		|| throw(TopicModelError("alpha must be positive."))
+	isequal(length(model.kappa), model.V)														|| throw(TopicModelError("kappa must be of length V"))
+	(isprobvec(model.kappa) | isempty(model.kappa))												|| throw(TopicModelError("kappa must be a probability vector."))
+	isequal(length(model.kappa_old), model.V)													|| throw(TopicModelError("kappa_old must be of length V."))
+	(isprobvec(model.kappa_old) | isempty(model.kappa_old))										|| throw(TopicModelError("kappa_old must be a probability vector."))
+	isequal(model.kappa_temp, zeros(model.V))													|| throw(TopicModelError("kappa_temp must be a zero vector of length V."))
+	isequal(size(model.beta), (model.K, model.V))												|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))									|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(size(model.beta_old), (model.K, model.V))											|| throw(TopicModelError("beta_old must be of size (K, V)."))
+	(isstochastic(model.beta_old, dims=2) | isempty(model.beta_old))							|| throw(TopicModelError("beta_old must be a right stochastic matrix."))
+	isequal(model.beta_temp, zeros(model.K, model.V))											|| throw(TopicModelError("beta_temp must be a zero matrix of size (K, V)."))
+	isequal(size(model.fbeta), (model.K, model.V))												|| throw(TopicModelError("fbeta must be of size (K, V)."))
+	(isstochastic(model.fbeta, dims=2) | isempty(model.fbeta))									|| throw(TopicModelError("fbeta must be a right stochastic matrix."))
+	isequal(length(model.Elogtheta), model.M)													|| throw(TopicModelError("Elogtheta must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])					|| throw(TopicModelError("Elogtheta must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])							|| throw(TopicModelError("Elogtheta must be finite."))
+	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])									|| throw(TopicModelError("Elogtheta must be nonpositive."))
+	isequal(length(model.Elogtheta_old), model.M)												|| throw(TopicModelError("Elogtheta_old must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta_old[d]), model.K) for d in 1:model.M])				|| throw(TopicModelError("Elogtheta_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta_old[d])) for d in 1:model.M])						|| throw(TopicModelError("Elogtheta_old must be finite."))
+	all(Bool[all(model.Elogtheta_old[d] .<= 0) for d in 1:model.M])								|| throw(TopicModelError("Elogtheta_old must be nonpositive."))
+	isequal(length(model.gamma), model.M)														|| throw(TopicModelError("gamma must be of length M."))
+	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError("gamma must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])								|| throw(TopicModelError("gamma must be finite."))
+	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])										|| throw(TopicModelError("gamma must be positive."))
+	isequal(length(model.tau), model.M)															|| throw(TopicModelError("tau must be of length M."))
+	all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])						|| throw(TopicModelError("tau must contain vectors of lengths N."))
+	all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])									|| throw(TopicModelError("tau must belong to the interval [0,1]."))
+	isequal(length(model.phi), model.M)															|| throw(TopicModelError("phi must be of length M."))
+	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])			|| throw(TopicModelError("phi must contain matrices of sizes (K, N)."))
+	all(Bool[isstochastic(model.phi[d], dims=1) | isempty(model.phi[d]) for d in 1:model.M])	|| throw(TopicModelError("phi must contain left stochastic matrices."))
+	isfinite(model.elbo)																		|| throw(TopicModelError("elbo must be finite"))
 	nothing
 end
 
 function check_model(model::gpuCTPF)
-	"Check GPU accelerated collaborative topic Poisson factorization model parameters."
+	"Check gpuCTPF parameters."
 
 	check_corp(model.corp)
 	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))					|| throw(TopicModelError(""))
