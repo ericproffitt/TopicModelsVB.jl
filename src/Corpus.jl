@@ -36,12 +36,12 @@ Base.showerror(io::IO, e::DocumentError) = print(io, "DocumentError: ", e.msg)
 function check_doc(doc::Document)
 	"Check Document parameters."
 
-	all(doc.terms .> 0)									|| throw(ArgumentError("All terms must be positive integers."))
-	all(doc.counts .> 0)								|| throw(ArgumentError("All counts must be positive integers."))
-	isequal(length(doc.terms), length(doc.counts))		|| throw(ArgumentError("The terms and counts vectors must have the same length."))
-	all(doc.readers .> 0)								|| throw(ArgumentError("All readers must be positive integers."))
-	all(doc.ratings .> 0)								|| throw(ArgumentError("All ratings must be positive integers."))
-	isequal(length(doc.readers), length(doc.ratings))	|| throw(ArgumentError("The readers and ratings vectors must have the same length."))
+	all(doc.terms .> 0)									|| throw(DocumentError("All terms must be positive integers."))
+	all(doc.counts .> 0)								|| throw(DocumentError("All counts must be positive integers."))
+	isequal(length(doc.terms), length(doc.counts))		|| throw(DocumentError("The terms and counts vectors must have the same length."))
+	all(doc.readers .> 0)								|| throw(DocumentError("All readers must be positive integers."))
+	all(doc.ratings .> 0)								|| throw(DocumentError("All ratings must be positive integers."))
+	isequal(length(doc.readers), length(doc.ratings))	|| throw(DocumentError("The readers and ratings vectors must have the same length."))
  	nothing
  end
 
