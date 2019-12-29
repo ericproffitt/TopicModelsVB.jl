@@ -678,12 +678,12 @@ function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer
 				break
 			end
 		end
-		update_he!(model)
-		update_alef!(model)
 		update_dalet!(model)
 		update_het!(model)
-		update_vav!(model)
+		update_alef!(model)
 		update_bet!(model)
+		update_he!(model)
+		update_vav!(model)
 
 		if check_elbo!(model, check_elbo, k, tol)
 			break
