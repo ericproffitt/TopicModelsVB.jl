@@ -298,6 +298,22 @@ function update_vav!(model::CTPF)
 	model.vav = model.f .+ sum(model.gimel) ./ model.dalet + sum(model.zayin) ./ model.het
 end
 
+function update_dalet!(model::CTPF)
+	"Update dalet."
+	"Analytic."
+
+	model.dalet_old = model.dalet
+	model.dalet = model.d .+ vec(sum(model.alef, dims=2)) ./ model.bet + vec(sum(model.he, dims=2)) ./ model.vav
+end
+
+function update_het!(model::CTPF)
+	"Update het."
+	"Analytic"
+
+	model.het_old = model.het
+	model.het = model.h .+ vec(sum(model.he, dims=2)) ./ model.vav
+end
+
 function update_gimel!(model::CTPF, d::Int)
 	"Update gimel."
 	"Analytic."
@@ -316,22 +332,6 @@ function update_zayin!(model::CTPF, d::Int)
 
 	ratings = model.corp[d].ratings
 	model.zayin[d] = model.g .+ model.xi[1][model.K+1:end,:] * ratings
-end
-
-function update_dalet!(model::CTPF)
-	"Update dalet."
-	"Analytic."
-
-	model.dalet_old = model.dalet
-	model.dalet = model.d .+ vec(sum(model.alef, dims=2)) ./ model.bet + vec(sum(model.he, dims=2)) ./ model.vav
-end
-
-function update_het!(model::CTPF)
-	"Update het."
-	"Analytic"
-
-	model.het_old = model.het
-	model.het = model.h .+ vec(sum(model.he, dims=2)) ./ model.vav
 end
 
 function update_phi!(model::CTPF, d::Int)
@@ -357,7 +357,7 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 
 	check_model(model)
 	all([tol, vtol] .>= 0)												|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, viter] .> 0)												|| throw(ArgumentError("Iteration parameters must be positive integers."))
+	all([iter, viter] .>= 0)											|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
 	update_elbo!(model)
@@ -373,15 +373,18 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 					break
 				end
 			end
-			update_alef!(model, d)
 			update_he!(model, d)
+			update_alef!(model, d)
 		end
-		update_dalet!(model)
-		update_het!(model)
-		update_alef!(model)
-		update_bet!(model)
 		update_he!(model)
-		update_vav!(model)
+		update_alef!(model)
+
+		for _ in 1:viter
+			update_dalet!(model)
+			update_het!(model)
+			update_bet!(model)
+			update_vav!(model)
+		end
 
 		if check_elbo!(model, check_elbo, k, tol)
 			break
