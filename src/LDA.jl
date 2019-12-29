@@ -151,7 +151,7 @@ function update_gamma!(model::LDA, d::Int)
 	"Analytic."
 
 	counts = model.corp[d].counts
-	@bumper model.gamma[d] = model.alpha + model.phi[1] * counts	
+	@bumper model.gamma[d] = model.alpha + model.phi[1] * counts
 end
 
 function update_phi!(model::LDA, d::Int)
