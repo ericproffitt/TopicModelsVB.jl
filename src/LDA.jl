@@ -1,5 +1,5 @@
 mutable struct LDA <: TopicModel
-	"LDA mutable struct."
+	"Latent Dirichlet allocation."
 
 	K::Int
 	M::Int

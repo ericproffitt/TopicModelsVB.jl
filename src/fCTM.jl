@@ -1,4 +1,6 @@
 mutable struct fCTM <: TopicModel
+	"Filtered correlated topic model."
+
 	K::Int
 	M::Int
 	V::Int

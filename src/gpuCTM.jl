@@ -1,4 +1,6 @@
 mutable struct gpuCTM <: TopicModel
+	"GPU accelerated correlated topic model."
+
 	K::Int
 	M::Int
 	V::Int

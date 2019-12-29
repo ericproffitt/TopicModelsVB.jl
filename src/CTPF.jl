@@ -1,4 +1,6 @@
 mutable struct CTPF <: TopicModel
+	"Collaborative topic Poisson factorization."
+
 	K::Int
 	M::Int
 	V::Int

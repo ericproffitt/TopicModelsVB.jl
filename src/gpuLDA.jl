@@ -1,4 +1,6 @@
 mutable struct gpuLDA <: TopicModel
+	"GPU accelerated latent Dirichlet allocation."
+
 	K::Int
 	M::Int
 	V::Int

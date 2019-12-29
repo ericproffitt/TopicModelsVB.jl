@@ -249,6 +249,8 @@ function readcorp(corp_symbol::Symbol)
 end
 
 function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+	"Write a corpus."
+
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
 
 	if !isempty(docfile)

@@ -1,4 +1,6 @@
 mutable struct fLDA <: TopicModel
+	"Filtered latent Dirichlet allocation."
+
 	K::Int
 	M::Int
 	V::Int
