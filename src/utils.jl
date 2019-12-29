@@ -138,14 +138,6 @@ VectorList{T} = Vector{Vector{T}}
 "Type alias for a vector of matrices."
 MatrixList{T} = Vector{Matrix{T}}
 
-function logsumexp(x::Array{<:Real})
-	"The LogSumExp of a real-valued array."
-	"Overflow safe."
-
-	maxval = maximum(x)
-	return maxval + log(sum(exp.(x .- maxval)))
-end
-
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
 	"Additive logistic function of a real-valued matrix."
 	"Overflow safe."

@@ -180,7 +180,7 @@ function update_logzeta!(model::CTM, d::Int)
 	"Update logzeta."
 	"Analytic."
 
-	model.logzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
+	model.logzeta[d] = Distributions.logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function update_phi!(model::CTM, d::Int)
