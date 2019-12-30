@@ -378,15 +378,12 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 			update_he!(model, d)
 			update_alef!(model, d)
 		end
-		update_he!(model)
 		update_alef!(model)
-
-		for _ in 1:viter
-			update_dalet!(model)
-			update_het!(model)
-			update_bet!(model)
-			update_vav!(model)
-		end
+		update_he!(model)
+		update_dalet!(model)
+		update_vav!(model)
+		update_het!(model)
+		update_bet!(model)
 
 		if check_elbo!(model, check_elbo, k, tol)
 			break
