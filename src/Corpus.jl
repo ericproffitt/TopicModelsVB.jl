@@ -405,6 +405,48 @@ function remove_empty_docs!(corp::Corpus)
 	nothing
 end
 
+function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Remove vocab and/or user keys which map to redundant values."
+	"Reassign Document term and/or reader keys."
+
+	if vocab
+		vkey_map = Dict()
+		vocab_dict_inverse = Dict()
+		vkeys = sort(collect(keys(corp.vocab)))
+		for vkey in vkeys
+			if corp.vocab[vkey] in keys(vocab_dict_inverse)
+				vkey_map[vkey] = vocab_dict_inverse[corp.vocab[vkey]]
+
+			else
+				vkey_map[vkey] = vkey
+			end
+		end
+
+		for doc in unique(corp)
+			doc.terms = [vkey_map[vkey] for vkey in doc.terms]
+		end
+	end
+
+	if users
+		ukey_map = Dict()
+		users_dict_inverse = Dict()
+		ukeys = sort(collect(keys(corp.users)))
+		for ukey in ukeys
+			if corp.users[ukey] in keys(users_dict_inverse)
+				ukey_map[ukey] = users_dict_inverse[corp.users[ukey]]
+
+			else
+				ukey_map[ukey] = ukey
+			end
+		end
+
+		for doc in unique(corp)
+			doc.readers = [ukey_map[ukey] for ukey in doc.readers]
+		end
+	end
+	nothing
+end
+
 function stop_corp!(corp::Corpus)
 	"Filter stop words in the associated corpus."
 
