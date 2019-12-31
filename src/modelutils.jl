@@ -8,11 +8,11 @@ end
 
 Base.showerror(io::IO, e::TopicModelError) = print(io, "TopicModelError: ", e.msg)
 
-showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
-showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
-showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, collect(doc_range))
-showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
 showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
+showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
+showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
+showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
+showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, collect(doc_range))
 
 getvocab(model::TopicModel) = sort(collect(values(model.corp.vocab)))
 getusers(model::TopicModel) = sort(collect(values(model.corp.users)))

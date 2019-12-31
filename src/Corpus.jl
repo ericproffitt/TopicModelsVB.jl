@@ -129,29 +129,49 @@ Base.lastindex(corp::Corpus) = length(corp)
 Base.enumerate(corp::Corpus) = enumerate(corp.docs)
 Base.unique(corp::Corpus) = Corpus(docs=unique(corp.docs), vocab=corp.vocab, users=corp.users)
 
-function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
-	"Display document(s) in readable format."
+function showdocs(corp::Corpus, doc::Document)
+	"Display document in readable format."
 
-	@assert checkbounds(Bool, 1:length(corp), doc_indices) "Some document indices outside docs range."
-	
-	for d in doc_indices
-		doc = corp[d]
-		@juliadots "Document $d\n"
-		if !isempty(doc.title)
-			@juliadots "$(doc.title)\n"
-		end
-		println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in corp[d].terms], " "), '\n')
+	issubset(doc.terms, keys(corp.vocab)) || throw(DocumentError("Document contains term keys not found in Corpus vocab."))
+
+	@juliadots "Document"
+	if !isempty(doc.title)
+		@juliadots "$(doc.title)\n"
 	end
+	println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n')
 end
 
 function showdocs(corp::Corpus, docs::Vector{Document})
-	doc_indices = findall(corp, docs)
-	showdocs(corp, doc_indices)
+	"Display document(s) in readable format."
+
+	for doc in docs
+		showdocs(corp, doc)
+	end
+end
+
+function showdocs(corp::Corpus, d::Integer)
+	"Display document in readable format."
+
+	(d in 1:length(corp)) || throw(CorpusError("Document index $d outside corpus range."))
+
+	doc = corp[d]
+
+	@juliadots "Document $d\n"
+	if !isempty(doc.title)
+		@juliadots "$(doc.title)\n"
+	end
+	println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n')
+end
+
+function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
+	"Display document(s) in readable format."
+
+	for d in doc_indices
+		showdocs(corp, d)
+	end
 end
 
 showdocs(corp::Corpus, doc_range::UnitRange{<:Integer}) = showdocs(corp, collect(doc_range))
-showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
-showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
 
 getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
 getusers(corp::Corpus) = sort(collect(values(corp.users)))
