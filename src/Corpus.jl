@@ -85,7 +85,7 @@ function check_corp(corp::Corpus)
 		try
 			check_doc(doc)
 		catch
-			error("Document $d failed check.")
+			throw(CorpusError("Document $d failed check."))
 		end
 	end
 
@@ -193,7 +193,7 @@ function readcorp(;docfile::String="", vocabfile::String="", userfile::String=""
 				push!(corp, Document(;doc_input...))
 			
 			catch
-				error("Document $d beginning on line $((d - 1) * (counts + readers + ratings) + d) failed to load.")
+				throw(CorpusError("Document $d beginning on line $((d - 1) * (counts + readers + ratings) + d) failed to load."))
 			end
 		end
 
