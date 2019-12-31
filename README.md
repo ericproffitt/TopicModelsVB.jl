@@ -251,7 +251,7 @@ artificial_corp = gencorp(model, 5000, laplace_smooth=1e-5)
 ### The laplace_smooth argument governs the amount of Laplace smoothing (defaults to 0).
 
 artificial_model = LDA(artificial_corp, 9)
-train!(artificial_model, iter=150, tol=0, check_elbo=15)
+train!(artificial_model, iter=150, tol=0, check_elbo=10)
 
 ### training...
 
@@ -283,7 +283,7 @@ One thing we notice so far is that despite producing what are clearly coherent t
 Random.seed!(2)
 
 model = fLDA(corp, 9)
-train!(model, iter=150, tol=0)
+train!(model, iter=150, tol=0, check_elbo=Inf)
 
 ### training...
 
@@ -318,7 +318,7 @@ For our final example using the NSF corpus, let's upgrade our model to a filtere
 Random.seed!(2)
 
 model = fCTM(corp, 9)
-train!(model, iter=150, tol=0)
+train!(model, iter=150, tol=0, check_elbo=Inf)
 
 ### training...
 
@@ -386,7 +386,7 @@ As for the most unlikely topic pairings, first are topics 7 and 9, corresponding
 Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic,
 
 ```julia
-indmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
+argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
 ```
 
 ### CTPF
