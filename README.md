@@ -588,7 +588,7 @@ This algorithm just crunched through a 16 topic 128,804 document topic model in 
 **Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
 Here is the benchmark of our above model against the equivalent model run on the CPU,
-![GPU Benchmark](https://github.com/esproff/TopicModelsVB.jl/blob/master/images/ldabar.png)
+![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/version-1.x/images/ldabar.png)
 
 As we can see, running the LDA model on the GPU is approximatey 1.32 orders of magnitude faster than running it on the CPU.
 
