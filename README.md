@@ -583,7 +583,7 @@ model = LDA(corp, 16)
 ### On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
 
-This algorithm just crunched through a 16 topic 128,804 document topic model in *under* 3 minutes.
+This algorithm just crunched through a 16 topic 128,804 document topic model in just over 2.5 minutes.
 
 **Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
 
@@ -591,7 +591,7 @@ Here is the benchmark of our above model against the equivalent model run on the
 
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/version-1.x/images/ldabar.png)
 
-As we can see, running the LDA model on the GPU is approximatey 1.32 orders of magnitude faster than running it on the CPU.
+As we can see, running the LDA model on the GPU is approximatey 1800% faster than running it on the CPU.
 
 Note, it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
