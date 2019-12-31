@@ -24,7 +24,7 @@ mutable struct Document
 	end
 end
 
-### Document outer constructor for non-kwarg terms initialization.
+### Document outer constructors.
 Document(terms) = Document(terms=terms)
 
 struct DocumentError <: Exception
@@ -66,9 +66,11 @@ mutable struct Corpus
 	end
 end
 
-### Corpus outer constructors for non-kwarg Document(s) initialization.
-Corpus(docs) = Corpus(docs=docs)
-Corpus(doc) = Corpus(docs=[doc])
+### Corpus outer constructors.
+Corpus(docs::Vector{Document}) = Corpus(docs=docs)
+Corpus(docs::Vector{Document}; vocab=[], users=[]) = Corpus(docs=docs, vocab=vocab, users=users)
+Corpus(doc::Document) = Corpus(docs=[doc])
+Corpus(doc::Document; vocab=[], users=[]) = Corpus(docs=[doc], vocab=vocab, users=users)
 
 struct CorpusError <: Exception
     msg::String
@@ -416,9 +418,11 @@ function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 		for vkey in vkeys
 			if corp.vocab[vkey] in keys(vocab_dict_inverse)
 				vkey_map[vkey] = vocab_dict_inverse[corp.vocab[vkey]]
+				delete!(corp.vocab, vkey)
 
 			else
 				vkey_map[vkey] = vkey
+				vocab_dict_inverse[corp.vocab[vkey]] = vkey
 			end
 		end
 
@@ -434,9 +438,11 @@ function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 		for ukey in ukeys
 			if corp.users[ukey] in keys(users_dict_inverse)
 				ukey_map[ukey] = users_dict_inverse[corp.users[ukey]]
+				delete!(corp.users, ukey)
 
 			else
 				ukey_map[ukey] = ukey
+				users_dict_inverse[corp.users[ukey]] = ukey
 			end
 		end
 

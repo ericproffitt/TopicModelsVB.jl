@@ -718,6 +718,10 @@ function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 function remove_empty_docs!(corp::Corpus)
 	"Documents with no terms are removed from the corpus."
 
+function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Remove vocab and/or user keys which map to redundant values."
+	"Reassign Document term and/or reader keys."
+
 function stop_corp!(corp::Corpus)
 	"Filter stop words in the associated corpus."
 
