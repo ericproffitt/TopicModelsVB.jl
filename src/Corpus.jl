@@ -134,7 +134,7 @@ function showdocs(corp::Corpus, doc::Document)
 
 	issubset(doc.terms, keys(corp.vocab)) || throw(DocumentError("Document contains term keys not found in Corpus vocab."))
 
-	@juliadots "Document"
+	@juliadots "Document\n"
 	if !isempty(doc.title)
 		@juliadots "$(doc.title)\n"
 	end
