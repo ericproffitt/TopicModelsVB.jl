@@ -633,7 +633,7 @@ function gendoc(model::Union{LDA, gpuLDA}, laplace_smooth::Real=0.0)
 	termcount = Dict{Int, Int}()
 	theta = rand(Dirichlet(model.alpha))
 	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.beta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
+	lexdist = [Categorical((vec(model.beta[i,:]) + laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
 	for _ in 1:C
 		z = rand(topicdist)
 		w = rand(lexdist[z])
@@ -655,7 +655,7 @@ function gendoc(model::fLDA, laplace_smooth::Real=0.0)
 	termcount = Dict{Int, Int}()
 	theta = rand(Dirichlet(model.alpha))
 	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.fbeta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
+	lexdist = [Categorical((vec(model.fbeta[i,:]) + laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
 	for _ in 1:C
 		z = rand(topicdist)
 		w = rand(lexdist[z])
@@ -678,7 +678,7 @@ function gendoc(model::Union{CTM, gpuCTM}, laplace_smooth::Real=0.0)
 	theta = rand(MvNormal(model.mu, model.sigma))
 	theta = exp.(theta) / sum(exp.(theta))
 	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.beta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
+	lexdist = [Categorical((vec(model.beta[i,:]) + laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
 	for _ in 1:C
 		z = rand(topicdist)
 		w = rand(lexdist[z])
@@ -701,7 +701,7 @@ function gendoc(model::fCTM, laplace_smooth::Real=0.0)
 	theta = rand(MvNormal(model.mu, model.sigma))
 	theta = exp(theta) / sum(exp(theta))
 	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.fbeta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
+	lexdist = [Categorical((vec(model.fbeta[i,:]) + laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
 	for _ in 1:C
 		z = rand(topicdist)
 		w = rand(lexdist[z])
