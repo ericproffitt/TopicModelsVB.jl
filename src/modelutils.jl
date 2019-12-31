@@ -642,7 +642,7 @@ function gendoc(model::Union{LDA, gpuLDA}, laplace_smooth::Real=0.0)
 	terms = collect(keys(termcount))
 	counts = collect(values(termcount))
 
-	return Document(terms, counts=counts)
+	return Document(terms=terms, counts=counts)
 end
 
 function gendoc(model::fLDA, laplace_smooth::Real=0.0)
@@ -664,7 +664,7 @@ function gendoc(model::fLDA, laplace_smooth::Real=0.0)
 	terms = collect(keys(termcount))
 	counts = collect(values(termcount))
 
-	return Document(terms, counts=counts)
+	return Document(terms=terms, counts=counts)
 end
 
 function gendoc(model::Union{CTM, gpuCTM}, laplace_smooth::Real=0.0)
@@ -687,7 +687,7 @@ function gendoc(model::Union{CTM, gpuCTM}, laplace_smooth::Real=0.0)
 	terms = collect(keys(termcount))
 	counts = collect(values(termcount))
 
-	return Document(terms, counts=counts)
+	return Document(terms=terms, counts=counts)
 end
 
 function gendoc(model::fCTM, laplace_smooth::Real=0.0)
@@ -710,7 +710,7 @@ function gendoc(model::fCTM, laplace_smooth::Real=0.0)
 	terms = collect(keys(termcount))
 	counts = collect(values(termcount))
 
-	return Document(terms, counts=counts)
+	return Document(terms=terms, counts=counts)
 end
 
 function gencorp(model::TopicModel, corp_size::Integer; laplace_smooth::Real=0.0)
