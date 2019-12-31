@@ -510,7 +510,7 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 	nothing
 end
 
-function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
+function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
 	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
 	"Contains optional keyword arguments."
 
@@ -518,6 +518,7 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp
 
 	remove_empty_docs 	&& remove_empty_docs!(corp)
 	condense_corp 		&& condense_corp!(corp)
+	remove_redundant	&& remove_redundant!(corp)
 	abridge_corp > 0 	&& abridge_corp!(corp)
 	pad_corp 			&& pad_corp!(corp, vocab=vocab, users=users)
 	trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
