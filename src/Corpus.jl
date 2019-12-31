@@ -137,7 +137,7 @@ function showdocs(corp::Corpus, doc::Document)
 	if !isempty(doc.title)
 		@juliadots "$(doc.title)\n"
 	end
-	println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n')
+	!isempty(doc) ? println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n') : println()
 end
 
 function showdocs(corp::Corpus, docs::Vector{Document})
@@ -151,7 +151,8 @@ end
 function showdocs(corp::Corpus, d::Integer)
 	"Display document in readable format."
 
-	(d in 1:length(corp)) || throw(CorpusError("Document index $d outside corpus range."))
+	(d in 1:length(corp))						|| throw(CorpusError("Document index $d outside corpus range."))
+	issubset(corp[d].terms, keys(corp.vocab))	|| throw(DocumentError("Document $d contains term keys not found in Corpus vocab."))
 
 	doc = corp[d]
 
@@ -159,7 +160,7 @@ function showdocs(corp::Corpus, d::Integer)
 	if !isempty(doc.title)
 		@juliadots "$(doc.title)\n"
 	end
-	println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n')
+	!isempty(doc) ? println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n') : println()
 end
 
 function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
@@ -171,6 +172,7 @@ function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
 end
 
 showdocs(corp::Corpus, doc_range::UnitRange{<:Integer}) = showdocs(corp, collect(doc_range))
+showdocs(corp::Corpus) = showdocs(corp, 1:length(corp))
 
 getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
 getusers(corp::Corpus) = sort(collect(values(corp.users)))
