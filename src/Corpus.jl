@@ -85,8 +85,7 @@ function check_corp(corp::Corpus)
 		try
 			check_doc(doc)
 		catch
-			println("Document $d failed check.")
-			check_doc(doc)
+			error("Document $d failed check.")
 		end
 	end
 
