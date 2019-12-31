@@ -282,7 +282,6 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		update_sigma!(model)
 		update_mu!(model)
 		update_eta!(model)
-		check_elbo(model)
 		
 		if check_elbo!(model, check_elbo, k, tol)
 			break
