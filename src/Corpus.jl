@@ -543,7 +543,6 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp
 	abridge_corp > 0 	&& abridge_corp!(corp)
 	pad_corp 			&& pad_corp!(corp, vocab=vocab, users=users)
 	trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
-
 	stop_corp 			&& stop_corp!(corp)
 	alphabetize_corp 	&& alphabetize_corp!(corp, vocab=vocab, users=users)
 
