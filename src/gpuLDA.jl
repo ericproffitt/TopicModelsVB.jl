@@ -130,7 +130,16 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	"Update alpha."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
+	Elogtheta_host = cl.read(model.queue, model.Elogtheta_buffer)[1:(model.K * model.M)]
+
+	Elogtheta_sum = zeros(Float32, model.K)
+	for d in 1:model.M, i in 1:model.K
+		Elogtheta_sum[i] += Elogtheta_host[model.K * (d - 1) + i]
+	end
+
+	#Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)[:,1:model.M]
+	#Elogtheta_sum = vec(sum(Elogtheta_host, dims=2))
+	#Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
 	nu = model.K
 	for _ in 1:niter
@@ -232,14 +241,15 @@ function update_Elogtheta!(model::gpuLDA)
 	"Update E[log(theta)]."
 	"Analytic."
 	
-	model.Elogtheta_old = model.Elogtheta
+	#model.Elogtheta_old = model.Elogtheta
 
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.gamma_buffer, model.Elogtheta_buffer)
-
-	#Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)[:,1:model.M]
+	
+	Elogtheta_host = cl.read(model.queue, model.Elogtheta_buffer)[1:(model.K * model.M)]
+	#Elogtheta_host = reshape(Elogtheta_host, model.K, model.M + 64 - model.M % 64)[:,1:model.M]
 	#model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
-	#return Elogtheta_host
-	@host model.Elogtheta_buffer
+	return Elogtheta_host
+	#@host model.Elogtheta_buffer
 end
 
 const LDA_GAMMA_c =
@@ -328,21 +338,24 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	update_elbo!(model)
 
-	Elogtheta_host_old = hcat(model.Elogtheta...)
+	Elogtheta_host_old = vcat(model.Elogtheta...)
 
 	for k in 1:iter
-		for _ in 1:viter
+		for v in 1:viter
 			update_phi!(model)			
 			update_gamma!(model)
-			update_Elogtheta!(model)
-			#Elogtheta_host = update_Elogtheta!(model)
+			#update_Elogtheta!(model)
+			Elogtheta_host = update_Elogtheta!(model)
 
+			#println(v)
+
+			if norm(Elogtheta_host - Elogtheta_host_old) < model.M * vtol
 			#if sum(sqrt.(sum((Elogtheta_host - Elogtheta_host_old).^2, dims=1))) < model.M * vtol
-			#	Elogtheta_host_old = Elogtheta_host
-			if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
+				Elogtheta_host_old = Elogtheta_host
+			#if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
 				break
 			end
-			#Elogtheta_host_old = Elogtheta_host
+			Elogtheta_host_old = Elogtheta_host
 		end
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)

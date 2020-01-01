@@ -117,7 +117,7 @@ fixcorp!(corp; pad_corp=true)
 
 Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
 
-In addition, if you would like to preserve term order in your documents, then you should avoid condesing your corpus.
+In addition, if you would like to preserve term order in your documents, then you should refrain from condesing your corpus.
 
 For example,
 
@@ -605,19 +605,19 @@ model = LDA(corp, 16)
 
 ### training...
 
-### 156.591258 seconds (231.34 M allocations: 25.416 GiB, 37.82% gc time)
+### 120.928241 seconds (130.06 M allocations: 22.745 GiB, 3.60% gc time)
 ### On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
 
-This algorithm just crunched through a 16 topic 128,804 document topic model in just over 2.5 minutes.
+This algorithm just crunched through a 16 topic 128,804 document topic model in 2 minutes.
 
-**Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive transfers between GPU and CPU memory.
+**Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive memory allocations on the CPU.
 
-Here is the benchmark of our above model against the equivalent model run on the CPU,
+Here is the benchmark of our above model against the equivalent model run on the CPU (excluding fixed costs and only timing the coordinate ascent algorithm),
 
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/version-1.x/images/ldabar.png)
 
-As we can see, running the LDA model on the GPU is approximatey 1800% faster than running it on the CPU.
+As we can see, running the LDA model on the GPU is approximatey 3200% faster than running it on the CPU.
 
 Note, it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
