@@ -117,6 +117,32 @@ fixcorp!(corp; pad_corp=true)
 
 Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
 
+In addition, if you would like to preserve term order in your documents, then you should avoid condesing your corpus.
+
+For example,
+
+```Julia
+corp = Corpus(Document(1:9), vocab=split("the quick brown fox jumped over the lazy dog"))
+
+showdocs(corp)
+```
+
+```
+ ●●● Document 1
+the quick brown fox jumped over the lazy dog
+```
+
+```Julia
+fixcorp!(corp, condense_corp=true)
+
+showdocs(corp)
+```
+
+```
+ ●●● Document 1
+the fox dog quick brown jumped lazy over the
+````
+
 **Important.** A corpus is only a container for documents. 
 
 Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order vocab keys, etc.), this will not affect any corpus attached to a model. However! Since corpora are containers for their documents, modifying an individual document will affect it in all corpora which contain it. Therefore,

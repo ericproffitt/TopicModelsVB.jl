@@ -342,7 +342,7 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 		corp.vocab = Dict(vkey => term for (vkey, term) in zip(vkeys, terms))
 
 		for doc in unique(corp)
-			doc.terms = [vkey_map[vkey] for vkey in doc.terms]
+			doc.terms = [vkey_map[j] for j in doc.terms]
 		end
 	end
 
@@ -385,7 +385,7 @@ function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	nothing
 end
 
-function condense_docs!(corp::Corpus)
+function condense_corp!(corp::Corpus)
 	"Ignore term order in documents."
 	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
 
