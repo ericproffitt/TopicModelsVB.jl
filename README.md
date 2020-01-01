@@ -735,7 +735,7 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	"Relabel vocab and/or user keys so that they form a unit range."
 
-function condense_docs!(corp::Corpus)
+function condense_corp!(corp::Corpus)
 	"Ignore term order in documents."
 	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
 
