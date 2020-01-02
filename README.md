@@ -613,7 +613,7 @@ This algorithm just crunched through a 16 topic 128,804 document topic model in 
 
 **Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive memory allocations on the CPU.
 
-Here is the benchmark of our above model against the equivalent model run on the CPU (excluding fixed costs and only timing the coordinate ascent algorithm),
+Here is the benchmark of the above model's coordinate ascent algorithm against the equivalent algorithm run on the CPU,
 
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/version-1.x/images/ldabar.png)
 
