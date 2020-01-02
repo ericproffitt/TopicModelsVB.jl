@@ -611,7 +611,7 @@ model = LDA(corp, 16)
 
 This algorithm just crunched through a 16 topic 128,804 document topic model in 2 minutes.
 
-**Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently since checking the ELBO for GPU models requires expensive memory allocations on the CPU.
+**Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently, since checking the ELBO for GPU models requires expensive memory allocations on the CPU.
 
 Here is the benchmark of the above model's coordinate ascent algorithm against the equivalent algorithm run on the CPU,
 
