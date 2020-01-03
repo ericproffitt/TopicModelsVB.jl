@@ -33,6 +33,7 @@ mutable struct gpuLDA <: TopicModel
 	beta_buffer::cl.Buffer{Float32}
 	gamma_buffer::cl.Buffer{Float32}
 	Elogtheta_buffer::cl.Buffer{Float32}
+	Elogtheta_old_buffer::cl.Buffer{Float32}
 	Elogtheta_dist_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
 
@@ -239,11 +240,12 @@ update_Elogtheta(	long K,
 					for (long i=0; i<K; i++)
 					{
 						float x = digamma(gamma[K * d + i]) - acc1;
+
 						acc2 += (x - Elogtheta[K * d + i]) * (x - Elogtheta[K * d + i]);
-						Elogtheta[K * d + i] = digamma(gamma[K * d + i]) - acc1;
+						Elogtheta[K * d + i] = x;
 					}
 
-					Elogtheta_dist[d] = acc2;
+					Elogtheta_dist[d] = sqrt(acc2);
 					}
 					"""
 
@@ -357,10 +359,10 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		for v in 1:viter
 			update_phi!(model)			
 			update_gamma!(model)
-			update_Elogtheta!(model)
+			#update_Elogtheta!(model)
 			Elogtheta_dist_host = update_Elogtheta!(model)
 
-			println(Elogtheta_dist_host[1])
+			println(sum(Elogtheta_dist_host))
 
 			if sum(Elogtheta_dist_host) < model.M * vtol
 				break
