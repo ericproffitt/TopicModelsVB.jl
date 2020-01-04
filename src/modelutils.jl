@@ -417,8 +417,8 @@ function update_buffer!(model::gpuLDA)
 	@buffer model.alpha
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
 	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.Elogtheta_sum_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.K))
 	model.Elogtheta_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M + 64 - model.M % 64))
-	#model.gamma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gamma..., zeros(Float32, model.K, 64 - model.M % 64)))
 	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
 	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
 end
@@ -549,6 +549,7 @@ function update_host!(model::gpuLDA)
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
 	
 	@host model.Elogtheta_buffer
+	@host model.Elogtheta_dist_buffer
 
 	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
 	model.gamma = [gamma_host[:,d] for d in 1:model.M]

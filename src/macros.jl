@@ -80,6 +80,18 @@ macro host(expr::Expr)
 		$(esc(model)).Elogtheta = [Elogtheta_host[:,d] for d in 1:$(esc(model)).M]
 		end
 
+	elseif expr.args[2] == :(:Elogtheta_sum_buffer)
+		expr_out = 
+		quote
+		$(esc(model)).Elogtheta_sum = cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_sum_buffer)
+		end
+
+	elseif expr.args[2] == :(:Elogtheta_dist_buffer)
+		expr_out = 
+		quote
+		$(esc(model)).Elogtheta_dist = cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_dist_buffer)[1:$(esc(model)).M]
+		end
+
 	elseif expr.args[2] == :(:mu_buffer)
 		expr_out = :($(esc(model)).mu = cl.read($(esc(model)).queue, $(esc(model)).mu_buffer))
 

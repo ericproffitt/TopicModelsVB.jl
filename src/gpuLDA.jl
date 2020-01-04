@@ -11,7 +11,8 @@ mutable struct gpuLDA <: TopicModel
 	alpha::Vector{Float32}
 	beta::Matrix{Float32}
 	Elogtheta::VectorList{Float32}
-	Elogtheta_old::VectorList{Float32}
+	Elogtheta_sum::Vector{Float32}
+	Elogtheta_dist::Vector{Float32}
 	gamma::VectorList{Float32}
 	phi::MatrixList{Float32}
 	elbo::Float32
@@ -21,6 +22,7 @@ mutable struct gpuLDA <: TopicModel
 	beta_kernel::cl.Kernel
 	beta_norm_kernel::cl.Kernel
 	Elogtheta_kernel::cl.Kernel
+	Elogtheta_sum_kernel::cl.Kernel
 	gamma_kernel::cl.Kernel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
@@ -33,7 +35,7 @@ mutable struct gpuLDA <: TopicModel
 	beta_buffer::cl.Buffer{Float32}
 	gamma_buffer::cl.Buffer{Float32}
 	Elogtheta_buffer::cl.Buffer{Float32}
-	Elogtheta_old_buffer::cl.Buffer{Float32}
+	Elogtheta_sum_buffer::cl.Buffer{Float32}
 	Elogtheta_dist_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
 
@@ -51,8 +53,9 @@ mutable struct gpuLDA <: TopicModel
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		Elogtheta = [ones(K) for _ in 1:M]#[-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
-		Elogtheta_old = copy(Elogtheta)
+		Elogtheta = [ones(Float32, K) for _ in 1:M]#Vector{Float32}[-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		Elogtheta_sum = fill(M, K)#sum(Elogtheta)
+		Elogtheta_dist = zeros(M)
 		gamma = [ones(K) for _ in 1:M]
 		phi = [ones(K, N[d]) / K for d in 1:M]
 		elbo = 0
@@ -62,6 +65,7 @@ mutable struct gpuLDA <: TopicModel
 		beta_program = cl.Program(context, source=LDA_BETA_c) |> cl.build!
 		beta_norm_program = cl.Program(context, source=LDA_BETA_NORM_c) |> cl.build!
 		Elogtheta_program = cl.Program(context, source=LDA_ELOGTHETA_c) |> cl.build!
+		Elogtheta_sum_program = cl.Program(context, source=LDA_ELOGTHETA_SUM_c) |> cl.build!
 		gamma_program = cl.Program(context, source=LDA_GAMMA_c) |> cl.build!
 		phi_program = cl.Program(context, source=LDA_PHI_c) |> cl.build!
 		phi_norm_program = cl.Program(context, source=LDA_PHI_NORM_c) |> cl.build!
@@ -69,11 +73,12 @@ mutable struct gpuLDA <: TopicModel
 		beta_kernel = cl.Kernel(beta_program, "update_beta")
 		beta_norm_kernel = cl.Kernel(beta_norm_program, "normalize_beta")
 		Elogtheta_kernel = cl.Kernel(Elogtheta_program, "update_Elogtheta")
+		Elogtheta_sum_kernel = cl.Kernel(Elogtheta_sum_program, "update_Elogtheta_sum")
 		gamma_kernel = cl.Kernel(gamma_program, "update_gamma")
 		phi_kernel = cl.Kernel(phi_program, "update_phi")
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 
-		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_old, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, Elogtheta_kernel, gamma_kernel, phi_kernel, phi_norm_kernel)
+		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_sum, Elogtheta_dist, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, Elogtheta_kernel, Elogtheta_sum_kernel, gamma_kernel, phi_kernel, phi_norm_kernel)
 		update_elbo!(model)	
 		return model
 	end
@@ -132,21 +137,12 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	"Update alpha."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	Elogtheta_host = cl.read(model.queue, model.Elogtheta_buffer)[1:(model.K * model.M)]
-
-	Elogtheta_sum = zeros(Float32, model.K)
-	for d in 1:model.M, i in 1:model.K
-		Elogtheta_sum[i] += Elogtheta_host[model.K * (d - 1) + i]
-	end
-
-	#Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)[:,1:model.M]
-	#Elogtheta_sum = vec(sum(Elogtheta_host, dims=2))
-	#Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
+	@host model.Elogtheta_sum_buffer
 
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alpha_grad = [nu / model.alpha[i] + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] .+ Elogtheta_sum
+		alpha_grad = [nu / model.alpha[i] + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] .+ model.Elogtheta_sum
 		alpha_invhess_diag = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
 		p = (alpha_grad .- dot(alpha_grad, alpha_invhess_diag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alpha_invhess_diag))) .* alpha_invhess_diag
 		
@@ -249,22 +245,33 @@ update_Elogtheta(	long K,
 					}
 					"""
 
+const LDA_ELOGTHETA_SUM_c =
+"""
+kernel void
+update_Elogtheta_sum(	long K,
+						long M,
+						const global float *Elogtheta,
+						global float *Elogtheta_sum)
+
+						{
+						long i = get_global_id(0);
+
+						float acc = 0.0f;
+
+						for (long d=0; d<M; d++)
+							acc += Elogtheta[K * d + i];
+
+						Elogtheta_sum[i] = acc;
+						}
+						"""
+
 function update_Elogtheta!(model::gpuLDA)
 	"Update E[log(theta)]."
 	"Analytic."
 	
-	#model.Elogtheta_old = model.Elogtheta
-
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.M, model.gamma_buffer, model.Elogtheta_buffer, model.Elogtheta_dist_buffer)
-	
-	Elogtheta_dist_host = cl.read(model.queue, model.Elogtheta_dist_buffer)[1:model.M]
-	return Elogtheta_dist_host
-
-	#Elogtheta_host = cl.read(model.queue, model.Elogtheta_buffer)[1:(model.K * model.M)]
-	#Elogtheta_host = reshape(Elogtheta_host, model.K, model.M)
-	#model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
-	#return Elogtheta_host
-	#@host model.Elogtheta_buffer
+	model.queue(model.Elogtheta_sum_kernel, model.K, nothing, model.K, model.M, model.Elogtheta_buffer, model.Elogtheta_sum_buffer)
+	@host model.Elogtheta_dist_buffer
 end
 
 const LDA_GAMMA_c =
@@ -353,35 +360,15 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	#all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	#update_elbo!(model)
 
-	#Elogtheta_host_old = hcat(model.Elogtheta...)
-
 	for k in 1:iter
 		for v in 1:viter
 			update_phi!(model)			
 			update_gamma!(model)
-			#update_Elogtheta!(model)
-			Elogtheta_dist_host = update_Elogtheta!(model)
+			update_Elogtheta!(model)
 
-			println(sum(Elogtheta_dist_host))
-
-			if sum(Elogtheta_dist_host) < model.M * vtol
+			if median(model.Elogtheta_dist) < vtol
 				break
 			end
-
-			#Elogtheta_dist = zeros(Float32, model.M)
-			#for d in 1:model.M, i in 1:model.K
-			#	Elogtheta_dist[d] += sqrt(sum((Elogtheta_host[model.K * (d - 1) + i] - Elogtheta_host_old[model.K * (d - 1) + i]).^2))
-			#end
-
-			#if sum(Elogtheta_dist) < model.M * vtol
-			#if norm(Elogtheta_host - Elogtheta_host_old) < sqrt(model.M) * vtol
-			#if median(sqrt.(sum((Elogtheta_host - Elogtheta_host_old).^2, dims=1))) < vtol
-			#	Elogtheta_host_old = Elogtheta_host
-			#if sum([norm(model.Elogtheta[d] - model.Elogtheta_old[d]) for d in 1:model.M]) < model.M * vtol
-				#nothing
-				#break
-			#end
-			#Elogtheta_host_old = Elogtheta_host
 		end
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)
@@ -392,6 +379,6 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	end
 
 	#(iter > 0) && update_host!(model)
-	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
+	#model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
