@@ -548,7 +548,8 @@ function update_host!(model::gpuLDA)
 
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
 	
-	@host model.Elogtheta_buffer
+	Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)
+	model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
 	@host model.Elogtheta_dist_buffer
 
 	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
