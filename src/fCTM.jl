@@ -38,7 +38,7 @@ mutable struct fCTM <: TopicModel
 
 		topics = [collect(1:V) for _ in 1:K]
 
-		eta = 0.95
+		eta = 0.5
 		mu = zeros(K)
 		sigma = Matrix(I, K, K)
 		invsigma = Matrix(I, K, K)

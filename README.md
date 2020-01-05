@@ -196,7 +196,8 @@ Random.seed!(2)
 corp = readcorp(:nsf) 
 
 corp.docs = corp[1:5000]
-fixcorp!(corp)
+fixcorp!(corp, trim_corp=true)
+### It's strongly recommended that you trim your corpus when reducing its size in order to remove excess vocabulary. 
 
 ### Notice that the post-fix vocabulary is smaller after removing all but the first 5000 docs.
 
@@ -335,7 +336,7 @@ solar           liquid          ecological       distributed      year          
 earth           particle        test             power            workshop       membrane      theoretical    questions       professor
 ```
 
-We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out, while those that remain are those which tend to cluster within their own, more generic, topic.
+We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out.
 
 ### CTM
 For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).

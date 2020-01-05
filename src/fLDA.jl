@@ -35,7 +35,7 @@ mutable struct fLDA <: TopicModel
 
 		topics = [collect(1:V) for _ in 1:K]
 
-		eta = 0.95
+		eta = 0.5
 		alpha = ones(K)
 		kappa = rand(Dirichlet(V, 1.0))
 		kappa_old = copy(kappa)
