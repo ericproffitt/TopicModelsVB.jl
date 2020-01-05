@@ -237,7 +237,7 @@ update_Elogtheta(	long K,
 					{
 						float x = digamma(gamma[K * d + i]) - acc1;
 
-						acc2 += (x - Elogtheta[K * d + i]) * (x - Elogtheta[K * d + i]);
+						acc2 += pow(x - Elogtheta[K * d + i], 2);
 						Elogtheta[K * d + i] = x;
 					}
 

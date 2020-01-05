@@ -297,9 +297,6 @@ function check_model(model::gpuCTM)
 	isequal(length(model.lambda), model.M)														|| throw(TopicModelError("lambda must be of length M."))
 	all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError("lambda must contain vectors of length K."))
 	all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])								|| throw(TopicModelError("lambda must be finite."))
-	isequal(length(model.lambda_old), model.M)													|| throw(TopicModelError("lambda_old must be of length M."))
-	all(Bool[isequal(length(model.lambda_old[d]), model.K) for d in 1:model.M])					|| throw(TopicModelError("lambda_old must contain vectors of length K."))
-	all(Bool[all(isfinite.(model.lambda_old[d])) for d in 1:model.M])							|| throw(TopicModelError("lambda_old must be finite."))
 	isequal(length(model.vsq), model.M)															|| throw(TopicModelError("vsq must be of length M."))
 	all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError("vsq must contain vectors of length K."))
 	all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])									|| throw(TopicModelError("vsq must be finite."))
@@ -396,7 +393,7 @@ function update_buffer!(model::gpuLDA)
 	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
 	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
 
-	@buffer model.alpha
+	model.alpha_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha)
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
 	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
 	model.Elogtheta_sum_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.K))
@@ -439,11 +436,13 @@ function update_buffer!(model::gpuCTM)
 	model.newton_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
 	model.newton_invhess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
 
-	@buffer model.sigma
-	@buffer model.invsigma
+	model.sigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sigma)
+	model.invsigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.invsigma)
 	model.mu_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.mu)
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
 	model.lambda_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.lambda_old_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
+	model.lambda_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M + 64 - model.M % 64))
 	model.vsq_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
 	model.logzeta_buffer = cl.Buffer(Float32, model.context, :rw, model.M + 64 - model.M % 64)
 	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
@@ -528,15 +527,13 @@ function update_host!(model::gpuLDA)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
-	
+	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)	
 	Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)
 	model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
-	@host model.Elogtheta_dist_buffer
-
+	model.Elogtheta_sum = cl.read(model.queue, model.Elogtheta_sum_buffer)
+	model.Elogtheta_dist = cl.read(model.queue, model.Elogtheta_dist_buffer)[1:model.M]
 	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
 	model.gamma = [gamma_host[:,d] for d in 1:model.M]
-
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
 	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
 end
@@ -549,14 +546,16 @@ function update_host!(model::gpuCTM)
 		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
 	end
 
-	@host model.mu_buffer
+	model.mu = cl.read(model.queue, model.mu_buffer)
 	model.sigma = reshape(cl.read(model.queue, model.sigma_buffer), model.K, model.K)
 	model.invsigma = reshape(cl.read(model.queue, model.invsigma_buffer), model.K, model.K)
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
-	@host model.lambda_buffer
-	@host model.vsq_buffer
+	lambda_host = reshape(cl.read(model.queue, model.lambda_buffer), model.K, model.M + 64 - model.M % 64)
+	model.lambda = [lambda_host[:,d] for d in 1:model.M]
+	model.lambda_dist = cl.read(model.queue,  model.lambda_dist_buffer)[1:model.M]
+	vsq_host = reshape(cl.read(model.queue, model.vsq_buffer), model.K, model.M + 64 - model.M % 64)
+	model.vsq = [vsq_host[:,d] for d in 1:model.M]
 	model.logzeta = cl.read(model.queue, model.logzeta_buffer)
-
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
 	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
 end
@@ -578,17 +577,14 @@ function update_host!(model::gpuCTPF)
 	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U)
 	model.bet = cl.read(model.queue, model.bet_buffer)
 	model.vav = cl.read(model.queue, model.vav_buffer)
-	@host model.gimel_buffer
-	
+	gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M + 64 - model.M % 64)
+	model.gimel = [gimel_host[:,d] for d in 1:model.M]
 	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, model.M + 64 - model.M % 64)
-	model.zayin = [zayin_host[:,d] for d in 1:model.M]
-		
+	model.zayin = [zayin_host[:,d] for d in 1:model.M]	
 	model.dalet = cl.read(model.queue, model.dalet_buffer)
 	model.het = cl.read(model.queue, model.het_buffer)
-	
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
 	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
-
 	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R) + 64 - sum(model.R) % 64)
 	model.xi = [xi_host[:,R_partial_sums[d]+1:R_partial_sums[d+1]] for d in 1:model.M]
 end

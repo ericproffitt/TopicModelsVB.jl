@@ -58,9 +58,6 @@ macro buffer(expr::Expr)
 	if expr.args[2] == :(:alpha)
 		expr_out = :($(esc(model)).alpha_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).alpha))
 
-	elseif expr.args[2] == :(:sigma)
-		expr_out = :($(esc(model)).sigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).sigma))
-
 	elseif expr.args[2] == :(:invsigma)
 		expr_out = :($(esc(model)).invsigma_buffer = cl.Buffer(Float32, $(esc(model)).context, (:rw, :copy), hostbuf=$(esc(model)).invsigma))
 	end
@@ -73,41 +70,17 @@ macro host(expr::Expr)
 
 	model = expr.args[1]
 
-	if expr.args[2] == :(:Elogtheta_buffer)
-		expr_out = 
-		quote
-		Elogtheta_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).Elogtheta = [Elogtheta_host[:,d] for d in 1:$(esc(model)).M]
-		end
-
-	elseif expr.args[2] == :(:Elogtheta_sum_buffer)
-		expr_out = 
-		quote
-		$(esc(model)).Elogtheta_sum = cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_sum_buffer)
-		end
+	if expr.args[2] == :(:Elogtheta_sum_buffer)
+		expr_out = :($(esc(model)).Elogtheta_sum = cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_sum_buffer))
 
 	elseif expr.args[2] == :(:Elogtheta_dist_buffer)
-		expr_out = 
-		quote
-		$(esc(model)).Elogtheta_dist = cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_dist_buffer)[1:$(esc(model)).M]
-		end
+		expr_out = :($(esc(model)).Elogtheta_dist = cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_dist_buffer)[1:$(esc(model)).M])
 
-	elseif expr.args[2] == :(:mu_buffer)
-		expr_out = :($(esc(model)).mu = cl.read($(esc(model)).queue, $(esc(model)).mu_buffer))
+	elseif expr.args[2] == :(:sigma_buffer)
+		expr_out = :($(esc(model)).sigma = reshape(cl.read($(esc(model)).queue, $(esc(model)).sigma_buffer), model.K, model.K))
 
-	elseif expr.args[2] == :(:lambda_buffer)
-		expr_out =
-		quote
-		lambda_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).lambda_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).lambda = [lambda_host[:,d] for d in 1:$(esc(model)).M]
-		end
-
-	elseif expr.args[2] == :(:vsq_buffer)
-		expr_out = 
-		quote
-		vsq_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).vsq_buffer), $(esc(model)).K, model.M + 64 - $(esc(model)).M % 64)
-		$(esc(model)).vsq = [vsq_host[:,d] for d in 1:$(esc(model)).M]
-		end
+	elseif expr.args[2] == :(:lambda_dist_buffer)
+		expr_out = :($(esc(model)).lambda_dist = cl.read($(esc(model)).queue, $(esc(model)).lambda_dist_buffer)[1:$(esc(model)).M])
 
 	elseif expr.args[2] == :(:gimel_buffer)
 		expr_out = 

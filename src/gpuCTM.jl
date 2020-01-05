@@ -13,7 +13,7 @@ mutable struct gpuCTM <: TopicModel
 	invsigma::Matrix{Float32}
 	beta::Matrix{Float32}
 	lambda::VectorList{Float32}
-	lambda_old::VectorList{Float32}
+	lambda_dist::Vector{Float32}
 	vsq::VectorList{Float32}
 	logzeta::Vector{Float32}
 	phi::MatrixList{Float32}
@@ -22,6 +22,7 @@ mutable struct gpuCTM <: TopicModel
 	context::cl.Context
 	queue::cl.CmdQueue
 	mu_kernel::cl.Kernel
+	sigma_kernel::cl.Kernel
 	beta_kernel::cl.Kernel
 	beta_norm_kernel::cl.Kernel
 	lambda_kernel::cl.Kernel
@@ -40,6 +41,8 @@ mutable struct gpuCTM <: TopicModel
 	invsigma_buffer::cl.Buffer{Float32}
 	beta_buffer::cl.Buffer{Float32}
 	lambda_buffer::cl.Buffer{Float32}
+	lambda_old_buffer::cl.Buffer{Float32}
+	lambda_dist_buffer::cl.Buffer{Float32}
 	vsq_buffer::cl.Buffer{Float32}
 	logzeta_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
@@ -62,7 +65,7 @@ mutable struct gpuCTM <: TopicModel
 		invsigma = Matrix(I, K, K)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		lambda = [zeros(K) for _ in 1:M]
-		lambda_old = copy(lambda)
+		lambda_dist = zeros(M)
 		vsq = [ones(K) for _ in 1:M]
 		logzeta = fill(0.5, M)
 		phi = [ones(K, N[d]) / K for d in 1:M]
@@ -71,6 +74,7 @@ mutable struct gpuCTM <: TopicModel
 		device, context, queue = cl.create_compute_context()
 
 		mu_program = cl.Program(context, source=CTM_MU_c) |> cl.build!
+		sigma_program = cl.Program(context, source=CTM_SIGMA_c) |> cl.build!
 		beta_program = cl.Program(context, source=CTM_BETA_c) |> cl.build!
 		beta_norm_program = cl.Program(context, source=CTM_BETA_NORM_c) |> cl.build!
 		lambda_program = cl.Program(context, source=CTM_LAMBDA_c) |> cl.build!
@@ -80,6 +84,7 @@ mutable struct gpuCTM <: TopicModel
 		phi_norm_program = cl.Program(context, source=CTM_PHI_NORM_c) |> cl.build!
 
 		mu_kernel = cl.Kernel(mu_program, "update_mu")
+		sigma_kernel = cl.Kernel(sigma_program, "update_sigma")
 		beta_kernel = cl.Kernel(beta_program, "update_beta")
 		beta_norm_kernel = cl.Kernel(beta_norm_program, "normalize_beta")
 		lambda_kernel = cl.Kernel(lambda_program, "update_lambda")
@@ -88,7 +93,7 @@ mutable struct gpuCTM <: TopicModel
 		phi_kernel = cl.Kernel(phi_program, "update_phi")
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 
-		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, lambda, lambda_old, vsq, logzeta, phi, elbo, device, context, queue, mu_kernel, beta_kernel, beta_norm_kernel, lambda_kernel, vsq_kernel, logzeta_kernel, phi_kernel, phi_norm_kernel)
+		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, lambda, lambda_dist, vsq, logzeta, phi, elbo, device, context, queue, mu_kernel, sigma_kernel, beta_kernel, beta_norm_kernel, lambda_kernel, vsq_kernel, logzeta_kernel, phi_kernel, phi_norm_kernel)
 		update_elbo!(model)
 		return model
 	end
@@ -170,17 +175,42 @@ function update_mu!(model::gpuCTM)
 	model.queue(model.mu_kernel, model.K, nothing, model.K, model.M, model.lambda_buffer, model.mu_buffer)
 end
 
+const CTM_SIGMA_c =
+"""
+kernel void
+update_sigma( 	long K,
+		        long M,
+		        const global float *mu,
+		        const global float *lambda,
+		        const global float *vsq,
+		        global float *sigma)
+		      
+		        {
+		        long i = get_global_id(0);
+		        long j = get_global_id(1);
+
+		        float acc = 0.0f;
+
+		        if (i == j)
+		            for (long d=0; d<M; d++)
+		              acc += vsq[K * d + i] + (lambda[K * d + i] - mu[i]) * (lambda[K * d + j] - mu[j]);
+
+		        if (i != j)
+		            for (long d=0; d<M; d++)
+		              acc += (lambda[K * d + i] - mu[i]) * (lambda[K * d + j] - mu[j]);
+
+		        sigma[K * i + j] = acc / M;
+		        }
+		        """
+
 function update_sigma!(model::gpuCTM)
 	"Update sigma."
 	"Analytic"
 
-	@host model.mu_buffer
-	@host model.vsq_buffer
+	model.queue(model.sigma_kernel, (model.K, model.K), nothing, model.K, model.M, model.mu_buffer, model.lambda_buffer, model.vsq_buffer, model.sigma_buffer)
 
-	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
+	@host model.sigma_buffer
 	model.invsigma = inv(model.sigma)
-
-	@buffer model.sigma
 	@buffer model.invsigma
 end
 
@@ -245,6 +275,7 @@ update_lambda(	long niter,
 				float ntol,
 				long K,
 				global float *A,
+				global float *lambda_old,
 				global float *lambda_grad,
 				global float *lambda_invhess,
 				const global long *C,
@@ -256,29 +287,33 @@ update_lambda(	long niter,
 				const global float *vsq,
 				const global float *logzeta,
 				const global float *phi,
-				global float *lambda)
+				global float *lambda,
+				global float *lambda_dist)
 	
 				{
 				long d = get_global_id(0);
 
 				long D = K * K * d;
 
+				for (long i=0; i<K; i++)
+					lambda_old[K * d + i] = lambda[K * d + i];
+
 				for (long _=0; _<niter; _++)
 				{
 					for (long i=0; i<K; i++)
 					{
-						float acc = 0.0f;
+						float acc1 = 0.0f;
 
 						for (long l=0; l<K; l++)
 						{
-							acc += invsigma[K * l + i] * (mu[l] - lambda[K * d + l]);
+							acc1 += invsigma[K * l + i] * (mu[l] - lambda[K * d + l]);
 							A[D + K * l + i] = -C[d] * sigma[K * l + i] * exp(lambda[K * d + l] + 0.5f * vsq[K * d + l] - logzeta[d]);
 						}
 
 						for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
-							acc += phi[K * n + i] * counts[n];
+							acc1 += phi[K * n + i] * counts[n];
 
-						lambda_grad[K * d + i] = acc - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
+						lambda_grad[K * d + i] = acc1 - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
 						A[D + K * i + i] -= 1.0f;
 					}
 
@@ -297,6 +332,13 @@ update_lambda(	long niter,
 					if (lgnorm < ntol)
 						break;
 				}
+
+				float acc2 = 0.0f;
+
+				for (long i=0; i<K; i++)
+					acc2 += pow(lambda[K * d + i] - lambda_old[K * d + i], 2);
+
+				lambda_dist[d] = sqrt(acc2);
 				}
 				"""
 
@@ -304,10 +346,8 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
 	"Newton's method."
 
-	model.lambda_old = model.lambda
-
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer)
-	@host model.lambda_buffer
+	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	@host model.lambda_dist_buffer
 end
 
 const CTM_VSQ_c =
@@ -469,12 +509,13 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	update_elbo!(model)
 
 	for k in 1:iter
-		for _ in 1:viter
+		for v in 1:viter
 			update_phi!(model)
 			update_logzeta!(model)
 			update_vsq!(model, niter, ntol)
 			update_lambda!(model, niter, ntol)
-			if sum([norm(model.lambda[d] - model.lambda_old[d]) for d in 1:model.M]) < model.M * vtol
+
+			if median(model.lambda_dist) < vtol
 				break
 			end
 		end
