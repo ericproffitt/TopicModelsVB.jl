@@ -53,8 +53,8 @@ mutable struct gpuLDA <: TopicModel
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		Elogtheta = [ones(Float32, K) for _ in 1:M]#Vector{Float32}[-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
-		Elogtheta_sum = fill(M, K)#sum(Elogtheta)
+		Elogtheta = Vector{Float32}[-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		Elogtheta_sum = sum(Elogtheta)
 		Elogtheta_dist = zeros(M)
 		gamma = [ones(K) for _ in 1:M]
 		phi = [ones(K, N[d]) / K for d in 1:M]
@@ -353,12 +353,12 @@ end
 function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
 
-	#check_model(model)
+	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
-	#all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
-	#update_elbo!(model)
+	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
+	update_elbo!(model)
 
 	for k in 1:iter
 		for v in 1:viter
@@ -378,7 +378,7 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		end
 	end
 
-	#(iter > 0) && update_host!(model)
-	#model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
+	(iter > 0) && update_host!(model)
+	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
