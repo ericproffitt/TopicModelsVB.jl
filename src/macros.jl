@@ -100,7 +100,7 @@ macro gpu(expr::Expr)
 
 	quote
 		local model = $(esc(expr.args[2]))
-		local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[2:end]))]
+		local kwargs = [(kw.args[1], kw.args[2]) for kw in $(esc(expr.args[3:end]))]
 		
 		if isa(model, LDA)
 			gpumodel = gpuLDA(Corpus(), 1)

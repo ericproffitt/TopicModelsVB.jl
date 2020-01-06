@@ -53,8 +53,8 @@ mutable struct gpuLDA <: TopicModel
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		Elogtheta = Vector{Float32}[-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
-		Elogtheta_sum = sum(Elogtheta)
+		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		Elogtheta_sum = sum([Elogtheta; [zeros(Float32, K)]])
 		Elogtheta_dist = zeros(M)
 		gamma = [ones(K) for _ in 1:M]
 		phi = [ones(K, N[d]) / K for d in 1:M]
