@@ -26,8 +26,8 @@ mutable struct gpuLDA <: TopicModel
 	gamma_kernel::cl.Kernel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
-	N_partial_sums_buffer::cl.Buffer{Int}
-	J_partial_sums_buffer::cl.Buffer{Int}
+	N_cumsum_buffer::cl.Buffer{Int}
+	J_cumsum_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
 	terms_sortperm_buffer::cl.Buffer{Int}
 	counts_buffer::cl.Buffer{Int}
@@ -164,7 +164,7 @@ const LDA_BETA_c =
 """
 kernel void
 update_beta(long K,
-			const global long *J_partial_sums,
+			const global long *J_cumsum,
 			const global long *terms_sortperm,
 			const global long *counts,
 			const global float *phi,
@@ -176,7 +176,7 @@ update_beta(long K,
 
 			float acc = 0.0f;
 
-			for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
+			for (long w=J_cumsum[j]; w<J_cumsum[j+1]; w++)
 				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
 			beta[K * j + i] = acc;
@@ -207,7 +207,7 @@ function update_beta!(model::gpuLDA)
 	"Update beta"
 	"Analytic."
 
-	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
+	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_cumsum_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
@@ -278,7 +278,7 @@ const LDA_GAMMA_c =
 """
 kernel void
 update_gamma(	long K,
-				const global long *N_partial_sums,
+				const global long *N_cumsum,
 				const global long *counts,
 				const global float *alpha,
 				const global float *phi,
@@ -290,7 +290,7 @@ update_gamma(	long K,
 
 				float acc = 0.0f;
 
-				for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+				for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
 					acc += phi[K * n + i] * counts[n]; 
 
 				gamma[K * d + i] = alpha[i] + acc + $(EPSILON32);
@@ -301,14 +301,14 @@ function update_gamma!(model::gpuLDA)
 	"Update gamma."
 	"Analytic."
 
-	model.queue(model.gamma_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
+	model.queue(model.gamma_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
 
 const LDA_PHI_c =
 """
 kernel void
 update_phi(	long K,
-			const global long *N_partial_sums,
+			const global long *N_cumsum,
 			const global long *terms,
 			const global float *beta,
 			const global float *Elogtheta,
@@ -318,7 +318,7 @@ update_phi(	long K,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+			for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
 				phi[K * n + i] = beta[K * terms[n] + i] * exp(Elogtheta[K * d + i]);
 			}
 			"""
@@ -346,7 +346,7 @@ function update_phi!(model::gpuLDA)
 	"Update phi."
 	"Analytic."
 
-	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
