@@ -49,10 +49,10 @@ mutable struct gpuCTPF <: TopicModel
 	phi_norm_kernel::cl.Kernel
 	xi_kernel::cl.Kernel
 	xi_norm_kernel::cl.Kernel
-	N_partial_sums_buffer::cl.Buffer{Int}
-	J_partial_sums_buffer::cl.Buffer{Int}
-	R_partial_sums_buffer::cl.Buffer{Int}
-	Y_partial_sums_buffer::cl.Buffer{Int}
+	N_cumsum_buffer::cl.Buffer{Int}
+	J_cumsum_buffer::cl.Buffer{Int}
+	R_cumsum_buffer::cl.Buffer{Int}
+	Y_cumsum_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
 	terms_sortperm_buffer::cl.Buffer{Int}
 	counts_buffer::cl.Buffer{Int}
@@ -291,7 +291,7 @@ const CTPF_ALEF_c =
 kernel void
 update_alef(long K,
 			float a,
-			const global long *J_partial_sums,
+			const global long *J_cumsum,
 			const global long *counts,
 			const global long *terms_sortperm,
 			const global float *phi,
@@ -303,7 +303,7 @@ update_alef(long K,
 
 			float acc = 0.0f;
 
-			for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
+			for (long w=J_cumsum[j]; w<J_cumsum[j+1]; w++)
 				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
 			alef[K * j + i] = a + acc;
@@ -314,7 +314,7 @@ function update_alef!(model::gpuCTPF)
 	"Update alef."
 	"Analytic."
 
-	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.a, model.J_partial_sums_buffer, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.alef_buffer)
+	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.a, model.J_cumsum_buffer, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.alef_buffer)
 end
 
 const CTPF_BET_c = 
@@ -352,8 +352,8 @@ const CTPF_GIMEL_c =
 kernel void
 update_gimel(	long K,
 				float c,
-				const global long *N_partial_sums,
-				const global long *R_partial_sums,
+				const global long *N_cumsum,
+				const global long *R_cumsum,
 				const global long *counts,
 				const global long *ratings,
 				const global float *phi,
@@ -367,10 +367,10 @@ update_gimel(	long K,
 				float acc_phi = 0.0f;
 				float acc_xi = 0.0f;
 
-				for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+				for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
 					acc_phi += phi[K * n + i] * counts[n];
 
-				for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
+				for (long r=R_cumsum[d]; r<R_cumsum[d+1]; r++)
 					acc_xi += xi[2 * K * r + i] * ratings[r]; 
 
 				gimel[K * d + i] = c + acc_phi + acc_xi;
@@ -383,7 +383,7 @@ function update_gimel!(model::gpuCTPF)
 
 	model.gimel_old = model.gimel
 
-	model.queue(model.gimel_kernel, (model.K, model.M), nothing, model.K, model.c, model.N_partial_sums_buffer, model.R_partial_sums_buffer, model.counts_buffer, model.ratings_buffer, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
+	model.queue(model.gimel_kernel, (model.K, model.M), nothing, model.K, model.c, model.N_cumsum_buffer, model.R_cumsum_buffer, model.counts_buffer, model.ratings_buffer, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
 	@host model.gimel_buffer
 end
 
@@ -428,7 +428,7 @@ const CTPF_HE_c =
 kernel void
 update_he(	long K,
 			float e,
-			const global long *Y_partial_sums,
+			const global long *Y_cumsum,
 			const global long *ratings,
 			const global long *readers_sortperm,
 			const global float *xi,
@@ -440,7 +440,7 @@ update_he(	long K,
 
 			float acc = 0.0f;
 
-			for (long r=Y_partial_sums[u]; r<Y_partial_sums[u+1]; r++)
+			for (long r=Y_cumsum[u]; r<Y_cumsum[u+1]; r++)
 				acc += ratings[readers_sortperm[r]] * (xi[2 * K * readers_sortperm[r] + i] + xi[K * (2 * readers_sortperm[r] + 1) + i]);
 
 			he[K * u + i] = e + acc;
@@ -451,7 +451,7 @@ function update_he!(model::gpuCTPF)
 	"Update he."
 	"Analytic."
 
-	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_partial_sums_buffer, model.ratings_buffer, model.readers_sortperm_buffer, model.xi_buffer, model.he_buffer)
+	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_cumsum_buffer, model.ratings_buffer, model.readers_sortperm_buffer, model.xi_buffer, model.he_buffer)
 end
 
 const CTPF_VAV_c = 
@@ -494,7 +494,7 @@ const CTPF_ZAYIN_c =
 kernel void
 update_zayin(	long K,
 				float g,
-				const global long *R_partial_sums,
+				const global long *R_cumsum,
 				const global long *ratings,
 				const global float *xi,
 				global float *zayin)
@@ -505,7 +505,7 @@ update_zayin(	long K,
 
 				float acc = 0.0f;
 
-				for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
+				for (long r=R_cumsum[d]; r<R_cumsum[d+1]; r++)
 					acc += xi[K * (2 * r + 1) + i] * ratings[r];
 
 				zayin[K * d + i] = g + acc; 
@@ -516,7 +516,7 @@ function update_zayin!(model::gpuCTPF)
 	"Update zayin."
 	"Analytic."
 
-	model.queue(model.zayin_kernel, (model.K, model.M), nothing, model.K, model.g, model.R_partial_sums_buffer, model.ratings_buffer, model.xi_buffer, model.zayin_buffer)
+	model.queue(model.zayin_kernel, (model.K, model.M), nothing, model.K, model.g, model.R_cumsum_buffer, model.ratings_buffer, model.xi_buffer, model.zayin_buffer)
 end
 
 const CTPF_HET_c =
@@ -554,7 +554,7 @@ $(DIGAMMA_c)
 
 kernel void
 update_phi(	long K,
-			const global long *N_partial_sums,
+			const global long *N_cumsum,
 			const global long *terms,
 			const global float *alef,
 			const global float *bet,
@@ -569,7 +569,7 @@ update_phi(	long K,
 
 			float gdb = digamma(gimel[K * d + i]) - log(dalet[i]) - log(bet[i]);
 
-			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+			for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
 				phi[K * n + i] = exp(gdb + digamma(alef[K * terms[n] + i]));
 			}
 			"""
@@ -597,7 +597,7 @@ function update_phi!(model::gpuCTPF)
 	"Update phi."
 	"Analytic."
 
-	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.terms_buffer, model.alef_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.phi_buffer)
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.alef_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
@@ -607,7 +607,7 @@ $(DIGAMMA_c)
 
 kernel void
 update_xi(	long K,
-			const global long *R_partial_sums,
+			const global long *R_cumsum,
 			const global long *readers,
 			const global float *bet,
 			const global float *gimel,
@@ -625,7 +625,7 @@ update_xi(	long K,
 			float gdv = digamma(gimel[K * d + i]) - log(dalet[i]) - log(bet[i]);
 			float zhv = digamma(zayin[K * d + i]) - log(het[i]) - log(vav[i]);
 
-			for (long r=R_partial_sums[d]; r<R_partial_sums[d+1]; r++)
+			for (long r=R_cumsum[d]; r<R_cumsum[d+1]; r++)
 			{
 				xi[2 * K * r + i] = exp(gdv + digamma(he[K * readers[r] + i]));
 				xi[K * (2 * r + 1) + i] = exp(zhv + digamma(he[K * readers[r] + i]));			
@@ -656,7 +656,7 @@ function update_xi!(model::gpuCTPF)
 	"Update xi."
 	"Analytic."
 
-	model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_partial_sums_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
+	model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_cumsum_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
 	model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
 end
 

@@ -31,8 +31,8 @@ mutable struct gpuCTM <: TopicModel
 	phi_kernel::cl.Kernel
 	phi_norm_kernel::cl.Kernel
 	C_buffer::cl.Buffer{Int}
-	N_partial_sums_buffer::cl.Buffer{Int}
-	J_partial_sums_buffer::cl.Buffer{Int}
+	N_cumsum_buffer::cl.Buffer{Int}
+	J_cumsum_buffer::cl.Buffer{Int}
 	terms_buffer::cl.Buffer{Int}
 	terms_sortperm_buffer::cl.Buffer{Int}
 	counts_buffer::cl.Buffer{Int}
@@ -218,7 +218,7 @@ const CTM_BETA_c =
 """
 kernel void
 update_beta(long K,
-			const global long *J_partial_sums,
+			const global long *J_cumsum,
 			const global long *terms_sortperm,
 			const global long *counts,
 			const global float *phi,
@@ -230,7 +230,7 @@ update_beta(long K,
 
 			float acc = 0.0f;
 
-			for (long w=J_partial_sums[j]; w<J_partial_sums[j+1]; w++)
+			for (long w=J_cumsum[j]; w<J_cumsum[j+1]; w++)
 				acc += counts[terms_sortperm[w]] * phi[K * terms_sortperm[w] + i];
 
 			beta[K * j + i] = acc;
@@ -261,7 +261,7 @@ function update_beta!(model::gpuCTM)
 	"Update beta."
 	"Analytic."
 
-	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_partial_sums_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
+	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_cumsum_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
 
@@ -279,7 +279,7 @@ update_lambda(	long niter,
 				global float *lambda_grad,
 				global float *lambda_invhess,
 				const global long *C,
-				const global long *N_partial_sums,
+				const global long *N_cumsum,
 				const global long *counts,
 				const global float *mu,
 				const global float *sigma,
@@ -310,7 +310,7 @@ update_lambda(	long niter,
 							A[D + K * l + i] = -C[d] * sigma[K * l + i] * exp(lambda[K * d + l] + 0.5f * vsq[K * d + l] - logzeta[d]);
 						}
 
-						for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+						for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
 							acc1 += phi[K * n + i] * counts[n];
 
 						lambda_grad[K * d + i] = acc1 - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
@@ -346,7 +346,7 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
 	"Newton's method."
 
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_partial_sums_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
 end
 
@@ -446,7 +446,7 @@ const CTM_PHI_c =
 """
 kernel void
 update_phi(	long K,
-			const global long *N_partial_sums,
+			const global long *N_cumsum,
 			const global long *terms,
 			const global float *beta,
 			const global float *lambda,
@@ -456,7 +456,7 @@ update_phi(	long K,
 			long i = get_global_id(0);
 			long d = get_global_id(1);
 
-			for (long n=N_partial_sums[d]; n<N_partial_sums[d+1]; n++)
+			for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
 				phi[K * n + i] = log(beta[K * terms[n] + i]) + lambda[K * d + i];
 			}
 			"""
@@ -493,7 +493,7 @@ function update_phi!(model::gpuCTM)
 	"Update phi."
 	"Analytic."
 
-	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_partial_sums_buffer, model.terms_buffer, model.beta_buffer, model.lambda_buffer, model.phi_buffer)
+	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.beta_buffer, model.lambda_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 

@@ -376,22 +376,15 @@ function update_buffer!(model::gpuLDA)
 		J[j+1] += 1
 	end
 
-	N_partial_sums = zeros(Int, model.M + 1)
-	for d in 1:model.M
-		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
-	end
-
-	J_partial_sums = zeros(Int, model.V + 1)
-	for j in 1:model.V
-		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
-	end
+	N_cumsum = cumsum([0; model.N])
+	J_cumsum = cumsum([0; J])
 
 	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
-	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
-	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
+	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
+	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
 
 	model.alpha_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha)
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
@@ -414,23 +407,16 @@ function update_buffer!(model::gpuCTM)
 		J[j+1] += 1
 	end
 
-	N_partial_sums = zeros(Int, model.M + 1)
-	for d in 1:model.M
-		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
-	end
-
-	J_partial_sums = zeros(Int, model.V + 1)
-	for j in 1:model.V
-		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
-	end
+	N_cumsum = cumsum([0; model.N])
+	J_cumsum = cumsum([0; J])
 
 	model.C_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=model.C)
 	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
-	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
-	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
+	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
+	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
 
 	model.newton_temp_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
 	model.newton_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
@@ -470,25 +456,10 @@ function update_buffer!(model::gpuCTPF)
 		Y[r+1] += 1
 	end
 
-	N_partial_sums = zeros(Int, model.M + 1)
-	for d in 1:model.M
-		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
-	end
-
-	J_partial_sums = zeros(Int, model.V + 1)
-	for j in 1:model.V
-		J_partial_sums[j+1] = J_partial_sums[j] + J[j]
-	end
-
-	R_partial_sums = zeros(Int, model.M + 1)
-	for d in 1:model.M
-		R_partial_sums[d+1] = R_partial_sums[d] + model.R[d]
-	end
-		
-	Y_partial_sums = zeros(Int, model.U + 1)
-	for u in 1:model.U
-		Y_partial_sums[u+1] = Y_partial_sums[u] + Y[u]
-	end
+	N_cumsum = cumsum([0; model.N])
+	J_cumsum = cumsum([0; J])
+	R_cumsum = cumsum([0; model.R])
+	J_cumsum = cumsum([0; Y])
 
 	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
@@ -498,10 +469,10 @@ function update_buffer!(model::gpuCTPF)
 	model.ratings_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings)
 	model.readers_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers_sortperm)
 
-	model.N_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_partial_sums)
-	model.J_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_partial_sums)
-	model.R_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=R_partial_sums)
-	model.Y_partial_sums_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=Y_partial_sums)
+	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
+	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
+	model.R_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=R_cumsum)
+	model.Y_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=Y_cumsum)
 
 	model.alef_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alef)
 	model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
@@ -522,9 +493,9 @@ end
 function update_host!(model::gpuLDA)
 	"Update gpuLDA model data in CPU RAM."
 
-	N_partial_sums = zeros(Int, model.M + 1)
+	N_cumsum = zeros(Int, model.M + 1)
 	for d in 1:model.M
-		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
+		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
 	end
 
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)	
@@ -535,15 +506,15 @@ function update_host!(model::gpuLDA)
 	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
 	model.gamma = [gamma_host[:,d] for d in 1:model.M]
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
-	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
+	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
 function update_host!(model::gpuCTM)
 	"Update gpuCTM model data in CPU RAM."
 
-	N_partial_sums = zeros(Int, model.M + 1)
+	N_cumsum = zeros(Int, model.M + 1)
 	for d in 1:model.M
-		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
+		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
 	end
 
 	model.mu = cl.read(model.queue, model.mu_buffer)
@@ -557,20 +528,20 @@ function update_host!(model::gpuCTM)
 	model.vsq = [vsq_host[:,d] for d in 1:model.M]
 	model.logzeta = cl.read(model.queue, model.logzeta_buffer)
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
-	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
+	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
 function update_host!(model::gpuCTPF)
 	"Update gpuCTPF model data in CPU RAM."
 
-	N_partial_sums = zeros(Int, model.M + 1)
+	N_cumsum = zeros(Int, model.M + 1)
 	for d in 1:model.M
-		N_partial_sums[d+1] = N_partial_sums[d] + model.N[d]
+		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
 	end
 
-	R_partial_sums = zeros(Int, model.M + 1)
+	R_cumsum = zeros(Int, model.M + 1)
 	for d in 1:model.M
-		R_partial_sums[d+1] = R_partial_sums[d] + model.R[d]
+		R_cumsum[d+1] = R_cumsum[d] + model.R[d]
 	end
 
 	model.alef = reshape(cl.read(model.queue, model.alef_buffer), model.K, model.V)
@@ -584,9 +555,9 @@ function update_host!(model::gpuCTPF)
 	model.dalet = cl.read(model.queue, model.dalet_buffer)
 	model.het = cl.read(model.queue, model.het_buffer)
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
-	model.phi = [phi_host[:,N_partial_sums[d]+1:N_partial_sums[d+1]] for d in 1:model.M]
+	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R) + 64 - sum(model.R) % 64)
-	model.xi = [xi_host[:,R_partial_sums[d]+1:R_partial_sums[d+1]] for d in 1:model.M]
+	model.xi = [xi_host[:,R_cumsum[d]+1:R_cumsum[d+1]] for d in 1:model.M]
 end
 
 function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
