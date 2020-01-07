@@ -11,7 +11,10 @@
 11. when different lex keys map to the same word, need to merge these in fixcorp functions
 12. write detect topic code, see issue #2
 13. save/load trained models see issue #13
-
+14. gpuCTM signal (6): Abort trap: 6 when too many topics
+15. stream documents into GPU models
+16. possibly try to collapse phi in gpuLDA and gpuCTM
+17. work on HMTM
 
 
 
