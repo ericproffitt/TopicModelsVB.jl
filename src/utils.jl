@@ -174,20 +174,20 @@ rref(long K, long D, global float *A, global float *B)
 end
 
 ### Algorithm for taking the L2 norm of a vector.
-const NORM2_c =
-"""
-inline float
-norm2(long K, long d, global float *x)
+#const NORM2_c =
+#"""
+#inline float
+#norm2(long K, long d, global float *x)
 		
-		{
-		float acc = 0.0f;
+#		{
+#		float acc = 0.0f;
 
-		for (long i=0; i<K; i++)
-			acc += x[K * d + i] * x[K * d + i];
+#		for (long i=0; i<K; i++)
+#			acc += x[K * d + i] * x[K * d + i];
 
-		return sqrt(acc);
-		}
-		"""
+#		return sqrt(acc);
+#		}
+#		"""
 
 "Type alias for a vector of vectors."
 VectorList{T} = Vector{Vector{T}}

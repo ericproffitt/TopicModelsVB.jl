@@ -47,8 +47,7 @@ mutable struct gpuCTM <: TopicModel
 	logzeta_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
 	newton_grad_buffer::cl.Buffer{Float32}
-	newton_invhess_buffer::cl.Buffer{Float32}
-	newton_temp_buffer::cl.Buffer{Float32}
+	newton_hess_buffer::cl.Buffer{Float32}
 
 	function gpuCTM(corp::Corpus, K::Integer)
 		check_corp(corp)
@@ -320,14 +319,16 @@ update_lambda(	long niter,
 								lambda_hess[D + K * j + i] -= C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
 						}
 
-					rref(K, D, lambda_hess, lambda_grad);	
+					float acc = 0.0f;
+					for (long i=0; i<K; i++)
+						acc += lambda_grad[K * d + i] * lambda_grad[K * d + i]
+
+					rref(K, D, d, lambda_hess, lambda_grad);	
 
 					for (long i=0; i<K; i++)
 						lambda[K * d + i] -= lambda_grad[K * d + i];
-
-					float lgnorm = norm2(K, d, lambda_grad);
 					
-					if (lgnorm < ntol)
+					if (sqrt(acc) < ntol)
 						break;
 				}
 
@@ -340,6 +341,7 @@ update_lambda(	long niter,
 				}
 				"""
 
+if false
 const CTM_LAMBDA_c =
 """
 $(RREF_c)
@@ -416,6 +418,7 @@ update_lambda(	long niter,
 				lambda_dist[d] = sqrt(acc2);
 				}
 				"""
+end
 
 function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
@@ -426,6 +429,55 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	@host model.lambda_dist_buffer
 end
 
+const CTM_VSQ_c =
+"""
+$(NORM2_c)
+
+kernel void
+update_vsq(	long niter,
+			float ntol,
+			long K,
+			global float *p,
+			global float *vsq_grad,
+			const global long *C,
+			const global float *invsigma,
+			const global float *lambda,
+			const global float *logzeta,
+			global float *vsq)
+			
+			{
+			long d = get_global_id(0);
+
+			float acc = 0.0f;
+			float vsq_invhess;
+
+			for (long _=0; _<niter; _++)
+			{
+				float rho = 1.0f;
+
+				for (long i=0; i<K; i++)
+				{
+					vsq_grad = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) - 1 / vsq[K * d + i]);
+					vsq_invhess = -1 / (0.25f * C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) + 0.5f / (vsq[K * d + i] * vsq[K * d + i]));
+				
+					float p = vsq_grad * vsq_invhess;
+					while (vsq[K * d + i] - rho * p <= 0)
+						rho *= 0.5f;
+
+					vsq[K * d + i] -= rho * p
+					acc += vsq_grad * vsq_grad
+				}
+				
+				if (sqrt(acc) < ntol)
+					break;
+			}
+
+			for (long i=0; i<K; i++)
+				vsq[K * d + i] += $(EPSILON32);
+			}
+			"""
+
+if false
 const CTM_VSQ_c =
 """
 $(NORM2_c)
@@ -474,6 +526,7 @@ update_vsq(	long niter,
 				vsq[K * d + i] += $(EPSILON32);
 			}
 			"""
+end
 
 function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update vsq."

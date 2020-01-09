@@ -418,9 +418,8 @@ function update_buffer!(model::gpuCTM)
 	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
 	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
 
-	model.newton_temp_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
 	model.newton_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
-	model.newton_invhess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
+	model.newton_hess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
 
 	model.sigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.sigma)
 	model.invsigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.invsigma)
