@@ -274,6 +274,81 @@ kernel void
 update_lambda(	long niter,
 				float ntol,
 				long K,
+				global float *lambda_old,
+				global float *lambda_grad,
+				global float *lambda_hess,
+				const global long *C,
+				const global long *N_cumsum,
+				const global long *counts,
+				const global float *mu,
+				const global float *invsigma,
+				const global float *vsq,
+				const global float *logzeta,
+				const global float *phi,
+				global float *lambda,
+				global float *lambda_dist)
+	
+				{
+				long d = get_global_id(0);
+
+				long D = K * K * d;
+
+				for (long i=0; i<K; i++)
+					lambda_old[K * d + i] = lambda[K * d + i];
+
+				for (long _=0; _<niter; _++)
+				{
+					float acc = 0.0f;
+
+					for (long i=0; i<K; i++)
+					{
+						for (long j=0; j<K; j++)
+							acc += invsigma[K * j + i] * (mu[j] - lambda[K * d + j]);
+
+						for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
+							acc += phi[K * n + i] * counts[n];
+
+						lambda_grad[K * d + i] = acc - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
+					}
+
+					for (long i=0; i<K; i++)
+						for (long j=0; j<K; j++)
+						{
+							lambda_hess[D + K * j + i] = -invsigma[K * j * i];
+
+							if (i == j)
+								lambda_hess[D + K * j + i] -= C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
+						}
+
+					rref(K, D, lambda_hess, lambda_grad);	
+
+					for (long i=0; i<K; i++)
+						lambda[K * d + i] -= lambda_grad[K * d + i];
+
+					float lgnorm = norm2(K, d, lambda_grad);
+					
+					if (lgnorm < ntol)
+						break;
+				}
+
+				float acc = 0.0f;
+
+				for (long i=0; i<K; i++)
+					acc += pow(lambda[K * d + i] - lambda_old[K * d + i], 2);
+
+				lambda_dist[d] = sqrt(acc);
+				}
+				"""
+
+const CTM_LAMBDA_c =
+"""
+$(RREF_c)
+$(NORM2_c)
+
+kernel void
+update_lambda(	long niter,
+				float ntol,
+				long K,
 				global float *A,
 				global float *lambda_old,
 				global float *lambda_grad,

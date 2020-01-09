@@ -196,8 +196,11 @@ function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	counts = model.corp[d].counts
 	for _ in 1:niter
 		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
-		lambda_invhess = -inv(I + model.C[d] * model.sigma * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]))) * model.sigma
-		model.lambda[d] -= lambda_invhess * lambda_grad
+		lambda_hess = -1 * (model.invsigma + model.C[d] * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])))
+		model.lambda[d] -= lambda_hess \ lambda_grad
+
+		#LinearAlgebra.LAPACK.posv!('U', -lambda_hess, lambda_grad)
+		#model.lambda[d] += lambda_grad
 		
 		if norm(lambda_grad) < ntol
 			break
