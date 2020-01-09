@@ -60,6 +60,62 @@ digamma(float x)
 const RREF_c =
 """
 inline void
+rref(long K, long D, long d, global float *A, global float *b)
+			
+		{
+		for (long j=0; j<K; j++)
+		{
+			float maxval = fabs(A[D + K * j + j]);
+
+			long maxrow = j;
+
+			for (long i=j+1; i<K; i++)
+			{
+				if (fabs(A[D + K * j + i]) > maxval)
+				{
+					maxval = fabs(A[D + K * j + i]);
+					maxrow = i;
+				}
+			}
+				
+			for (long l=0; l<K; l++)
+			{
+				float A_temp = A[D + K * l + maxrow];
+				A[D + K * l + maxrow] = A[D + K * l + j];
+				A[D + K * l + j] = A_temp;
+			}
+
+			float b_temp = b[K * d + maxrow];
+			b[K * d + maxrow] = b[K * d + j];
+			b[K * d + j] = b_temp;
+
+			for (long i=j; i<K-1; i++)
+			{
+				float c = -A[D + K * j + (i + 1)] / A[D + K * j + j];
+		
+				for (long l=j; l<K; l++)
+					if (l == j)
+						A[D + K * l + (i + 1)] = 0.0f;
+					else
+						A[D + K * l + (i + 1)] += c * A[D + K * l + j];
+
+				b[K * d + (i + 1)] += c * b[K * d + j];
+			}
+		}
+
+		for (long j=K-1; j>0; j--)
+			for (long i=j-1; i>=0; i--)
+				b[K * d + i] -= b[K * d + j] * A[D + K * j + i] / A[D + K * j + j];
+
+		for (long j=0; j<K; j++)
+			b[K * d + j] *= 1 / A[D + K * j + j];
+		}			
+		"""
+
+if false
+const RREF_c =
+"""
+inline void
 rref(long K, long D, global float *A, global float *B)
 			
 		{
@@ -115,6 +171,7 @@ rref(long K, long D, global float *A, global float *B)
 				B[D + K * l + j] *= 1 / A[D + K * j + j];
 		}			
 		"""
+end
 
 ### Algorithm for taking the L2 norm of a vector.
 const NORM2_c =
