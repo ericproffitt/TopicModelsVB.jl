@@ -423,7 +423,7 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
 	"Newton's method."
 	
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_hess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.lambda_old_buffer, model.lambda_grad_buffer, model.lambda_hess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	#model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
 end
@@ -434,8 +434,6 @@ kernel void
 update_vsq(	long niter,
 			float ntol,
 			long K,
-			global float *p,
-			global float *vsq_grad,
 			const global long *C,
 			const global float *invsigma,
 			const global float *lambda,
@@ -445,11 +443,13 @@ update_vsq(	long niter,
 			{
 			long d = get_global_id(0);
 
-			float acc = 0.0f;
-			float vsq_invhess;
+			float vsq_grad;
+			float vsq_invhess
+			float p;
 
 			for (long _=0; _<niter; _++)
 			{
+				float acc = 0.0f;
 				float rho = 1.0f;
 
 				for (long i=0; i<K; i++)
@@ -457,7 +457,7 @@ update_vsq(	long niter,
 					vsq_grad = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) - 1 / vsq[K * d + i]);
 					vsq_invhess = -1 / (0.25f * C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) + 0.5f / (vsq[K * d + i] * vsq[K * d + i]));
 				
-					float p = vsq_grad * vsq_invhess;
+					p = vsq_grad * vsq_invhess;
 					while (vsq[K * d + i] - rho * p <= 0)
 						rho *= 0.5f;
 
@@ -529,7 +529,8 @@ function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update vsq."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.newton_grad_buffer, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
+	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
+	#model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.newton_grad_buffer, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
 const CTM_logzeta_c = 
