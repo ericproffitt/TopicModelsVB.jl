@@ -149,9 +149,6 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi[1] * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
 		lambda_hess = -1 * (model.invsigma + model.C[d] * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])))
 		model.lambda[d] -= lambda_hess \ lambda_grad
-
-		#LinearAlgebra.LAPACK.posv!('U', -lambda_hess, lambda_grad)
-		#model.lambda[d] += lambda_grad
 		
 		if norm(lambda_grad) < ntol
 			break
