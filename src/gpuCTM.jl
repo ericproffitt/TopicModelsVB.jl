@@ -420,8 +420,9 @@ update_lambda(	long niter,
 function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
 	"Newton's method."
-
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	
+	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_hess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	#model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.newton_temp_buffer, model.lambda_old_buffer, model.newton_grad_buffer, model.newton_invhess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.sigma_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
 end
 
