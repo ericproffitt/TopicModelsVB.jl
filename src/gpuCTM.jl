@@ -42,12 +42,12 @@ mutable struct gpuCTM <: TopicModel
 	beta_buffer::cl.Buffer{Float32}
 	lambda_buffer::cl.Buffer{Float32}
 	lambda_old_buffer::cl.Buffer{Float32}
+	lambda_grad_buffer::cl.Buffer{Float32}
+	lambda_hess_buffer::cl.Buffer{Float32}
 	lambda_dist_buffer::cl.Buffer{Float32}
 	vsq_buffer::cl.Buffer{Float32}
 	logzeta_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
-	newton_grad_buffer::cl.Buffer{Float32}
-	newton_hess_buffer::cl.Buffer{Float32}
 
 	function gpuCTM(corp::Corpus, K::Integer)
 		check_corp(corp)
