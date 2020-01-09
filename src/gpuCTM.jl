@@ -291,12 +291,14 @@ update_lambda(	long niter,
 
 				long D = K * K * d;
 
+				float acc;
+
 				for (long i=0; i<K; i++)
 					lambda_old[K * d + i] = lambda[K * d + i];
 
 				for (long _=0; _<niter; _++)
 				{
-					float acc = 0.0f;
+					acc = 0.0f;
 
 					for (long i=0; i<K; i++)
 					{
@@ -318,9 +320,9 @@ update_lambda(	long niter,
 								lambda_hess[D + K * j + i] -= C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
 						}
 
-					float acc = 0.0f;
+					acc = 0.0f;
 					for (long i=0; i<K; i++)
-						acc += lambda_grad[K * d + i] * lambda_grad[K * d + i]
+						acc += lambda_grad[K * d + i] * lambda_grad[K * d + i];
 
 					rref(K, D, d, lambda_hess, lambda_grad);	
 
@@ -331,7 +333,7 @@ update_lambda(	long niter,
 						break;
 				}
 
-				float acc = 0.0f;
+				acc = 0.0f;
 
 				for (long i=0; i<K; i++)
 					acc += pow(lambda[K * d + i] - lambda_old[K * d + i], 2);
@@ -444,7 +446,7 @@ update_vsq(	long niter,
 			long d = get_global_id(0);
 
 			float vsq_grad;
-			float vsq_invhess
+			float vsq_invhess;
 			float p;
 
 			for (long _=0; _<niter; _++)
@@ -461,8 +463,8 @@ update_vsq(	long niter,
 					while (vsq[K * d + i] - rho * p <= 0)
 						rho *= 0.5f;
 
-					vsq[K * d + i] -= rho * p
-					acc += vsq_grad * vsq_grad
+					vsq[K * d + i] -= rho * p;
+					acc += vsq_grad * vsq_grad;
 				}
 				
 				if (sqrt(acc) < ntol)
