@@ -638,8 +638,9 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	update_elbo!(model)
 
 	for k in 1:iter
-		println(k)
+		#println(k)
 		for v in 1:viter
+			println(v)
 			update_phi!(model)
 			update_logzeta!(model)
 			update_vsq!(model, niter, ntol)

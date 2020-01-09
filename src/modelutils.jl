@@ -524,7 +524,7 @@ function update_host!(model::gpuCTM)
 	model.lambda_dist = cl.read(model.queue,  model.lambda_dist_buffer)[1:model.M]
 	vsq_host = reshape(cl.read(model.queue, model.vsq_buffer), model.K, model.M + 64 - model.M % 64)
 	model.vsq = [vsq_host[:,d] for d in 1:model.M]
-	model.logzeta = cl.read(model.queue, model.logzeta_buffer)
+	model.logzeta = cl.read(model.queue, model.logzeta_buffer)[1:model.M]
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
 	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end

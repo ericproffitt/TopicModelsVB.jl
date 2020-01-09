@@ -175,7 +175,7 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 
 	for k in 1:iter
 		for d in 1:model.M	
-			for _ in 1:viter
+			for v in 1:viter
 				update_phi!(model, d)
 				update_gamma!(model, d)
 				update_Elogtheta!(model, d)
