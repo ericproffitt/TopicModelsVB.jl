@@ -311,10 +311,10 @@ update_lambda(	long niter,
 						lambda_grad[K * d + i] = acc - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
 					}
 
-					for (long i=0; i<K; i++)
-						for (long j=0; j<K; j++)
+					for (long j=0; j<K; j++)
+						for (long i=0; i<K; i++)
 						{
-							lambda_hess[D + K * j + i] = -invsigma[K * j * i];
+							lambda_hess[D + K * j + i] = -invsigma[K * j + i];
 
 							if (i == j)
 								lambda_hess[D + K * j + i] -= C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
