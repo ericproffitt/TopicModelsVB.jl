@@ -298,10 +298,10 @@ update_lambda(	long niter,
 
 				for (long _=0; _<niter; _++)
 				{
-					acc = 0.0f;
-
 					for (long i=0; i<K; i++)
 					{
+						acc = 0.0f;
+
 						for (long j=0; j<K; j++)
 							acc += invsigma[K * j + i] * (mu[j] - lambda[K * d + j]);
 
