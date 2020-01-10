@@ -119,18 +119,12 @@ VectorList{T} = Vector{Vector{T}}
 MatrixList{T} = Vector{Matrix{T}}
 
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
-	"Additive logistic function of a real-valued matrix."
+	"Additive logistic function of a real-valued matrix over the given dimension."
 	"Overflow safe."
 
-	@assert dims in [1, 2]
-
-	if dims == 1
-		x = x .- [maximum(x[:,j]) for j in 1:size(x, 2)]'
-		x = exp.(x) ./ sum(exp.(x), dims=1)
-
-	else
-		x = x .- [maximum(x[i,:]) for i in 1:size(x, 1)]
-		x = exp.(x) ./ sum(exp.(x), dims=2)
+	if dims in [1,2]
+		x = exp.(x .- maximum(x, dims=dims))
+		x = x ./ sum(x, dims=dims)
 	end
 
 	return x
@@ -140,16 +134,20 @@ function additive_logistic(x::Vector{<:Real})
 	"Additive logistic function of a real-valued vector."
 	"Overflow safe."
 
-	x = x .- maximum(x)
-	return exp.(x) / sum(exp.(x))
+	x = exp.(x .- maximum(x))
+	x = x / sum(x)
+
+	return x
 end
 
 function additive_logistic(x::Matrix{<:Real})
-	"Additive logistic function of a real-valued Matrix."
+	"Additive logistic function of a real-valued matrix."
 	"Overflow safe."
 
-	x = x .- maximum(x)
-	return exp.(x) / sum(exp.(x))
+	x = exp.(x .- maximum(x))
+	x = x / sum(x)
+
+	return x
 end
 
 function isstochastic(P::Matrix{<:Real}; dims::Integer)
