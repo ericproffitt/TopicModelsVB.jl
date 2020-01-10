@@ -124,7 +124,7 @@ function update_elbo!(model::fCTM)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi[1] = additive_logistic((@boink model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.lambda_old[d]), dims=1)
+		model.phi[1] = additive_logistic(model.tau_old[d]' .* log.(@boink model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
 		model.elbo += Elogpeta(model, d) + Elogpc(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 	end
 
@@ -248,7 +248,7 @@ function update_phi!(model::fCTM, d::Int)
 	"Analytic"
 
 	terms = model.corp[d].terms
-	model.phi[1] = additive_logistic((@boink model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d]), dims=1)
+	model.phi[1] = additive_logistic(model.tau[d]' .* log.(@boink model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
 function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)	

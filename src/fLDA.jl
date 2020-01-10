@@ -118,7 +118,7 @@ function update_elbo!(model::fLDA)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi[1] = additive_logistic((@boink model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.Elogtheta_old[d]), dims=1)
+		model.phi[1] = additive_logistic(model.tau_old[d]' .* log.(@boink model.beta_old[:,terms]) .+ model.Elogtheta_old[d], dims=1)
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 	end
 
@@ -222,7 +222,7 @@ function update_phi!(model::fLDA, d::Int)
 	"Analytic."
 
 	terms = model.corp[d].terms
-	model.phi[1] = additive_logistic((@boink model.tau[d]' .* log.(model.beta[:,terms]) .+ model.Elogtheta[d]), dims=1)
+	model.phi[1] = additive_logistic(model.tau[d]' .* log.(@boink model.beta[:,terms]) .+ model.Elogtheta[d], dims=1)
 end
 
 function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
