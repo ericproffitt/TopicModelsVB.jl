@@ -454,7 +454,7 @@ update_phi(	long K,
 			long d = get_global_id(1);
 
 			for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
-				phi[K * n + i] = log(beta[K * terms[n] + i]) + lambda[K * d + i];
+				phi[K * n + i] = log(beta[K * terms[n] + i]) + lambda[K * d + i] + $(EPSILON32);
 			}
 			"""
 

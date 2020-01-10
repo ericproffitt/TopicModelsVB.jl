@@ -22,7 +22,7 @@ mutable struct fLDA <: TopicModel
 	gamma::VectorList{Float64}
 	tau::VectorList{Float64}
 	tau_old::VectorList{Float64}
-	phi::Matrix{Float64}
+	phi::MatrixList{Float64}
 	elbo::Float64
 
 	function fLDA(corp::Corpus, K::Integer)
@@ -49,7 +49,7 @@ mutable struct fLDA <: TopicModel
 		gamma = [ones(K) for _ in 1:M]
 		tau = [fill(eta, N[d]) for d in 1:M]
 		tau_old = copy(tau)
-		phi = ones(K, N[1]) / K
+		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo = 0
 	
 		model = new(K, M, V, N, C, copy(corp), topics, eta, alpha, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, fbeta, Elogtheta, Elogtheta_old, gamma, tau, tau_old, phi, elbo)
@@ -77,7 +77,7 @@ function Elogpz(model::fLDA, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi * counts, model.Elogtheta[d])
+	x = dot(model.phi[1] * counts, model.Elogtheta[d])
 	return x
 end
 
@@ -85,7 +85,7 @@ function Elogpw(model::fLDA, d::Int)
 	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
+	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
 	return x
 end
 
@@ -108,7 +108,7 @@ function Elogqz(model::fLDA, d::Int)
 	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[1][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
@@ -118,8 +118,7 @@ function update_elbo!(model::fLDA)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi = additive_logistic(model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.Elogtheta_old[d], dims=1)
-		model.phi ./= sum(model.phi, dims=1)
+		model.phi[1] = additive_logistic((@boink model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.Elogtheta_old[d]), dims=1)
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 	end
 
@@ -189,7 +188,7 @@ function update_beta!(model::fLDA, d::Int)
 	"Analytic."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.beta_temp[:,terms] += model.phi .* (model.tau[d] .* counts)'
+	model.beta_temp[:,terms] += model.phi[1] .* (model.tau[d] .* counts)'
 end
 
 function update_Elogtheta!(model::fLDA, d::Int)
@@ -205,7 +204,7 @@ function update_gamma!(model::fLDA, d::Int)
 	"Analytic."
 
 	counts = model.corp[d].counts
-	@bumper model.gamma[d] = model.alpha + model.phi * counts	
+	@bumper model.gamma[d] = model.alpha + model.phi[1] * counts	
 end
 
 function update_tau!(model::fLDA, d::Int)
@@ -215,7 +214,7 @@ function update_tau!(model::fLDA, d::Int)
 	model.tau_old[d] = model.tau[d]
 
 	terms = model.corp[d].terms
-	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, dims=1))))
+	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi[1], dims=1))))
 end
 
 function update_phi!(model::fLDA, d::Int)
@@ -223,7 +222,7 @@ function update_phi!(model::fLDA, d::Int)
 	"Analytic."
 
 	terms = model.corp[d].terms
-	model.phi = additive_logistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.Elogtheta[d], dims=1)
+	model.phi[1] = additive_logistic((@boink model.tau[d]' .* log.(model.beta[:,terms]) .+ model.Elogtheta[d]), dims=1)
 end
 
 function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)

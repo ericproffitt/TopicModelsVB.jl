@@ -319,7 +319,7 @@ update_phi(	long K,
 			long d = get_global_id(1);
 
 			for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
-				phi[K * n + i] = beta[K * terms[n] + i] * exp(Elogtheta[K * d + i]);
+				phi[K * n + i] = beta[K * terms[n] + i] * exp(Elogtheta[K * d + i]) + $(EPSILON32);
 			}
 			"""
 
@@ -361,7 +361,6 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	(check_elbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
-		println(k)
 		for v in 1:viter
 			update_phi!(model)			
 			update_gamma!(model)

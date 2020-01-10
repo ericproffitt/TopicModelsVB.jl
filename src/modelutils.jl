@@ -818,9 +818,3 @@ function predict(corp::Corpus, model_train::TopicModel)
 	nothing
 end
 
-
-
-
-
-
-

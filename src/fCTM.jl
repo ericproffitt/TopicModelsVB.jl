@@ -25,7 +25,7 @@ mutable struct fCTM <: TopicModel
 	logzeta::Vector{Float64}
 	tau::VectorList{Float64}
 	tau_old::VectorList{Float64}
-	phi::Matrix{Float64}
+	phi::MatrixList{Float64}
 	elbo::Float64
 
 	function fCTM(corp::Corpus, K::Integer)
@@ -55,7 +55,7 @@ mutable struct fCTM <: TopicModel
 		logzeta = fill(0.5, M)
 		tau = [fill(eta, N[d]) for d in 1:M]
 		tau_old = copy(tau)
-		phi = ones(K, N[1]) / K
+		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo = 0
 
 		model = new(K, M, V, N, C, copy(corp), topics, eta, mu, sigma, invsigma, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, fbeta, lambda, lambda_old, vsq, logzeta, tau, tau_old, phi, elbo)
@@ -83,7 +83,7 @@ function Elogpz(model::fCTM, d::Int)
 	"Compute E[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
+	x = dot(model.phi[1]' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
 	return x
 end
 
@@ -91,7 +91,7 @@ function Elogpw(model::fCTM, d::Int)
 	"Compute E[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
+	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
 	return x
 end
 
@@ -114,7 +114,7 @@ function Elogqz(model::fCTM, d::Int)
 	"Compute E[log(q(z))]."
 
 	counts = model.corp[d].counts
-	x = -sum([c * entropy(Categorical(model.phi[:,n])) for (n, c) in enumerate(counts)])
+	x = -sum([c * entropy(Categorical(model.phi[1][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
@@ -124,8 +124,7 @@ function update_elbo!(model::fCTM)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		model.phi = additive_logistic(model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
-		model.phi ./= sum(model.phi, dims=1)
+		model.phi[1] = additive_logistic((@boink model.tau_old[d]' .* log.(model.beta_old[:,terms]) .+ model.lambda_old[d]), dims=1)
 		model.elbo += Elogpeta(model, d) + Elogpc(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 	end
 
@@ -184,7 +183,7 @@ function update_beta!(model::fCTM, d::Int)
 	"Analytic."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	model.beta_temp[:,terms] += model.phi .* (model.tau[d] .* counts)'
+	model.beta_temp[:,terms] += model.phi[1] .* (model.tau[d] .* counts)'
 end
 
 function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
@@ -195,7 +194,7 @@ function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 
 	counts = model.corp[d].counts
 	for _ in 1:niter
-		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
+		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi[1] * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
 		lambda_hess = -1 * (model.invsigma + model.C[d] * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])))
 		model.lambda[d] -= lambda_hess \ lambda_grad
 		
@@ -241,7 +240,7 @@ function update_tau!(model::fCTM, d::Int)
 	model.tau_old[d] = model.tau[d]
 
 	terms = model.corp[d].terms
-	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi, dims=1))))
+	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi[1], dims=1))))
 end
 
 function update_phi!(model::fCTM, d::Int)
@@ -249,7 +248,7 @@ function update_phi!(model::fCTM, d::Int)
 	"Analytic"
 
 	terms = model.corp[d].terms
-	model.phi = additive_logistic(model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
+	model.phi[1] = additive_logistic((@boink model.tau[d]' .* log.(model.beta[:,terms]) .+ model.lambda[d]), dims=1)
 end
 
 function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)	
