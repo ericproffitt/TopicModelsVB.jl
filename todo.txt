@@ -17,7 +17,7 @@
 17. work on HMTM
 18. add print_elbo option
 19. need to deal with long stretches of negatives some how, see fLDA with 5000 docs and 9 topics.
-20. isposdef fails for model.sigma in fCTM, not exactly symmetric, isposdef function too stringent
+21. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite
 
 
 
@@ -42,5 +42,6 @@
 17. make extended integers datatype so that chkelbo can be Z U {Inf}
 19. fix DTM
 19. make sure elbo is matched to model data when it goes into training
+20. isposdef fails for model.sigma in fCTM, not exactly symmetric, isposdef function too stringent
 
 
