@@ -9,8 +9,8 @@ mutable struct CTM <: TopicModel
 	corp::Corpus
 	topics::VectorList{Int}
 	mu::Vector{Float64}
-	sigma::Matrix{Float64}
-	invsigma::Matrix{Float64}
+	sigma::Symmetric{Float64}
+	invsigma::Symmetric{Float64}
 	beta::Matrix{Float64}
 	beta_old::Matrix{Float64}
 	beta_temp::Matrix{Float64}
@@ -32,8 +32,8 @@ mutable struct CTM <: TopicModel
 		topics = [collect(1:V) for _ in 1:K]
 
 		mu = zeros(K)
-		sigma = Matrix(I, K, K)
-		invsigma = Matrix(I, K, K)
+		sigma = Symmetric(Matrix{Float64}(I, K, K))
+		invsigma = copy(sigma)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
@@ -118,7 +118,7 @@ function update_sigma!(model::CTM)
 	"Update sigma."
 	"Analytic"
 
-	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
+	model.sigma = Symmetric((diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M)
 	model.invsigma = inv(model.sigma)
 end
 

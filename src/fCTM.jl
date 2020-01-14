@@ -10,8 +10,8 @@ mutable struct fCTM <: TopicModel
 	topics::VectorList{Int}
 	eta::Float64
 	mu::Vector{Float64}
-	sigma::Matrix{Float64}
-	invsigma::Matrix{Float64}
+	sigma::Symmetric{Float64}
+	invsigma::Symmetric{Float64}
 	kappa::Vector{Float64}
 	kappa_old::Vector{Float64}
 	kappa_temp::Vector{Float64}
@@ -40,8 +40,8 @@ mutable struct fCTM <: TopicModel
 
 		eta = 0.5
 		mu = zeros(K)
-		sigma = Matrix(I, K, K)
-		invsigma = Matrix(I, K, K)
+		sigma = Symmetric(Matrix{Float64}(I, K, K))
+		invsigma = copy(sigma)
 		kappa = rand(Dirichlet(V, 1.0))
 		kappa_old = copy(kappa)
 		kappa_temp = zeros(V)
@@ -149,7 +149,7 @@ function update_sigma!(model::fCTM)
 	"Update sigma."
 	"Analytic"
 
-	model.sigma = (diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M
+	model.sigma = Symmetric((diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M)
 	model.invsigma = inv(model.sigma)
 end
 

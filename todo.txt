@@ -15,6 +15,9 @@
 15. stream documents into GPU models
 16. possibly try to collapse phi in gpuLDA and gpuCTM
 17. work on HMTM
+18. add print_elbo option
+19. need to deal with long stretches of negatives some how, see fLDA with 5000 docs and 9 topics.
+20. isposdef fails for model.sigma in fCTM, not exactly symmetric, isposdef function too stringent
 
 
 

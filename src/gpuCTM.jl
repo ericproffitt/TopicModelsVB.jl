@@ -9,8 +9,8 @@ mutable struct gpuCTM <: TopicModel
 	corp::Corpus
 	topics::VectorList{Int}
 	mu::Vector{Float32}
-	sigma::Matrix{Float32}
-	invsigma::Matrix{Float32}
+	sigma::Symmetric{Float32}
+	invsigma::Symmetric{Float32}
 	beta::Matrix{Float32}
 	lambda::VectorList{Float32}
 	lambda_dist::Vector{Float32}
@@ -60,8 +60,8 @@ mutable struct gpuCTM <: TopicModel
 		topics = [collect(1:V) for _ in 1:K]
 
 		mu = zeros(K)
-		sigma = Matrix(I, K, K)
-		invsigma = Matrix(I, K, K)
+		sigma = Symmetric(Matrix{Float32}(I, K, K))
+		invsigma = copy(sigma)
 		beta = rand(Dirichlet(V, 1.0), K)'
 		lambda = [zeros(K) for _ in 1:M]
 		lambda_dist = zeros(M)
