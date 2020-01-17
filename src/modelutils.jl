@@ -819,7 +819,27 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 	end
 end
 
-function predict(corp::Corpus, model_train::TopicModel)
-	nothing
+function predict(corp::Corpus, model::LDA, iter=10, tol=1/model.K^2)
+	for v in 1:viter
+		update_phi!(model, d)
+		update_gamma!(model, d)
+		update_Elogtheta!(model, d)
+		if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
+			break
+		end
+	end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
