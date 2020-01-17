@@ -18,7 +18,8 @@
 18. add print_elbo option
 19. need to deal with long stretches of negatives some how, see fLDA with 5000 docs and 9 topics.
 21. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite
-
+22. should sigma for CTM be required to be positive definite or just positive semidefinite? test with 2 topics maybe. could set inv(model.sigma) to pinv(model.sigma)
+23. get NaNs with LDA with 1 topic.
 
 
 
