@@ -21,8 +21,8 @@
 22. should sigma for CTM be required to be positive definite or just positive semidefinite? test with 2 topics maybe. could set inv(model.sigma) to pinv(model.sigma)
 23. get NaNs with LDA with 1 topic. Basically, gamma and alpha go to Inf with 1 topic because that increasing the likelihood
 24. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
-
-
+25. findall for docs in corpus not working, need to understand how to do this correctly
+26. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF
 
 
 

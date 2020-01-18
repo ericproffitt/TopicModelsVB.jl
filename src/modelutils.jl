@@ -10,9 +10,9 @@ Base.showerror(io::IO, e::TopicModelError) = print(io, "TopicModelError: ", e.ms
 
 showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
 showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
-showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
-showdocs(model::TopicModel, doc_indices::Vector{Int}) = showdocs(model.corp, doc_indices)
-showdocs(model::TopicModel, doc_range::UnitRange{Int}) = showdocs(model.corp, collect(doc_range))
+showdocs(model::TopicModel, d::Integer) = showdocs(model.corp, d)
+showdocs(model::TopicModel, doc_indices::Vector{<:Integer}) = showdocs(model.corp, doc_indices)
+showdocs(model::TopicModel, doc_range::UnitRange{<:Integer}) = showdocs(model.corp, collect(doc_range))
 
 getvocab(model::TopicModel) = sort(collect(values(model.corp.vocab)))
 getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
@@ -819,23 +819,107 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 	end
 end
 
-function predict(corp::Corpus, train_model::LDA, test_model::LDA, iter=10, tol=1/model.K^2)
+function predict(corp::Corpus; train_model::Union{LDA, fLDA, gpuLDA}, iter::Integer=10, tol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained LDA model."
 
-	checkbounds(Bool, 1:model.U, users) || throw(TopicModelError("Some user indices are outside range."))
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
+	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
 
-	for v in 1:iter
-		update_phi!(model, d)
-		update_gamma!(model, d)
-		update_Elogtheta!(model, d)
-		if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
-			break
+	model = LDA(corp, train_model.K)
+	model.alpha = train_model.alpha
+	model.beta = train_model.beta
+	model.topics = train_model.topics
+
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_gamma!(model, d)
+			update_Elogtheta!(model, d)
+			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < tol
+				break
+			end
 		end
 	end
+
+	return model
 end
 
+function predict(corp::Corpus; train_model::CTM, iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained CTM model."
 
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 
+	model = LDA(corp, train_model.K)
+	model.mu = train_model.mu
+	model.sigma = train_model.sigma
+	model.invsigma = train_model.invsigma
+	model.beta = train_model.beta
+	model.topics = train_model.topics
 
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_logzeta!(model, d)
+			update_vsq!(model, d, niter, ntol)
+			update_lambda!(model, d, niter, ntol)
+			if norm(model.lambda[d] - model.lambda_old[d]) < tol
+				break
+			end
+		end
+	end
+
+	return model
+end
+
+function predict(corp::Corpus; train_model::Union{CTPF, gpuCTPF}, iter::Integer=10, tol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained CTPF model."
+	nothing
+end
+
+function topicdist(model::Union{LDA, fLDA, gpuLDA}, d::Integer)
+	"Get the LDA topic distribution for a document as a probability vector."
+
+	topic_distribution = model.gamma[d] / sum(model.gamma[d])
+	return topic_distribution
+end
+
+function topicdist(model::Union{CTM, fCTM, gpuCTM}, d::Integer)
+	"Get the CTM topic distribution for document as a probability vector."
+
+	x = exp.(model.lambda[d] + 0.5 * model.vsq[d])
+	topic_distribution = x / sum(x)
+
+	return topic_distribution
+end
+
+function topicdist(model::Union{CTPF, gpuCTPF}, d::Integer)
+	"Get the CTPF topic distribution for a document as a probability vector."
+
+	x = model.gimel[d] ./ model.dalet
+	topic_distribution = x / sum(x)
+
+	return topic_distribution
+end
+
+function topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
+	"Get TopicModel topic distributions for document(s) as a probability vector."
+
+	topic_distributions = Vector{typeof(model.elbo)}[]
+	for d in doc_indices
+		push!(topic_distributions, topicdist(model, d))
+	end
+
+	return topic_distributions
+end
+
+topicdist(model::TopicModel, doc_range::UnitRange{<:Integer}) = topicdist(model, collect(doc_range))
 
 
 
