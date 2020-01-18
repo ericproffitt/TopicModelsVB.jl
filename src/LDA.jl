@@ -88,7 +88,7 @@ function update_elbo!(model::LDA)
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
-		@bumper model.phi[1] = model.beta_old[:,terms] .* exp.(model.Elogtheta_old[d])
+		@positive model.phi[1] = model.beta_old[:,terms] .* exp.(model.Elogtheta_old[d])
 		model.phi[1] ./= sum(model.phi[1], dims=1)
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
 	end
@@ -112,14 +112,14 @@ function update_alpha!(model::LDA, niter::Integer, ntol::Real)
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
 		end	
-		model.alpha -= rho * p
+		@finite model.alpha -= rho * p
 		
 		if (norm(alpha_grad) < ntol) & (nu / model.K < ntol)
 			break
 		end
 		nu *= 0.5
 	end
-	@bumper model.alpha
+	@positive model.alpha
 end
 
 function update_beta!(model::LDA)
@@ -151,7 +151,7 @@ function update_gamma!(model::LDA, d::Int)
 	"Analytic."
 
 	counts = model.corp[d].counts
-	@bumper model.gamma[d] = model.alpha + model.phi[1] * counts
+	@positive model.gamma[d] = model.alpha + model.phi[1] * counts
 end
 
 function update_phi!(model::LDA, d::Int)
@@ -159,7 +159,7 @@ function update_phi!(model::LDA, d::Int)
 	"Analytic."
 
 	terms = model.corp[d].terms
-	@bumper model.phi[1] = model.beta[:,terms] .* exp.(model.Elogtheta[d])
+	@positive model.phi[1] = model.beta[:,terms] .* exp.(model.Elogtheta[d])
 	model.phi[1] ./= sum(model.phi[1], dims=1)
 end
 

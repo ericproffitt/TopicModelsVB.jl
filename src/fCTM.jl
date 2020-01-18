@@ -223,7 +223,7 @@ function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 			break
 		end
 	end
-	@bumper model.vsq[d]
+	@positive model.vsq[d]
 end
 
 function update_logzeta!(model::fCTM, d::Int)
@@ -287,7 +287,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		end
 	end
 
-	@bumper model.fbeta = model.beta .* (model.kappa' .<= 0)
+	@positive model.fbeta = model.beta .* (model.kappa' .<= 0)
 	model.fbeta ./= sum(model.fbeta, dims=2)
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing

@@ -165,7 +165,7 @@ function update_vsq!(model::CTM, d::Int)
 	x = Variable(model.K, Positive())
 	problem = maximize(-0.5 * dot(diag(model.invsigma), x) - model.C[d] * sum(model.lambda[d] .- model.logzeta[d] + 0.5 * x) + 0.5 * sum(log.(x)))
 	solve!(problem, solver)
-	@bumper model.vsq[d] = vec(x.value)
+	@positive model.vsq[d] = vec(x.value)
 end
 
 function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
@@ -187,7 +187,7 @@ function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 			break
 		end
 	end
-	@bumper model.vsq[d]
+	@positive model.vsq[d]
 end
 
 function update_logzeta!(model::CTM, d::Int)

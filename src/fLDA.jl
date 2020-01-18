@@ -155,7 +155,7 @@ function update_alpha!(model::fLDA, niter::Integer, ntol::Real)
 		end
 		nu *= 0.5
 	end
-	@bumper model.alpha
+	@positive model.alpha
 end
 
 function update_kappa!(model::fLDA)
@@ -204,7 +204,7 @@ function update_gamma!(model::fLDA, d::Int)
 	"Analytic."
 
 	counts = model.corp[d].counts
-	@bumper model.gamma[d] = model.alpha + model.phi[1] * counts	
+	@positive model.gamma[d] = model.alpha + model.phi[1] * counts	
 end
 
 function update_tau!(model::fLDA, d::Int)
@@ -259,7 +259,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		end
 	end
 
-	@bumper model.fbeta = model.beta .* (model.kappa' .<= 0)
+	@positive model.fbeta = model.beta .* (model.kappa' .<= 0)
 	model.fbeta ./= sum(model.fbeta, dims=2)
 	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
 	nothing

@@ -819,8 +819,11 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 	end
 end
 
-function predict(corp::Corpus, model::LDA, iter=10, tol=1/model.K^2)
-	for v in 1:viter
+function predict(corp::Corpus, train_model::LDA, test_model::LDA, iter=10, tol=1/model.K^2)
+
+	checkbounds(Bool, 1:model.U, users) || throw(TopicModelError("Some user indices are outside range."))
+
+	for v in 1:iter
 		update_phi!(model, d)
 		update_gamma!(model, d)
 		update_Elogtheta!(model, d)

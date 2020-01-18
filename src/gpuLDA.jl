@@ -156,7 +156,7 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 		end
 		nu *= 0.5
 	end
-	@bumper model.alpha
+	@positive model.alpha
 	@buffer model.alpha
 end
 

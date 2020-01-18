@@ -37,7 +37,7 @@ macro boink(expr::Expr)
 	return expr_out
 end
 
-macro bumper(expr::Expr)
+macro positive(expr::Expr)
 	"Add EPSILON to a numerical variable or array during variable assignment."
 
 	if (expr.head == :.) || (expr.head == :ref)
@@ -45,6 +45,19 @@ macro bumper(expr::Expr)
 	
 	elseif expr.head == :(=)
 		expr_out = :(:($($(expr.args[1]))) = EPSILON .+ :($($(expr.args[2]))))
+	end
+
+	return expr_out
+end
+
+macro finite(expr::Expr)
+	"Prevent overflow of floating point to Inf by returning floatmax() of value."
+
+	if (expr.head == :.) || (expr.head == :ref)
+		expr_out = :(:($($expr)) = min.(:($($expr)), floatmax.(:($($expr)))))
+	
+	elseif expr.head == :(=)
+		expr_out = :(:($($(expr.args[1]))) = min.(:($($(expr.args[2]))), floatmax.(:($($(expr.args[2]))))))
 	end
 
 	return expr_out
