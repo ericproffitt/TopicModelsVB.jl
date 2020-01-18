@@ -118,6 +118,8 @@ VectorList{T} = Vector{Vector{T}}
 "Type alias for a vector of matrices."
 MatrixList{T} = Vector{Matrix{T}}
 
+finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = min.(x, floatmax.(x))
+
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
 	"Additive logistic function of a real-valued matrix over the given dimension."
 	"Overflow safe."
@@ -167,6 +169,25 @@ function isstochastic(P::Matrix{<:Real}; dims::Integer)
 end
 
 ### Keep until pull request is merged.
-import Distributions.xlogy
 Distributions.xlogy(x::T, y::T) where {T<:Real} = x != zero(T) ? x * log(y) : zero(log(y))
 Distributions.binomlogpdf(n::Real, p::Real, k::Real) = (isinteger(k) & (zero(k) <= k <= n)) ? convert(typeof(float(p)), loggamma(n + 1) - loggamma(k + 1) - loggamma(n - k + 1) + xlogy(k, p) + xlogy(n - k, 1 - p)) : convert(typeof(float(p)), -Inf)
+
+### Keep until pull request is merged.
+function Distributions.entropy(d::Dirichlet)
+    α = d.alpha
+    α0 = d.alpha0
+    k = length(α)
+
+    if length(k) == 1
+    	en = 0.0
+
+    else
+	    en = d.lmnB + (α0 - k) * digamma(α0)
+	    for j in 1:k
+	        @inbounds αj = α[j]
+	        en -= (αj - 1.0) * digamma(αj)
+	    end
+	end
+
+    return en
+end

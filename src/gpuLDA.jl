@@ -87,7 +87,7 @@ end
 function Elogptheta(model::gpuLDA, d::Int)
 	"Compute E[log(P(theta))]."
 
-	x = loggamma(sum(model.alpha)) - sum(loggamma.(model.alpha)) + dot(model.alpha .- 1, model.Elogtheta[d])
+	x = finite(loggamma(sum(model.alpha))) - finite(sum(loggamma.(model.alpha))) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
@@ -149,7 +149,7 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
 		end	
-		model.alpha -= rho * p
+		@finite model.alpha -= rho * p
 		
 		if (norm(alpha_grad) < ntol) & (nu / model.K < ntol)
 			break

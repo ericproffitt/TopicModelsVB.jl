@@ -58,6 +58,9 @@ macro finite(expr::Expr)
 	
 	elseif expr.head == :(=)
 		expr_out = :(:($($(expr.args[1]))) = min.(:($($(expr.args[2]))), floatmax.(:($($(expr.args[2]))))))
+
+	elseif expr.head == :(-=)
+		expr_out = :(:($($(expr.args[1]))) = min.(:($($(expr.args[1]))) - :($($(expr.args[2]))), floatmax.(:($($(expr.args[1]))) - :($($(expr.args[2]))))))
 	end
 
 	return expr_out

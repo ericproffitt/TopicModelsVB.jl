@@ -156,18 +156,6 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	end
 end
 
-function update_vsq!(model::CTM, d::Int)
-	"Update vsq."
-	"Interior-point Newton's method with log-barrier and back-tracking line search."
-
-	#-0.5 * dot(diag(model.invsigma), model.vsq) - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]) - 0.5 * log.(model.vsq[d])
-
-	x = Variable(model.K, Positive())
-	problem = maximize(-0.5 * dot(diag(model.invsigma), x) - model.C[d] * sum(model.lambda[d] .- model.logzeta[d] + 0.5 * x) + 0.5 * sum(log.(x)))
-	solve!(problem, solver)
-	@positive model.vsq[d] = vec(x.value)
-end
-
 function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	"Update vsq."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
@@ -221,7 +209,6 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 			for v in 1:viter
 				update_phi!(model, d)
 				update_logzeta!(model, d)
-				#update_vsq!(model, d)
 				update_vsq!(model, d, niter, ntol)
 				update_lambda!(model, d, niter, ntol)
 				if norm(model.lambda[d] - model.lambda_old[d]) < vtol

@@ -47,7 +47,7 @@ end
 function Elogptheta(model::LDA, d::Int)
 	"Compute E[log(P(theta))]."
 
-	x = loggamma(sum(model.alpha)) - sum(loggamma.(model.alpha)) + dot(model.alpha .- 1, model.Elogtheta[d])
+	x = finite(loggamma(sum(model.alpha))) - finite(sum(loggamma.(model.alpha))) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
