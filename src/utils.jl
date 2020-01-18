@@ -118,7 +118,7 @@ VectorList{T} = Vector{Vector{T}}
 "Type alias for a vector of matrices."
 MatrixList{T} = Vector{Matrix{T}}
 
-finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = min.(x, floatmax.(x))
+finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = sign.(x) .* min.(abs.(x), floatmax.(x))
 
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
 	"Additive logistic function of a real-valued matrix over the given dimension."

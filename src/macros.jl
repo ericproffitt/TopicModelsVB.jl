@@ -54,13 +54,13 @@ macro finite(expr::Expr)
 	"Prevent overflow of floating point to Inf by returning floatmax() of value."
 
 	if (expr.head == :.) || (expr.head == :ref)
-		expr_out = :(:($($expr)) = min.(:($($expr)), floatmax.(:($($expr)))))
+		expr_out = :(:($($expr)) = sign.(:($($expr))) .* min.(abs.(:($($expr))), floatmax.(:($($expr)))))
 	
 	elseif expr.head == :(=)
-		expr_out = :(:($($(expr.args[1]))) = min.(:($($(expr.args[2]))), floatmax.(:($($(expr.args[2]))))))
+		expr_out = :(:($($(expr.args[1]))) = sign.(:($($(expr.args[2])))) .* min.(abs.(:($($(expr.args[2])))), floatmax.(:($($(expr.args[2]))))))
 
 	elseif expr.head == :(-=)
-		expr_out = :(:($($(expr.args[1]))) = min.(:($($(expr.args[1]))) - :($($(expr.args[2]))), floatmax.(:($($(expr.args[1]))) - :($($(expr.args[2]))))))
+		expr_out = :(:($($(expr.args[1]))) = sign.(:($($(expr.args[1])))) .* min.(abs.(:($($(expr.args[1]))) - :($($(expr.args[2])))), floatmax.(:($($(expr.args[1]))) - :($($(expr.args[2]))))))
 	end
 
 	return expr_out

@@ -23,6 +23,7 @@
 24. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
 25. findall for docs in corpus not working, need to understand how to do this correctly
 26. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF
+27. need to deal with beta and fbeta in filtered models, predict function, etc.
 
 
 
