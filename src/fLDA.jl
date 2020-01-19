@@ -16,7 +16,6 @@ mutable struct fLDA <: TopicModel
 	beta::Matrix{Float64}
 	beta_old::Matrix{Float64}
 	beta_temp::Matrix{Float64}
-	fbeta::Matrix{Float64}
 	Elogtheta::VectorList{Float64}
 	Elogtheta_old::VectorList{Float64}
 	gamma::VectorList{Float64}
@@ -43,7 +42,6 @@ mutable struct fLDA <: TopicModel
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		fbeta = copy(beta)
 		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
 		Elogtheta_old = copy(Elogtheta)
 		gamma = [ones(K) for _ in 1:M]
@@ -52,7 +50,7 @@ mutable struct fLDA <: TopicModel
 		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo = 0
 	
-		model = new(K, M, V, N, C, copy(corp), topics, eta, alpha, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, fbeta, Elogtheta, Elogtheta_old, gamma, tau, tau_old, phi, elbo)
+		model = new(K, M, V, N, C, copy(corp), topics, eta, alpha, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, tau, tau_old, phi, elbo)
 		update_elbo!(model)
 		return model
 	end
@@ -252,16 +250,13 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		update_beta!(model)
 		update_kappa!(model)
 		update_alpha!(model, niter, ntol)
-		update_eta!(model)	
+		#update_eta!(model)	
 		
 		if check_elbo!(model, check_elbo, k, tol)
 			break
 		end
 	end
 
-	#@positive model.fbeta = model.beta .* (model.kappa' .<= 0)
-	#@positive model.fbeta = model.beta .* (1 .- model.kappa')
-	model.fbeta ./= sum(model.fbeta, dims=2)
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end

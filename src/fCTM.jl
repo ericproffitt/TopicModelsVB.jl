@@ -18,7 +18,6 @@ mutable struct fCTM <: TopicModel
 	beta::Matrix{Float64}
 	beta_old::Matrix{Float64}
 	beta_temp::Matrix{Float64}
-	fbeta::Matrix{Float64}
 	lambda::VectorList{Float64}
 	lambda_old::VectorList{Float64}
 	vsq::VectorList{Float64}
@@ -48,7 +47,6 @@ mutable struct fCTM <: TopicModel
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		fbeta = copy(beta)
 		lambda = [zeros(K) for _ in 1:M]
 		lambda_old = copy(lambda)
 		vsq = [ones(K) for _ in 1:M]
@@ -58,7 +56,7 @@ mutable struct fCTM <: TopicModel
 		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo = 0
 
-		model = new(K, M, V, N, C, copy(corp), topics, eta, mu, sigma, invsigma, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, fbeta, lambda, lambda_old, vsq, logzeta, tau, tau_old, phi, elbo)
+		model = new(K, M, V, N, C, copy(corp), topics, eta, mu, sigma, invsigma, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, lambda, lambda_old, vsq, logzeta, tau, tau_old, phi, elbo)
 		update_elbo!(model)
 		return model
 	end
@@ -280,15 +278,13 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		update_kappa!(model)
 		update_sigma!(model)
 		update_mu!(model)
-		update_eta!(model)
+		#update_eta!(model)
 		
 		if check_elbo!(model, check_elbo, k, tol)
 			break
 		end
 	end
 
-	@positive model.fbeta = model.beta .* (model.kappa' .<= 0)
-	model.fbeta ./= sum(model.fbeta, dims=2)
-	model.topics = [reverse(sortperm(vec(model.fbeta[i,:]))) for i in 1:model.K]
+	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
