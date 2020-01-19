@@ -8,7 +8,7 @@ Topic models are Bayesian hierarchical models designed to discover the latent lo
 
 Markov chain Monte Carlo methods are slow but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian methods are fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods are fundamentally optimization algorithms, which are naturally equipped in the assessment of convergence to local optima.
+Contrarily, variational Bayesian methods are fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods are fundamentally optimization algorithms, and are naturally equipped in the assessment of convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
@@ -147,7 +147,7 @@ the fox dog quick brown jumped lazy over the
 
 Whenever you load a corpus into a model, a copy of that corpus is made, such that if you modify the original corpus at corpus-level (remove documents, re-order vocab keys, etc.), this will not affect any corpus attached to a model. However! Since corpora are containers for their documents, modifying an individual document will affect it in all corpora which contain it. Therefore,
 
-1. Using `fixcorp!` to modify the documents of a corpus will not result in corpus defects, but will cause them also to be changed in all other corpora which contain them.
+1. Using `fixcorp!` to modify the documents of a corpus will not result in corpus defects, but will cause them also to be changed in all other corpora which contain them. If you would like to copy a corpus with independent documents, use `deepcopy(corp)`.
 
 2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`. It is advised that you don't do this without good reason.
 
@@ -191,7 +191,7 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 ```julia
 using TopicModelsVB
 
-Random.seed!(2);
+Random.seed!(10);
 
 corp = readcorp(:nsf) 
 
@@ -209,32 +209,38 @@ train!(model, iter=150, tol=0)
 
 ### training...
 
-showtopics(model, cols=9)
+showtopics(model, cols=9, 20)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4        topic 5       topic 6      topic 7          topic 8         topic 9
-data            research        species          research       research      cell         research         theory          chemistry
-project         study           plant            systems        university    protein      project          problems        research
-research        experimental    research         system         support       cells        data             study           metal
-study           high            study            design         students      proteins     study            research        reactions
-earthquake      theoretical     populations      data           program       gene         economic         equations       chemical
-ocean           systems         genetic          algorithms     science       plant        important        work            study
-water           phase           plants           based          scientists    studies      social           investigator    studies
-studies         flow            evolutionary     control        award         genes        understanding    geometry        program
-measurements    physics         population       project        dr            molecular    information      project         organic
-field           quantum         data             computer       project       research     work             principal       structure
-provide         materials       dr               performance    scientific    specific     development      algebraic       molecular
-time            model           studies          parallel       sciences      function     theory           mathematical    dr
-results         temperature     patterns         techniques     conference    system       provide          differential    compounds
-models          properties      relationships    problems       national      study        analysis         groups          surface
-program         dynamics        important        models         projects      important    policy           space           molecules
+topic 1          topic 2        topic 3        topic 4          topic 5          topic 6        topic 7          topic 8          topic 9
+plant            research       models         research         data             research       research         research         theory
+cell             chemistry      research       project          research         system         dr               students         problems
+protein          study          study          study            species          systems        university       science          study
+cells            high           data           data             study            design         support          program          research
+genetic          chemical       model          social           project          data           award            university       equations
+gene             studies        numerical      theory           important        project        program          conference       work
+molecular        surface        theoretical    economic         provide          earthquake     sciences         support          geometry
+studies          materials      methods        understanding    studies          performance    project          scientists       project
+proteins         metal          problems       important        time             control        months           provide          groups
+dna              reactions      theory         work             field            based          mathematical     engineering      algebraic
+plants           properties     physics        information      ocean            computer       professor        workshop         differential
+genes            organic        work           development      water            analysis       year             faculty          investigator
+research         program        systems        policy           analysis         algorithms     science          graduate         space
+study            electron       flow           models           understanding    parallel       equipment        national         principal
+specific         phase          analysis       behavior         determine        developed      scientists       scientific       mathematical
+system           structure      time           provide          results          techniques     institute        international    systems
+important        temperature    processes      analysis         climate          information    scientific       undergraduate    analysis
+function         molecular      solar          political        patterns         time           collaboration    held             spaces
+understanding    systems        large          model            large            network        projects         projects         problem
+development      project        project        public           processes        structures     national         project          solutions
 ```
 
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown,
 
 ```julia
-topicdist(model, 1) ### = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
+println(round.(topicdist(model, 1), digits=3))
+### = [0.161, 0.0, 0.0, 0.063, 0.774, 0.0, 0.0, 0.0, 0.0]
 ```
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation,
 
@@ -250,10 +256,11 @@ populations prior minimal population size current permit analyses effects
 differing levels species distributions life history...
 ```
 
-On the other hand, some documents will be a combination of topics. Consider the topic breakdown for document 25,
+Just for fun, let's consider one more document (document 25),
 
 ```julia
-model.gamma[25] # = [11.424, 45.095, 0.020, 0.036, 0.049, 0.022, 0.020, 66.573, 0.026]
+println(round.(topicdist(model, 25), digits=3))
+### = [0.0, 0.0, 0.583, 0.0, 0.0, 0.0, 0.0, 0.0, 0.415]
 
 showdocs(model, 25)
 ```
@@ -267,7 +274,7 @@ analysis partial differential equations form basis studies primary goals underst
 internal presence vortex rings arise density stratification due salinity temperature...
 ```
 
-We see that in this case document 25 appears to be about applications of mathematical physics to ocean currents, which corresponds precisely to a combination of topics 1, 2 and 8.
+We see that in this case document 25 appears to be about mathematical physics, which corresponds precisely to topics 3 and 9.
 
 Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.
 
