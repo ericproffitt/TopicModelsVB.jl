@@ -844,7 +844,7 @@ function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10
 end
 
 function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained LDA model."
+	"Predict topic distributions for corpus of documents based on trained fLDA model."
 
 	check_corp(corp)
 	check_model(train_model)
@@ -852,7 +852,7 @@ function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/
 	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
 	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
 
-	model = LDA(corp, train_model.K)
+	model = fLDA(corp, train_model.K)
 	model.alpha = train_model.alpha
 	model.beta = train_model.beta
 	model.topics = train_model.topics
@@ -881,7 +881,7 @@ function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10
 	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 
-	model = LDA(corp, train_model.K)
+	model = CTM(corp, train_model.K)
 	model.mu = train_model.mu
 	model.sigma = train_model.sigma
 	model.invsigma = train_model.invsigma
@@ -904,7 +904,7 @@ function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10
 end
 
 function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained CTM model."
+	"Predict topic distributions for corpus of documents based on trained fCTM model."
 
 	check_corp(corp)
 	check_model(train_model)
@@ -912,7 +912,7 @@ function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/
 	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 
-	model = LDA(corp, train_model.K)
+	model = fCTM(corp, train_model.K)
 	model.mu = train_model.mu
 	model.sigma = train_model.sigma
 	model.invsigma = train_model.invsigma
