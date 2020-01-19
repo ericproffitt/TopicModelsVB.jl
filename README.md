@@ -8,7 +8,7 @@ Topic models are Bayesian hierarchical models designed to discover the latent lo
 
 Markov chain Monte Carlo methods are slow but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian methods are fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods, being optimization procedures, are naturally equipped in the assessment of convergence to local optima.
+Contrarily, variational Bayesian methods are fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, variational Bayesian methods are fundamentally optimization algorithms, which are naturally equipped in the assessment of convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
@@ -149,7 +149,7 @@ Whenever you load a corpus into a model, a copy of that corpus is made, such tha
 
 1. Using `fixcorp!` to modify the documents of a corpus will not result in corpus defects, but will cause them also to be changed in all other corpora which contain them.
 
-2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`. It is advised that you don't do this with out good reason.
+2. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`. It is advised that you don't do this without good reason.
 
 ## Models
 The available models are as follows:
@@ -234,7 +234,7 @@ program         dynamics        important        models         projects      im
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown,
 
 ```julia
-model.gamma[1] ### = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
+topicdist(model, 1) ### = [0.036, 0.030, 94.930, 0.036, 0.049, 0.022, 4.11, 0.027, 0.026]
 ```
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation,
 
@@ -415,6 +415,95 @@ Furthermore, as expected, the topic which is least correlated with all other top
 ```julia
 argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
 ```
+
+### Topic Prediction
+
+The topic models so far discussed can also be used to train a classification algorithm designed to predict the topic distribution of new, unseen documents.
+
+Let's train an LDA model on 5,000 documents, and then inspect the topic distributions for the final 10 documents in this corpus,
+
+```julia
+Random.seed!(100)
+
+model = LDA(corp, 9)
+train!(model, check_elbo=Inf)
+
+for d in 4901:5000
+	@show topicdist(model, d)
+end
+```
+
+```
+Document 4991: [0.0, 0.87, 0.128, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Document 4992: [0.0, 0.0, 0.0, 0.0, 0.173, 0.825, 0.0, 0.0, 0.0]
+Document 4993: [0.171, 0.0, 0.0, 0.0, 0.0, 0.0, 0.394, 0.434, 0.0]
+Document 4994: [0.0, 0.0, 0.0, 0.0, 0.92, 0.0, 0.078, 0.0, 0.0]
+Document 4995: [0.002, 0.001, 0.001, 0.001, 0.656, 0.001, 0.002, 0.002, 0.334]
+Document 4996: [0.001, 0.0, 0.0, 0.0, 0.001, 0.683, 0.0, 0.0, 0.314]
+Document 4997: [0.001, 0.0, 0.0, 0.604, 0.001, 0.0, 0.001, 0.392, 0.0]
+Document 4998: [0.177, 0.0, 0.0, 0.0, 0.001, 0.0, 0.821, 0.0, 0.0]
+Document 4999: [0.406, 0.0, 0.0, 0.593, 0.0, 0.0, 0.0, 0.0, 0.0]
+Document 5000: [0.001, 0.0, 0.777, 0.0, 0.22, 0.0, 0.001, 0.001, 0.0]
+```
+
+As a sanity check to make sure these topic distributions make sense, less cross-check the final two documents against the topics.
+
+```julia
+showtopics(model, cols=9)
+```
+
+```
+topic 1       topic 2          topic 3      topic 4         topic 5       topic 6       topic 7       topic 8        topic 9
+research      research         plant        theory          research      data          research      research       research
+systems       study            cell         study           chemistry     research      dr            students       project
+system        species          protein      problems        study         project       university    science        study
+design        data             cells        research        chemical      earthquake    award         program        information
+algorithms    project          genetic      work            reactions     time          project       university     theory
+data          dr               gene         equations       studies       study         support       support        understanding
+problems      important        research     investigator    high          models        program       engineering    language
+methods       provide          plants       project         surface       months        scientists    conference     important
+models        studies          species      geometry        metal         support       physics       provide        behavior
+based         analysis         studies      principal       materials     year          study         projects       social
+control       patterns         genes        mathematical    organic       ocean         professor     project        data
+analysis      history          molecular    groups          properties    important     field         national       work
+parallel      evolutionary     proteins     algebraic       structure     analysis      laboratory    sciences       economic
+project       information      dna          differential    molecular     model         studies       faculty        political
+techniques    relationships    study        space           program       seismic       institute     scientific     models
+```
+
+```julia
+showdocs(model, 4999:5000)
+```
+
+```
+ ●●● Document 4999
+ ●●● Uses and Simulation of Randomness: Applications to Cryptography,Program Checking and Counting Problems.
+randomized algorithms consume valuable resource uniformly distributed random bits primary focuses work develop general techniques designing pseudo generator stretches short string longer totally polynomial time adversary central component secure private key cryptosystem conserve number monte carlo shown construct function investigator plans constructions efficient generators typical important counting problem estimate truth assignments satisfy boolean formula algorithm designed deterministic sought recently theory program checking developed supplement verification testing computing verifying correctness answer possibly partially faulty supposedly computes successfully applied variety algebraic problems extended applications
+
+ ●●● Document 5000
+ ●●● New Possibilities for Understanding the Role of Neuromelanin
+class cellular found tissues organisms product metabolism pigment central nervous system mammals including man involved production dopamine function unknown indirect evidence important determining behavior neurons genesis goal project determine role studying vivo scanning electron microscopy magnetic resonance imaging techniques monitor paramagnetic semiconductor properties relate functional states investigation increase understanding treatment disease disorders
+```
+
+Now as a performance test, we can partition our corpus into training and test corpora as follows,
+
+```julia
+train_corp = copy(corp)
+train_corp.docs = train_corp[1:4990];
+
+test_corp = copy(corp)
+test_corp.docs = test_corp[4991:5000];
+```
+
+Finally, we will retrain our LDA model on just the training corpus, and then used that trained model to predict the topic distributions of the ten documents in our test corpus,
+
+```julia
+Random.seed!(100)
+
+train_model = LDA(train_corp, 9)
+train!(model, check_elbo=Inf)
+
+predict(test_corp, train_model=train_model)
 
 ### CTPF
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model. CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.

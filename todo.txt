@@ -24,7 +24,7 @@
 25. findall for docs in corpus not working, need to understand how to do this correctly
 26. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF
 27. need to deal with beta and fbeta in filtered models, predict function, etc.
-
+28. need to deal with mu and lambda in CTM with floatmax, etc.
 
 
 
