@@ -420,16 +420,36 @@ argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
 
 The topic models so far discussed can also be used to train a classification algorithm designed to predict the topic distribution of new, unseen documents.
 
-Let's train an LDA model on 5,000 documents, and then inspect the topic distributions for the final 10 documents in this corpus,
+Let's take our 5,000 document NSF corpus, and partition it into training and test corpora,
 
 ```julia
-Random.seed!(100)
+train_corp = copy(corp)
+train_corp.docs = train_corp[1:4995];
 
-model = LDA(corp, 9)
+test_corp = copy(corp)
+test_corp.docs = test_corp[4996:5000];
+```
+
+Now we can train our LDA model on just the training corpus, and then use that trained model to predict the topic distributions of the ten documents in our test corpus,
+
+```julia
+Random.seed!(100);
+
+train_model = LDA(train_corp, 9)
 train!(model, check_elbo=Inf)
 
+test_model = predict(test_corp, train_model=train_model)
+```
+
+The `predict` function works by taking in a corpus of new, unseen documents, and a trained model, and returning a new model of the same type. This new model can then be inspected directly, or using `topicdist`, in order to see the topic distribution for the documents in the test corpus.
+
+Let's first take a look at the topics for the trained model, as well as the documents in our test corpus,
+
+```
+
+```julia
 for d in 4991:5000
-	println("Document ", d, ": ", round.(topicdist(model, d), digits=3))
+	println("Document ", 4990 + d, ": ", round.(topicdist(model, d), digits=3))
 end
 ```
 
@@ -444,74 +464,6 @@ Document 4997: [0.001, 0.0, 0.0, 0.604, 0.001, 0.0, 0.001, 0.392, 0.0]
 Document 4998: [0.177, 0.0, 0.0, 0.0, 0.001, 0.0, 0.821, 0.0, 0.0]
 Document 4999: [0.406, 0.0, 0.0, 0.593, 0.0, 0.0, 0.0, 0.0, 0.0]
 Document 5000: [0.001, 0.0, 0.777, 0.0, 0.22, 0.0, 0.001, 0.001, 0.0]
-```
-
-As a sanity check to make sure these topic distributions make sense, less cross-check the final two documents against the topics.
-
-```julia
-showtopics(model, cols=9)
-```
-
-```
-topic 1       topic 2          topic 3      topic 4         topic 5       topic 6       topic 7       topic 8        topic 9
-research      research         plant        theory          research      data          research      research       research
-systems       study            cell         study           chemistry     research      dr            students       project
-system        species          protein      problems        study         project       university    science        study
-design        data             cells        research        chemical      earthquake    award         program        information
-algorithms    project          genetic      work            reactions     time          project       university     theory
-data          dr               gene         equations       studies       study         support       support        understanding
-problems      important        research     investigator    high          models        program       engineering    language
-methods       provide          plants       project         surface       months        scientists    conference     important
-models        studies          species      geometry        metal         support       physics       provide        behavior
-based         analysis         studies      principal       materials     year          study         projects       social
-control       patterns         genes        mathematical    organic       ocean         professor     project        data
-analysis      history          molecular    groups          properties    important     field         national       work
-parallel      evolutionary     proteins     algebraic       structure     analysis      laboratory    sciences       economic
-project       information      dna          differential    molecular     model         studies       faculty        political
-techniques    relationships    study        space           program       seismic       institute     scientific     models
-```
-
-```julia
-showdocs(model, 4999:5000)
-```
-
-```
- ●●● Document 4999
- ●●● Uses and Simulation of Randomness: Applications to Cryptography,Program Checking and Counting Problems.
-randomized algorithms consume valuable resource uniformly distributed random bits primary focuses work develop general techniques designing pseudo generator stretches short string longer totally polynomial time adversary central component secure private key cryptosystem conserve number monte carlo shown construct function investigator plans constructions efficient generators typical important counting problem estimate truth assignments satisfy boolean formula algorithm designed deterministic sought recently theory program checking developed supplement verification testing computing verifying correctness answer possibly partially faulty supposedly computes successfully applied variety algebraic problems extended applications
-
- ●●● Document 5000
- ●●● New Possibilities for Understanding the Role of Neuromelanin
-class cellular found tissues organisms product metabolism pigment central nervous system mammals including man involved production dopamine function unknown indirect evidence important determining behavior neurons genesis goal project determine role studying vivo scanning electron microscopy magnetic resonance imaging techniques monitor paramagnetic semiconductor properties relate functional states investigation increase understanding treatment disease disorders
-```
-
-Now as a performance test, we can partition our corpus into training and test corpora as follows,
-
-```julia
-train_corp = copy(corp)
-train_corp.docs = train_corp[1:4990];
-
-test_corp = copy(corp)
-test_corp.docs = test_corp[4991:5000];
-```
-
-Finally, we will retrain our LDA model on just the training corpus, and then used that trained model to predict the topic distributions of the ten documents in our test corpus,
-
-```julia
-Random.seed!(100);
-
-train_model = LDA(train_corp, 9)
-train!(model, check_elbo=Inf)
-
-test_model = predict(test_corp, train_model=train_model)
-```
-
-The `predict` function works by taking in a corpus of new, unseen documents, and a trained model, and returning a new model of the same type. This new model can then be inspected directly, or using `topicdist`, in order to see the topic distribution for the documents in the test corpus.
-
-```julia
-for d in 4991:5000
-	println("Document ", 4990 + d, ": ", round.(topicdist(model, d), digits=3))
-end
 ```
 
 ```

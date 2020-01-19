@@ -93,7 +93,7 @@ macro host(expr::Expr)
 		expr_out = :($(esc(model)).Elogtheta_dist = cl.read($(esc(model)).queue, $(esc(model)).Elogtheta_dist_buffer)[1:$(esc(model)).M])
 
 	elseif expr.args[2] == :(:sigma_buffer)
-		expr_out = :($(esc(model)).sigma = Symmetric(reshape(cl.read($(esc(model)).queue, $(esc(model)).sigma_buffer), model.K, model.K)))
+		expr_out = :($(esc(model)).sigma = Symmetric(reshape(cl.read($(esc(model)).queue, $(esc(model)).sigma_buffer), $(esc(model)).K, $(esc(model)).K)))
 
 	elseif expr.args[2] == :(:lambda_dist_buffer)
 		expr_out = :($(esc(model)).lambda_dist = cl.read($(esc(model)).queue, $(esc(model)).lambda_dist_buffer)[1:$(esc(model)).M])
