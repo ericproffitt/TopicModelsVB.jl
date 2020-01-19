@@ -815,7 +815,7 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 	end
 end
 
-function predict(corp::Corpus; train_model::Union{LDA, fLDA, gpuLDA}, iter::Integer=10, tol::Real=1/train_model.K^2)
+function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10, tol::Real=1/train_model.K^2)
 	"Predict topic distributions for corpus of documents based on trained LDA model."
 
 	check_corp(corp)
@@ -843,7 +843,36 @@ function predict(corp::Corpus; train_model::Union{LDA, fLDA, gpuLDA}, iter::Inte
 	return model
 end
 
-function predict(corp::Corpus; train_model::Union{CTM, fCTM, gpuCTM}, iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained LDA model."
+
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
+	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
+
+	model = LDA(corp, train_model.K)
+	model.alpha = train_model.alpha
+	model.beta = train_model.beta
+	model.topics = train_model.topics
+
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_tau!(model, d)
+			update_gamma!(model, d)
+			update_Elogtheta!(model, d)
+			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
+				break
+			end
+		end
+	end
+
+	return model
+end
+
+function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
 	"Predict topic distributions for corpus of documents based on trained CTM model."
 
 	check_corp(corp)
@@ -866,6 +895,38 @@ function predict(corp::Corpus; train_model::Union{CTM, fCTM, gpuCTM}, iter::Inte
 			update_vsq!(model, d, niter, ntol)
 			update_lambda!(model, d, niter, ntol)
 			if norm(model.lambda[d] - model.lambda_old[d]) < tol
+				break
+			end
+		end
+	end
+
+	return model
+end
+
+function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained CTM model."
+
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+
+	model = LDA(corp, train_model.K)
+	model.mu = train_model.mu
+	model.sigma = train_model.sigma
+	model.invsigma = train_model.invsigma
+	model.beta = train_model.beta
+	model.topics = train_model.topics
+
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_tau!(model, d)
+			update_logzeta!(model, d)
+			update_lambda!(model, d, niter, ntol)
+			update_vsq!(model, d, niter, ntol)
+			if norm(model.lambda[d] - model.lambda_old[d]) < vtol
 				break
 			end
 		end
