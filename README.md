@@ -293,31 +293,31 @@ showtopics(artificial_model, cols=9)
 ```
 
 ```
-topic 1       topic 2         topic 3         topic 4          topic 5          topic 6       topic 7         topic 8          topic 9
-research      research        theory          species          cell             research      data            research         chemistry
-systems       study           study           research         protein          university    project         project          research
-system        flow            problems        study            cells            support       research        data             reactions
-design        experimental    research        plant            gene             program       study           study            metal
-data          phase           equations       populations      proteins         students      earthquake      social           chemical
-algorithms    high            work            genetic          genes            science       water           information      structure
-based         theoretical     investigator    population       plant            award         studies         economic         studies
-models        systems         project         evolutionary     studies          scientists    ocean           development      program
-control       quantum         geometry        plants           molecular        project       time            work             study
-problems      physics         principal       data             specific         sciences      measurements    important        molecular
-computer      temperature     space           relationships    system           scientific    provide         analysis         organic
-project       model           differential    understanding    research         dr            program         understanding    dr
-analysis      materials       algebraic       studies          function         national      models          theory           properties
-techniques    phenomena       groups          important        understanding    conference    field           models           compounds
-methods       work            mathematical    patterns         study            provide       analysis        provide          reaction
+topic 1      topic 2       topic 3        topic 4        topic 5          topic 6          topic 7         topic 8        topic 9
+plant        research      research       research       data             research         theory          models         research
+cell         study         students       system         species          project          problems        study          university
+protein      chemistry     systems        design         research         data             study           research       dr
+cells        high          program        systems        study            study            research        data           support
+molecular    chemical      science        project        project          economic         equations       model          program
+genetic      studies       information    data           important        social           work            numerical      award
+proteins     surface       data           earthquake     studies          theory           geometry        methods        science
+gene         reactions     important      performance    time             important        groups          theoretical    students
+studies      metal         engineering    control        provide          understanding    differential    problems       sciences
+dna          materials     activities     analysis       patterns         development      project         physics        project
+plants       electron      project        based          ocean            work             algebraic       theory         scientists
+genes        organic       provide        algorithms     field            models           principal       time           projects
+research     structure     work           parallel       climate          analysis         mathematical    systems        national
+study        program       workshop       computer       understanding    policy           investigator    flow           scientific
+important    properties    field          developed      water            provide          analysis        work           months
 ```
 
 One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc. While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts. Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training. Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
 
 ```julia
-Random.seed!(2);
+Random.seed!(10);
 
 model = fLDA(corp, 9)
-train!(model, iter=150, tol=0, check_elbo=Inf)
+train!(model, check_elbo=Inf)
 
 ### training...
 
