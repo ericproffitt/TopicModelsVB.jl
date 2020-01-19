@@ -433,7 +433,7 @@ test_corp.docs = test_corp[4996:5000];
 Now we can train our LDA model on just the training corpus, and then use that trained model to predict the topic distributions of the ten documents in our test corpus,
 
 ```julia
-Random.seed!(100);
+Random.seed!(10);
 
 train_model = LDA(train_corp, 9)
 train!(model, check_elbo=Inf)
@@ -445,38 +445,74 @@ The `predict` function works by taking in a corpus of new, unseen documents, and
 
 Let's first take a look at the topics for the trained model, as well as the documents in our test corpus,
 
+```julia
+showtopics(train_model, cols=9, 20)
+```
+
+```
+topic 1          topic 2         topic 3        topic 4          topic 5          topic 6        topic 7          topic 8          topic 9
+plant            research        models         research         data             research       research         research         theory
+cell             chemistry       research       project          research         system         dr               students         problems
+protein          study           study          study            species          systems        university       science          study
+cells            high            data           data             study            design         support          program          research
+genetic          chemical        model          theory           project          data           award            university       equations
+gene             studies         numerical      social           important        project        program          conference       work
+molecular        surface         methods        economic         provide          earthquake     sciences         support          geometry
+studies          materials       theoretical    understanding    studies          performance    project          scientists       groups
+proteins         metal           problems       important        time             control        months           provide          algebraic
+dna              reactions       theory         work             field            based          mathematical     engineering      project
+plants           properties      work           information      ocean            computer       professor        workshop         differential
+genes            organic         physics        development      analysis         analysis       year             faculty          investigator
+research         program         systems        policy           water            algorithms     science          graduate         space
+study            electron        analysis       models           understanding    parallel       equipment        national         mathematical
+specific         phase           flow           provide          determine        information    scientists       scientific       principal
+system           structure       time           behavior         results          techniques     institute        international    systems
+important        temperature     large          analysis         climate          developed      scientific       undergraduate    spaces
+function         molecular       processes      political        patterns         time           collaboration    held             analysis
+understanding    systems         solar          model            large            network        projects         project          solutions
+development      measurements    project        public           processes        structures     national         projects         mathematics
 ```
 
 ```julia
-for d in 4991:5000
-	println("Document ", 4990 + d, ": ", round.(topicdist(model, d), digits=3))
+showdocs(corp, 4996:5000)
+```
+
+```
+ ●●● Document 4996
+ ●●● Decision-Making, Modeling and Forecasting Hydrometeorologic Extremes Under Climate Change
+project develop fuzzy set framework deal effects climatic water resources management uncertainties prediction extremes floods changing conditions probabilistic analyses combined historical data link local climate elements global circulation models generation patterns anomalies produce flood events developed time series forecasting carried basis pattern forecasts decision making reservoir operation research provide theoretical bases engineering techniques taking fluctuations account related extreme
+
+ ●●● Document 4997
+ ●●● Mathematical Sciences: Representation Theory Conference, September 13-15, 1991, Eugene, Oregon
+grant support conference representation theory finite groups lie type area important strands analysis geometry algebra intersect typically applications structure held september university oregon major center participants include leaders field domestic foreign ideas progress ongoing research activities undoubtedly result
+
+ ●●● Document 4998
+ ●●● Irregularity Modeling & Plasma Line Studies at High Latitudes
+scientific tasks project include modeling data acquisition related improving understanding large scale plasma structures high latitude ionosphere electrodynamics auroral arcs studied line measurements conducted radar facility recently upgraded facilitate initial efforts aimed origin complex evolution polar cap patches sun aligned north southward imf conditions provide realistic inputs effort comparison output pi helped acquiring part cedar organized structure campaign variety ground based situ sources
+
+ ●●● Document 4999
+ ●●● Uses and Simulation of Randomness: Applications to Cryptography,Program Checking and Counting Problems.
+randomized algorithms consume valuable resource uniformly distributed random bits primary focuses work develop general techniques designing pseudo generator stretches short string longer totally polynomial time adversary central component secure private key cryptosystem conserve number monte carlo shown construct function investigator plans constructions efficient generators typical important counting problem estimate truth assignments satisfy boolean formula algorithm designed deterministic sought recently theory program checking developed supplement verification testing computing verifying correctness answer possibly partially faulty supposedly computes successfully applied variety algebraic problems extended applications
+
+ ●●● Document 5000
+ ●●● New Possibilities for Understanding the Role of Neuromelanin
+class cellular found tissues organisms product metabolism pigment central nervous system mammals including man involved production dopamine function unknown indirect evidence important determining behavior neurons genesis goal project determine role studying vivo scanning electron microscopy magnetic resonance imaging techniques monitor paramagnetic semiconductor properties relate functional states investigation increase understanding treatment disease disorders
+```
+
+Now let's take a look at the predicted topic distributions for these five documents,
+
+```julia
+for d in 1:5
+	println("Document ", 4995 + d, ": ", round.(topicdist(test_model, d), digits=3))
 end
 ```
 
 ```
-Document 4991: [0.0, 0.87, 0.128, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-Document 4992: [0.0, 0.0, 0.0, 0.0, 0.173, 0.825, 0.0, 0.0, 0.0]
-Document 4993: [0.171, 0.0, 0.0, 0.0, 0.0, 0.0, 0.394, 0.434, 0.0]
-Document 4994: [0.0, 0.0, 0.0, 0.0, 0.92, 0.0, 0.078, 0.0, 0.0]
-Document 4995: [0.002, 0.001, 0.001, 0.001, 0.656, 0.001, 0.002, 0.002, 0.334]
-Document 4996: [0.001, 0.0, 0.0, 0.0, 0.001, 0.683, 0.0, 0.0, 0.314]
-Document 4997: [0.001, 0.0, 0.0, 0.604, 0.001, 0.0, 0.001, 0.392, 0.0]
-Document 4998: [0.177, 0.0, 0.0, 0.0, 0.001, 0.0, 0.821, 0.0, 0.0]
-Document 4999: [0.406, 0.0, 0.0, 0.593, 0.0, 0.0, 0.0, 0.0, 0.0]
-Document 5000: [0.001, 0.0, 0.777, 0.0, 0.22, 0.0, 0.001, 0.001, 0.0]
-```
-
-```
-Document 4991: [0.035, 0.51, 0.31, 0.003, 0.035, 0.089, 0.011, 0.003, 0.004]
-Document 4992: [0.002, 0.046, 0.175, 0.001, 0.13, 0.604, 0.004, 0.037, 0.001]
-Document 4993: [0.086, 0.0, 0.0, 0.028, 0.184, 0.006, 0.218, 0.478, 0.0]
-Document 4994: [0.0, 0.0, 0.0, 0.0, 0.898, 0.0, 0.099, 0.0, 0.0]
-Document 4995: [0.182, 0.001, 0.001, 0.001, 0.515, 0.001, 0.002, 0.002, 0.294]
-Document 4996: [0.195, 0.042, 0.0, 0.0, 0.001, 0.598, 0.0, 0.0, 0.163]
-Document 4997: [0.001, 0.0, 0.0, 0.535, 0.026, 0.0, 0.001, 0.405, 0.031]
-Document 4998: [0.129, 0.066, 0.0, 0.0, 0.08, 0.152, 0.536, 0.0, 0.036]
-Document 4999: [0.405, 0.002, 0.016, 0.489, 0.002, 0.002, 0.002, 0.057, 0.023]
-Document 5000: [0.001, 0.03, 0.76, 0.0, 0.207, 0.0, 0.001, 0.001, 0.0]
+Document 4996: [0.0, 0.001, 0.207, 0.188, 0.452, 0.151, 0.0, 0.0, 0.0]
+Document 4997: [0.001, 0.026, 0.001, 0.043, 0.001, 0.001, 0.012, 0.386, 0.53]
+Document 4998: [0.0, 0.019, 0.583, 0.0, 0.268, 0.122, 0.0, 0.007, 0.0]
+Document 4999: [0.002, 0.002, 0.247, 0.037, 0.019, 0.227, 0.002, 0.026, 0.438]
+Document 5000: [0.785, 0.178, 0.001, 0.0, 0.034, 0.001, 0.001, 0.001, 0.0]
 ```
 
 ### CTPF
