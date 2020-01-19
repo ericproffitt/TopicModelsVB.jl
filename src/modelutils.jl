@@ -843,7 +843,7 @@ function predict(corp::Corpus; train_model::Union{LDA, fLDA, gpuLDA}, iter::Inte
 	return model
 end
 
-function predict(corp::Corpus; train_model::CTM, iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+function predict(corp::Corpus; train_model::Union{CTM, fCTM, gpuCTM}, iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
 	"Predict topic distributions for corpus of documents based on trained CTM model."
 
 	check_corp(corp)
@@ -872,11 +872,6 @@ function predict(corp::Corpus; train_model::CTM, iter::Integer=10, tol::Real=1/t
 	end
 
 	return model
-end
-
-function predict(corp::Corpus; train_model::Union{CTPF, gpuCTPF}, iter::Integer=10, tol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained CTPF model."
-	nothing
 end
 
 function topicdist(model::Union{LDA, fLDA, gpuLDA}, d::Integer)

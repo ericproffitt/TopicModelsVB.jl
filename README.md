@@ -191,11 +191,11 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 ```julia
 using TopicModelsVB
 
-Random.seed!(2)
+Random.seed!(2);
 
 corp = readcorp(:nsf) 
 
-corp.docs = corp[1:5000]
+corp.docs = corp[1:5000];
 fixcorp!(corp, trim_corp=true)
 ### It's strongly recommended that you trim your corpus when reducing its size in order to remove excess vocabulary. 
 
@@ -307,7 +307,7 @@ methods       work            mathematical    patterns         study            
 One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc. While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts. Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training. Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
 
 ```julia
-Random.seed!(2)
+Random.seed!(2);
 
 model = fLDA(corp, 9)
 train!(model, iter=150, tol=0, check_elbo=Inf)
@@ -428,8 +428,8 @@ Random.seed!(100)
 model = LDA(corp, 9)
 train!(model, check_elbo=Inf)
 
-for d in 4901:5000
-	@show topicdist(model, d)
+for d in 4991:5000
+	println("Document ", d, ": ", round.(topicdist(model, d), digits=3))
 end
 ```
 
@@ -498,12 +498,24 @@ test_corp.docs = test_corp[4991:5000];
 Finally, we will retrain our LDA model on just the training corpus, and then used that trained model to predict the topic distributions of the ten documents in our test corpus,
 
 ```julia
-Random.seed!(100)
+Random.seed!(100);
 
 train_model = LDA(train_corp, 9)
 train!(model, check_elbo=Inf)
 
-predict(test_corp, train_model=train_model)
+test_model = predict(test_corp, train_model=train_model)
+```
+
+The `predict` function works by taking in a corpus of new, unseen documents, and a trained model, and returning a new model of the same type. This new model can then be inspected directly, or using `topicdist`, in order to see the topic distribution for the documents in the test corpus.
+
+```julia
+for d in 4991:5000
+	println("Document ", 4990 + d, ": ", round.(topicdist(model, d), digits=3))
+end
+```
+
+```
+```
 
 ### CTPF
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model. CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
@@ -537,7 +549,7 @@ Fortunately, since CTPF can if need be depend entirely on thematic structure whe
 Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus. Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=20).
 
 ```julia
-Random.seed!(2)
+Random.seed!(2);
 
 model = gpuCTPF(corp, 30)
 train!(model, iter=20, check_elbo=5)
