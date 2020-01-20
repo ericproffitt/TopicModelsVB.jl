@@ -487,7 +487,10 @@ showdocs(corp, 4996:5000)
 ```
  ●●● Document 4996
  ●●● Decision-Making, Modeling and Forecasting Hydrometeorologic Extremes Under Climate Change
-project develop fuzzy set framework deal effects climatic water resources management uncertainties prediction extremes floods changing conditions probabilistic analyses combined historical data link local climate elements global circulation models generation patterns anomalies produce flood events developed time series forecasting carried basis pattern forecasts decision making reservoir operation research provide theoretical bases engineering techniques taking fluctuations account related extreme
+project develop fuzzy set framework deal effects climatic water resources management uncertainties prediction extremes floods changing conditions
+probabilistic analyses combined historical data link local climate elements global circulation models generation patterns anomalies produce flood events
+developed time series forecasting carried basis pattern forecasts decision making reservoir operation research provide theoretical bases engineering
+techniques taking fluctuations account related extreme
 
  ●●● Document 4997
  ●●● Mathematical Sciences: Representation Theory Conference, September 13-15, 1991, Eugene, Oregon
