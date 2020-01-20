@@ -488,43 +488,27 @@ showdocs(corp, 4996:5000)
  ●●● Document 4996
  ●●● Decision-Making, Modeling and Forecasting Hydrometeorologic Extremes Under Climate Change
 project develop fuzzy set framework deal effects climatic water resources management uncertainties
-prediction extremes floods changing conditions probabilistic analyses combined historical data link
-local climate elements global circulation models generation patterns anomalies produce flood events
-developed time series forecasting carried basis pattern forecasts decision making reservoir operation
-research provide theoretical bases engineering techniques taking fluctuations account related extreme
+prediction extremes floods...
 
  ●●● Document 4997
  ●●● Mathematical Sciences: Representation Theory Conference, September 13-15, 1991, Eugene, Oregon
 grant support conference representation theory finite groups lie type area important strands analysis
-geometry algebra intersect typically applications structure held september university oregon major
-center participants include leaders field domestic foreign ideas progress ongoing research activities
-undoubtedly result
+geometry algebra...
 
  ●●● Document 4998
  ●●● Irregularity Modeling & Plasma Line Studies at High Latitudes
 scientific tasks project include modeling data acquisition related improving understanding large scale
-plasma structures high latitude ionosphere electrodynamics auroral arcs studied line measurements
-conducted radar facility recently upgraded facilitate initial efforts aimed origin complex evolution
-polar cap patches sun aligned north southward imf conditions provide realistic inputs effort comparison
-output pi helped acquiring part cedar organized structure campaign variety ground based situ sources
+plasma structures high latitude ionosphere electrodynamics...
 
  ●●● Document 4999
  ●●● Uses and Simulation of Randomness: Applications to Cryptography,Program Checking and Counting Problems.
 randomized algorithms consume valuable resource uniformly distributed random bits primary focuses work
-develop general techniques designing pseudo generator stretches short string longer totally polynomial time
-adversary central component secure private key cryptosystem conserve number monte carlo shown construct
-function investigator plans constructions efficient generators typical important counting problem estimate
-truth assignments satisfy boolean formula algorithm designed deterministic sought recently theory program
-checking developed supplement verification testing computing verifying correctness answer possibly partially
-faulty supposedly computes successfully applied variety algebraic problems extended applications
+develop general techniques designing pseudo generator stretches short string longer totally polynomial...
 
  ●●● Document 5000
  ●●● New Possibilities for Understanding the Role of Neuromelanin
 class cellular found tissues organisms product metabolism pigment central nervous system mammals including
-man involved production dopamine function unknown indirect evidence important determining behavior neurons
-genesis goal project determine role studying vivo scanning electron microscopy magnetic resonance imaging
-techniques monitor paramagnetic semiconductor properties relate functional states investigation increase
-understanding treatment disease disorders
+man involved production dopamine...
 ```
 
 Now let's take a look at the predicted topic distributions for these five documents,

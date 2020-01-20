@@ -26,6 +26,7 @@
 27. need to deal with beta and fbeta in filtered models, predict function, etc.
 28. need to deal with mu and lambda in CTM with floatmax, etc.
 29. when you initialize beta as ones(K, V) / V, it doesn't train.
+30. showtitles function
 
 
 
