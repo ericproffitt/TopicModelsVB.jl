@@ -349,10 +349,10 @@ We can now see that many of the most troublesome corpus-specific stop words have
 For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).
 
 ```julia
-Random.seed!(2)
+Random.seed!(10);
 
 model = fCTM(corp, 9)
-train!(model, iter=150, tol=0, check_elbo=Inf)
+train!(model, tol=0, check_elbo=Inf)
 
 ### training...
 
@@ -360,37 +360,37 @@ showtopics(model, 20, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3          topic 4          topic 5         topic 6       topic 7      topic 8         topic 9
-data            flow            species          system           university      cell          data         theory          chemistry
-earthquake      theoretical     plant            design           support         protein       social       problems        chemical
-ocean           model           populations      data             program         cells         economic     equations       reactions
-water           models          genetic          algorithms       students        plant         theory       investigator    metal
-measurements    physics         evolutionary     control          science         proteins      policy       geometry        materials
-program         numerical       plants           problems         dr              gene          human        algebraic       properties
-climate         experimental    population       models           award           molecular     political    groups          surface
-seismic         theory          data             parallel         scientists      genes         models       differential    program
-soil            particle        dr               computer         scientific      dna           public       mathematical    molecular
-models          dynamics        patterns         performance      sciences        system        change       space           electron
-global          nonlinear       evolution        model            projects        function      model        mathematics     organic
-earth           particles       variation        processing       national        regulation    science      spaces          dr
-sea             quantum         group            applications     engineering     plants        people       functions       university
-response        phenomena       ecology          network          conference      expression    decision     questions       molecules
-damage          heat            ecological       networks         year            mechanisms    issues       manifolds       compounds
-pacific         energy          forest           approach         researchers     dr            labor        finite          reaction
-system          fluid           environmental    efficient        workshop        membrane      market       dimensional     laser
-solar           phase           food             software         mathematical    genetic       case         properties      temperature
-surface         award           experiments      computational    months          cellular      women        solutions       synthesis
-ice             waves           test             distributed      equipment       binding       factors      group           optical
+topic 1         topic 2          topic 3          topic 4         topic 5        topic 6         topic 7       topic 8
+flow            species          water            chemistry       economic       problems        cell          students
+solar           plant            ocean            metal           social         systems         protein       university
+fluid           genetic          climate          materials       policy         theory          cells         science
+stars           months           marine           reactions       theory         algorithms      gene          program
+seismic         plants           global           chemical        political      equations       proteins      theory
+evolution       populations      sea              molecular       science        problem         genes         scientists
+heat            evolutionary     atmospheric      electron        public         design          plant         conference
+waves           population       environmental    surface         decision       parallel        earthquake    support
+measurements    biology          measurements     organic         women          system          molecular     national
+earth           year             change           temperature     labor          methods         dna           projects
+mantle          evolution        ice              laser           market         models          regulation    sciences
+magnetic        relationships    samples          molecules       people         mathematical    expression    engineering
+zone            variation        pacific          compounds       change         solutions       plants        mathematical
+velocity        patterns         north            high            scientific     nonlinear       specific      workshop
+numerical       fellowship       sites            properties      human          performance     brain         faculty
+particle        support          processes        university      case           applications    membrane      scientific
+rocks           mathematical     sediment         phase           issues         differential    genetic       international
+observations    reproductive     analyses         reaction        children       investigator    function      graduate
+deformation     molecular        circulation      liquid          interviews     principal       binding       award
+earthquake      sciences         organic          measurements    individuals    networks        response      undergraduate
 ```
 
 Because the topics in the fLDA model were already so well defined, there's little room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
-* topic 1: *Earth Science*
-* topic 2: *Physics*
-* topic 3: *Ecology*
-* topic 4: *Computer Science*
+* topic 1: *Molecular Biology*
+* topic 2: *Computer Science*
+* topic 3: *Academia*
+* topic 4: *Chemistry*
 * topic 5: *Academia*
 * topic 6: *Molecular Biology*
 * topic 7: *Economics*
@@ -698,7 +698,7 @@ ctpf_model.alef = exp.(model.beta)
 ### For model of type: LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM.
 ```   
 
-## GPU Acceleration
+### GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
 
 There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU,
