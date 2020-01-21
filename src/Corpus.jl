@@ -128,27 +128,39 @@ Base.lastindex(corp::Corpus) = length(corp)
 Base.enumerate(corp::Corpus) = enumerate(corp.docs)
 Base.unique(corp::Corpus) = Corpus(docs=unique(corp.docs), vocab=corp.vocab, users=corp.users)
 
+function showdocs(corp::Corpus, docs::Vector{Document})
+	"Display document(s) in readable format."
+
+	for (n, doc) in enumerate(docs)
+		if !isempty(doc.title)
+			@juliadots "$(doc.title)\n"
+
+		else
+			@juliadots "Document\n"
+		end
+
+		if !isempty(doc)
+			print(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n')
+
+		else
+			println()
+		end
+
+		if n < length(docs)
+			println()
+		end
+	end
+end
+
 function showdocs(corp::Corpus, doc::Document)
 	"Display document in readable format."
 
 	issubset(doc.terms, keys(corp.vocab)) || throw(DocumentError("Document contains term keys not found in Corpus vocab."))
 
-	if !isempty(doc.title)
-		@juliadots "$(doc.title)\n"
-
-	else
-		@juliadots "Document\n"
-	end
-	!isempty(doc) ? println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n') : println()
+	showdocs(corp, [doc])
 end
 
-function showdocs(corp::Corpus, docs::Vector{Document})
-	"Display document(s) in readable format."
 
-	for doc in docs
-		showdocs(corp, doc)
-	end
-end
 
 function showdocs(corp::Corpus, d::Integer)
 	"Display document in readable format."
