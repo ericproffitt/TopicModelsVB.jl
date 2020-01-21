@@ -481,34 +481,15 @@ development      measurements    project        public           processes      
 ```
 
 ```julia
-showdocs(corp, 4996:5000)
+showtitles(corp, 4996:5000)
 ```
 
 ```
- ●●● Document 4996
- ●●● Decision-Making, Modeling and Forecasting Hydrometeorologic Extremes Under Climate Change
-project develop fuzzy set framework deal effects climatic water resources management uncertainties
-prediction extremes floods...
-
- ●●● Document 4997
- ●●● Mathematical Sciences: Representation Theory Conference, September 13-15, 1991, Eugene, Oregon
-grant support conference representation theory finite groups lie type area important strands analysis
-geometry algebra...
-
- ●●● Document 4998
- ●●● Irregularity Modeling & Plasma Line Studies at High Latitudes
-scientific tasks project include modeling data acquisition related improving understanding large scale
-plasma structures high latitude ionosphere electrodynamics...
-
- ●●● Document 4999
- ●●● Uses and Simulation of Randomness: Applications to Cryptography,Program Checking and Counting Problems.
-randomized algorithms consume valuable resource uniformly distributed random bits primary focuses work
-develop general techniques designing pseudo generator stretches short string longer totally polynomial...
-
- ●●● Document 5000
- ●●● New Possibilities for Understanding the Role of Neuromelanin
-class cellular found tissues organisms product metabolism pigment central nervous system mammals including
-man involved production dopamine...
+ • Document 4996 Decision-Making, Modeling and Forecasting Hydrometeorologic Extremes Under Climate Change
+ • Document 4997 Mathematical Sciences: Representation Theory Conference, September 13-15, 1991, Eugene, Oregon
+ • Document 4998 Irregularity Modeling & Plasma Line Studies at High Latitudes
+ • Document 4999 Uses and Simulation of Randomness: Applications to Cryptography,Program Checking and Counting Problems.
+ • Document 5000 New Possibilities for Understanding the Role of Neuromelanin
 ```
 
 Now let's take a look at the predicted topic distributions for these five documents,
