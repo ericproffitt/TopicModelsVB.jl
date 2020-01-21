@@ -61,7 +61,17 @@ mutable struct Corpus
 		isa(users, Dict) || (users = Dict(ukey => user for (ukey, user) in enumerate(users)))
 
 		corp = new(docs, vocab, users)
-		check_corp(corp)
+
+		for (d, doc) in enumerate(corp)
+			try
+				check_doc(doc)
+			catch
+				throw(CorpusError("Document $d failed check."))
+			end
+		end
+
+		all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
+		all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
 		return corp
 	end
 end
@@ -91,6 +101,10 @@ function check_corp(corp::Corpus)
 
 	all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
 	all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
+
+	issubset(vcat([doc.terms for doc in corp]...), keys(corp.vocab)) 	|| throw(CorpusError("Documents contain term keys not found in corpus vocabulary (see fixcorp! function)."))
+	(length(corp.vocab) == maximum(corp.vocab.keys)) 					|| throw(CorpusError("Corpus vocab keys must form unit range (see fixcorp! function)."))
+	(length(corp.users) == maximum(corp.users.keys)) 					|| throw(CorpusError("Corpus user keys must form unit range (see fixcorp! function)."))
 	nothing
 end
 
@@ -131,6 +145,8 @@ Base.unique(corp::Corpus) = Corpus(docs=unique(corp.docs), vocab=corp.vocab, use
 function showdocs(corp::Corpus, docs::Vector{Document})
 	"Display document(s) in readable format."
 
+	issubset(vcat([doc.terms for doc in docs]...), keys(corp.vocab)) || throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
+
 	for (n, doc) in enumerate(docs)
 		if !isempty(doc.title)
 			@juliadots "$(doc.title)\n"
@@ -140,7 +156,7 @@ function showdocs(corp::Corpus, docs::Vector{Document})
 		end
 
 		if !isempty(doc)
-			print(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n')
+			println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "))
 
 		else
 			println()
@@ -152,40 +168,37 @@ function showdocs(corp::Corpus, docs::Vector{Document})
 	end
 end
 
-function showdocs(corp::Corpus, doc::Document)
-	"Display document in readable format."
-
-	issubset(doc.terms, keys(corp.vocab)) || throw(DocumentError("Document contains term keys not found in Corpus vocab."))
-
-	showdocs(corp, [doc])
-end
-
-
-
-function showdocs(corp::Corpus, d::Integer)
-	"Display document in readable format."
-
-	(d in 1:length(corp))						|| throw(CorpusError("Document index $d outside corpus range."))
-	issubset(corp[d].terms, keys(corp.vocab))	|| throw(DocumentError("Document $d contains term keys not found in Corpus vocab."))
-
-	doc = corp[d]
-
-	@juliadots "Document $d\n"
-	if !isempty(doc.title)
-		@juliadots "$(doc.title)\n"
-	end
-	!isempty(doc) ? println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n') : println()
-end
-
 function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
 	"Display document(s) in readable format."
 
-	for d in doc_indices
-		showdocs(corp, d)
+	issubset(doc_indices, 1:length(corp))											|| throw(CorpusError("Some document indices outside corpus range."))
+	issubset(vcat([doc.terms for doc in corp[doc_indices]]...), keys(corp.vocab))	|| throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
+
+	docs = corp[doc_indices]
+
+	for (n, doc) in enumerate(docs)
+		@juliadots "Document $d\n"
+		
+		if !isempty(doc.title)
+			@juliadots "$(doc.title)\n"
+		end
+
+		if !isempty(doc)
+			println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "))
+
+		else
+			println()
+		end
+
+		if n < length(docs)
+			println()
+		end
 	end
 end
 
+showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc]) 
 showdocs(corp::Corpus, doc_range::UnitRange{<:Integer}) = showdocs(corp, collect(doc_range))
+showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
 showdocs(corp::Corpus) = showdocs(corp, 1:length(corp))
 
 function showtitles(corp::Corpus, doc::Document)
