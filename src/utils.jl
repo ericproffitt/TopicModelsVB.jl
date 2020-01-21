@@ -169,6 +169,8 @@ function isstochastic(P::Matrix{<:Real}; dims::Integer)
 end
 
 ### Keep until pull request is merged.
+import Distributions.xlogy
+import Distributions.binomlogpdf
 Distributions.xlogy(x::T, y::T) where {T<:Real} = x != zero(T) ? x * log(y) : zero(log(y))
 Distributions.binomlogpdf(n::Real, p::Real, k::Real) = (isinteger(k) & (zero(k) <= k <= n)) ? convert(typeof(float(p)), loggamma(n + 1) - loggamma(k + 1) - loggamma(n - k + 1) + xlogy(k, p) + xlogy(n - k, 1 - p)) : convert(typeof(float(p)), -Inf)
 

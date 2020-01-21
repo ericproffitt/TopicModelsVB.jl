@@ -459,7 +459,7 @@ function update_buffer!(model::gpuCTPF)
 	N_cumsum = cumsum([0; model.N])
 	J_cumsum = cumsum([0; J])
 	R_cumsum = cumsum([0; model.R])
-	J_cumsum = cumsum([0; Y])
+	Y_cumsum = cumsum([0; Y])
 
 	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
@@ -726,7 +726,7 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 		
 		for d in model.libs[u]
 			print(Crayon(foreground=:yellow, bold=true), " • ")
-			isempty(model.corp[d].title) ? print(Crayon(foreground=:white, bold=true), "doc $d\n") : print(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)\n")
+			isempty(model.corp[d].title) ? print(Crayon(foreground=:white, bold=false), "Document $d\n") : print(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)\n")
 		end
 		print()
 	end
@@ -799,7 +799,7 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 		for i in 1:length(docucols[1])
 			for j in 1:length(docucols)
 				try
-					!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "doc $(docucols[j][i])"
+					!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "Document $(docucols[j][i])"
 					dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(docs[d].title)) for d in docucols[j]]) - length(title) + 4
 					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
 					print(Crayon(foreground=:yellow, bold=true), string(rankcols[j][i]) * ". " * " "^rspacing)
@@ -867,6 +867,9 @@ function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10
 			end
 		end
 	end
+
+	#gpumodel = gpuLDA(corp, model.K)
+	#gpumodel.
 
 	return model
 end

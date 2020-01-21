@@ -133,9 +133,11 @@ function showdocs(corp::Corpus, doc::Document)
 
 	issubset(doc.terms, keys(corp.vocab)) || throw(DocumentError("Document contains term keys not found in Corpus vocab."))
 
-	@juliadots "Document\n"
 	if !isempty(doc.title)
 		@juliadots "$(doc.title)\n"
+
+	else
+		@juliadots "Document\n"
 	end
 	!isempty(doc) ? println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "), '\n') : println()
 end
@@ -173,6 +175,61 @@ end
 
 showdocs(corp::Corpus, doc_range::UnitRange{<:Integer}) = showdocs(corp, collect(doc_range))
 showdocs(corp::Corpus) = showdocs(corp, 1:length(corp))
+
+function showtitles(corp::Corpus, doc::Document)
+	"Display document title in readable format."
+
+	issubset(doc.terms, keys(corp.vocab)) || throw(DocumentError("Document contains term keys not found in Corpus vocab."))
+
+	print(Crayon(foreground=:yellow, bold=true), " • ")
+
+	if !isempty(doc.title)
+		print(Crayon(foreground=:white, bold=false), "$(doc.title)\n")
+
+	else
+		print(Crayon(foreground=:white, bold=true), "Document\n")
+	end
+
+	print()
+end
+
+function showtitles(corp::Corpus, docs::Vector{Document})
+	"Display document titles(s) in readable format."
+
+	for doc in docs
+		showtitles(corp, doc)
+	end
+end
+
+function showtitles(corp::Corpus, d::Integer)
+	"Display document title in readable format."
+
+	(d in 1:length(corp))						|| throw(CorpusError("Document index $d outside corpus range."))
+	issubset(corp[d].terms, keys(corp.vocab))	|| throw(DocumentError("Document $d contains term keys not found in Corpus vocab."))
+	
+	print(Crayon(foreground=:yellow, bold=true), " • ")
+
+	if !isempty(model.corp[d].title)
+		print(Crayon(foreground=:white, bold=true), "Document $d ")
+		print(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)\n")
+
+	else
+		print(Crayon(foreground=:white, bold=true), "Document $d\n")
+	end
+
+	print()
+end
+
+function showtitles(corp::Corpus, doc_indices::Vector{<:Integer})
+	"Display document titles(s) in readable format."
+
+	for d in doc_indices
+		showtitles(corp, d)
+	end
+end
+
+showtitles(corp::Corpus, doc_range::UnitRange{<:Integer}) = showtitles(corp, collect(doc_range))
+showtitles(corp::Corpus) = showtitles(corp, 1:length(corp))
 
 getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
 getusers(corp::Corpus) = sort(collect(values(corp.users)))
