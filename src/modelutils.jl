@@ -14,6 +14,12 @@ showdocs(model::TopicModel, d::Integer) = showdocs(model.corp, d)
 showdocs(model::TopicModel, doc_indices::Vector{<:Integer}) = showdocs(model.corp, doc_indices)
 showdocs(model::TopicModel, doc_range::UnitRange{<:Integer}) = showdocs(model.corp, collect(doc_range))
 
+showtitles(model::TopicModel, doc::Document) = showtitles(model.corp, doc)
+showtitles(model::TopicModel, docs::Vector{Document}) = showtitles(model.corp, docs)
+showtitles(model::TopicModel, d::Integer) = showtitles(model.corp, d)
+showtitles(model::TopicModel, doc_indices::Vector{<:Integer}) = showtitles(model.corp, doc_indices)
+showtitles(model::TopicModel, doc_range::UnitRange{<:Integer}) = showtitles(model.corp, collect(doc_range))
+
 getvocab(model::TopicModel) = sort(collect(values(model.corp.vocab)))
 getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
 
