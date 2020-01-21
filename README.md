@@ -712,7 +712,7 @@ There's no reason to instantiate the GPU models directly, instead you can simply
 corp = readcorp(:nsf)
 
 model = LDA(corp, 16)
-@time @gpu train!(model, iter=150, tol=0, chkelbo=151)
+@time @gpu train!(model, iter=150, tol=0, check_elbo=Inf)
 ### Let's time it as well to get an exact benchmark. 
 
 ### training...
