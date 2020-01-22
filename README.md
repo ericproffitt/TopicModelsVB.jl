@@ -123,7 +123,6 @@ For example,
 
 ```Julia
 corp = Corpus(Document(1:9), vocab=split("the quick brown fox jumped over the lazy dog"))
-
 showdocs(corp)
 ```
 
@@ -134,7 +133,6 @@ the quick brown fox jumped over the lazy dog
 
 ```Julia
 fixcorp!(corp, condense_corp=true)
-
 showdocs(corp)
 ```
 
