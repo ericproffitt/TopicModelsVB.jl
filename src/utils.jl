@@ -180,7 +180,7 @@ function Distributions.entropy(d::Dirichlet)
     α0 = d.alpha0
     k = length(α)
 
-    if length(k) == 1
+    if k == 1
     	en = 0.0
 
     else
