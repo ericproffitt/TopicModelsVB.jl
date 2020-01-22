@@ -581,94 +581,51 @@ function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
 	false
 end
 
-function gendoc(model::Union{LDA, gpuLDA}, laplace_smooth::Real=0.0)
+function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
 	"Generate artificial document from LDA or gpuLDA generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
 	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
 	theta = rand(Dirichlet(model.alpha))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((model.beta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
-	for _ in 1:C
-		z = rand(topicdist)
-		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
-	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
-
-	return Document(terms=terms, counts=counts)
-end
-
-function gendoc(model::fLDA, laplace_smooth::Real=0.0)
-	"Generate artificial document from fLDA generative model."
-	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
-
-	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
-	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
-	theta = rand(Dirichlet(model.alpha))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((model.fbeta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
+	topic_dist = Categorical(theta)
+	vocab_dist = [Categorical((model.beta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
+	
+	term_count = Dict{Int, Int}()
 	for _ in 1:C
-		z = rand(topicdist)
-		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
+		z = rand(topic_dist)
+		w = rand(vocab_dist[z])
+		haskey(term_count, w) ? term_count[w] += 1 : term_count[w] = 1
 	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
 
-	return Document(terms=terms, counts=counts)
+	doc = Document(terms=collect(keys(term_count)), counts=collect(values(term_count)))
+	return doc
 end
 
-function gendoc(model::Union{CTM, gpuCTM}, laplace_smooth::Real=0.0)
+function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
 	"Generate artificial document from CTM or gpuCTM generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
 	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
 	theta = rand(MvNormal(model.mu, model.sigma))
-	theta = exp.(theta) / sum(exp.(theta))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((model.beta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
-	for _ in 1:C
-		z = rand(topicdist)
-		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
-	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
-
-	return Document(terms=terms, counts=counts)
-end
-
-function gendoc(model::fCTM, laplace_smooth::Real=0.0)
-	"Generate artificial document from fCTM generative model."
-	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
-
-	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
+	theta = additive_logistic(theta)
 	
-	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
-	theta = rand(MvNormal(model.mu, model.sigma))
-	theta = exp(theta) / sum(exp(theta))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((model.fbeta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
+	topic_dist = Categorical(theta)
+	vocab_dist = [Categorical((model.beta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
+	
+	term_count = Dict{Int, Int}()
 	for _ in 1:C
 		z = rand(topicdist)
 		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
+		haskey(term_count, w) ? term_count[w] += 1 : term_count[w] = 1
 	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
 
-	return Document(terms=terms, counts=counts)
+	doc = Document(terms=collect(keys(term_count)), counts=collect(values(term_count)))
+	return doc
 end
 
 function gencorp(model::TopicModel, corp_size::Integer; laplace_smooth::Real=0.0)
@@ -783,7 +740,7 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	checkbounds(Bool, 1:model.M, M) 	|| throw(ArgumentError("Some document indices are outside range."))
-	(cols > 0
+	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	isa(users, Vector) || (users = [users])
 
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
@@ -873,9 +830,6 @@ function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10
 			end
 		end
 	end
-
-	#gpumodel = gpuLDA(corp, model.K)
-	#gpumodel.
 
 	return model
 end
