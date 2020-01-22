@@ -346,10 +346,10 @@ earth           particle        test             power            workshop      
 We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out.
 
 ### CTM
-For our final example using the NSF corpus, let's upgrade our model to a filtered *correlated* topic model (fCTM).
+For our final example using the NSF corpus, let's upgrade our model to a (filtered) correlated topic model (fCTM).
 
 ```julia
-Random.seed!(10);
+#Random.seed!(77777);
 
 model = fCTM(corp, 9)
 train!(model, tol=0, check_elbo=Inf)
@@ -360,67 +360,63 @@ showtopics(model, 20, cols=9)
 ```
 
 ```
-topic 1         topic 2          topic 3          topic 4         topic 5        topic 6         topic 7       topic 8
-flow            species          water            chemistry       economic       problems        cell          students
-solar           plant            ocean            metal           social         systems         protein       university
-fluid           genetic          climate          materials       policy         theory          cells         science
-stars           months           marine           reactions       theory         algorithms      gene          program
-seismic         plants           global           chemical        political      equations       proteins      theory
-evolution       populations      sea              molecular       science        problem         genes         scientists
-heat            evolutionary     atmospheric      electron        public         design          plant         conference
-waves           population       environmental    surface         decision       parallel        earthquake    support
-measurements    biology          measurements     organic         women          system          molecular     national
-earth           year             change           temperature     labor          methods         dna           projects
-mantle          evolution        ice              laser           market         models          regulation    sciences
-magnetic        relationships    samples          molecules       people         mathematical    expression    engineering
-zone            variation        pacific          compounds       change         solutions       plants        mathematical
-velocity        patterns         north            high            scientific     nonlinear       specific      workshop
-numerical       fellowship       sites            properties      human          performance     brain         faculty
-particle        support          processes        university      case           applications    membrane      scientific
-rocks           mathematical     sediment         phase           issues         differential    genetic       international
-observations    reproductive     analyses         reaction        children       investigator    function      graduate
-deformation     molecular        circulation      liquid          interviews     principal       binding       award
-earthquake      sciences         organic          measurements    individuals    networks        response      undergraduate
+topic 1          topic 2         topic 3         topic 4        topic 5         topic 6       topic 7         topic 8         topic 9
+design           chemistry       theory          earthquake     plant           social        ocean           students        flow
+algorithms       materials       problems        soil           species         economic      data            science         solar
+system           reactions       equations       damage         cell            policy        measurements    support         heat
+parallel         metal           investigator    data           plants          science       pacific         program         particles
+systems          chemical        differential    response       cells           human         sea             university      fluid
+problems         molecular       principal       ground         genetic         political     water           research        measurements
+performance      electron        mathematical    seismic        protein         language      circulation     sciences        stars
+network          organic         geometry        buildings      gene            public        atmospheric     conference      optical
+based            surface         groups          san            molecular       american      global          scientific      transport
+computer         molecules       space           hazard         genes           cultural      climate         scientists      plasma
+networks         properties      solutions       soils          dna             japanese      mantle          projects        gas
+control          compounds       algebraic       october        proteins        change        chemical        year            laser
+processing       reaction        finite          earthquakes    biology         people        earth           national        geometry
+software         program         spaces          climate        populations     labor         trace           engineering     numerical
+problem          temperature     nonlinear       california     evolutionary    market        rocks           months          particle
+applications     spectroscopy    problem         performance    growth          scientific    sediment        workshop        waves
+efficient        synthesis       mathematics     design         population      national      ridge           mathematical    transfer
+distributed      energy          manifolds       building       regulation      women         deep            faculty         surface
+programming      liquid          dimensional     francisco      expression      examine       north           academic        flows
+computational    high            functions       national       mechanisms      children      experiment      nsf             devices
 ```
-
-Because the topics in the fLDA model were already so well defined, there's little room for improvement in topic coherence by upgrading to the fCTM model, however what's most interesting about the CTM and fCTM models is the ability to look at topic correlations.
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
-* topic 1: *Molecular Biology*
-* topic 2: *Computer Science*
-* topic 3: *Academia*
-* topic 4: *Chemistry*
-* topic 5: *Academia*
-* topic 6: *Molecular Biology*
-* topic 7: *Economics*
-* topic 8: *Mathematics*
-* topic 9: *Chemistry*
+* topic 1: *Computer Science*
+* topic 2: *Chemistry*
+* topic 3: *Mathematics*
+* topic 4: *California Earthquakes*
+* topic 5: *Molecular Biology*
+* topic 6: *Social Science*
+* topic 7: *Earth Science*
+* topic 8: *Academia*
+* topic 9: *Physics*
 
 Now let's take a look at the topic-covariance matrix,
 
 ```julia
 model.sigma
 
-### Top 3 off-diagonal positive entries, sorted in descending order:
-model.sigma[4,8] # 9.520
-model.sigma[3,6] # 7.369
-model.sigma[1,3] # 5.763
+### Top 2 off-diagonal positive entries, sorted in descending order:
+model.sigma[1,3] # = 8.758
+model.sigma[2,9] # = 6.204
 
-### Top 3 negative entries, sorted in ascending order:
-model.sigma[7,9] # -14.572
-model.sigma[3,8] # -12.472
-model.sigma[1,8] # -11.776
+### Top 2 negative entries, sorted in ascending order:
+model.sigma[3,5] # = -23.459
+model.sigma[2,6] # = -14.403
 ```
 
-According to the list above, the most closely related topics are topics 4 and 8, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding to the topics *Ecology* and *Molecular Biology*, and then by 1 and 3, corresponding to *Earth Science* and *Ecology*.
+According to the list above, the most closely related topics are topics 1 and 3, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding *Chemistry* and *Physics*.
 
-As for the most unlikely topic pairings, first are topics 7 and 9, corresponding to *Economics* and *Chemistry*, followed by topics 3 and 8, corresponding to *Ecology* and *Mathematics*, and then third are topics 1 and 8, corresponding to *Earth Science* and *Mathematics*.
+As for the most unlikely topic pairings, first are topics 3 and 5, corresponding to *Mathematics* and *Molecular Biology*, and followed by topics 2 and 8, corresponding to *Chemistry* and *Social Science*.
 
-Furthermore, as expected, the topic which is least correlated with all other topics is the *Academia* topic,
+Furthermore, the topic which is least correlated with all other topics is the *California Earthquakes* topic,
 
 ```julia
-argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 5.
+argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 4.
 ```
 
 ### Topic Prediction
