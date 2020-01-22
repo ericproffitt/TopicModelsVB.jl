@@ -831,8 +831,11 @@ function getusers(corp::Corpus)
 ### Model Functions
 
 ```julia
-function showdocs(model::TopicModel, docs)
+function showdocs(model::TopicModel, docs/doc_indices)
 	"Display document(s) in readable format."
+
+function showtitles(model::TopicModel, docs/doc_indices)
+	"Display document title(s) in readable format."
 
 function check_model(model::TopicModel)
 	"Check model parameters."
