@@ -102,9 +102,10 @@ function check_corp(corp::Corpus)
 	all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
 	all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
 
-	issubset(vcat([doc.terms for doc in corp]...), keys(corp.vocab)) 	|| throw(CorpusError("Documents contain term keys not found in corpus vocabulary (see fixcorp! function)."))
-	(length(corp.vocab) == maximum(corp.vocab.keys)) 					|| throw(CorpusError("Corpus vocab keys must form unit range (see fixcorp! function)."))
-	(length(corp.users) == maximum(corp.users.keys)) 					|| throw(CorpusError("Corpus user keys must form unit range (see fixcorp! function)."))
+	issubset(vcat([doc.terms for doc in corp]...), keys(corp.vocab)) 		|| throw(CorpusError("Documents contain term keys not found in corpus vocabulary (see fixcorp! function)."))
+	issubset(vcat([doc.readers for doc in corp]...), keys(corp.users)) 		|| throw(CorpusError("Documents contain user keys not found in corpus users (see fixcorp! function)."))
+	(length(corp.vocab) == maximum(push!(collect(keys(corp.vocab)), 0)))	|| throw(CorpusError("Corpus vocab keys must form unit range starting at 1 (see fixcorp! function)."))
+	(length(corp.users) == maximum(push!(collect(keys(corp.users)), 0)))	|| throw(CorpusError("Corpus user keys must form unit range starting at 1 (see fixcorp! function)."))
 	nothing
 end
 
@@ -427,7 +428,7 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 end
 
 function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Relabel vocab and/or user keys so that they form a unit range."
+	"Relabel vocab and/or user keys so that they form a unit range starting at 1."
 
 	if vocab
 		vkeys = sort(collect(keys(corp.vocab)))
