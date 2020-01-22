@@ -311,40 +311,6 @@ study        program       workshop       computer       understanding    policy
 important    properties    field          developed      water            provide          analysis        work           months
 ```
 
-One thing we notice so far is that despite producing what are clearly coherent topics, many of the top words in each topic are words such as *research*, *study*, *data*, etc. While such terms would be considered informative in a generic corpus, they are effectively stop words in a corpus composed of science article abstracts. Such corpus-specific stop words will be missed by most generic stop word lists, and they can be difficult to pinpoint and individually remove prior to training. Thus let's change our model to a *filtered* latent Dirichlet allocation (fLDA) model.
-
-```julia
-Random.seed!(10);
-
-model = fLDA(corp, 9)
-train!(model, check_elbo=Inf)
-
-### training...
-
-showtopics(model, cols=9)
-```
-
-```
-topic 1         topic 2         topic 3          topic 4          topic 5        topic 6       topic 7        topic 8         topic 9
-earthquake      theoretical     species          design           university     cell          economic       theory          chemistry
-ocean           flow            plant            algorithms       support        protein       social         equations       metal
-water           phase           populations      computer         students       cells         theory         geometry        reactions
-measurements    physics         genetic          parallel         program        proteins      policy         algebraic       chemical
-program         quantum         plants           performance      science        gene          human          differential    program
-soil            temperature     evolutionary     processing       award          plant         change         mathematical    organic
-seismic         effects         population       applications     scientists     genes         political      groups          molecular
-climate         phenomena       patterns         networks         scientific     molecular     public         space           compounds
-effects         laser           variation        network          sciences       function      science        mathematics     surface
-global          numerical       effects          software         conference     dna           decision       finite          molecules
-sea             measurements    food             computational    national       regulation    people         solutions       university
-surface         experiments     environmental    efficient        projects       expression    effects        spaces          reaction
-response        award           ecology          program          engineering    plants        labor          dimensional     synthesis
-solar           liquid          ecological       distributed      year           mechanisms    market         functions       compvocabes
-earth           particle        test             power            workshop       membrane      theoretical    questions       professor
-```
-
-We can now see that many of the most troublesome corpus-specific stop words have been automatically filtered out.
-
 ### CTM
 For our final example using the NSF corpus, let's upgrade our model to a (filtered) correlated topic model (fCTM).
 
