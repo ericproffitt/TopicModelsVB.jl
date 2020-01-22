@@ -312,7 +312,7 @@ important    properties    field          developed      water            provid
 ```
 
 ### CTM
-For our final example using the NSF corpus, let's upgrade our model to a (filtered) correlated topic model (fCTM).
+For our final example using the NSF corpus, let's upgrade our model to a (filtered) correlated topic model.
 
 ```julia
 #Random.seed!(77777);
@@ -382,7 +382,7 @@ As for the most unlikely topic pairings, first are topics 3 and 5, corresponding
 Furthermore, the topic which is least correlated with all other topics is the *California Earthquakes* topic,
 
 ```julia
-argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 4.
+argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 4
 ```
 
 ### Topic Prediction
@@ -817,8 +817,11 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp
 	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
 	"Contains optional keyword arguments."
 
-function showdocs(corp::Corpus, doc_indices)
+function showdocs(corp::Corpus, docs/doc_indices)
 	"Display document(s) in readable format."
+
+function showtitles(corp::Corpus, docs/doc_indices)
+	"Display document title(s) in readable format."
 
 function getvocab(corp::Corpus)
 
@@ -865,6 +868,12 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs, U)
 
 function showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M))
 	"Show the top 'M' document recommendations for a user(s)."
+
+function predict(corp::Corpus, train_model::Union{LDA, gpuLDA, fLDA, CTM, gpuCTM, fCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained fLDA model."
+
+function topicdist(model::TopicModel, doc_indices)
+	"Get TopicModel topic distributions for document(s) as a probability vector."
 ```
 
 ## Bibliography
