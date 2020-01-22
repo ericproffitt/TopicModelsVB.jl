@@ -585,7 +585,7 @@ function gendoc(model::Union{LDA, gpuLDA}, laplace_smooth::Real=0.0)
 	"Generate artificial document from LDA or gpuLDA generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
-	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
+	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
 	termcount = Dict{Int, Int}()
@@ -607,7 +607,7 @@ function gendoc(model::fLDA, laplace_smooth::Real=0.0)
 	"Generate artificial document from fLDA generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
-	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
+	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
 	termcount = Dict{Int, Int}()
@@ -629,7 +629,7 @@ function gendoc(model::Union{CTM, gpuCTM}, laplace_smooth::Real=0.0)
 	"Generate artificial document from CTM or gpuCTM generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
-	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
+	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
 	termcount = Dict{Int, Int}()
@@ -652,7 +652,7 @@ function gendoc(model::fCTM, laplace_smooth::Real=0.0)
 	"Generate artificial document from fCTM generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
-	laplace_smooth >= 0 || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
+	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
 	termcount = Dict{Int, Int}()
@@ -675,8 +675,8 @@ function gencorp(model::TopicModel, corp_size::Integer; laplace_smooth::Real=0.0
 	"Generate artificial corpus using specified generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
-	corp_size > 0 		|| throw(ArgumentError("corp_size parameter must be a positive integer."))
-	laplace_smooth >= 0	|| throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
+	(corp_size > 0 )		|| throw(ArgumentError("corp_size parameter must be a positive integer."))
+	(laplace_smooth >= 0)	|| throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	corp = Corpus(vocab=model.corp.vocab, users=model.corp.users)
 	corp.docs = [gendoc(model, laplace_smooth) for d in 1:corp_size]
@@ -688,9 +688,9 @@ function showtopics(model::TopicModel, top_n_terms::Integer=min(15, model.V); to
 	"topics parameter controls which topics are displayed."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	top_n_terms <= model.V					|| throw(ArgumentError("Number of displayed terms must be less than vocab size."))
+	(top_n_terms <= model.V)				|| throw(ArgumentError("Number of displayed terms must be less than vocab size."))
 	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("Some topic indices are outside range."))
-	cols > 0								|| throw(ArgumentError("cols must be a positive integer."))
+	(cols > 0)								|| throw(ArgumentError("cols must be a positive integer."))
 	
 	cols = min(cols, length(topics))
 
@@ -746,7 +746,7 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:In
 
 	checkbounds(Bool, 1:model.U, U) 	|| throw(ArgumentError("Some user indices are outside range."))
 	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("Some document indices are outside range."))
-	cols > 0							|| throw(ArgumentError("cols must be a positive integer."))
+	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
@@ -783,7 +783,7 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	checkbounds(Bool, 1:model.M, M) 	|| throw(ArgumentError("Some document indices are outside range."))
-	cols > 0
+	(cols > 0
 	isa(users, Vector) || (users = [users])
 
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
@@ -975,12 +975,16 @@ end
 function topicdist(model::Union{LDA, fLDA, gpuLDA}, d::Integer)
 	"Get the LDA topic distribution for a document as a probability vector."
 
+	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+
 	topic_distribution = model.gamma[d] / sum(model.gamma[d])
 	return topic_distribution
 end
 
 function topicdist(model::Union{CTM, fCTM, gpuCTM}, d::Integer)
 	"Get the CTM topic distribution for document as a probability vector."
+
+	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
 
 	x = exp.(model.lambda[d] + 0.5 * model.vsq[d])
 	topic_distribution = x / sum(x)
@@ -991,6 +995,8 @@ end
 function topicdist(model::Union{CTPF, gpuCTPF}, d::Integer)
 	"Get the CTPF topic distribution for a document as a probability vector."
 
+	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+
 	x = model.gimel[d] ./ model.dalet
 	topic_distribution = x / sum(x)
 
@@ -999,6 +1005,8 @@ end
 
 function topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
 	"Get TopicModel topic distributions for document(s) as a probability vector."
+
+	issubset(doc_indices, 1:length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
 
 	topic_distributions = Vector{typeof(model.elbo)}[]
 	for d in doc_indices

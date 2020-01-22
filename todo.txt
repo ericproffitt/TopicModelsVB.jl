@@ -28,6 +28,7 @@
 29. when you initialize beta as ones(K, V) / V, it doesn't train.
 30. showtitles function
 31. errors in showdocs, showtitles need to be standardized, show at the bad doc index, or check all indices at the beginning.
+32. need to set up predict to return GPU models
 
 
 
