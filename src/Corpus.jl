@@ -326,9 +326,6 @@ function readcorp(corp_symbol::Symbol)
 		userfile = joinpath(datasets_path, "citeu/citeuusers.txt")
 		titlefile = joinpath(datasets_path, "citeu/citeutitles.txt")
 		corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
-		
-		# why was this necessary?
-		#padcorp!(corp)
 
 	else
 		println("Included corpora:\n:nsf\n:citeu")
