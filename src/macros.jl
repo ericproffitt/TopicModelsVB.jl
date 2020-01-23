@@ -161,8 +161,8 @@ macro gpu(expr::Expr)
 			gpumodel.C = model.C
 			gpumodel.topics = model.topics
 			gpumodel.mu = model.mu
-			gpumodel.sigma = model.sigma
-			gpumodel.invsigma = model.invsigma
+			gpumodel.sigma = convert(Symmetric{Float32,Array{Float32,2}}, model.sigma)
+			gpumodel.invsigma = convert(Symmetric{Float32,Array{Float32,2}}, model.invsigma)
 			gpumodel.beta = model.beta
 			gpumodel.lambda = model.lambda
 			gpumodel.vsq = model.vsq
@@ -174,8 +174,8 @@ macro gpu(expr::Expr)
 			
 			model.topics = gpumodel.topics
 			model.mu = gpumodel.mu
-			model.sigma = gpumodel.sigma
-			model.invsigma = gpumodel.invsigma
+			model.sigma = convert(Symmetric{Float64,Array{Float64,2}}, model.sigma)
+			model.invsigma = convert(Symmetric{Float64,Array{Float64,2}}, model.invsigma)
 			model.beta = gpumodel.beta
 			model.lambda = gpumodel.lambda
 			model.vsq = gpumodel.vsq
@@ -252,4 +252,3 @@ macro gpu(expr::Expr)
 		end
 	end
 end
-

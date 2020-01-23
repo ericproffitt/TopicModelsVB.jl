@@ -943,13 +943,3 @@ function topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
 end
 
 topicdist(model::TopicModel, doc_range::UnitRange{<:Integer}) = topicdist(model, collect(doc_range))
-
-
-
-
-
-
-
-
-
-
