@@ -301,31 +301,31 @@ function readcorp(corp_symbol::Symbol)
 
 	version = "v$(VERSION.major).$(VERSION.minor)"
 
-	if corp_symbol == :nsf
-		docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfdocs.txt"
-		vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfvocab.txt"
-		titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsftitles.txt"
-		corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
-
-	elseif corp_symbol == :citeu
-		docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeudocs.txt"
-		vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuvocab.txt"
-		userfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuusers.txt"
-		titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeutitles.txt"
-		corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
-
 	#if corp_symbol == :nsf
-	#	docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfdocs.txt"
-	#	vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfvocab.txt"
-	#	titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsftitles.txt"
+	#	docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfdocs.txt"
+	#	vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfvocab.txt"
+	#	titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsftitles.txt"
 	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
 
 	#elseif corp_symbol == :citeu
-	#	docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeudocs.txt"
-	#	vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuvocab.txt"
-	#	userfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuusers.txt"
-	#	titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeutitles.txt"
+	#	docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeudocs.txt"
+	#	vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuvocab.txt"
+	#	userfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuusers.txt"
+	#	titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeutitles.txt"
 	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
+
+	if corp_symbol == :nsf
+		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfdocs.txt"
+		vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfvocab.txt"
+		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsftitles.txt"
+		corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
+
+	elseif corp_symbol == :citeu
+		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeudocs.txt"
+		vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuvocab.txt"
+		userfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuusers.txt"
+		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeutitles.txt"
+		corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 		
 		# why was this necessary?
 		#padcorp!(corp)
@@ -546,8 +546,8 @@ function stop_corp!(corp::Corpus)
 
 	version = "v$(VERSION.major).$(VERSION.minor)"	
 
-	stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
-	#stop_words = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
+	#stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
+	stop_words = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
 	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
 	
 	for doc in unique(corp)
