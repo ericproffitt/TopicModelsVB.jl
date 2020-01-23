@@ -2,13 +2,6 @@
 ### Eric Proffitt
 ### December 3, 2019
 
-using DelimitedFiles
-using Crayons
-using SpecialFunctions
-using Distributions
-using LinearAlgebra
-using Random
-
 ### The function eps() outputs the machine epsilon of the argument.
 ### Argument currently set to 1e-14.
 ### Resulting EPSILON is approx. 1.6e-30.
