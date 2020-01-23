@@ -1,0 +1,1 @@
+AbstractfLDA = Union{fLDA}

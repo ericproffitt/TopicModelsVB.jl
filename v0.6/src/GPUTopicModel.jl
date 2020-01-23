@@ -1,0 +1,1 @@
+abstract type GPUTopicModel <: TopicModel end

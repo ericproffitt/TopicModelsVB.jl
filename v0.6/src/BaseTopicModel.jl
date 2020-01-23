@@ -1,0 +1,1 @@
+BaseTopicModel = Union{AbstractLDA, AbstractfLDA, AbstractCTM, AbstractfCTM}

@@ -1,0 +1,1 @@
+AbstractCTM = Union{CTM, gpuCTM}
