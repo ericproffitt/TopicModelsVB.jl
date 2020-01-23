@@ -666,7 +666,7 @@ Here is the benchmark of the above model's coordinate ascent algorithm against t
 
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/version-1.x/images/ldabar.png)
 
-As we can see, running the LDA model on the GPU is approximatey 3200% faster than running it on the CPU.
+As we can see, running the LDA model on the GPU is approximatey 1500% faster than running it on the CPU.
 
 Note, it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
