@@ -403,7 +403,7 @@ Random.seed!(10);
 train_model = LDA(train_corp, 9)
 train!(train_model, check_elbo=Inf)
 
-test_model = predict(test_corp, train_model=train_model)
+test_model = predict(test_corp, train_model)
 ```
 
 The `predict` function works by taking in a corpus of new, unseen documents, and a trained model, and returning a new model of the same type. This new model can then be inspected directly, or using `topicdist`, in order to see the topic distribution for the documents in the test corpus.
