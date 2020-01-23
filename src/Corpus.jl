@@ -299,7 +299,7 @@ end
 function readcorp(corp_symbol::Symbol)
 	"Shortcuts for prepackaged corpora."
 
-	version = "v$(VERSION.major).$(VERSION.minor)"
+	datasets_path = joinpath(join(split(@__DIR__, '/')[1:end-1], '/'), "datasets")
 
 	#if corp_symbol == :nsf
 	#	docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfdocs.txt"
@@ -315,16 +315,16 @@ function readcorp(corp_symbol::Symbol)
 	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 
 	if corp_symbol == :nsf
-		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfdocs.txt"
-		vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfvocab.txt"
-		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsftitles.txt"
+		docfile = joinpath(datasets_path, "nsf/nsfdocs.txt")
+		vocabfile = joinpath(datasets_path, "nsf/nsfvocab.txt")
+		titlefile = joinpath(datasets_path, "nsf/nsftitles.txt")
 		corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
 
 	elseif corp_symbol == :citeu
-		docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeudocs.txt"
-		vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuvocab.txt"
-		userfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuusers.txt"
-		titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeutitles.txt"
+		docfile = joinpath(datasets_path, "citeu/citeudocs.txt")
+		vocabfile = joinpath(datasets_path, "citeu/citeuvocab.txt")
+		userfile = joinpath(datasets_path, "citeu/citeuusers.txt")
+		titlefile = joinpath(datasets_path, "citeu/citeutitles.txt")
 		corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
 		
 		# why was this necessary?
@@ -544,10 +544,10 @@ end
 function stop_corp!(corp::Corpus)
 	"Filter stop words in the associated corpus."
 
-	version = "v$(VERSION.major).$(VERSION.minor)"	
+	datasets_path = joinpath(join(split(@__DIR__, '/')[1:end-1], '/'), "datasets")
 
 	#stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
-	stop_words = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
+	stop_words = vec(readdlm(joinpath(dataset_path, "stopwords.txt"), String))
 	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
 	
 	for doc in unique(corp)
