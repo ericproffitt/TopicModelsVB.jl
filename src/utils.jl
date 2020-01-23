@@ -1,91 +1,28 @@
-#############
-### Julia ###
-#############
+### Utilites for TopicModelsVB
+### Eric Proffitt
+### December 3, 2019
 
+using DelimitedFiles
+using Crayons
+using SpecialFunctions
+using Distributions
+using LinearAlgebra
+using Random
+
+### The function eps() outputs the machine epsilon of the argument.
+### Argument currently set to 1e-14.
+### Resulting EPSILON is approx. 1.6e-30.
 const EPSILON = eps(1e-14)
 
-VectorList{T} = Vector{Vector{T}}
-MatrixList{T} = Vector{Matrix{T}}
-
-bold(str::AbstractString) = print_with_color(:bold, bold=true, str)
-yellow(str::AbstractString) = print_with_color(:yellow, bold=true, str)
-
-isnegative(x::Real) = x < 0
-ispositive(x::Real) = x > 0
-
-function logsumexp{T<:Real}(xs::Array{T})
-	maxval = maximum(xs)
-	return maxval + log(sum(exp.(xs - maxval)))
-end
-
-function addlogistic{T<:Real}(xs::Array{T})
-	maxval = maximum(xs)
-	xs -= maxval
-	xs = exp.(xs) / sum(exp.(xs))
-	return xs
-end
-
-function addlogistic{T<:Real}(xs::Matrix{T}, region::Integer)
-	if region == 1
-		maxvals = [maximum(xs[:,j]) for j in 1:size(xs, 2)]
-		xs .-= maxvals'
-		xs = exp.(xs) ./ sum(exp.(xs), 1)
-	elseif region == 2
-		maxvals = [maximum(xs[i,:]) for i in 1:size(xs, 1)]
-		xs .-= maxvals
-		xs = exp.(xs) ./ sum(exp.(xs), 2)
-	else
-		xs = addlogistic(xs)
-	end
-	return xs
-end
-
-function Distributions.isprobvec{T<:Real}(P::Matrix{T}, region::Integer)
-	@assert region in [1, 2]
-
-	if region == 1
-		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
-	else
-		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
-	end
-	return x
-end
-
-function Distributions.Categorical(p::Vector{Float32})
-	@assert isapprox(sum(p), 1)
-	p = map(Float64, p)
-	p /= sum(p)
-	return Categorical(p)
-end
-
-function Distributions.Multinomial(n::Integer, p::Vector{Float32})
-	@assert isapprox(sum(p), 1)
-	p = map(Float64, p)
-	p /= sum(p)
-	return Multinomial(n, p)
-end
-
-function partition{T<:Any}(xs::Union{UnitRange{T}, Vector{T}}, n::Integer)
-	@assert ispositive(n)
-
-	q = div(length(xs), n)
-	r = length(xs) - q*n
-	p = typeof(xs)[xs[(n*i-n+1):(n*i)] for i in 1:q]
-	if ispositive(r)
-		push!(p, xs[(q*n+1):end])
-	end
-	return p
-end
-
-
-
-###########
-### C++ ###
-###########
-
+### EPSILON32 is 1e-30.
 const EPSILON32 = "0.000000000000000000000000000001f"
 
-const DIGAMMA_cpp =
+### Numerical approximation to the digamma function.
+### Based on eq. (12), without looking at the accompanying source
+### code, of: K. S. Kölbig, "Programs for computing the logarithm of
+### the gamma function, and the digamma function, for complex
+### argument," Computer Phys. Commun. vol. 4, pp. 221–226 (1972).
+const DIGAMMA_c =
 """
 inline float
 digamma(float x)
@@ -114,17 +51,16 @@ digamma(float x)
 				- 0.021092796092796094f * t*t*t*t*t
 				+ 0.08333333333333333f * t*t*t*t*t*t
 				- 0.4432598039215686f * t*t*t*t*t*t*t;
+
 		return p;
 		}
 		"""
 
-const RREF_cpp =
+### Gauss-Jordan (reduced row echelon form) algorithm for solving the linear system Ax=b.
+const RREF_c =
 """
 inline void
-rref(	long K,
-		long D,
-		global float *A,
-		global float *B)
+rref(long K, long D, long d, global float *A, global float *b)
 			
 		{
 		for (long j=0; j<K; j++)
@@ -144,15 +80,14 @@ rref(	long K,
 				
 			for (long l=0; l<K; l++)
 			{
-				float tempvarA = A[D + K * l + maxrow];
-				float tempvarB = B[D + K * l + maxrow];
-
+				float A_temp = A[D + K * l + maxrow];
 				A[D + K * l + maxrow] = A[D + K * l + j];
-				B[D + K * l + maxrow] = B[D + K * l + j];
-
-				A[D + K * l + j] = tempvarA;
-				B[D + K * l + j] = tempvarB;
+				A[D + K * l + j] = A_temp;
 			}
+
+			float b_temp = b[K * d + maxrow];
+			b[K * d + maxrow] = b[K * d + j];
+			b[K * d + j] = b_temp;
 
 			for (long i=j; i<K-1; i++)
 			{
@@ -163,36 +98,98 @@ rref(	long K,
 						A[D + K * l + (i + 1)] = 0.0f;
 					else
 						A[D + K * l + (i + 1)] += c * A[D + K * l + j];
-		
-				for (long l=0; l<K; l++)	
-					B[D + K * l + (i + 1)] += c * B[D + K * l + j];
+
+				b[K * d + (i + 1)] += c * b[K * d + j];
 			}
 		}
 
 		for (long j=K-1; j>0; j--)
 			for (long i=j-1; i>=0; i--)
-				for (long l=0; l<K; l++)
-					B[D + K * l + i] -= B[D + K * l + j] * A[D + K * j + i] / A[D + K * j + j];
+				b[K * d + i] -= b[K * d + j] * A[D + K * j + i] / A[D + K * j + j];
 
 		for (long j=0; j<K; j++)
-			for (long l=0; l<K; l++)
-				B[D + K * l + j] *= 1 / A[D + K * j + j];
+			b[K * d + j] *= 1 / A[D + K * j + j];
 		}			
 		"""
 
-const NORM2_cpp =
-"""
-inline float
-norm2(	long K,
-		long d,
-		global float *x)
-		
-		{
-		float acc = 0.0f;
+"Type alias for a vector of vectors."
+VectorList{T} = Vector{Vector{T}}
 
-		for (long i=0; i<K; i++)
-			acc += x[K * d + i] * x[K * d + i];
+"Type alias for a vector of matrices."
+MatrixList{T} = Vector{Matrix{T}}
 
-		return sqrt(acc);
-		}
-		"""
+finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = sign.(x) .* min.(abs.(x), floatmax.(x))
+
+function additive_logistic(x::Matrix{<:Real}; dims::Integer)
+	"Additive logistic function of a real-valued matrix over the given dimension."
+	"Overflow safe."
+
+	if dims in [1,2]
+		x = exp.(x .- maximum(x, dims=dims))
+		x = x ./ sum(x, dims=dims)
+	end
+
+	return x
+end
+
+function additive_logistic(x::Vector{<:Real})
+	"Additive logistic function of a real-valued vector."
+	"Overflow safe."
+
+	x = exp.(x .- maximum(x))
+	x = x / sum(x)
+
+	return x
+end
+
+function additive_logistic(x::Matrix{<:Real})
+	"Additive logistic function of a real-valued matrix."
+	"Overflow safe."
+
+	x = exp.(x .- maximum(x))
+	x = x / sum(x)
+
+	return x
+end
+
+function isstochastic(P::Matrix{<:Real}; dims::Integer)
+	"Check to see if X is a stochastic matrix."
+	"if dims = 1, check for left stochastic matrix."
+	"if dims = 2, check for right stochastic matrix."
+
+	if dims == 1
+		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
+	elseif dims == 2
+		x = all([isprobvec(P[i,:]) for i in 1:size(P, 1)])
+	else
+		x = P
+	end
+
+	return x
+end
+
+### Keep until pull request is merged.
+import Distributions.xlogy
+import Distributions.binomlogpdf
+Distributions.xlogy(x::T, y::T) where {T<:Real} = x != zero(T) ? x * log(y) : zero(log(y))
+Distributions.binomlogpdf(n::Real, p::Real, k::Real) = (isinteger(k) & (zero(k) <= k <= n)) ? convert(typeof(float(p)), loggamma(n + 1) - loggamma(k + 1) - loggamma(n - k + 1) + xlogy(k, p) + xlogy(n - k, 1 - p)) : convert(typeof(float(p)), -Inf)
+
+### Keep until pull request is merged.
+function Distributions.entropy(d::Dirichlet)
+    α = d.alpha
+    α0 = d.alpha0
+    k = length(α)
+
+    if k == 1
+    	en = 0.0
+
+    else
+	    en = d.lmnB + (α0 - k) * digamma(α0)
+	    for j in 1:k
+	        @inbounds αj = α[j]
+	        en -= (αj - 1.0) * digamma(αj)
+	    end
+	end
+
+    return en
+end

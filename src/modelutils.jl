@@ -1,853 +1,668 @@
-#################################
-### General Display Functions ###
-#################################
+### Model utilites for TopicModelsVB
+### Eric Proffitt
+### December 3, 2019
 
-showdocs(model::TopicModel, ds::Vector{Int}) = showdocs(model.corp, ds)
-showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
-showdocs(model::TopicModel, ds::UnitRange{Int}) = showdocs(model.corp, collect(ds))
-showdocs(model::TopicModel, d::Int) = showdocs(model.corp, d)
+struct TopicModelError <: Exception
+    msg::AbstractString
+end
+
+Base.showerror(io::IO, e::TopicModelError) = print(io, "TopicModelError: ", e.msg)
+
 showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
+showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
+showdocs(model::TopicModel, d::Integer) = showdocs(model.corp, d)
+showdocs(model::TopicModel, doc_indices::Vector{<:Integer}) = showdocs(model.corp, doc_indices)
+showdocs(model::TopicModel, doc_range::UnitRange{<:Integer}) = showdocs(model.corp, collect(doc_range))
 
-getlex(model::TopicModel) = sort(collect(values(model.corp.lex)))
+showtitles(model::TopicModel, doc::Document) = showtitles(model.corp, doc)
+showtitles(model::TopicModel, docs::Vector{Document}) = showtitles(model.corp, docs)
+showtitles(model::TopicModel, d::Integer) = showtitles(model.corp, d)
+showtitles(model::TopicModel, doc_indices::Vector{<:Integer}) = showtitles(model.corp, doc_indices)
+showtitles(model::TopicModel, doc_range::UnitRange{<:Integer}) = showtitles(model.corp, collect(doc_range))
+
+getvocab(model::TopicModel) = sort(collect(values(model.corp.vocab)))
 getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
 
+### Display output for TopicModel objects.
 Base.show(io::IO, model::LDA) = print(io, "Latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::fLDA) = print(io, "Filtered latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::CTM) = print(io, "Correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::fCTM) = print(io, "Filtered correlated topic model with $(model.K) topics.")
-Base.show(io::IO, model::DTM) = print(io, "Dynamic topic model with $(model.K) topics and ∆ = $(model.delta).")
 Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")
 Base.show(io::IO, model::gpuLDA) = print(io, "GPU accelerated latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
+function check_model(model::LDA)
+	"Check LDA parameters."
 
-
-##################################################################
-### Host-to-Buffer and Buffer-to-Host Functions for GPU Models ###
-##################################################################
-
-function updateBuf!(model::gpuLDA, b::Int)
-	b = b % model.B + 1
-
-	@buf b model.Npsums
-	@buf b model.Jpsums
-	@buf b model.terms
-	@buf b model.counts
-	@buf b model.words
-
-	@buf b model.phi
-	@buf b model.Elogtheta
-end
-
-function updateBuf!(model::gpuCTM, b::Int)
-	b = b % model.B + 1
-
-	@buf b model.C
-	@buf b model.Npsums
-	@buf b model.Jpsums
-	@buf b model.terms
-	@buf b model.counts
-	@buf b model.words
-
-	@buf b model.newtontemp
-	@buf b model.newtongrad
-	@buf b model.newtoninvhess
-
-	@buf b model.phi
-end
-
-function updateBuf!(model::gpuCTPF, b::Int)
-	b = b % model.B + 1
-
-	@buf b model.Npsums
-	@buf b model.Jpsums
-	@buf b model.Rpsums
-	@buf b model.Ypsums
-	@buf b model.terms
-	@buf b model.counts
-	@buf b model.words
-	@buf b model.readers
-	@buf b model.ratings
-	@buf b model.views
-
-	@buf b model.phi
-	@buf b model.xi
-end
-
-function updateHost!(model::gpuLDA, b::Int)
-	@host model.alphabuf
-	@host model.betabuf
-	@host model.gammabuf
-	@host b model.phibuf
-	@host b model.Elogthetabuf
-	@host b model.Elogthetasumbuf
-end
-
-function updateHost!(model::gpuCTM, b::Int)
-	@host model.mubuf
-	@host model.sigmabuf
-	@host model.invsigmabuf
-	@host model.betabuf
-	@host model.lambdabuf
-	@host model.vsqbuf
-	@host model.lzetabuf
-	@host b model.phibuf
-end
-
-function updateHost!(model::gpuCTPF, b::Int)
-	@host model.alefbuf
-	@host model.betbuf
-	@host model.gimelbuf
-	@host model.daletbuf
-	@host model.hebuf
-	@host model.vavbuf
-	@host model.zayinbuf
-	@host model.hetbuf
-	@host b model.phibuf
-	@host b model.xibuf
-end
-
-
-
-##########################################################################################################
-### Function for Aligning Auxiliary Data with Primary Data Coupled with Optional Primary Data Checking ###
-##########################################################################################################
-
-function fixmodel!(model::LDA; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
-	@assert all(isfinite.(model.alpha))
-	@assert all(ispositive.(model.alpha))
-	@assert isequal(length(model.alpha), model.K)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.newbeta), (model.K, model.V))
-	@assert isequal(model.newbeta, zeros(model.K, model.V))
-	@assert isequal(length(model.gamma), model.M)
-	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])
-	@assert isequal(size(model.phi), (model.K, model.N[1]))
-	@assert isprobvec(model.phi, 1)
-	@assert isfinite(model.elbo)
-	end
-
-	model.Elogtheta = digamma.(model.gamma[1]) - digamma(sum(model.gamma[1]))
-	model.Elogthetasum = zeros(model.K)
-	model.newbeta = zeros(model.K, model.V)
-	model.newelbo = 0
+	check_corp(model.corp) 
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(model.M, length(model.corp))											|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])						|| throw(TopicModelError("C must contain sums of document counts."))
+	isequal(length(model.alpha), model.K)											|| throw(TopicModelError("alpha must be of length K."))
+	all(isfinite.(model.alpha))														|| throw(TopicModelError("alpha must be finite."))
+	all(model.alpha .> 0)															|| throw(TopicModelError("alpha must be positive."))
+	isequal(size(model.beta), (model.K, model.V))									|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))						|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(size(model.beta_old), (model.K, model.V))								|| throw(TopicModelError("beta_old must be of size (K, V)."))
+	(isstochastic(model.beta_old, dims=2) | isempty(model.beta_old))				|| throw(TopicModelError("beta_old must be a right stochastic matrix."))
+	isequal(model.beta_temp, zeros(model.K, model.V))								|| throw(TopicModelError("beta_temp must be a zero matrix of size (K, V)."))
+	isequal(length(model.Elogtheta), model.M)										|| throw(TopicModelError("Elogtheta must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("Elogtheta must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])				|| throw(TopicModelError("Elogtheta must be finite."))
+	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])						|| throw(TopicModelError("Elogtheta must be nonpositive."))
+	isequal(length(model.Elogtheta_old), model.M)									|| throw(TopicModelError("Elogtheta_old must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("Elogtheta_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta_old[d])) for d in 1:model.M])			|| throw(TopicModelError("Elogtheta_old must be finite."))
+	all(Bool[all(model.Elogtheta_old[d] .<= 0) for d in 1:model.M])					|| throw(TopicModelError("Elogtheta_old must be nonpositive."))
+	isequal(length(model.gamma), model.M)											|| throw(TopicModelError("gamma must be of length M."))
+	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])			|| throw(TopicModelError("gamma must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])					|| throw(TopicModelError("gamma must be finite."))
+	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])							|| throw(TopicModelError("gamma must be positive."))
+	isfinite(model.elbo)															|| throw(TopicModelError("elbo must be finite."))
 	nothing
 end
 
-function fixmodel!(model::fLDA; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
-	@assert isequal(length(model.alpha), model.K)	
-	@assert all(isfinite.(model.alpha))
-	@assert all(ispositive.(model.alpha))
-	@assert (0 <= model.eta <= 1)	
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.newbeta), (model.K, model.V))
-	@assert isequal(model.newbeta, zeros(model.K, model.V))
-	@assert isequal(size(model.fbeta), (model.K, model.V))
-	@assert isprobvec(model.fbeta, 2)	
-	@assert isequal(length(model.kappa), model.V)
-	@assert isprobvec(model.kappa)
-	@assert isequal(length(model.newkappa), model.V)
-	@assert isequal(model.newkappa, zeros(model.V))	
-	@assert isequal(length(model.gamma), model.M)
-	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])
-	@assert isequal(length(model.tau), model.M)
-	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
-	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])	
-	@assert isequal(size(model.phi), (model.K, model.N[1]))
-	@assert isprobvec(model.phi, 1)
-	@assert isfinite(model.elbo)
-	end
+function check_model(model::fLDA)
+	"Check fLDA parameters."
 
-	model.Elogtheta = digamma.(model.gamma[1]) - digamma(sum(model.gamma[1]))
-	model.Elogthetasum = zeros(model.K)
-	model.newbeta = zeros(model.K, model.V)
-	model.newkappa = zeros(model.V)
-	model.newelbo = 0
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(model.M, length(model.corp))											|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])						|| throw(TopicModelError("C must contain sums of document counts."))
+	(0 <= model.eta <= 1)															|| throw(TopicModelError("eta must belong to the interval [0,1]."))
+	isequal(length(model.alpha), model.K)											|| throw(TopicModelError("alpha must be of length K."))
+	all(isfinite.(model.alpha))														|| throw(TopicModelError("alpha must be finite."))
+	all(model.alpha .> 0)															|| throw(TopicModelError("alpha must be positive."))
+	isequal(length(model.kappa), model.V)											|| throw(TopicModelError("kappa must be of length V"))
+	(isprobvec(model.kappa) | isempty(model.kappa))									|| throw(TopicModelError("kappa must be a probability vector."))
+	isequal(length(model.kappa_old), model.V)										|| throw(TopicModelError("kappa_old must be of length V."))
+	(isprobvec(model.kappa_old) | isempty(model.kappa_old))							|| throw(TopicModelError("kappa_old must be a probability vector."))
+	isequal(model.kappa_temp, zeros(model.V))										|| throw(TopicModelError("kappa_temp must be a zero vector of length V."))
+	isequal(size(model.beta), (model.K, model.V))									|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))						|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(size(model.beta_old), (model.K, model.V))								|| throw(TopicModelError("beta_old must be of size (K, V)."))
+	(isstochastic(model.beta_old, dims=2) | isempty(model.beta_old))				|| throw(TopicModelError("beta_old must be a right stochastic matrix."))
+	isequal(model.beta_temp, zeros(model.K, model.V))								|| throw(TopicModelError("beta_temp must be a zero matrix of size (K, V)."))
+	isequal(length(model.Elogtheta), model.M)										|| throw(TopicModelError("Elogtheta must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("Elogtheta must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])				|| throw(TopicModelError("Elogtheta must be finite."))
+	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])						|| throw(TopicModelError("Elogtheta must be nonpositive."))
+	isequal(length(model.Elogtheta_old), model.M)									|| throw(TopicModelError("Elogtheta_old must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("Elogtheta_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta_old[d])) for d in 1:model.M])			|| throw(TopicModelError("Elogtheta_old must be finite."))
+	all(Bool[all(model.Elogtheta_old[d] .<= 0) for d in 1:model.M])					|| throw(TopicModelError("Elogtheta_old must be nonpositive."))
+	isequal(length(model.gamma), model.M)											|| throw(TopicModelError("gamma must be of length M."))
+	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])			|| throw(TopicModelError("gamma must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])					|| throw(TopicModelError("gamma must be finite."))
+	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])							|| throw(TopicModelError("gamma must be positive."))
+	isequal(length(model.tau), model.M)												|| throw(TopicModelError("tau must be of length M."))
+	all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])			|| throw(TopicModelError("tau must contain vectors of lengths N."))
+	all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])						|| throw(TopicModelError("tau must belong to the interval [0,1]."))
+	isfinite(model.elbo)															|| throw(TopicModelError("elbo must be finite."))
 	nothing
 end
 
-function fixmodel!(model::CTM; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert all(isfinite.(model.mu))	
-	@assert isequal(size(model.sigma), (model.K, model.K))
-	@assert isposdef(model.sigma)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.newbeta), (model.K, model.V))
-	@assert isequal(model.newbeta, zeros(model.K, model.V))
-	@assert isequal(length(model.lambda), model.M)
-	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
-	@assert isequal(length(model.vsq), model.M)
-	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
-	@assert isfinite(model.lzeta)	
-	@assert isequal(size(model.phi), (model.K, model.N[1]))
-	@assert isprobvec(model.phi, 1)
-	@assert isfinite(model.elbo)
-	end
+function check_model(model::CTM)
+	"Check CTM parameters."
 
-	model.invsigma = inv(model.sigma)
-	model.newbeta = zeros(model.K, model.V)
-	model.newelbo = 0
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))	
+	isequal(model.M, length(model.corp))										|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError("C must contain sums of document counts."))	
+	all(isfinite.(model.mu))													|| throw(TopicModelError("mu must be finite."))
+	isequal(size(model.sigma), (model.K, model.K))								|| throw(TopicModelError("sigma must be of size (K, K)."))
+	isposdef(model.sigma)														|| throw(TopicModelError("sigma must be positive-definite."))
+	isequal(size(model.invsigma), (model.K, model.K))							|| throw(TopicModelError("invsigma must be of size (K, K)."))
+	isposdef(model.invsigma)													|| throw(TopicModelError("invsigma must be positive-definite."))
+	isequal(size(model.beta), (model.K, model.V))								|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))					|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(size(model.beta_old), (model.K, model.V))							|| throw(TopicModelError("beta_old must be of size (K, V)."))
+	(isstochastic(model.beta_old, dims=2) | isempty(model.beta_old))			|| throw(TopicModelError("beta_old must be a right stochastic matrix."))
+	isequal(model.beta_temp, zeros(model.K, model.V))							|| throw(TopicModelError("beta_temp must be a zero matrix of size (K, V)."))
+	isequal(length(model.lambda), model.M)										|| throw(TopicModelError("lambda must be of length M."))
+	all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("lambda must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])				|| throw(TopicModelError("lambda must be finite."))
+	isequal(length(model.lambda_old), model.M)									|| throw(TopicModelError("lambda_old must be of length M."))
+	all(Bool[isequal(length(model.lambda_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("lambda_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.lambda_old[d])) for d in 1:model.M])			|| throw(TopicModelError("lambda_old must be finite."))
+	isequal(length(model.vsq), model.M)											|| throw(TopicModelError("vsq must be of length M."))
+	all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("vsq must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])					|| throw(TopicModelError("vsq must be finite."))
+	all(Bool[all(model.vsq[d] .> 0) for d in 1:model.M])						|| throw(TopicModelError("vsq must be positive."))
+	isequal(length(model.logzeta), model.M)										|| throw(TopicModelError("logzeta must be of length M."))
+	all(isfinite.(model.logzeta))												|| throw(TopicModelError("logzeta must be finite."))
+	isfinite(model.elbo)														|| throw(TopicModelError("elbo must be finite."))
 	nothing
 end
 
-function fixmodel!(model::fCTM; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert (0 <= model.eta <= 1)	
-	@assert all(isfinite.(model.mu))
-	@assert isequal(size(model.sigma), (model.K, model.K))
-	@assert isposdef(model.sigma)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(size(model.newbeta), (model.K, model.V))
-	@assert isequal(model.newbeta, zeros(model.K, model.V))
-	@assert isequal(size(model.fbeta), (model.K, model.V))
-	@assert isprobvec(model.fbeta, 2)	
-	@assert isequal(length(model.kappa), model.V)
-	@assert isprobvec(model.kappa)
-	@assert isequal(length(model.newkappa), model.V)
-	@assert isequal(model.newkappa, zeros(model.V))
-	@assert isequal(length(model.lambda), model.M)
-	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
-	@assert isequal(length(model.vsq), model.M)
-	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])	
-	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
-	@assert isfinite(model.lzeta)
-	@assert isequal(length(model.tau), model.M)
-	@assert all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])
-	@assert all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])
-	@assert isequal(size(model.phi), (model.K, model.N[1]))
-	@assert isprobvec(model.phi, 1)	
-	@assert isfinite(model.elbo)
-	end
+function check_model(model::fCTM)
+	"Check fCTM parameters."
 
-	model.invsigma = inv(model.sigma)
-	model.newbeta = zeros(model.K, model.V)
-	model.newkappa = zeros(model.V)
-	model.newelbo = 0
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(model.M, length(model.corp))										|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError("C must contain sums of document counts."))
+	(0 <= model.eta <= 1)														|| throw(TopicModelError("eta must belong to the interval [0,1]."))
+	all(isfinite.(model.mu))													|| throw(TopicModelError("mu must be finite."))
+	isequal(size(model.sigma), (model.K, model.K))								|| throw(TopicModelError("sigma must be of size (K, K)."))
+	isposdef(model.sigma)														|| throw(TopicModelError("sigma must be positive-definite."))
+	isequal(size(model.invsigma), (model.K, model.K))							|| throw(TopicModelError("invsigma must be of size (K, K)."))
+	isposdef(model.invsigma)													|| throw(TopicModelError("invsigma must be positive-definite."))
+	isequal(length(model.kappa), model.V)										|| throw(TopicModelError("kappa must be of length V."))
+	(isprobvec(model.kappa) | isempty(model.kappa))								|| throw(TopicModelError("kappa must be a probability vector."))
+	isequal(length(model.kappa_old), model.V)									|| throw(TopicModelError("kappa_old must be of length V."))
+	(isprobvec(model.kappa_old) | isempty(model.kappa_old))						|| throw(TopicModelError("kappa_old must be a probability vector."))
+	isequal(model.kappa_temp, zeros(model.V))									|| throw(TopicModelError("kappa_temp must be zero vector of length V."))
+	isequal(size(model.beta), (model.K, model.V))								|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))					|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(size(model.beta_old), (model.K, model.V))							|| throw(TopicModelError("beta_old must be of size (K, V)."))
+	(isstochastic(model.beta_old, dims=2) | isempty(model.beta_old))			|| throw(TopicModelError("beta_old must be a right stochastic matrix."))
+	isequal(model.beta_temp, zeros(model.K, model.V))							|| throw(TopicModelError("beta_temp must be a zero matrix of size (K, V)."))
+	isequal(length(model.lambda), model.M)										|| throw(TopicModelError("lambda must be of length M."))
+	all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("lambda must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])				|| throw(TopicModelError("lambda must be finite."))
+	isequal(length(model.lambda_old), model.M)									|| throw(TopicModelError("lambda_old must be of length M."))
+	all(Bool[isequal(length(model.lambda_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("lambda_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.lambda_old[d])) for d in 1:model.M])			|| throw(TopicModelError("lambda_old must be finite."))
+	isequal(length(model.vsq), model.M)											|| throw(TopicModelError("vsq must be of length M."))
+	all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("vsq must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])					|| throw(TopicModelError("vsq must be finite."))
+	all(Bool[all(model.vsq[d] .> 0) for d in 1:model.M])						|| throw(TopicModelError("vsq must be positive."))
+	isequal(length(model.logzeta), model.M)										|| throw(TopicModelError("logzeta must be of length M."))
+	all(isfinite.(model.logzeta))												|| throw(TopicModelError("logzeta must be finite."))
+	isequal(length(model.tau), model.M)											|| throw(TopicModelError("tau must be of length M."))
+	all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])		|| throw(TopicModelError("tau must contain vectors of lengths N."))
+	all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])					|| throw(TopicModelError("tau must belong to the interval [0,1]."))
+	isfinite(model.elbo)														|| throw(TopicModelError("elbo must be finite."))
 	nothing
 end
 
-function fixmodel!(model::DTM; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert !isnegative(model.T)
-	@assert isequal(vcat(model.S...), sortperm([doc.stamp for doc in model.corp]))	
-	@assert isfinite(model.sigmasq)
-	@assert ispositive(model.sigmasq)	
-	@assert isequal(length(model.alpha), model.T)
-	@assert all(Bool[isequal(length(model.alpha[t]), model.K) for t in 1:model.T])
-	@assert all(Bool[all(isfinite.(model.alpha[t])) for t in 1:model.T])
-	@assert all(Bool[all(ispositive.(model.alpha[t])) for t in 1:model.T])	
-	@assert isequal(length(model.gamma), model.M)
-	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])
-	@assert isequal(length(model.phi), model.M)
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in 1:model.M])	
-	@assert isequal(size(model.m0), (model.K, model.V))
-	@assert all(isfinite.(model.m0))	
-	@assert isequal(size(model.v0), (model.K, model.V))
-	@assert all(isfinite.(model.v0))
-	@assert all(ispositive.(model.v0))	
-	@assert isequal(length(model.m), model.T)
-	@assert all(Bool[isequal(size(model.m[t]), (model.K, model.V)) for t in 1:model.T])
-	@assert all(Bool[all(isfinite.(model.m[t])) for t in 1:model.T])
-	@assert isequal(length(model.v), model.T)
-	@assert all(Bool[isequal(size(model.v[t]), (model.K, model.V)) for t in 1:model.T])	
-	@assert all(Bool[all(isfinite.(model.v[t])) for t in 1:model.T])
-	@assert all(Bool[all(ispositive.(model.v[t])) for t in 1:model.T])	
-	@assert isequal(length(model.bsq), model.T)
-	@assert all(isfinite.(model.bsq))
-	@assert all(ispositive(model.bsq))	
-	@assert all(Bool[all(isfinite.(model.betahat[t])) for t in 1:model.T])
-	@assert isequal(size(model.mbeta0), (model.K, model.V))	
-	@assert all(isfinite.(model.mbeta0))	
-	@assert isequal(size(model.vbeta0), (model.K, model.V))
-	@assert all(isfinite.(model.vbeta0))
-	@assert all(ispositive.(model.vbeta0))
-	@assert isequal(length(model.mbeta), model.T)
-	@assert all(Bool[isequal(size(model.mbeta[t]), (model.K, model.V)) for t in 1:model.T])
-	@assert all(Bool[all(isfinite.(model.mbeta[t])) for t in 1:model.T])
-	@assert isequal(length(model.vbeta), model.T)
-	@assert all(Bool[isequal(size(model.vbeta[t]), (model.K, model.V)) for t in 1:model.T])	
-	@assert all(Bool[all(isfinite.(model.vbeta[t])) for t in 1:model.T])
-	@assert all(Bool[all(ispositive(model.vbeta[t])) for t in 1:model.T])
-	@assert all(isfinite.(model.lzeta))	
-	@assert isfinite(model.delta)
-	@assert ispositive(model.delta)	
-	@assert isfinite(model.elbo)
-	end
+function check_model(model::CTPF)
+	"Check CTPF parameters."
 
-	model.Elogtheta = [digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in 1:model.M]
-	model.Eexpbeta = [exp.(model.mbeta[t] + 0.5 * model.vbeta[t]) for t in 1:model.T]
-	model.maxlEexpbeta = [maximum(model.Eexpbeta[t]) for t in 1:model.T]
-	model.ovflEexpbeta = [exp.(model.mbeta[t] + 0.5 * model.vbeta[t] - model.maxlEexpbeta[t]) for t in 1:model.T]
-	nothing
-end
-
-function fixmodel!(model::CTPF; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])
-	@assert isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])
-	@assert isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])
-	@assert ispositive(model.a)
-	@assert ispositive(model.b)
-	@assert ispositive(model.c)
-	@assert ispositive(model.d)
-	@assert ispositive(model.e)
-	@assert ispositive(model.f)
-	@assert ispositive(model.g)
-	@assert ispositive(model.h)	
-	@assert isequal(size(model.alef), (model.K, model.V))
-	@assert all(isfinite.(model.alef))
-	@assert all(ispositive.(model.alef))
-	@assert isequal(length(model.bet), model.K)
-	@assert all(isfinite.(model.bet))
-	@assert all(ispositive.(model.bet))
-	@assert isequal(length(model.gimel), model.M)
-	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gimel[d])) for d in 1:model.M])
-	@assert isequal(length(model.dalet), model.K)
-	@assert all(isfinite.(model.dalet))
-	@assert all(ispositive.(model.dalet))
-	@assert isequal(size(model.he), (model.K, model.U))	
-	@assert all(isfinite.(model.he))
-	@assert all(ispositive.(model.he))
-	@assert isequal(length(model.vav), model.K)
-	@assert all(isfinite.(model.vav))
-	@assert all(ispositive.(model.vav))
-	@assert isequal(length(model.zayin), model.M)
-	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.zayin[d])) for d in 1:model.M])
-	@assert isequal(length(model.het), model.K)
-	@assert all(isfinite.(model.het))
-	@assert all(ispositive.(model.het))
-	@assert isequal(size(model.phi), (model.K, model.N[1]))
-	@assert isprobvec(model.phi, 1)
-	@assert isequal(size(model.xi), (2model.K, model.R[1]))
-	@assert isprobvec(model.xi, 1)
-	@assert isfinite(model.elbo)
-	end
-
-	model.newalef = fill(model.a, model.K, model.V)
-	model.newhe = fill(model.e, model.K, model.U)
-	model.newelbo = 0
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))			|| throw(TopicModelError("Corpus users keys must form unit range of length U."))
+	isequal(model.M, length(model.corp))										|| throw(TopicModelError("M must be equal to the number of documents in the corpus."))
+	isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])			|| throw(TopicModelError("N must contain document lengths"))
+	isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])			|| throw(TopicModelError("C must contain sums of document counts."))
+	isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])		|| throw(TopicModelError("R must contain numbers of readers in documents."))
+	model.a > 0																	|| throw(TopicModelError("a must be positive."))
+	model.b > 0																	|| throw(TopicModelError("b must be positive."))
+	model.c > 0																	|| throw(TopicModelError("c must be positive."))
+	model.d > 0																	|| throw(TopicModelError("d must be positive."))
+	model.e > 0																	|| throw(TopicModelError("e must be positive."))
+	model.f > 0																	|| throw(TopicModelError("f must be positive."))
+	model.g > 0																	|| throw(TopicModelError("g must be positive."))
+	model.h > 0																	|| throw(TopicModelError("h must be positive."))
+	isequal(size(model.alef), (model.K, model.V))								|| throw(TopicModelError("alef must be of size (K, V)."))
+	all(isfinite.(model.alef))													|| throw(TopicModelError("alef must be finite."))
+	all(model.alef .> 0)														|| throw(TopicModelError("alef must be positive."))
+	isequal(size(model.alef_old), (model.K, model.V))							|| throw(TopicModelError("alef_old must be of size (K, V)."))
+	all(isfinite.(model.alef_old))												|| throw(TopicModelError("alef_old must be finite."))
+	all(model.alef_old .> 0)													|| throw(TopicModelError("alef_old must be positive."))
+	isequal(model.alef_temp, fill(model.a, model.K, model.V))					|| throw(TopicModelError("alef_temp must be a fill a matrix of size (K, V)."))
+	isequal(length(model.bet), model.K)											|| throw(TopicModelError("bet must be of length K"))
+	all(isfinite.(model.bet))													|| throw(TopicModelError("bet must be finite."))
+	all(model.bet .> 0)															|| throw(TopicModelError("bet must be positive."))
+	isequal(length(model.bet_old), model.K)										|| throw(TopicModelError("bet_old must be of length K"))
+	all(isfinite.(model.bet_old))												|| throw(TopicModelError("bet_old must be finite."))
+	all(model.bet_old .> 0)														|| throw(TopicModelError("bet_old must be positive."))
+	isequal(length(model.gimel), model.M)										|| throw(TopicModelError("gimel must be of length M."))
+	all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("gimel must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])				|| throw(TopicModelError("gimel must be finite."))
+	all(Bool[all(model.gimel[d] .> 0) for d in 1:model.M])						|| throw(TopicModelError("gimel must be positive."))
+	isequal(length(model.gimel_old), model.M)									|| throw(TopicModelError("gimel_old must be of length M."))
+	all(Bool[isequal(length(model.gimel_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("gimel_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gimel_old[d])) for d in 1:model.M])			|| throw(TopicModelError("gimel_old must be finite."))
+	all(Bool[all(model.gimel_old[d] .> 0) for d in 1:model.M])					|| throw(TopicModelError("gimel_old must be positive."))
+	isequal(length(model.dalet), model.K)										|| throw(TopicModelError("dalet must be of length K."))
+	all(isfinite.(model.dalet))													|| throw(TopicModelError("dalet must be finite."))
+	all(model.dalet .> 0)														|| throw(TopicModelError("dalet must be positive."))
+	isequal(length(model.dalet_old), model.K)									|| throw(TopicModelError("dalet_old must be of length K."))
+	all(isfinite.(model.dalet_old))												|| throw(TopicModelError("dalet_old must be finite."))
+	all(model.dalet_old .> 0)													|| throw(TopicModelError("dalet_old must be positive."))
+	isequal(size(model.he), (model.K, model.U))									|| throw(TopicModelError("he must be of size (K, U)"))
+	all(isfinite.(model.he))													|| throw(TopicModelError("he must be finite."))
+	all(model.he .> 0)															|| throw(TopicModelError("he must be positive."))
+	isequal(size(model.he_old), (model.K, model.U))								|| throw(TopicModelError("he_old must be of size (K, U)"))
+	all(isfinite.(model.he_old))												|| throw(TopicModelError("he_old must be finite."))
+	all(model.he_old .> 0)														|| throw(TopicModelError("he_old must be positive."))
+	isequal(model.he_temp, fill(model.e, model.K, model.U))						|| throw(TopicModelError("he_temp must be a fill e matrix of size (K, U)."))
+	isequal(length(model.vav), model.K)											|| throw(TopicModelError("vav must be of length K."))
+	all(isfinite.(model.vav))													|| throw(TopicModelError("vav must be finite."))
+	all(model.vav .> 0)															|| throw(TopicModelError("vav must be positive."))
+	isequal(length(model.vav_old), model.K)										|| throw(TopicModelError("vav_old must be of length K."))
+	all(isfinite.(model.vav_old))												|| throw(TopicModelError("vav_old must be finite."))
+	all(model.vav_old .> 0)														|| throw(TopicModelError("vav_old must be positive."))
+	isequal(length(model.zayin), model.M)										|| throw(TopicModelError("zayin must be of length M."))
+	all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("zayin must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])				|| throw(TopicModelError("zayin must be finite."))
+	all(Bool[all(model.zayin[d] .> 0) for d in 1:model.M])						|| throw(TopicModelError("zayin must be positive."))
+	isequal(length(model.zayin_old), model.M)									|| throw(TopicModelError("zayin_old must be of length M."))
+	all(Bool[isequal(length(model.zayin_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("zayin_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.zayin_old[d])) for d in 1:model.M])			|| throw(TopicModelError("zayin_old must be finite."))
+	all(Bool[all(model.zayin_old[d] .> 0) for d in 1:model.M])					|| throw(TopicModelError("zayin_old must be positive."))
+	isequal(length(model.het), model.K)											|| throw(TopicModelError("het must be of length K."))
+	all(isfinite.(model.het))													|| throw(TopicModelError("het must be finite."))
+	all(model.het .> 0)															|| throw(TopicModelError("het must be positive."))
+	isequal(length(model.het_old), model.K)										|| throw(TopicModelError("het_old must be of length K."))
+	all(isfinite.(model.het_old))												|| throw(TopicModelError("het_old must be finite."))
+	all(model.het_old .> 0)														|| throw(TopicModelError("het_old must be positive."))
+	isfinite(model.elbo)														|| throw(TopicModelError("elbo must be finite."))
 	nothing	
 end
 
-function fixmodel!(model::gpuLDA; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(vcat(model.batches...), collect(1:model.M))
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])
-	@assert all(isfinite.(model.alpha))
-	@assert all(ispositive.(model.alpha))
-	@assert isequal(length(model.alpha), model.K)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)	
-	@assert isequal(length(model.gamma), model.M)
-	@assert all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gamma[d])) for d in 1:model.M])	
-	@assert isequal(length(model.phi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
+function check_model(model::gpuLDA)
+	"Check gpuLDA parameters."
+
+	check_corp(model.corp) 
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(model.M, length(model.corp))														|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError("C must contain sums of document counts."))
+	isequal(length(model.alpha), model.K)														|| throw(TopicModelError("alpha must be of length K."))
+	all(isfinite.(model.alpha))																	|| throw(TopicModelError("alpha must be finite."))
+	all(model.alpha .> 0)																		|| throw(TopicModelError("alpha must be positive."))
+	isequal(size(model.beta), (model.K, model.V))												|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))									|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(length(model.Elogtheta), model.M)													|| throw(TopicModelError("Elogtheta must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])					|| throw(TopicModelError("Elogtheta must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])							|| throw(TopicModelError("Elogtheta must be finite."))
+	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])									|| throw(TopicModelError("Elogtheta must be nonpositive."))
+	isequal(length(model.gamma), model.M)														|| throw(TopicModelError("gamma must be of length M."))
+	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError("gamma must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])								|| throw(TopicModelError("gamma must be finite."))
+	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])										|| throw(TopicModelError("gamma must be positive."))
+	isequal(length(model.phi), model.M)															|| throw(TopicModelError("phi must be of length M."))
+	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])			|| throw(TopicModelError("phi must contain matrices of sizes (K, N)."))
+	all(Bool[isstochastic(model.phi[d], dims=1) | isempty(model.phi[d]) for d in 1:model.M])	|| throw(TopicModelError("phi must contain left stochastic matrices."))
+	isfinite(model.elbo)																		|| throw(TopicModelError("elbo must be finite."))
+	nothing
+end
+
+function check_model(model::gpuCTM)
+	"Check gpuCTM parameters."
+
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))	
+	isequal(model.M, length(model.corp))														|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError("C must contain sums of document counts."))	
+	all(isfinite.(model.mu))																	|| throw(TopicModelError("mu must be finite."))
+	isequal(size(model.sigma), (model.K, model.K))												|| throw(TopicModelError("sigma must be of size (K, K)."))
+	isposdef(model.sigma)																		|| throw(TopicModelError("sigma must be positive-definite."))
+	isequal(size(model.invsigma), (model.K, model.K))											|| throw(TopicModelError("invsigma must be of size (K, K)."))
+	isposdef(model.invsigma)																	|| throw(TopicModelError("invsigma must be positive-definite."))
+	isequal(size(model.beta), (model.K, model.V))												|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))									|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(length(model.lambda), model.M)														|| throw(TopicModelError("lambda must be of length M."))
+	all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError("lambda must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])								|| throw(TopicModelError("lambda must be finite."))
+	isequal(length(model.vsq), model.M)															|| throw(TopicModelError("vsq must be of length M."))
+	all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])						|| throw(TopicModelError("vsq must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])									|| throw(TopicModelError("vsq must be finite."))
+	all(Bool[all(model.vsq[d] .> 0) for d in 1:model.M])										|| throw(TopicModelError("vsq must be positive."))
+	isequal(length(model.logzeta), model.M)														|| throw(TopicModelError("logzeta must be of length M."))
+	all(isfinite.(model.logzeta))																|| throw(TopicModelError("logzeta must be finite."))
+	isequal(length(model.phi), model.M)															|| throw(TopicModelError("phi must be of length M."))
+	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])			|| throw(TopicModelError("phi must contain matrices of sizes (K, N)."))
+	all(Bool[isstochastic(model.phi[d], dims=1) | isempty(model.phi[d]) for d in 1:model.M])	|| throw(TopicModelError("phi must contain left stochastic matrices."))
+	isfinite(model.elbo)																		|| throw(TopicModelError("elbo must be finite."))
+	nothing
+end
+
+function check_model(model::gpuCTPF)
+	"Check gpuCTPF parameters."
+
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))					|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))					|| throw(TopicModelError("Corpus users keys must form unit range of length U."))
+	isequal(model.M, length(model.corp))												|| throw(TopicModelError("M must be equal to the number of documents in the corpus."))
+	isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])					|| throw(TopicModelError("N must contain document lengths"))
+	isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])					|| throw(TopicModelError("C must contain sums of document counts."))
+	isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])				|| throw(TopicModelError("R must contain numbers of readers in documents."))
+	model.a > 0																			|| throw(TopicModelError("a must be positive."))
+	model.b > 0																			|| throw(TopicModelError("b must be positive."))
+	model.c > 0																			|| throw(TopicModelError("c must be positive."))
+	model.d > 0																			|| throw(TopicModelError("d must be positive."))
+	model.e > 0																			|| throw(TopicModelError("e must be positive."))
+	model.f > 0																			|| throw(TopicModelError("f must be positive."))
+	model.g > 0																			|| throw(TopicModelError("g must be positive."))
+	model.h > 0																			|| throw(TopicModelError("h must be positive."))
+	isequal(size(model.alef), (model.K, model.V))										|| throw(TopicModelError("alef must be of size (K, V)."))
+	all(isfinite.(model.alef))															|| throw(TopicModelError("alef must be finite."))
+	all(model.alef .> 0)																|| throw(TopicModelError("alef must be positive."))
+	isequal(length(model.bet), model.K)													|| throw(TopicModelError("bet must be of length K"))
+	all(isfinite.(model.bet))															|| throw(TopicModelError("bet must be finite."))
+	all(model.bet .> 0)																	|| throw(TopicModelError("bet must be positive."))														
+	isequal(length(model.gimel), model.M)												|| throw(TopicModelError("gimel must be of length M."))
+	all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])				|| throw(TopicModelError("gimel must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])						|| throw(TopicModelError("gimel must be finite."))
+	all(Bool[all(model.gimel[d] .> 0) for d in 1:model.M])								|| throw(TopicModelError("gimel must be positive."))
+	isequal(length(model.dalet), model.K)												|| throw(TopicModelError("dalet must be of length K."))
+	all(isfinite.(model.dalet))															|| throw(TopicModelError("dalet must be finite."))
+	all(model.dalet .> 0)																|| throw(TopicModelError("dalet must be positive."))
+	isequal(size(model.he), (model.K, model.U))											|| throw(TopicModelError("he must be of size (K, U)"))
+	all(isfinite.(model.he))															|| throw(TopicModelError("he must be finite."))
+	all(model.he .> 0)																	|| throw(TopicModelError("he must be positive."))
+	isequal(length(model.vav), model.K)													|| throw(TopicModelError("vav must be of length K."))
+	all(isfinite.(model.vav))															|| throw(TopicModelError("vav must be finite."))
+	all(model.vav .> 0)																	|| throw(TopicModelError("vav must be positive."))
+	isequal(length(model.zayin), model.M)												|| throw(TopicModelError("zayin must be of length M."))
+	all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])				|| throw(TopicModelError("zayin must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])						|| throw(TopicModelError("zayin must be finite."))
+	all(Bool[all(model.zayin[d] .> 0) for d in 1:model.M])								|| throw(TopicModelError("zayin must be positive."))
+	isequal(length(model.het), model.K)													|| throw(TopicModelError("het must be of length K."))
+	all(isfinite.(model.het))															|| throw(TopicModelError("het must be finite."))
+	all(model.het .> 0)																	|| throw(TopicModelError("het must be positive."))
+	isequal(length(model.phi), model.M)													|| throw(TopicModelError("phi must be of length M."))
+	all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in 1:model.M])	|| throw(TopicModelError(""))
+	all(Bool[isstochastic(model.phi[d], dims=1) for d in 1:model.M])					|| throw(TopicModelError(""))
+	isequal(length(model.xi), model.M)													|| throw(TopicModelError("phi must be of length M."))
+	all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in 1:model.M])	|| throw(TopicModelError(""))
+	all(Bool[isstochastic(model.xi[d], dims=1) for d in 1:model.M])						|| throw(TopicModelError(""))
+	isfinite(model.elbo)																|| throw(TopicModelError("elbo must be finite"))
+	nothing	
+end
+
+function update_buffer!(model::gpuLDA)
+	"Update gpuLDA model data in GPU RAM."
+
+	terms = vcat([doc.terms for doc in model.corp]...) .- 1
+	terms_sortperm = sortperm(terms) .- 1
+	counts = vcat([doc.counts for doc in model.corp]...)
+		
+	J = zeros(Int, model.V)
+	for j in terms
+		J[j+1] += 1
 	end
 
-	model.Elogtheta = [digamma.(model.gamma[d]) - digamma(sum(model.gamma[d])) for d in model.batches[1]]
-	model.Elogthetasum = zeros(model.K)
-	model.newbeta = nothing
+	N_cumsum = cumsum([0; model.N])
+	J_cumsum = cumsum([0; J])
+
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
+	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
+	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
+
+	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
+	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
+
+	model.alpha_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha)
+	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
+	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.Elogtheta_sum_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.K))
+	model.Elogtheta_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M + 64 - model.M % 64))
+	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
+end
+
+function update_buffer!(model::gpuCTM)
+	"Update gpuCTM model data in GPU RAM."
+
+	terms = vcat([doc.terms for doc in model.corp]...) .- 1
+	terms_sortperm = sortperm(terms) .- 1
+	counts = vcat([doc.counts for doc in model.corp]...)
+
+	J = zeros(Int, model.V)
+	for j in terms
+		J[j+1] += 1
+	end
+
+	N_cumsum = cumsum([0; model.N])
+	J_cumsum = cumsum([0; J])
+
+	model.C_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=model.C)
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
+	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
+	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
+
+	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
+	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
+
+	model.sigma_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=Matrix(model.sigma))
+	model.invsigma_buffer = cl.Buffer(Float32, model.context, (:r, :copy), hostbuf=Matrix(model.invsigma))
+	model.mu_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.mu)
+	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
+	model.lambda_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.lambda_old_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
+	model.lambda_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
+	model.lambda_hess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
+	model.lambda_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M + 64 - model.M % 64))
+	model.vsq_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.logzeta_buffer = cl.Buffer(Float32, model.context, :rw, model.M + 64 - model.M % 64)
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
+end
+
+function update_buffer!(model::gpuCTPF)
+	"Update gpuCTPF model data in GPU RAM."
+		
+	terms = vcat([doc.terms for doc in model.corp]...) .- 1
+	terms_sortperm = sortperm(terms) .- 1
+	counts = vcat([doc.counts for doc in model.corp]...)
+
+	readers = vcat([doc.readers for doc in model.corp]...) .- 1
+	readers_sortperm = sortperm(readers) .- 1
+	ratings = vcat([doc.ratings for doc in model.corp]...)
 	
-	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
-	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
 
-	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	for (b, batch) in enumerate(model.batches)
-		for (n, d) in enumerate(batch)
-			model.Npsums[b][n+1] = model.Npsums[b][n] + model.N[d]
-		end
-	end
-		
-	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for b in 1:model.B
-		for j in model.terms[b]
-			J[b][j+1] += 1
-		end
+	J = zeros(Int, model.V)
+	for j in terms
+		J[j+1] += 1
 	end
 
-	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for b in 1:model.B
-		for j in 1:model.V
-			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
-		end
+	Y = zeros(Int, model.U)
+	for r in readers
+		Y[r+1] += 1
 	end
 
-	model.device, model.context, model.queue = cl.create_compute_context()
+	N_cumsum = cumsum([0; model.N])
+	J_cumsum = cumsum([0; J])
+	R_cumsum = cumsum([0; model.R])
+	Y_cumsum = cumsum([0; Y])
 
-	betaprog = cl.Program(model.context, source=LDA_BETA_cpp) |> cl.build!
-	betanormprog = cl.Program(model.context, source=LDA_BETA_NORM_cpp) |> cl.build!
-	newbetaprog = cl.Program(model.context, source=LDA_NEWBETA_cpp) |> cl.build!
-	gammaprog = cl.Program(model.context, source=LDA_GAMMA_cpp) |> cl.build!
-	phiprog = cl.Program(model.context, source=LDA_PHI_cpp) |> cl.build!
-	phinormprog = cl.Program(model.context, source=LDA_PHI_NORM_cpp) |> cl.build!
-	Elogthetaprog = cl.Program(model.context, source=LDA_ELOGTHETA_cpp) |> cl.build!
-	Elogthetasumprog = cl.Program(model.context, source=LDA_ELOGTHETASUM_cpp) |> cl.build!
+	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
+	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
+	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
 
-	model.betakern = cl.Kernel(betaprog, "updateBeta")
-	model.betanormkern = cl.Kernel(betanormprog, "normalizeBeta")
-	model.newbetakern = cl.Kernel(newbetaprog, "updateNewbeta")
-	model.gammakern = cl.Kernel(gammaprog, "updateGamma")
-	model.phikern = cl.Kernel(phiprog, "updatePhi")
-	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
-	model.Elogthetakern = cl.Kernel(Elogthetaprog, "updateElogtheta")
-	model.Elogthetasumkern = cl.Kernel(Elogthetasumprog, "updateElogthetasum")		
+	model.readers_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers)
+	model.ratings_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings)
+	model.readers_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers_sortperm)
 
-	@buf model.alpha
-	@buf model.beta
-	@buf model.gamma
-	@buf model.Elogthetasum
-	@buf model.newbeta
-	updateBuf!(model, 0)
+	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
+	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
+	model.R_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=R_cumsum)
+	model.Y_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=Y_cumsum)
 
-	model.newelbo = 0
+	model.alef_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alef)
+	model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
+	model.bet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.bet)
+	model.vav_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
+	model.gimel_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.zayin_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.dalet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet)
+	model.het_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het)
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
+	model.xi_buffer = cl.Buffer(Float32, model.context, :rw, 2 * model.K * (sum(model.R) + 64 - sum(model.R) % 64))
+end
+
+function update_host!(model::TopicModel)
 	nothing
 end
 
-function fixmodel!(model::gpuCTM; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(vcat(model.batches...), collect(1:model.M))
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(doc.terms) for doc in model.corp])
-	@assert isequal(model.C, [sum(doc.counts) for doc in model.corp])	
-	@assert all(isfinite.(model.mu))	
-	@assert isequal(size(model.sigma), (model.K, model.K))
-	@assert isposdef(model.sigma)
-	@assert isequal(size(model.beta), (model.K, model.V))
-	@assert isprobvec(model.beta, 2)
-	@assert isequal(length(model.lambda), model.M)
-	@assert all(Bool[isequal(length(model.lambda[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.lambda[d])) for d in 1:model.M])	
-	@assert isequal(length(model.vsq), model.M)
-	@assert all(Bool[isequal(length(model.vsq[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.vsq[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.vsq[d])) for d in 1:model.M])	
-	@assert all(isfinite.(model.lzeta))	
-	@assert isequal(length(model.phi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
+function update_host!(model::gpuLDA)
+	"Update gpuLDA model data in CPU RAM."
+
+	N_cumsum = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
 	end
 
-	model.invsigma = inv(model.sigma)
-	model.newbeta = nothing
-
-	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
-	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
-
-	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	for (b, batch) in enumerate(model.batches)
-		for (n, d) in enumerate(batch)
-			model.Npsums[b][n+1] = model.Npsums[b][n] + model.N[d]
-		end
-	end
-		
-	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for b in 1:model.B
-		for j in model.terms[b]
-			J[b][j+1] += 1
-		end
-	end
-
-	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for b in 1:model.B
-		for j in 1:model.V
-			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
-		end
-	end
-
-	model.device, model.context, model.queue = cl.create_compute_context()
-
-	muprog = cl.Program(model.context, source=CTM_MU_cpp) |> cl.build!
-	betaprog = cl.Program(model.context, source=CTM_BETA_cpp) |> cl.build!
-	betanormprog = cl.Program(model.context, source=CTM_BETA_NORM_cpp) |> cl.build!
-	newbetaprog = cl.Program(model.context, source=CTM_NEWBETA_cpp) |> cl.build!
-	lambdaprog = cl.Program(model.context, source=CTM_LAMBDA_cpp) |> cl.build!
-	vsqprog = cl.Program(model.context, source=CTM_VSQ_cpp) |> cl.build!
-	lzetaprog = cl.Program(model.context, source=CTM_LZETA_cpp) |> cl.build!
-	phiprog = cl.Program(model.context, source=CTM_PHI_cpp) |> cl.build!
-	phinormprog = cl.Program(model.context, source=CTM_PHI_NORM_cpp) |> cl.build!
-
-	model.mukern = cl.Kernel(muprog, "updateMu")
-	model.betakern = cl.Kernel(betaprog, "updateBeta")
-	model.betanormkern = cl.Kernel(betanormprog, "normalizeBeta")
-	model.newbetakern = cl.Kernel(newbetaprog, "updateNewbeta")
-	model.lambdakern = cl.Kernel(lambdaprog, "updateLambda")
-	model.vsqkern = cl.Kernel(vsqprog, "updateVsq")
-	model.lzetakern = cl.Kernel(lzetaprog, "updateLzeta")
-	model.phikern = cl.Kernel(phiprog, "updatePhi")
-	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
-		
-	@buf model.mu
-	@buf model.sigma
-	@buf model.beta
-	@buf model.lambda
-	@buf model.vsq
-	@buf model.lzeta
-	@buf model.invsigma
-	@buf model.newbeta
-	updateBuf!(model, 0)
-
-	model.newelbo = 0
-	nothing
+	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)	
+	Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)
+	model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
+	model.Elogtheta_sum = cl.read(model.queue, model.Elogtheta_sum_buffer)
+	model.Elogtheta_dist = cl.read(model.queue, model.Elogtheta_dist_buffer)[1:model.M]
+	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
+	model.gamma = [gamma_host[:,d] for d in 1:model.M]
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
-function fixmodel!(model::gpuCTPF; check::Bool=true)
-	if check
-	checkcorp(model.corp)
-	@assert !isempty(model.corp)
-	@assert isequal(vcat(model.batches...), collect(1:model.M))
-	@assert isequal(collect(1:model.V), sort(collect(keys(model.corp.lex))))	
-	@assert isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))
-	@assert isequal(model.M, length(model.corp))
-	@assert isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])
-	@assert isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])
-	@assert isequal(model.R, [length(model.corp[d].readers) for d in 1:model.M])
-	@assert ispositive(model.a)
-	@assert ispositive(model.b)
-	@assert ispositive(model.c)
-	@assert ispositive(model.d)
-	@assert ispositive(model.e)
-	@assert ispositive(model.f)
-	@assert ispositive(model.g)
-	@assert ispositive(model.h)	
-	@assert isequal(size(model.alef), (model.K, model.V))
-	@assert all(isfinite.(model.alef))
-	@assert all(ispositive.(model.alef))
-	@assert isequal(length(model.bet), model.K)
-	@assert all(isfinite.(model.bet))
-	@assert all(ispositive.(model.bet))
-	@assert isequal(length(model.gimel), model.M)
-	@assert all(Bool[isequal(length(model.gimel[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.gimel[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.gimel[d])) for d in 1:model.M])
-	@assert isequal(length(model.dalet), model.K)
-	@assert all(isfinite.(model.dalet))
-	@assert all(ispositive.(model.dalet))
-	@assert isequal(size(model.he), (model.K, model.U))	
-	@assert all(isfinite.(model.he))
-	@assert all(ispositive.(model.he))
-	@assert isequal(length(model.vav), model.K)
-	@assert all(isfinite.(model.vav))
-	@assert all(ispositive.(model.vav))
-	@assert isequal(length(model.zayin), model.M)
-	@assert all(Bool[isequal(length(model.zayin[d]), model.K) for d in 1:model.M])
-	@assert all(Bool[all(isfinite.(model.zayin[d])) for d in 1:model.M])
-	@assert all(Bool[all(ispositive.(model.zayin[d])) for d in 1:model.M])
-	@assert isequal(length(model.het), model.K)
-	@assert all(isfinite.(model.het))
-	@assert all(ispositive.(model.het))
-	@assert isequal(length(model.phi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.phi[d]), (model.K, model.N[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.phi[d], 1) for d in model.batches[1]])
-	@assert isequal(length(model.xi), length(model.batches[1]))
-	@assert all(Bool[isequal(size(model.xi[d]), (2model.K, model.R[d])) for d in model.batches[1]])
-	@assert all(Bool[isprobvec(model.xi[d], 1) for d in model.batches[1]])
+function update_host!(model::gpuCTM)
+	"Update gpuCTM model data in CPU RAM."
+
+	N_cumsum = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
 	end
 
-	model.newalef = nothing
-	model.newhe = nothing
-		
-	model.terms = [vcat([doc.terms for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.counts = [vcat([doc.counts for doc in model.corp[batch]]...) for batch in model.batches]
-	model.words = [sortperm(termvec) - 1 for termvec in model.terms]
-
-	model.readers = [vcat([doc.readers for doc in model.corp[batch]]...) - 1 for batch in model.batches]
-	model.ratings = [vcat([doc.ratings for doc in model.corp[batch]]...) for batch in model.batches]
-	model.views = [sortperm(readervec) - 1 for readervec in model.readers]
-
-	model.Npsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	model.Rpsums = [zeros(Int, length(batch) + 1) for batch in model.batches]
-	for (b, batch) in enumerate(model.batches)
-		for (m, d) in enumerate(batch)
-			model.Npsums[b][m+1] = model.Npsums[b][m] + model.N[d]
-			model.Rpsums[b][m+1] = model.Rpsums[b][m] + model.R[d]
-		end
-	end
-		
-	J = [zeros(Int, model.V) for _ in 1:model.B]
-	for b in 1:model.B
-		for j in model.terms[b]
-			J[b][j+1] += 1
-		end
-	end
-
-	model.Jpsums = [zeros(Int, model.V + 1) for _ in 1:model.B]
-	for b in 1:model.B
-		for j in 1:model.V
-			model.Jpsums[b][j+1] = model.Jpsums[b][j] + J[b][j]
-		end
-	end
-
-	Y = [zeros(Int, model.U) for _ in 1:model.B]
-	for b in 1:model.B
-		for r in model.readers[b]
-			Y[b][r+1] += 1
-		end
-	end
-
-	model.Ypsums = [zeros(Int, model.U + 1) for _ in 1:model.B]
-	for b in 1:model.B
-		for u in 1:model.U
-			model.Ypsums[b][u+1] = model.Ypsums[b][u] + Y[b][u]
-		end
-	end
-
-	model.device, model.context, model.queue = cl.create_compute_context()		
-
-	alefprog = cl.Program(model.context, source=CTPF_ALEF_cpp) |> cl.build!
-	newalefprog = cl.Program(model.context, source=CTPF_NEWALEF_cpp) |> cl.build!
-	betprog = cl.Program(model.context, source=CTPF_BET_cpp) |> cl.build!
-	gimelprog = cl.Program(model.context, source=CTPF_GIMEL_cpp) |> cl.build!
-	daletprog = cl.Program(model.context, source=CTPF_DALET_cpp) |> cl.build!
-	heprog = cl.Program(model.context, source=CTPF_HE_cpp) |> cl.build!
-	newheprog = cl.Program(model.context, source=CTPF_NEWHE_cpp) |> cl.build!
-	vavprog = cl.Program(model.context, source=CTPF_VAV_cpp) |> cl.build!
-	zayinprog = cl.Program(model.context, source=CTPF_ZAYIN_cpp) |> cl.build!
-	hetprog = cl.Program(model.context, source=CTPF_HET_cpp) |> cl.build!
-	phiprog = cl.Program(model.context, source=CTPF_PHI_cpp) |> cl.build!
-	phinormprog = cl.Program(model.context, source=CTPF_PHI_NORM_cpp) |> cl.build!
-	xiprog = cl.Program(model.context, source=CTPF_XI_cpp) |> cl.build!
-	xinormprog = cl.Program(model.context, source=CTPF_XI_NORM_cpp) |> cl.build!
-
-	model.alefkern = cl.Kernel(alefprog, "updateAlef")
-	model.newalefkern = cl.Kernel(newalefprog, "updateNewalef")
-	model.betkern = cl.Kernel(betprog, "updateBet")
-	model.gimelkern = cl.Kernel(gimelprog, "updateGimel")
-	model.daletkern = cl.Kernel(daletprog, "updateDalet")
-	model.hekern = cl.Kernel(heprog, "updateHe")
-	model.newhekern = cl.Kernel(newheprog, "updateNewhe")
-	model.vavkern = cl.Kernel(vavprog, "updateVav")
-	model.zayinkern = cl.Kernel(zayinprog, "updateZayin")
-	model.hetkern = cl.Kernel(hetprog, "updateHet")
-	model.phikern = cl.Kernel(phiprog, "updatePhi")
-	model.phinormkern = cl.Kernel(phinormprog, "normalizePhi")
-	model.xikern = cl.Kernel(xiprog, "updateXi")
-	model.xinormkern = cl.Kernel(xinormprog, "normalizeXi")
-		
-	@buf model.alef
-	@buf model.bet
-	@buf model.gimel
-	@buf model.dalet
-	@buf model.he
-	@buf model.vav
-	@buf model.zayin
-	@buf model.het
-	@buf model.newalef
-	@buf model.newhe
-	updateBuf!(model, 0)
-
-	model.newelbo = 0
-	nothing
+	model.mu = cl.read(model.queue, model.mu_buffer)
+	model.sigma = Symmetric(reshape(cl.read(model.queue, model.sigma_buffer), model.K, model.K))
+	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
+	lambda_host = reshape(cl.read(model.queue, model.lambda_buffer), model.K, model.M + 64 - model.M % 64)
+	model.lambda = [lambda_host[:,d] for d in 1:model.M]
+	model.lambda_dist = cl.read(model.queue,  model.lambda_dist_buffer)[1:model.M]
+	vsq_host = reshape(cl.read(model.queue, model.vsq_buffer), model.K, model.M + 64 - model.M % 64)
+	model.vsq = [vsq_host[:,d] for d in 1:model.M]
+	model.logzeta = cl.read(model.queue, model.logzeta_buffer)[1:model.M]
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
+function update_host!(model::gpuCTPF)
+	"Update gpuCTPF model data in CPU RAM."
 
-
-######################################################
-### Function for Updating the Evidence Lower Bound ###
-######################################################
-
-function checkELBO!(model::TopicModel, k::Int, chk::Bool, tol::Real)
-	converged = false
-	if chk
-		∆elbo = -(model.elbo - updateELBO!(model))
-		println(k, " ∆elbo: ", round(∆elbo, 3))
-		if abs(∆elbo) < tol
-			converged = true
-		end
+	N_cumsum = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
 	end
 
-	return converged
+	R_cumsum = zeros(Int, model.M + 1)
+	for d in 1:model.M
+		R_cumsum[d+1] = R_cumsum[d] + model.R[d]
+	end
+
+	model.alef = reshape(cl.read(model.queue, model.alef_buffer), model.K, model.V)
+	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U)
+	model.bet = cl.read(model.queue, model.bet_buffer)
+	model.vav = cl.read(model.queue, model.vav_buffer)
+	gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M + 64 - model.M % 64)
+	model.gimel = [gimel_host[:,d] for d in 1:model.M]
+	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, model.M + 64 - model.M % 64)
+	model.zayin = [zayin_host[:,d] for d in 1:model.M]	
+	model.dalet = cl.read(model.queue, model.dalet_buffer)
+	model.het = cl.read(model.queue, model.het_buffer)
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
+	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R) + 64 - sum(model.R) % 64)
+	model.xi = [xi_host[:,R_cumsum[d]+1:R_cumsum[d+1]] for d in 1:model.M]
 end
 
+function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
+	"Check and print value of delta_elbo."
+	"If abs(delta_elbo) < tol, terminate algorithm."
 
+	if k % check_elbo == 0
+		update_host!(model)
+		delta_elbo = -(model.elbo - update_elbo!(model))
+		println(k, " ∆elbo: ", round(delta_elbo, digits=3))
 
-#################################################################
-### Functions for Generating Artificial Documents and Corpora ###
-#################################################################
+		if abs(delta_elbo) < tol
+			return true
+		end
+	end
+	false
+end
 
-function gendoc(model::AbstractLDA, a::Real=0.0)
-	@assert !isnegative(a)
+function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
+	"Generate artificial document from LDA or gpuLDA generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
+
+	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
 	theta = rand(Dirichlet(model.alpha))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.beta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
+	
+	topic_dist = Categorical(theta)
+	vocab_dist = [Categorical((model.beta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
+	
+	term_count = Dict{Int, Int}()
 	for _ in 1:C
-		z = rand(topicdist)
-		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
+		z = rand(topic_dist)
+		w = rand(vocab_dist[z])
+		haskey(term_count, w) ? term_count[w] += 1 : term_count[w] = 1
 	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
 
-	return Document(terms, counts=counts)
+	doc = Document(terms=collect(keys(term_count)), counts=collect(values(term_count)))
+	return doc
 end
 
-function gendoc(model::AbstractfLDA, a::Real=0.0)
-	@assert !isnegative(a)
+function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
+	"Generate artificial document from CTM or gpuCTM generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
+
+	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
-	theta = rand(Dirichlet(model.alpha))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.fbeta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
-	for _ in 1:C
-		z = rand(topicdist)
-		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
-	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
-
-	return Document(terms, counts=counts)
-end
-
-function gendoc(model::AbstractCTM, a::Real=0.0)
-	@assert !isnegative(a)
-	
-	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
 	theta = rand(MvNormal(model.mu, model.sigma))
-	theta = exp.(theta) / sum(exp.(theta))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.beta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
+	theta = additive_logistic(theta)
+	
+	topic_dist = Categorical(theta)
+	vocab_dist = [Categorical((model.beta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
+	
+	term_count = Dict{Int, Int}()
 	for _ in 1:C
 		z = rand(topicdist)
 		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
+		haskey(term_count, w) ? term_count[w] += 1 : term_count[w] = 1
 	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
 
-	return Document(terms, counts=counts)
+	doc = Document(terms=collect(keys(term_count)), counts=collect(values(term_count)))
+	return doc
 end
 
-function gendoc(model::AbstractfCTM, a::Real=0.0)
-	@assert !isnegative(a)
+function gencorp(model::TopicModel, corp_size::Integer; laplace_smooth::Real=0.0)
+	"Generate artificial corpus using specified generative model."
+	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
+
+	(corp_size > 0 )		|| throw(ArgumentError("corp_size parameter must be a positive integer."))
+	(laplace_smooth >= 0)	|| throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
-	C = rand(Poisson(mean(model.C)))
-	termcount = Dict{Int, Int}()
-	theta = rand(MvNormal(model.mu, model.sigma))
-	theta = exp(theta) / sum(exp(theta))
-	topicdist = Categorical(theta)
-	lexdist = [Categorical((vec(model.fbeta[i,:]) + a) / (1 + a * model.V)) for i in 1:model.K]
-	for _ in 1:C
-		z = rand(topicdist)
-		w = rand(lexdist[z])
-		haskey(termcount, w) ? termcount[w] += 1 : termcount[w] = 1
-	end
-	terms = collect(keys(termcount))
-	counts = collect(values(termcount))
-
-	return Document(terms, counts=counts)
-end
-
-function gencorp(model::BaseTopicModel, corpsize::Integer, a::Real=0.0)
-	@assert ispositive(corpsize)
-	@assert !isnegative(a)
-	
-	corp = Corpus(lex=model.corp.lex, users=model.corp.users)
-	corp.docs = [gendoc(model, a) for d in 1:corpsize]
-
+	corp = Corpus(vocab=model.corp.vocab, users=model.corp.users)
+	corp.docs = [gendoc(model, laplace_smooth) for d in 1:corp_size]
 	return corp
 end
 
+function showtopics(model::TopicModel, top_n_terms::Integer=min(15, model.V); topics::Union{<:Integer, Vector{<:Integer}}=collect(1:model.K), cols::Integer=4)
+	"Display the top n terms for each topic."
+	"topics parameter controls which topics are displayed."
+	"cols parameter controls the number of topic columns displayed per line."
 
-
-###############################
-### Topic Display Functions ###
-###############################
-
-function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), cols::Integer=4)
-	@assert checkbounds(Bool, 1:model.V, N)
-	@assert checkbounds(Bool, 1:model.K, topics)
-	@assert ispositive(cols)
-	isa(topics, Vector) || (topics = [topics])
+	(top_n_terms <= model.V)				|| throw(ArgumentError("Number of displayed terms must be less than vocab size."))
+	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("Some topic indices are outside range."))
+	(cols > 0)								|| throw(ArgumentError("cols must be a positive integer."))
+	
 	cols = min(cols, length(topics))
 
-	lex = model.corp.lex
-	maxjspacings = [maximum([length(lex[j]) for j in topic[1:N]]) for topic in model.topics]
+	vocab = model.corp.vocab
+	maxjspacings = [maximum([length(vocab[j]) for j in topic[1:top_n_terms]]) for topic in model.topics]
 
-	for block in partition(topics, cols)
-		for j in 0:N
+	for block in Iterators.partition(topics, cols)
+		for j in 0:top_n_terms
 			for (k, i) in enumerate(block)
 				if j == 0
 					jspacing = max(4, maxjspacings[i] - length("$i") - 2)
-					k == cols ? yellow("topic $i") : yellow("topic $i" * " "^jspacing)
+					k == cols ? print(Crayon(foreground=:yellow, bold=true), "topic $i") : print(Crayon(foreground=:yellow, bold=true), "topic $i" * " "^jspacing)
 				else
-					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(lex[model.topics[i][j]]) + 4
-					k == cols ? print(lex[model.topics[i][j]]) : print(lex[model.topics[i][j]] * " "^jspacing)
+					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(vocab[model.topics[i][j]]) + 4
+					k == cols ? print(Crayon(foreground=:white, bold=false), vocab[model.topics[i][j]]) : print(Crayon(foreground=:white, bold=false), vocab[model.topics[i][j]] * " "^jspacing)
 				end
 			end
 			println()
@@ -856,73 +671,39 @@ function showtopics{T<:Integer}(model::TopicModel, N::Integer=min(15, model.V); 
 	end
 end
 
-function showtopics{T<:Integer, S<:Integer}(model::AbstractDTM, N::Integer=min(15, model.V); topics::Union{T, Vector{T}}=collect(1:model.K), times::Union{S, Vector{S}}=collect(1:model.T), cols::Integer=4)
-	@assert checkbounds(Bool, 1:model.V, N)
-	@assert checkbounds(Bool, 1:model.K, topics)
-	@assert checkbounds(Bool, 1:model.T, times)
-	@assert ispositive(cols)
-	isa(times, Vector) || (times = [times])
-	
-	corp, lex = model.corp, model.corp.lex
+function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
+	"Display the documents in a user(s) library."
 
-	if length(topics) > 1
-		container = LDA(corp, model.K)
-		for t in times
-			container.topics = model.topics[t][topics]
-			container.V = model.V
-			@juliadots "Time: $t\n"
-			@juliadots "Span: $(corp[model.S[t][1]].stamp) - $(corp[model.S[t][end]].stamp)\n"
-			showtopics(container, N, topics=topics, cols=cols)
-		end
-	
-	else
-		cols = min(cols, length(times))
-		@juliadots "Topic: $(topics[1])\n"
-		maxjspacings = [maximum([length(lex[j]) for j in time[topics[1]][1:N]]) for time in model.topics]
-
-		for block in partition(times, cols)
-			for j in 0:N
-				for (s, t) in enumerate(block)
-					if j == 0
-						jspacing = max(4, maxjspacings[t] - length("$t") - 1)
-						s == cols ? yellow("time $t") : yellow("time $t" * " "^jspacing)
-					else
-						jspacing = max(5 + length("$t"), maxjspacings[t]) - length(lex[model.topics[t][topics[1]][j]]) + 4
-						s == cols ? print(lex[model.topics[t][topics[1]][j]]) : print(lex[model.topics[t][topics[1]][j]] * " "^jspacing)
-					end
-				end
-				println()
-			end
-			println()
-		end
-	end
-end
-
-function showlibs{T<:Integer}(model::AbstractCTPF, users::Vector{T})
-	@assert checkbounds(Bool, 1:model.U, users)
+	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	
 	for u in users
 		@juliadots "user $u\n"
-		try if model.corp.users[u][1:5] != "#user"
+		try
+			if model.corp.users[u][1:5] != "#user"
 				@juliadots model.corp.users[u] * "\n"
 			end
-		catch @juliadots model.corp.users[u] * "\n"
+		
+		catch
+			@juliadots model.corp.users[u] * "\n"
 		end
 		
 		for d in model.libs[u]
-			yellow(" • ")
-			isempty(model.corp[d].title) ? bold("doc $d\n") : bold("$(model.corp[d].title)\n")
+			print(Crayon(foreground=:yellow, bold=true), " • ")
+			isempty(model.corp[d].title) ? print(Crayon(foreground=:white, bold=false), "Document $d\n") : print(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)\n")
 		end
-		println()
+		print()
 	end
 end
 
-showlibs(model::AbstractCTPF, user::Integer) = showlibs(model, [user])
+showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
 
-function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U::Integer=min(16, model.U); cols::Integer=4)
-	@assert checkbounds(Bool, 1:model.M, docs)	
-	@assert checkbounds(Bool, 1:model.U, U)
-	@assert ispositive(cols)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}}, U::Integer=min(16, model.U); cols::Integer=4)
+	"Display the top U user recommendations for a document(s)."
+	"cols parameter controls the number of topic columns displayed per line."
+
+	checkbounds(Bool, 1:model.U, U) 	|| throw(ArgumentError("Some user indices are outside range."))
+	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("Some document indices are outside range."))
+	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	isa(docs, Vector) || (docs = [docs])
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
@@ -932,16 +713,19 @@ function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U
 			@juliadots corp[d].title * "\n"
 		end
 
-		usercols = partition(drecs[d][1:U], Int(ceil(U / cols)))
-		rankcols = partition(1:U, Int(ceil(U / cols)))
+		usercols = collect(Iterators.partition(drecs[d][1:U], Int(ceil(U / cols))))
+		rankcols = collect(Iterators.partition(1:U, Int(ceil(U / cols))))
 
 		for i in 1:length(usercols[1])
 			for j in 1:length(usercols)
 				try
-				uspacing = maximum([length(users[u]) for u in usercols[j]]) - length(users[usercols[j][i]]) + 4
-				rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
-				yellow(string(rankcols[j][i]) * ". " * " "^rspacing)
-				j == length(usercols) ? print(users[usercols[j][i]]) : print(users[usercols[j][i]] * " "^uspacing)
+					uspacing = maximum([length(users[u]) for u in usercols[j]]) - length(users[usercols[j][i]]) + 4
+					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
+					print(Crayon(foreground=:yellow, bold=true), string(rankcols[j][i]) * ". " * " "^rspacing)
+					j == length(usercols) ? print(Crayon(foreground=:white, bold=false), users[usercols[j][i]]) : print(Crayon(foreground=:white, bold=false), users[usercols[j][i]] * " "^uspacing)
+				
+				catch
+					nothing
 				end
 			end
 			println()
@@ -950,32 +734,42 @@ function showdrecs{T<:Integer}(model::AbstractCTPF, docs::Union{T, Vector{T}}, U
 	end
 end
 
-function showurecs{T<:Integer}(model::AbstractCTPF, users::Union{T, Vector{T}}, M::Integer=min(10, model.M); cols::Integer=1)
-	@assert checkbounds(Bool, 1:model.U, users)
-	@assert checkbounds(Bool, 1:model.M, M)
-	@assert ispositive(cols)
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}}, M::Integer=min(10, model.M); cols::Integer=1)
+	"# Show the top 'M' document recommendations for a user(s)."
+	"If a document has no title, the document's index in the corpus will be shown instead."
+
+	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
+	checkbounds(Bool, 1:model.M, M) 	|| throw(ArgumentError("Some document indices are outside range."))
+	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	isa(users, Vector) || (users = [users])
+
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
 
 	for u in users
 		@juliadots "user $u\n"
-		try if corp.users[u][1:5] != "#user"
+		try 
+			if corp.users[u][1:5] != "#user"
 				@juliadots corp.users[u] * "\n"
 			end
-		catch @juliadots corp.users[u] * "\n"
+		
+		catch 
+			@juliadots corp.users[u] * "\n"
 		end
 
-		docucols = partition(urecs[u][1:M], Int(ceil(M / cols)))
-		rankcols = partition(1:M, Int(ceil(M / cols)))
+		docucols = collect(Iterators.partition(urecs[u][1:M], Int(ceil(M / cols))))
+		rankcols = collect(Iterators.partition(1:M, Int(ceil(M / cols))))
 
 		for i in 1:length(docucols[1])
 			for j in 1:length(docucols)
 				try
-				!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "doc $(docucols[j][i])"
-				dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(docs[d].title)) for d in docucols[j]]) - length(title) + 4
-				rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
-				yellow(string(rankcols[j][i]) * ". " * " "^rspacing)
-				j == length(docucols) ? bold(title) : bold(title * " "^dspacing)
+					!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "Document $(docucols[j][i])"
+					dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(docs[d].title)) for d in docucols[j]]) - length(title) + 4
+					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
+					print(Crayon(foreground=:yellow, bold=true), string(rankcols[j][i]) * ". " * " "^rspacing)
+					j == length(docucols) ? print(Crayon(foreground=:white, bold=false), title) : print(Crayon(foreground=:white, bold=false), title * " "^dspacing)
+
+				catch
+					nothing
 				end
 			end
 			println()
@@ -983,4 +777,179 @@ function showurecs{T<:Integer}(model::AbstractCTPF, users::Union{T, Vector{T}}, 
 		println()
 	end
 end
+
+function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10, tol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained LDA model."
+
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
+	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
+
+	model = LDA(corp, train_model.K)
+	model.alpha = train_model.alpha
+	model.beta = train_model.beta
+	model.topics = train_model.topics
+
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_gamma!(model, d)
+			update_Elogtheta!(model, d)
+			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < tol
+				break
+			end
+		end
+	end
+
+	return model
+end
+
+function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained fLDA model."
+
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
+	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
+
+	model = fLDA(corp, train_model.K)
+	model.alpha = train_model.alpha
+	model.beta = train_model.beta
+	model.topics = train_model.topics
+
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_tau!(model, d)
+			update_gamma!(model, d)
+			update_Elogtheta!(model, d)
+			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
+				break
+			end
+		end
+	end
+
+	return model
+end
+
+function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained CTM model."
+
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+
+	model = CTM(corp, train_model.K)
+	model.mu = train_model.mu
+	model.sigma = train_model.sigma
+	model.invsigma = train_model.invsigma
+	model.beta = train_model.beta
+	model.topics = train_model.topics
+
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_logzeta!(model, d)
+			update_vsq!(model, d, niter, ntol)
+			update_lambda!(model, d, niter, ntol)
+			if norm(model.lambda[d] - model.lambda_old[d]) < tol
+				break
+			end
+		end
+	end
+
+	return model
+end
+
+function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained fCTM model."
+
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+
+	model = fCTM(corp, train_model.K)
+	model.mu = train_model.mu
+	model.sigma = train_model.sigma
+	model.invsigma = train_model.invsigma
+	model.beta = train_model.beta
+	model.topics = train_model.topics
+
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_tau!(model, d)
+			update_logzeta!(model, d)
+			update_lambda!(model, d, niter, ntol)
+			update_vsq!(model, d, niter, ntol)
+			if norm(model.lambda[d] - model.lambda_old[d]) < vtol
+				break
+			end
+		end
+	end
+
+	return model
+end
+
+function topicdist(model::Union{LDA, fLDA, gpuLDA}, d::Integer)
+	"Get the LDA topic distribution for a document as a probability vector."
+
+	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+
+	topic_distribution = model.gamma[d] / sum(model.gamma[d])
+	return topic_distribution
+end
+
+function topicdist(model::Union{CTM, fCTM, gpuCTM}, d::Integer)
+	"Get the CTM topic distribution for document as a probability vector."
+
+	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+
+	x = exp.(model.lambda[d] + 0.5 * model.vsq[d])
+	topic_distribution = x / sum(x)
+
+	return topic_distribution
+end
+
+function topicdist(model::Union{CTPF, gpuCTPF}, d::Integer)
+	"Get the CTPF topic distribution for a document as a probability vector."
+
+	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+
+	x = model.gimel[d] ./ model.dalet
+	topic_distribution = x / sum(x)
+
+	return topic_distribution
+end
+
+function topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
+	"Get TopicModel topic distributions for document(s) as a probability vector."
+
+	issubset(doc_indices, 1:length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+
+	topic_distributions = Vector{typeof(model.elbo)}[]
+	for d in doc_indices
+		push!(topic_distributions, topicdist(model, d))
+	end
+
+	return topic_distributions
+end
+
+topicdist(model::TopicModel, doc_range::UnitRange{<:Integer}) = topicdist(model, collect(doc_range))
+
+
+
+
+
+
+
+
+
 

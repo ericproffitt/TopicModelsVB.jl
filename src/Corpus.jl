@@ -1,75 +1,281 @@
-#######################
-### Document Struct ###
-#######################
+### Document and Corpus data structures for TopicModelsVB.
+### Eric Proffitt
+### December 3, 2019
 
 mutable struct Document
+	"Document mutable struct"
+
+	"terms:   A vector{Int} containing keys for the Corpus vocab Dict."
+	"counts:  A Vector{Int} denoting the counts of each term in the Document."
+	"readers: A Vector{Int} denoting the keys for the Corpus users Dict."
+	"ratings: A Vector{Int} denoting the ratings for each reader in the Document."
+	"title:   The title of the document (String)."
+
 	terms::Vector{Int}
 	counts::Vector{Int}
 	readers::Vector{Int}
 	ratings::Vector{Int}
-	stamp::Float64
 	title::String
 
-	function Document(terms; counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), stamp=-Inf, title="")
-		doc = new(terms, counts, readers, ratings, stamp[1], title)
-		checkdoc(doc)
+	function Document(;terms=Int[], counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), title="")
+		doc = new(terms, counts, readers, ratings, title)
+		check_doc(doc)
 		return doc
 	end
 end
 
+### Document outer constructors.
+Document(terms) = Document(terms=terms)
 
+struct DocumentError <: Exception
+    msg::String
+end
 
-#####################
-### Corpus Struct ###
-#####################
+Base.showerror(io::IO, e::DocumentError) = print(io, "DocumentError: ", e.msg)
+
+function check_doc(doc::Document)
+	"Check Document parameters."
+
+	all(doc.terms .> 0)									|| throw(DocumentError("All terms must be positive integers."))
+	all(doc.counts .> 0)								|| throw(DocumentError("All counts must be positive integers."))
+	isequal(length(doc.terms), length(doc.counts))		|| throw(DocumentError("The terms and counts vectors must have the same length."))
+	all(doc.readers .> 0)								|| throw(DocumentError("All readers must be positive integers."))
+	all(doc.ratings .> 0)								|| throw(DocumentError("All ratings must be positive integers."))
+	isequal(length(doc.readers), length(doc.ratings))	|| throw(DocumentError("The readers and ratings vectors must have the same length."))
+ 	nothing
+ end
 
 mutable struct Corpus
+	"Corpus mutable struct."
+
+	"docs:  A Vector{Document} containing the documents which belong to the Corpus."
+	"vocab: A Dict{Int, String} containing a mapping term Int (key) => term String (value)."
+	"users: A Dict{Int, String} containing a mapping user Int (key) => user String (value)."
+
 	docs::Vector{Document}
-	lex::Dict{Int, String}
+	vocab::Dict{Int, String}
 	users::Dict{Int, String}
 
-	function Corpus(;docs=Document[], lex=[], users=[])
-		isa(lex, Dict) || (lex = Dict(lkey => term for (lkey, term) in enumerate(lex)))
+	function Corpus(;docs=Document[], vocab=[], users=[])
+		isa(vocab, Dict) || (vocab = Dict(vkey => term for (vkey, term) in enumerate(vocab)))
 		isa(users, Dict) || (users = Dict(ukey => user for (ukey, user) in enumerate(users)))
 
-		corp = new(docs, lex, users)
-		checkcorp(corp)
+		corp = new(docs, vocab, users)
+
+		for (d, doc) in enumerate(corp)
+			try
+				check_doc(doc)
+			catch
+				throw(CorpusError("Document $d failed check."))
+			end
+		end
+
+		all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
+		all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
 		return corp
 	end
 end
 
+### Corpus outer constructors.
+Corpus(docs::Vector{Document}) = Corpus(docs=docs)
+Corpus(docs::Vector{Document}; vocab=[], users=[]) = Corpus(docs=docs, vocab=vocab, users=users)
+Corpus(doc::Document) = Corpus(docs=[doc])
+Corpus(doc::Document; vocab=[], users=[]) = Corpus(docs=[doc], vocab=vocab, users=users)
 
+struct CorpusError <: Exception
+    msg::String
+end
 
-#################################################
-### Functions for Reading and Writing Corpora ###
-#################################################
+Base.showerror(io::IO, e::CorpusError) = print(io, "CorpusError: ", e.msg)
 
-function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)	
+function check_corp(corp::Corpus)
+	"Check Corpus parameters."
+
+	for (d, doc) in enumerate(corp)
+		try
+			check_doc(doc)
+		catch
+			throw(CorpusError("Document $d failed check."))
+		end
+	end
+
+	all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
+	all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
+
+	issubset(vcat([doc.terms for doc in corp]...), keys(corp.vocab)) 		|| throw(CorpusError("Documents contain term keys not found in corpus vocabulary (see fixcorp! function)."))
+	issubset(vcat([doc.readers for doc in corp]...), keys(corp.users)) 		|| throw(CorpusError("Documents contain user keys not found in corpus users (see fixcorp! function)."))
+	(length(corp.vocab) == maximum(push!(collect(keys(corp.vocab)), 0)))	|| throw(CorpusError("Corpus vocab keys must form unit range starting at 1 (see fixcorp! function)."))
+	(length(corp.users) == maximum(push!(collect(keys(corp.users)), 0)))	|| throw(CorpusError("Corpus user keys must form unit range starting at 1 (see fixcorp! function)."))
+	nothing
+end
+
+Base.show(io::IO, doc::Document) = print(io, "Document with:\n * $(length(doc.terms)) terms\n * $(length(doc.readers)) readers")
+Base.length(doc::Document) = length(doc.terms)
+Base.size(doc::Document) = sum(doc.counts)
+Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
+Base.isempty(doc::Document) = length(doc) == 0
+
+Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.vocab)) vocab\n * $(length(corp.users)) users")
+Base.iterate(corp::Corpus, d=1) = Base.iterate(corp.docs, d)
+Base.push!(corp::Corpus, doc::Document) = push!(corp.docs, doc)
+Base.pop!(corp::Corpus) = pop!(corp.docs)
+Base.pushfirst!(corp::Corpus, doc::Document) = pushfirst!(corp.docs, doc)
+Base.pushfirst!(corp::Corpus, docs::Vector{Document}) = pushfirst!(corp.docs, docs)
+Base.popfirst!(corp::Corpus) = popfirst!(corp.docs)
+Base.insert!(corp::Corpus, d::Int, doc::Document) = insert!(corp.docs, d, doc)
+Base.deleteat!(corp::Corpus, d::Int) = deleteat!(corp.docs, d)
+Base.deleteat!(corp::Corpus, doc_indices::Vector{Int}) = deleteat!(corp.docs, doc_indices)
+Base.deleteat!(corp::Corpus, doc_indices::UnitRange{Int}) = deleteat!(corp.docs, doc_indices)
+Base.getindex(corp::Corpus, d::Int) = getindex(corp.docs, d)
+Base.getindex(corp::Corpus, doc_indices::Vector{Int}) = getindex(corp.docs, doc_indices)
+Base.getindex(corp::Corpus, doc_indices::UnitRange{Int}) = getindex(corp.docs, doc_indices)
+Base.getindex(corp::Corpus, doc_bool::Vector{Bool}) = getindex(corp.docs, doc_bool)
+Base.setindex!(corp::Corpus, doc::Document, d::Int) = setindex!(corp.docs, doc, d)
+Base.setindex!(corp::Corpus, docs::Vector{Document}, doc_indices::Vector{Int}) = setindex!(corp.docs, docs, doc_indices)
+Base.setindex!(corp::Corpus, docs::Vector{Document}, doc_indices::UnitRange{Int}) = setindex!(corp.docs, docs, doc_indices)
+Base.findfirst(corp::Corpus, doc::Document) = findfirst(corp.docs, doc)
+Base.findall(corp::Corpus, docs::Vector{Document}) = findall((in)corp.docs, docs)
+Base.findall(corp::Corpus, doc::Document) = findall(corp, [doc])
+Base.length(corp::Corpus) = length(corp.docs)
+Base.size(corp::Corpus) = (length(corp), length(corp.vocab), length(corp.users))
+Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), vocab=copy(corp.vocab), users=copy(corp.users))
+Base.lastindex(corp::Corpus) = length(corp)
+Base.enumerate(corp::Corpus) = enumerate(corp.docs)
+Base.unique(corp::Corpus) = Corpus(docs=unique(corp.docs), vocab=corp.vocab, users=corp.users)
+
+function showdocs(corp::Corpus, docs::Vector{Document})
+	"Display document(s) in readable format."
+
+	issubset(vcat([doc.terms for doc in docs]...), keys(corp.vocab)) || throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
+
+	for (n, doc) in enumerate(docs)
+		if !isempty(doc.title)
+			@juliadots "$(doc.title)\n"
+
+		else
+			@juliadots "Document\n"
+		end
+
+		if !isempty(doc)
+			println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in doc.terms], " "))
+
+		else
+			println()
+		end
+
+		if n < length(docs)
+			println()
+		end
+	end
+end
+
+function showdocs(corp::Corpus, doc_indices::Vector{<:Integer})
+	"Display document(s) in readable format."
+
+	issubset(doc_indices, 1:length(corp))											|| throw(CorpusError("Some document indices outside corpus range."))
+	issubset(vcat([doc.terms for doc in corp[doc_indices]]...), keys(corp.vocab))	|| throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
+
+	for (n, d) in enumerate(doc_indices)
+		@juliadots "Document $d\n"
+		
+		if !isempty(corp[d].title)
+			@juliadots "$(corp[d].title)\n"
+		end
+
+		if !isempty(corp[d])
+			println(Crayon(bold=false), join([corp.vocab[vkey] for vkey in corp[d].terms], " "))
+
+		else
+			println()
+		end
+
+		if n < length(doc_indices)
+			println()
+		end
+	end
+end
+
+showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc]) 
+showdocs(corp::Corpus, doc_range::UnitRange{<:Integer}) = showdocs(corp, collect(doc_range))
+showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
+showdocs(corp::Corpus) = showdocs(corp, 1:length(corp))
+
+function showtitles(corp::Corpus, docs::Vector{Document})
+	"Display document title in readable format."
+
+	issubset(vcat([doc.terms for doc in docs]...), keys(corp.vocab)) || throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
+
+	for doc in docs
+		print(Crayon(foreground=:yellow, bold=true), " • ")
+
+		if !isempty(doc.title)
+			println(Crayon(foreground=:white, bold=false), "$(doc.title)")
+
+		else
+			println(Crayon(foreground=:white, bold=true), "Document")
+		end
+	end
+end
+
+function showtitles(corp::Corpus, doc_indices::Vector{<:Integer})
+	"Display document title in readable format."
+
+	issubset(doc_indices, 1:length(corp))											|| throw(CorpusError("Some document indices outside corpus range."))
+	issubset(vcat([doc.terms for doc in corp[doc_indices]]...), keys(corp.vocab))	|| throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
+	
+	for d in doc_indices
+		print(Crayon(foreground=:yellow, bold=true), " • ")
+
+		if !isempty(corp[d].title)
+			print(Crayon(foreground=:white, bold=true), "Document $d ")
+			println(Crayon(foreground=:white, bold=false), "$(corp[d].title)")
+
+		else
+			println(Crayon(foreground=:white, bold=true), "Document $d")
+		end
+	end
+end
+
+showtitles(corp::Corpus, doc::Document) = showtitles(corp, [doc]) 
+showtitles(corp::Corpus, doc_range::UnitRange{<:Integer}) = showtitles(corp, collect(doc_range))
+showtitles(corp::Corpus, d::Integer) = showtitles(corp, [d])
+showtitles(corp::Corpus) = showtitles(corp, 1:length(corp))
+
+getvocab(corp::Corpus) = sort(collect(values(corp.vocab)))
+getusers(corp::Corpus) = sort(collect(values(corp.users)))
+
+function readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+	"Load a Corpus object from text file(s)."
+
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
 	(!isempty(docfile) | isempty(titlefile)) || warn("No docfile, titles will not be assigned.")
-	stamp = stamps
 
 	corp = Corpus()
 	if !isempty(docfile)
 		docs = open(docfile)
-		dockwargs = [:counts, :readers, :ratings, :stamp]	
-		for (d, docblock) in enumerate(partition(readlines(docs), counts + readers + ratings + stamp + 1))
-			try
-			doclines = Vector{Float64}[[parse(Float64, p) for p in split(line, delim)] for line in docblock]			
-			docinput = zip(dockwargs[[counts, readers, ratings, stamp]], doclines[2:end])
-			push!(corp, Document(doclines[1]; docinput...))
-			catch error("Document $d beginning on line $((d - 1) * (counts + readers + ratings + stamp) + d) failed to load.")
+		doc_kwargs = [:terms, :counts, :readers, :ratings]	
+		
+		for (d, doc_block) in enumerate(Iterators.partition(readlines(docs), counts + readers + ratings + 1))
+			try 
+				doc_lines = Vector{Int}[[parse(Int, p) for p in split(line, delim)] for line in doc_block]			
+				doc_input = zip(doc_kwargs[[true, counts, readers, ratings]], doc_lines)
+				push!(corp, Document(;doc_input...))
+			
+			catch
+				throw(CorpusError("Document $d beginning on line $((d - 1) * (counts + readers + ratings) + d) failed to load."))
 			end
 		end
-	else warn("No docfile, topic models cannot be trained without documents.")
+
+	else
+		warn("No docfile, topic models cannot be trained without documents.")
 	end
 
-	if !isempty(lexfile)
-		lex = readdlm(lexfile, '\t', comments=false)
-		lkeys = lex[:,1]
-		terms = [string(j) for j in lex[:,2]]
-		corp.lex = Dict{Int, String}(zip(lkeys, terms))
-		@assert all(ispositive.(collect(keys(corp.lex))))
+	if !isempty(vocabfile)
+		vocab = readdlm(vocabfile, '\t', comments=false)
+		vkeys = vocab[:,1]
+		terms = [string(j) for j in vocab[:,2]]
+		corp.vocab = Dict{Int, String}(zip(vkeys, terms))
+		@assert all(collect(keys(corp.vocab)) .> 0)
 	end
 
 	if !isempty(userfile)
@@ -77,7 +283,7 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 		ukeys = users[:,1]
 		users = [string(u) for u in users[:,2]]
 		corp.users = Dict{Int, String}(zip(ukeys, users))
-		@assert all(ispositive.(collect(keys(corp.users))))
+		@assert all(collect(keys(corp.users)) .> 0)
 	end
 
 	if !isempty(titlefile)
@@ -90,27 +296,70 @@ function readcorp(;docfile::AbstractString="", lexfile::AbstractString="", userf
 	return corp
 end
 
-function writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractString="", userfile::AbstractString="", titlefile::AbstractString="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false, stamps::Bool=false)	
+function readcorp(corp_symbol::Symbol)
+	"Shortcuts for prepackaged corpora."
+
+	version = "v$(VERSION.major).$(VERSION.minor)"
+
+	if corp_symbol == :nsf
+		docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfdocs.txt"
+		vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfvocab.txt"
+		titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsftitles.txt"
+		corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
+
+	elseif corp_symbol == :citeu
+		docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeudocs.txt"
+		vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuvocab.txt"
+		userfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuusers.txt"
+		titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeutitles.txt"
+		corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
+
+	#if corp_symbol == :nsf
+	#	docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfdocs.txt"
+	#	vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsfvocab.txt"
+	#	titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/nsf/nsftitles.txt"
+	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
+
+	#elseif corp_symbol == :citeu
+	#	docfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeudocs.txt"
+	#	vocabfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuvocab.txt"
+	#	userfile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeuusers.txt"
+	#	titlefile = homedir() * "/.julia/$version/topicmodelsvb/datasets/citeu/citeutitles.txt"
+	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
+		
+		# why was this necessary?
+		#padcorp!(corp)
+
+	else
+		println("Included corpora:\n:nsf\n:citeu")
+		corp = nothing
+	end
+
+	return corp
+end
+
+function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
+	"Write a corpus."
+
 	(ratings <= readers) || (ratings = false; warn("Ratings require readers, ratings switch set to false."))
-	stamp = stamps
 
 	if !isempty(docfile)
-		dockwargs = [:counts, :readers, :ratings, :stamp]
-		dockwargs = dockwargs[[counts, readers, ratings, stamp]]
+		doc_kwargs = [:counts, :readers, :ratings]
+		doc_kwargs = doc_kwargs[[counts, readers, ratings]]
 		docfile = open(docfile, "w")
 		for doc in corp
 			write(docfile, join(doc.terms, delim), '\n')
-			for arg in dockwargs
+			for arg in doc_kwargs
 				write(docfile, join(doc.(arg), delim), '\n')
 			end
 		end
 		close(docfile)
 	end
 
-	if !isempty(lexfile)
-		lkeys = sort(collect(keys(corp.lex)))
-		lex = zip(lkeys, [corp.lex[lkey] for lkey in lkeys])
-		writedlm(lexfile, lex)
+	if !isempty(vocabfile)
+		vkeys = sort(collect(keys(corp.vocab)))
+		vocab = zip(vkeys, [corp.vocab[vkey] for vkey in vkeys])
+		writedlm(vocabfile, vocab)
 	end
 
 	if !isempty(userfile)
@@ -125,81 +374,223 @@ function writecorp(corp::Corpus; docfile::AbstractString="", lexfile::AbstractSt
 	nothing
 end
 
+### The _corp and _docs functions are designed to provide safe methods for modifying corpora.
+### The _corp functions only meaningfully modify the Corpus object.
+### In so far as the _corp functions modify Document objects, it only amounts to a possible relabeling of the keys in the documents.
+### The _doc functions only modify the Document objects attached the corpus, they do not modify the Corpus object.
+### The exception to the above rule is the stop_corp! function, which removes stop words from both the Corpus vocab dictionary and associated keys in the documents.
 
+function abridge_corp!(corp::Corpus, n::Integer=0)
+	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
 
-#######################
-### corp! Functions ###
-#######################
-
-function abridgecorp!(corp::Corpus; stop::Bool=false, order::Bool=true, abr::Integer=1)
-	v = "v$(VERSION.major).$(VERSION.minor)"	
+	doc_vkeys = Set(vcat([doc.terms for doc in unique(corp)]...))
+	vocab_count = Dict(Int(j) => 0 for j in doc_vkeys)
 	
-	if stop
-		stopwords = vec(readdlm(pwd() * "/.julia/$v/topicmodelsvb/datasets/stopwords.txt", String))
-		stopkeys = filter(j -> lowercase(corp.lex[j]) in stopwords, collect(keys(corp.lex)))
-		for doc in corp
-			keep = Bool[!(j in stopkeys) for j in doc.terms]
-			doc.terms = doc.terms[keep]
-			doc.counts = doc.counts[keep]
-		end
+	for doc in unique(corp), (j, c) in zip(doc.terms, doc.counts)
+		vocab_count[j] += c
 	end
 
-	if !order
-		for doc in corp
-			docdict = Dict(Int(j) => 0 for j in doc.terms)
-			for (j, c) in zip(doc.terms, doc.counts)
-				docdict[j] += c
-			end
-			doc.terms = collect(keys(docdict))
-			doc.counts = collect(values(docdict))
-		end
-	end
-
-	if abr > 1
-		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		lexcount = Dict(Int(j) => 0 for j in doclkeys)
-		for doc in corp, (j, c) in zip(doc.terms, doc.counts)
-			lexcount[j] += c
-		end
-
-		for doc in corp
-			keep = Bool[lexcount[j] >= abr for j in doc.terms]
-			doc.terms = doc.terms[keep]
-			doc.counts = doc.counts[keep]
-		end
-
-		keep = Bool[length(doc.terms) > 0 for doc in corp]
-		corp.docs = corp[keep]
+	for doc in unique(corp)
+		keep = Bool[vocab_count[j] > n for j in doc.terms]
+		doc.terms = doc.terms[keep]
+		doc.counts = doc.counts[keep]
 	end
 	nothing
 end
 
-function trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true)
-	if lex		
-		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		corp.lex = Dict(lkey => corp.lex[lkey] for lkey in intersect(keys(corp.lex), doclkeys))
+function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Alphabetize vocab and/or user dictionaries."
+
+	if vocab
+		vkeys = sort(collect(keys(corp.vocab)))
+		terms = sort(collect(values(corp.vocab)))
+
+		vkey_map = Dict(vkey_old => vkey_new for (vkey_old, vkey_new) in zip(vkeys, vkeys[sortperm(sortperm([corp.vocab[vkey] for vkey in vkeys]))]))
+		corp.vocab = Dict(vkey => term for (vkey, term) in zip(vkeys, terms))
+
+		for doc in unique(corp)
+			doc.terms = [vkey_map[j] for j in doc.terms]
+		end
 	end
 
+	if users
+		ukeys = sort(collect(keys(corp.users)))
+		users = sort(collect(values(corp.users)))
+
+		ukey_map = Dict(ukey_old => ukey_new for (ukey_old, ukey_new) in zip(ukeys, ukeys[sortperm(sortperm([corp.users[ukey] for ukey in ukeys]))]))
+		corp.users = Dict(ukey => user for (ukey, user) in zip(ukeys, users))
+
+		for doc in unique(corp)
+			doc.readers = [ukey_map[r] for r in doc.readers]
+		end
+	end
+	nothing
+end
+
+function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Relabel vocab and/or user keys so that they form a unit range starting at 1."
+
+	if vocab
+		vkeys = sort(collect(keys(corp.vocab)))
+		vkey_map = Dict(vkey => v for (v, vkey) in enumerate(vkeys))
+		corp.vocab = Dict(vkey_map[vkey] => corp.vocab[vkey] for vkey in keys(corp.vocab))
+
+		for doc in unique(corp)
+			doc.terms = [vkey_map[vkey] for vkey in doc.terms]
+		end
+	end
+
+	if users
+		ukeys = sort(collect(keys(corp.users)))
+		ukey_map = Dict(ukey => u for (u, ukey) in enumerate(ukeys))
+		corp.users = Dict(ukey_map[ukey] => corp.users[ukey] for ukey in keys(corp.users))
+
+		for doc in unique(corp)
+			doc.readers = [ukey_map[ukey] for ukey in doc.readers]
+		end
+	end
+	nothing
+end
+
+function condense_corp!(corp::Corpus)
+	"Ignore term order in documents."
+	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
+
+	for doc in unique(corp)
+		docdict = Dict(j => 0 for j in doc.terms)
+		for (j, c) in zip(doc.terms, doc.counts)
+			docdict[j] += c
+		end
+
+		doc.terms = collect(keys(docdict))
+		doc.counts = collect(values(docdict))
+	end
+	nothing
+end
+
+function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries."
+
+	if vocab
+		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+		for vkey in setdiff(doc_vkeys, keys(corp.vocab))
+			corp.vocab[vkey] = string(join(["#term", vkey]))
+		end
+	end
+
+	if users
+		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
+		for ukey in setdiff(doc_ukeys, keys(corp.users))
+			corp.users[ukey] = string(join(["#user", ukey]))
+		end
+	end
+	nothing
+end
+
+function remove_empty_docs!(corp::Corpus)
+	"Documents with no terms are removed from the corpus."
+
+	keep = Bool[length(doc.terms) > 0 for doc in corp]
+	corp.docs = corp[keep]
+	nothing
+end
+
+function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Remove vocab and/or user keys which map to redundant values."
+	"Reassign Document term and/or reader keys."
+
+	if vocab
+		vkey_map = Dict()
+		vocab_dict_inverse = Dict()
+		vkeys = sort(collect(keys(corp.vocab)))
+		for vkey in vkeys
+			if corp.vocab[vkey] in keys(vocab_dict_inverse)
+				vkey_map[vkey] = vocab_dict_inverse[corp.vocab[vkey]]
+				delete!(corp.vocab, vkey)
+
+			else
+				vkey_map[vkey] = vkey
+				vocab_dict_inverse[corp.vocab[vkey]] = vkey
+			end
+		end
+
+		for doc in unique(corp)
+			doc.terms = [vkey_map[vkey] for vkey in doc.terms]
+		end
+	end
+
+	if users
+		ukey_map = Dict()
+		users_dict_inverse = Dict()
+		ukeys = sort(collect(keys(corp.users)))
+		for ukey in ukeys
+			if corp.users[ukey] in keys(users_dict_inverse)
+				ukey_map[ukey] = users_dict_inverse[corp.users[ukey]]
+				delete!(corp.users, ukey)
+
+			else
+				ukey_map[ukey] = ukey
+				users_dict_inverse[corp.users[ukey]] = ukey
+			end
+		end
+
+		for doc in unique(corp)
+			doc.readers = [ukey_map[ukey] for ukey in doc.readers]
+		end
+	end
+	nothing
+end
+
+function stop_corp!(corp::Corpus)
+	"Filter stop words in the associated corpus."
+
+	version = "v$(VERSION.major).$(VERSION.minor)"	
+
+	stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
+	#stop_words = vec(readdlm(pwd() * "/.julia/$version/topicmodelsvb/datasets/stopwords.txt", String))
+	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
+	
+	for doc in unique(corp)
+		keep = Bool[!(j in stop_keys) for j in doc.terms]
+		doc.terms = doc.terms[keep]
+		doc.counts = doc.counts[keep]
+	end
+	nothing
+end
+
+function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Those keys which appear in the corpus vocab and/or user dictionaries but not in any of the documents are removed from the corpus."
+
+	if vocab
+		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+		corp.vocab = Dict(vkey => corp.vocab[vkey] for vkey in intersect(keys(corp.vocab), doc_vkeys))
+	end
+
+	if users
+		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
+		corp.users = Dict(ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), doc_ukeys))
+	end
+	nothing
+end
+
+function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
+	"Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents."
+
 	if terms
-		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		boguslkeys = setdiff(doclkeys, keys(corp.lex))
-		for doc in corp
-			keep = Bool[!(j in boguslkeys) for j in doc.terms]
+		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
+		bogus_vkeys = setdiff(doc_vkeys, keys(corp.vocab))
+		for doc in unique(corp)
+			keep = Bool[!(j in bogus_vkeys) for j in doc.terms]
 			doc.terms = doc.terms[keep]
 			doc.counts = doc.counts[keep]
 		end
 	end
-	
-	if users
-		docukeys = Set(vcat([doc.readers for doc in corp]...))
-		corp.users = Dict(ukey => corp.users[ukey] for ukey in intersect(keys(corp.users), docukeys))
-	end
 
-	if readers
-		docukeys = Set(vcat([doc.readers for doc in corp]...))	
-		bogusukeys = setdiff(docukeys, keys(corp.users))
-		for doc in corp
-			keep = Bool[!(u in bogusukeys) for u in doc.readers]
+	if terms
+		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
+		bogus_ukeys = setdiff(doc_ukeys, keys(corp.users))
+		for doc in unique(corp)
+			keep = Bool[!(u in bogus_ukeys) for u in doc.readers]
 			doc.readers = doc.readers[keep]
 			doc.ratings = doc.ratings[keep]
 		end
@@ -207,235 +598,21 @@ function trimcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=t
 	nothing
 end
 
-function compactcorp!(corp::Corpus; lex::Bool=true, users::Bool=true, alphabetize::Bool=true)	
-	if lex
-		lkeys = sort(collect(keys(corp.lex)))
-		lkeymap = zip(lkeys, 1:length(corp.lex))
-		if alphabetize
-			alphabetdict = Dict(j => lkey for (j, lkey) in zip(sortperm([corp.lex[lkey] for lkey in lkeys]), 1:length(corp.lex)))
-			lkeydict = Dict(lkey => alphabetdict[j] for (lkey, j) in lkeymap)
-		else
-			lkeydict = Dict(lkey => j for (lkey, j) in lkeymap)
-		end
-		
-		corp.lex = Dict(lkeydict[lkey] => corp.lex[lkey] for lkey in keys(corp.lex))
-		for lkey in keys(corp.lex)
-			try if corp.lex[lkey][1:5] == "#term"; corp.lex[lkey] = "#term$(lkey)"; end
-			end
-		end
-	end
+function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
+	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
+	"Contains optional keyword arguments."
 
-	if users
-		ukeys = sort(collect(keys(corp.users)))
-		ukeymap = zip(ukeys, 1:length(corp.users))
-		if alphabetize
-			alphabetdict = Dict(r => ukey for (r, ukey) in zip(sortperm([corp.users[ukey] for ukey in ukeys]), 1:length(corp.users)))
-			ukeydict = Dict(ukey => alphabetdict[r] for (ukey, r) in ukeymap)
-		else
-			ukeydict = Dict(ukey => r for (ukey, r) in ukeymap)
-		end
+	pad_corp ? pad_corp!(corp) : trim_docs!(corp)
 
-		corp.users = Dict(ukeydict[ukey] => corp.users[ukey] for ukey in keys(corp.users))
-		for ukey in keys(corp.users)
-			try if corp.users[ukey][1:5] == "#user"; corp.users[ukey] = "#user$(ukey)"; end
-			end
-		end
-	end
+	remove_empty_docs 	&& remove_empty_docs!(corp)
+	condense_corp 		&& condense_corp!(corp)
+	remove_redundant	&& remove_redundant!(corp)
+	abridge_corp > 0 	&& abridge_corp!(corp)
+	pad_corp 			&& pad_corp!(corp, vocab=vocab, users=users)
+	trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
+	stop_corp 			&& stop_corp!(corp)
+	alphabetize_corp 	&& alphabetize_corp!(corp, vocab=vocab, users=users)
 
-	for doc in unique(corp)
-		if lex; doc.terms = [lkeydict[lkey] for lkey in doc.terms]; end
-		if users; doc.readers = [ukeydict[ukey] for ukey in doc.readers]; end
-	end
+	compact_corp!(corp)
 	nothing
-end
-
-function padcorp!(corp::Corpus; lex::Bool=true, users::Bool=true)
-	if lex
-		doclkeys = Set(vcat([doc.terms for doc in corp]...))
-		for lkey in setdiff(doclkeys, keys(corp.lex))
-			corp.lex[lkey] = string(join(["#term",lkey]))
-		end
-	end
-	if users
-		docukeys = Set(vcat([doc.readers for doc in corp]...))
-		for ukey in setdiff(docukeys, keys(corp.users))
-			corp.users[ukey] = string(join(["#user",ukey]))
-		end
-	end
-	nothing
-end
-
-function cullcorp!(corp::Corpus; lex::Bool=false, users::Bool=false, len::Integer=1)
-	lexkeys = keys(corp.lex)
-	userkeys = keys(corp.users)
-	bogusdocs = Int[]
-	for (d, doc) in enumerate(corp)
-		if lex
-			for j in doc.terms
-				if !(j in lexkeys)
-					push!(bogusdocs, d)
-					break
-				end
-			end
-		end
-
-		if users & !(d in bogusdocs)
-			for u in doc.readers
-				if !(u in userkeys)
-					push!(bogusdocs, d)
-					break
-				end
-			end
-		end
-
-		if (len > 1) & !(d in bogusdocs)
-			if length(doc) < len
-				push!(bogusdocs, d)
-			end
-		end
-
-		if isempty(doc.terms) & !(d in bogusdocs)
-			push!(bogusdocs, d)
-		end
-	end
-
-	deleteat!(corp, bogusdocs)
-	nothing
-end
-
-function fixcorp!(corp::Corpus; lex::Bool=true, terms::Bool=true, users::Bool=true, readers::Bool=true, stop::Bool=false, order::Bool=true, abr::Integer=1, len::Integer=1, alphabetize::Bool=true)
-	println("Abridging corpus..."); abridgecorp!(corp, stop=stop, order=order, abr=abr)
-	println("Trimming corpus..."); trimcorp!(corp, lex=lex, terms=terms, users=users, readers=readers)
-	println("Culling corpus..."); cullcorp!(corp, len=len)	
-	println("Compacting corpus..."); compactcorp!(corp, lex=lex, users=users, alphabetize=alphabetize)
-	nothing
-end
-
-
-
-########################
-### Corpus Utilities ###
-########################
-
-function Base.show(io::IO, doc::Document)
-	print(io, "Document with:\n * $(length(doc.terms)) terms\n * $(length(doc.readers)) readers") 
-	if isfinite(doc.stamp)
-		print(io, "\n * $(doc.stamp) stamp")
-	end
-end
-
-Base.length(doc::Document) = length(doc.terms)
-Base.size(doc::Document) = sum(doc.counts)
-Base.in(doc::Document, corp::Corpus) = in(doc, corp.docs)
-
-Base.show(io::IO, corp::Corpus) = print(io, "Corpus with:\n * $(length(corp)) docs\n * $(length(corp.lex)) lex\n * $(length(corp.users)) users")
-Base.start(corp::Corpus) = 1
-Base.next(corp::Corpus, d::Int) = corp.docs[d], d + 1
-Base.done(corp::Corpus, d::Int) = length(corp.docs) == d - 1
-Base.push!(corp::Corpus, doc::Document) = push!(corp.docs, doc)
-Base.pop!(corp::Corpus) = pop!(corp.docs)
-Base.unshift!(corp::Corpus, doc::Document) = unshift!(corp.docs, doc)
-Base.unshift!(corp::Corpus, docs::Vector{Document}) = unshift!(corp.docs, docs)
-Base.shift!(corp::Corpus) = shift!(corp.docs)
-Base.insert!(corp::Corpus, d::Int, doc::Document) = insert!(corp.docs, d, doc)
-Base.deleteat!(corp::Corpus, d::Int) = deleteat!(corp.docs, d)
-Base.deleteat!(corp::Corpus, ds::Vector{Int}) = deleteat!(corp.docs, ds)
-Base.deleteat!(corp::Corpus, ds::UnitRange{Int}) = deleteat!(corp.docs, ds)
-Base.getindex(corp::Corpus, d::Int) = getindex(corp.docs, d)
-Base.getindex(corp::Corpus, ds::Vector{Int}) = getindex(corp.docs, ds)
-Base.getindex(corp::Corpus, ds::UnitRange{Int}) = getindex(corp.docs, ds)
-Base.getindex(corp::Corpus, ds::Vector{Bool}) = getindex(corp.docs, find(ds))
-Base.setindex!(corp::Corpus, doc::Document, d::Int) = setindex!(corp.docs, doc, d)
-Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::Vector{Int}) = setindex!(corp.docs, docs, ds)
-Base.setindex!(corp::Corpus, docs::Vector{Document}, ds::UnitRange{Int}) = setindex!(corp.docs, docs, ds)
-Base.findfirst(corp::Corpus, doc::Document) = findfirst(corp.docs, doc)
-Base.findin(corp::Corpus, docs::Vector{Document}) = findin(corp.docs, docs)
-Base.findin(corp::Corpus, doc::Document) = findin(corp, [doc])
-Base.length(corp::Corpus) = length(corp.docs)
-Base.size(corp::Corpus) = (length(corp), length(corp.lex), length(corp.users))
-Base.copy(corp::Corpus) = Corpus(docs=copy(corp.docs), lex=copy(corp.lex), users=copy(corp.users))
-Base.endof(corp::Corpus) = length(corp)
-
-function checkdoc(doc::Document)
-	pass =
-	(!isempty(doc.terms)
-	& all(ispositive.(doc.terms))
-	& all(ispositive.(doc.counts))
-	& isequal(length(doc.terms), length(doc.counts))
-	& all(ispositive.(doc.readers))
-	& all(ispositive.(doc.ratings))
-	& isequal(length(doc.readers), length(doc.ratings)))
-	return pass	
-end
-
-function checkcorp(corp::Corpus)
-	pass = true
-	for (d, doc) in enumerate(corp)
-		checkdoc(doc) || (println("Document $d failed check."); pass=false)
-	end
-	@assert all(ispositive.(collect(keys(corp.lex))))
-	@assert all(ispositive.(collect(keys(corp.users))))
-	return pass
-end
-
-function showdocs{T<:Integer}(corp::Corpus, ds::Vector{T})
-	@assert checkbounds(Bool, 1:length(corp), ds) "Some document indices outside docs range."
-	
-	for d in ds
-		doc = corp[d]
-		@juliadots "doc $d\n"
-		if !isempty(doc.title)
-			@juliadots "$(doc.title)\n"
-		end
-		println(join([corp.lex[lkey] for lkey in corp[d].terms], " "), '\n')
-	end
-end
-
-function showdocs(corp::Corpus, docs::Vector{Document})
-	ds = findin(corp, docs)
-	showdocs(corp, ds)
-end
-
-showdocs{T<:Integer}(corp::Corpus, ds::UnitRange{T}) = showdocs(corp, collect(ds))
-showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
-showdocs(corp::Corpus, doc::Document) = showdocs(corp, [doc])
-
-getlex(corp::Corpus) = sort(collect(values(corp.lex)))
-getusers(corp::Corpus) = sort(collect(values(corp.users)))
-
-
-
-######################################
-### Pre-packaged Dataset Shortcuts ###
-######################################
-
-function readcorp(corpsym::Symbol)
-	v = "v$(VERSION.major).$(VERSION.minor)"
-
-	if corpsym == :nsf
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsfdocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsflex.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/nsf/nsftitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
-
-	elseif corpsym == :citeu
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeudocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeulex.txt"
-		userfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeuusers.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/citeu/citeutitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
-		padcorp!(corp)
-
-	elseif corpsym == :mac
-		docfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/macdocs.txt"
-		lexfile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/maclex.txt"
-		titlefile = homedir() * "/.julia/$v/topicmodelsvb/datasets/mac/mactitles.txt"
-		corp = readcorp(docfile=docfile, lexfile=lexfile, titlefile=titlefile, counts=true, stamps=true)
-
-	else
-		println("Included corpora:\n:nsf\n:citeu\n:mac")
-		corp = nothing
-	end
-
-	return corp
 end
