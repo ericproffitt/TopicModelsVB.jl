@@ -203,9 +203,9 @@ fixcorp!(corp, trim_corp=true)
 
 model = LDA(corp, 9)
 
+train!(model, iter=150, tol=0)
 ### Setting tol=0 will ensure that all 150 iterations are completed.
 ### If you don't want to watch the ∆elbo, set check_elbo=Inf.
-train!(model, iter=150, tol=0)
 
 ### training...
 
@@ -281,6 +281,8 @@ Furthermore, if we want to, we can also generate artificial corpora by using the
 Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out,
 
 ```julia
+Random.seed!(10);
+
 artificial_corp = gencorp(model, 5000, laplace_smooth=1e-5)
 ### The laplace_smooth argument governs the amount of Laplace smoothing (defaults to 0).
 
@@ -315,7 +317,7 @@ important    properties    field          developed      water            provid
 For our final example using the NSF corpus, let's upgrade our model to a (filtered) correlated topic model.
 
 ```julia
-#Random.seed!(77777);
+Random.seed!(77777);
 
 model = fCTM(corp, 9)
 train!(model, tol=0, check_elbo=Inf)
@@ -326,39 +328,39 @@ showtopics(model, 20, cols=9)
 ```
 
 ```
-topic 1          topic 2         topic 3         topic 4        topic 5         topic 6       topic 7         topic 8         topic 9
-design           chemistry       theory          earthquake     plant           social        ocean           students        flow
-algorithms       materials       problems        soil           species         economic      data            science         solar
-system           reactions       equations       damage         cell            policy        measurements    support         heat
-parallel         metal           investigator    data           plants          science       pacific         program         particles
-systems          chemical        differential    response       cells           human         sea             university      fluid
-problems         molecular       principal       ground         genetic         political     water           research        measurements
-performance      electron        mathematical    seismic        protein         language      circulation     sciences        stars
-network          organic         geometry        buildings      gene            public        atmospheric     conference      optical
-based            surface         groups          san            molecular       american      global          scientific      transport
-computer         molecules       space           hazard         genes           cultural      climate         scientists      plasma
-networks         properties      solutions       soils          dna             japanese      mantle          projects        gas
-control          compounds       algebraic       october        proteins        change        chemical        year            laser
-processing       reaction        finite          earthquakes    biology         people        earth           national        geometry
-software         program         spaces          climate        populations     labor         trace           engineering     numerical
-problem          temperature     nonlinear       california     evolutionary    market        rocks           months          particle
-applications     spectroscopy    problem         performance    growth          scientific    sediment        workshop        waves
-efficient        synthesis       mathematics     design         population      national      ridge           mathematical    transfer
-distributed      energy          manifolds       building       regulation      women         deep            faculty         surface
-programming      liquid          dimensional     francisco      expression      examine       north           academic        flows
-computational    high            functions       national       mechanisms      children      experiment      nsf             devices
+topic 1           topic 2         topic 3        topic 4          topic 5         topic 6        topic 7         topic 8          topic 9
+earthquake        social          chemistry      science          theory          plant          water           design           solar
+data              economic        program        support          problems        cell           ocean           system           flow
+soil              theory          students       university       equations       protein        species         algorithms       waves
+damage            policy          materials      sciences         geometry        cells          sea             parallel         stars
+seismic           political       molecular      students         investigator    genetic        marine          systems          scale
+buildings         public          chemical       program          algebraic       gene           climate         performance      magnetic
+sites             women           reactions      mathematical     mathematical    plants         pacific         language         observations
+response          labor           university     scientific       principal       species        ice             problems         particles
+san               market          metal          months           differential    molecular      measurements    processing       measurements
+ground            decision        electron       year             space           genes          global          based            optical
+archaeological    change          organic        national         problem         dna            flow            networks         particle
+hazard            people          surface        scientists       solutions       proteins       forest          network          wave
+species           human           temperature    academic         groups          regulation     change          computer         numerical
+materials         case            molecules      conference       finite          expression     rates           control          mass
+earthquakes       individuals     compounds      engineering      nonlinear       function       circulation     software         motion
+october           interviews      laser          equipment        mathematics     growth         history         programming      equipment
+site              empirical       reaction       institute        spaces          populations    north           communication    imaging
+collection        factors         physics        workshop         dimensional     specific       data            distributed      physics
+california        differences     quantum        faculty          manifolds       biology        samples         problem          velocity
+history           implications    properties     international    functions       mechanisms     sediment        applications     image
 ```
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
-* topic 1: *Computer Science*
-* topic 2: *Chemistry*
-* topic 3: *Mathematics*
-* topic 4: *California Earthquakes*
-* topic 5: *Molecular Biology*
-* topic 6: *Social Science*
-* topic 7: *Earth Science*
-* topic 8: *Academia*
+* topic 1: *Earthquakes*
+* topic 2: *Social Science*
+* topic 3: *Chemistry*
+* topic 4: *Academia*
+* topic 5: *Mathematics*
+* topic 6: *Molecular Biology*
+* topic 7: *Ecology*
+* topic 8: *Computer Science*
 * topic 9: *Physics*
 
 Now let's take a look at the topic-covariance matrix,
@@ -366,24 +368,18 @@ Now let's take a look at the topic-covariance matrix,
 ```julia
 model.sigma
 
-### Top 2 off-diagonal positive entries, sorted in descending order:
-model.sigma[1,3] # = 8.758
-model.sigma[2,9] # = 6.204
+### Top 2 off-diagonal positive entries:
+model.sigma[5,8] # = 16.856
+model.sigma[6,7] # = 9.280
 
-### Top 2 negative entries, sorted in ascending order:
-model.sigma[3,5] # = -23.459
-model.sigma[2,6] # = -14.403
+### Top 2 negative entries:
+model.sigma[5,6] # = -32.034
+model.sigma[2,3] # = -21.081
 ```
 
-According to the list above, the most closely related topics are topics 1 and 3, which correspond to the *Computer Science* and *Mathematics* topics, followed closely by 3 and 6, corresponding *Chemistry* and *Physics*.
+According to the list above, the most closely related topics are topics 5 and 8, which correspond to the *Mathematics* and *Computer Science* topics, followed by 6 and 7, corresponding *Molecular Biology* and *Ecology*.
 
-As for the most unlikely topic pairings, first are topics 3 and 5, corresponding to *Mathematics* and *Molecular Biology*, and followed by topics 2 and 8, corresponding to *Chemistry* and *Social Science*.
-
-Furthermore, the topic which is least correlated with all other topics is the *California Earthquakes* topic,
-
-```julia
-argmin([norm(model.sigma[:,j], 1) - model.sigma[j,j] for j in 1:9]) # = 4
-```
+As for the most unlikely topic pairings, most strongly negative correlated are topics 5 and 6, corresponding to *Mathematics* and *Molecular Biology*, followed by topics 2 and 3, corresponding to *Social Science* and *Chemistry*.
 
 ### Topic Prediction
 
@@ -405,7 +401,7 @@ Now we can train our LDA model on just the training corpus, and then use that tr
 Random.seed!(10);
 
 train_model = LDA(train_corp, 9)
-train!(model, check_elbo=Inf)
+train!(train_model, check_elbo=Inf)
 
 test_model = predict(test_corp, train_model=train_model)
 ```
