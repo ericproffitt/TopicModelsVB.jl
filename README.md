@@ -656,11 +656,9 @@ model = LDA(corp, 16)
 
 ### training...
 
-### 120.928241 seconds (130.06 M allocations: 22.745 GiB, 3.60% gc time)
+### 214.126210 seconds (102.17 M allocations: 10.590 GiB, 1.69% gc time)
 ### On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
-
-This algorithm just crunched through a 16 topic 128,804 document topic model in 2 minutes.
 
 **Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently, since checking the ELBO for GPU models requires expensive memory allocations on the CPU.
 

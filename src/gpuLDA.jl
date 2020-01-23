@@ -141,13 +141,13 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 
 	nu = model.K
 	for _ in 1:niter
-		rho = 1.0
+		rho = 1.0f0
 		alpha_grad = [nu / model.alpha[i] + model.M * (digamma(sum(model.alpha)) - digamma(model.alpha[i])) for i in 1:model.K] .+ model.Elogtheta_sum
 		alpha_invhess_diag = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
 		p = (alpha_grad .- dot(alpha_grad, alpha_invhess_diag) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(alpha_invhess_diag))) .* alpha_invhess_diag
 		
 		while minimum(model.alpha - rho * p) < 0
-			rho *= 0.5
+			rho *= 0.5f0
 		end	
 		@finite model.alpha -= rho * p
 		
@@ -353,12 +353,12 @@ end
 function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
 	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
 
-	check_model(model)
+	#check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
-	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
-	(check_elbo <= iter) && update_elbo!(model)
+	#all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
+	#(check_elbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for v in 1:viter
@@ -378,7 +378,7 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		end
 	end
 
-	(iter > 0) && update_host!(model)
+	#(iter > 0) && update_host!(model)
 	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end
