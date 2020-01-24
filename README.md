@@ -654,7 +654,7 @@ Note, as was done by Blei et al. in their original paper, if you would like to w
 
 ```julia
 ctpf_model.alef = exp.(model.beta)
-### For model of type: LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM.
+### For model of type: LDA, CTM, fCTM, gpuLDA, gpuCTM.
 ```   
 
 ### GPU Acceleration
@@ -718,13 +718,6 @@ abstract type TopicModel end
 
 mutable struct LDA <: TopicModel
 	"LDA mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
-
-mutable struct fLDA <: TopicModel
-	"fLDA mutable struct."
 
 	corpus::Corpus
 	K::Int
@@ -881,8 +874,8 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs, U)
 function showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M))
 	"Show the top 'M' document recommendations for a user(s)."
 
-function predict(corp::Corpus, train_model::Union{LDA, gpuLDA, fLDA, CTM, gpuCTM, fCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained fLDA model."
+function predict(corp::Corpus, train_model::Union{LDA, gpuLDA, CTM, gpuCTM, fCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained LDA or CTM model."
 
 function topicdist(model::TopicModel, doc_indices)
 	"Get TopicModel topic distributions for document(s) as a probability vector."
