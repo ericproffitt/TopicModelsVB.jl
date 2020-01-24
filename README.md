@@ -248,7 +248,9 @@ For the CTPF models, you may access the raw topic distributions by computing,
 model.alef ./ model.bet
 ```
 
-Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown,
+Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.
+
+For instance, document 1 has topic breakdown,
 
 ```julia
 println(round.(topicdist(model, 1), digits=3))
