@@ -16,12 +16,12 @@ This package takes the latter approach to topic modeling.
 
 ```julia
 DelimitedFiles
-Crayons
-Random
 SpecialFunctions
 LinearAlgebra
+Random
 Distributions
 OpenCL
+Crayons
 ```
 
 ## Install
