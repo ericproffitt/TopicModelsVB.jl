@@ -27,7 +27,7 @@ OpenCL
 ## Install
 
 ```julia
-Pkg.add("TopicModelsVB")
+(v1.3) pkg> add https://github.com/ericproffitt/TopicModelsVB.jl
 ```
 
 ## Datasets
