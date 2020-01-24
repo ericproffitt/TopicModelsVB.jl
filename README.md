@@ -650,9 +650,14 @@ showurecs(model, 1741, 50)
 50. Typed Contracts for Functional Programming
 ```
 
-Raw document and user recommendations may be accessed via,
+Raw scores, as well as document and user recommendations, may be accessed via,
 
 ```julia
+model.scores
+### M x U matrix
+### M = number of documents, ordered identically to the documents in model.corp.docs.
+### U = number of users, ordered identically to the keys in model.corp.vocab.
+
 model.drecs
 model.urecs
 ```
