@@ -324,7 +324,9 @@ important    properties    field          developed      water            provid
 ```
 
 ### CTM
-For our next model, let's upgrade to a (filtered) correlated topic model. Filtering the correlated topic model will dynamically identify and suppress stop words which would otherwise clutter up the topic distribution output.
+For our next model, let's upgrade to a (filtered) correlated topic model.
+
+Filtering the correlated topic model will dynamically identify and suppress stop words which would otherwise clutter up the topic distribution output.
 
 ```julia
 Random.seed!(77777);
