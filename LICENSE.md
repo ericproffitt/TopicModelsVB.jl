@@ -1,6 +1,6 @@
 The TopicModelsVB.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2016: Eric Proffitt.
+> Copyright (c) 2020: Eric Proffitt.
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
@@ -22,5 +22,8 @@ The TopicModelsVB.jl package is licensed under the MIT "Expat" License:
 > SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 This software uses supporting software with their own licesnses:
+https://github.com/JuliaLang/julia/blob/master/LICENSE.md
+https://github.com/JuliaMath/SpecialFunctions.jl/blob/master/LICENSE
 https://github.com/JuliaStats/Distributions.jl/blob/master/LICENSE.md
 https://github.com/JuliaGPU/OpenCL.jl/blob/master/LICENSE.md
+https://github.com/KristofferC/Crayons.jl/blob/master/LICENSE.md
