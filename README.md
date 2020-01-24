@@ -257,7 +257,8 @@ println(round.(topicdist(model, 1), digits=3))
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation,
 
 ```julia
-showdocs(model, 1) # Could also have done showdocs(corp, 1).
+showdocs(model, 1)
+### Could also have done showdocs(corp, 1).
 ```
 
 ```
