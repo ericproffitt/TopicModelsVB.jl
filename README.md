@@ -237,7 +237,9 @@ If you are interested in the raw topic distributions. For LDA and CTM models, yo
 
 ```julia
 model.beta
-### K x V matrix, with K = number of topics and V = number of vocabulary terms, ordered identically to the keys in model.corp.vocab.
+### K x V matrix
+### K = number of topics.
+### V = number of vocabulary terms, ordered identically to the keys in model.corp.vocab.
 ```
 
 For the CTPF models, you may access the raw topic distributions by computing,
