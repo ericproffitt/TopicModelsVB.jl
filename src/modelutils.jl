@@ -898,23 +898,21 @@ function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/
 	return model
 end
 
-#function topicdist(model::Union{LDA, fLDA, gpuLDA}, d::Integer)
-#	"Get the LDA topic distribution for a document as a probability vector."
+function topicdist(model::Union{LDA, gpuLDA}, d::Integer)
+	"Get the LDA topic distribution for a document as a probability vector."
 
-#	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
 
-#	topic_distribution = model.gamma[d] / sum(model.gamma[d])
-#	return topic_distribution
-#end
+	topic_distribution = model.gamma[d] / sum(model.gamma[d])
+	return topic_distribution
+end
 
 function topicdist(model::Union{CTM, fCTM, gpuCTM}, d::Integer)
 	"Get the CTM topic distribution for document as a probability vector."
 
 	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
 
-	x = exp.(model.lambda[d] + 0.5 * model.vsq[d])
-	topic_distribution = x / sum(x)
-
+	topic_distribution = additive_logistic(model.lambda[d] + 0.5 * model.vsq[d])
 	return topic_distribution
 end
 
