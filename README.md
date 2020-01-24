@@ -233,6 +233,19 @@ understanding    systems        large          model            large           
 development      project        project        public           processes        structures     national         project          solutions
 ```
 
+If you are interested in the raw topic distributions. For LDA and CTM models, you may access them via the matrix,
+
+```julia
+model.beta
+### K x V matrix, with K = number of topics and V = number of vocabulary terms, ordered identically to the keys in model.corp.vocab.
+```
+
+For the CTPF models, you may access the raw topic distributions by computing,
+
+```julia
+model.alef ./ model.bet
+```
+
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents. For instance, document 1 has topic breakdown,
 
 ```julia
@@ -311,7 +324,7 @@ important    properties    field          developed      water            provid
 ```
 
 ### CTM
-For our final example using the NSF corpus, let's upgrade our model to a (filtered) correlated topic model.
+For our next model, let's upgrade to a (filtered) correlated topic model. Filtering the correlated topic model will dynamically identify and suppress stop words which would otherwise clutter up the topic distribution output.
 
 ```julia
 Random.seed!(77777);
