@@ -655,7 +655,14 @@ Note, as was done by Blei et al. in their original paper, if you would like to w
 ```julia
 ctpf_model.alef = exp.(model.beta)
 ### For model of type: LDA, CTM, fCTM, gpuLDA, gpuCTM.
-```   
+```
+
+Raw document and user recommendations may be accessed via,
+
+```julia
+model.drecs
+model.urecs
+```
 
 ### GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
