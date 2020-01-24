@@ -394,7 +394,7 @@ model.sigma[2,3] # = -21.081
 
 According to the list above, the most closely related topics are topics 5 and 8, which correspond to the *Mathematics* and *Computer Science* topics, followed by 6 and 7, corresponding *Molecular Biology* and *Ecology*.
 
-As for the most unlikely topic pairings, most strongly negative correlated are topics 5 and 6, corresponding to *Mathematics* and *Molecular Biology*, followed by topics 2 and 3, corresponding to *Social Science* and *Chemistry*.
+As for the most unlikely topic pairings, most strongly negatively correlated are topics 5 and 6, corresponding to *Mathematics* and *Molecular Biology*, followed by topics 2 and 3, corresponding to *Social Science* and *Chemistry*.
 
 ### Topic Prediction
 
