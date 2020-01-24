@@ -660,7 +660,7 @@ Raw scores, as well as document and user recommendations, may be accessed via,
 model.scores
 ### M x U matrix
 ### M = number of documents, ordered identically to the documents in model.corp.docs.
-### U = number of users, ordered identically to the keys in model.corp.vocab.
+### U = number of users, ordered identically to the keys in model.corp.users.
 
 model.drecs
 model.urecs
