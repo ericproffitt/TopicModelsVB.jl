@@ -1,1 +1,0 @@
-AbstractLDA = Union{LDA, gpuLDA}

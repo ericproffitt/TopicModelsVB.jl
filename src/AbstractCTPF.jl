@@ -1,1 +1,0 @@
-AbstractCTPF = Union{CTPF, gpuCTPF}

@@ -1,1 +1,0 @@
-AbstractfCTM = Union{fCTM}
