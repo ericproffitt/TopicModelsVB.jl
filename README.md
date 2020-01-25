@@ -187,6 +187,8 @@ Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model w
 
 ```julia
 using TopicModelsVB
+using Random
+using Distributions
 
 Random.seed!(10);
 
