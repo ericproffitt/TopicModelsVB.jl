@@ -516,7 +516,7 @@ sum([isempty(doc.readers) for doc in corp]) # = 158
 
 Fortunately, since CTPF can if need be depend entirely on thematic structure when making recommendations, this poses no problem for the model.
 
-Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus. Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics, and then run it for a relatively short number of iterations.
+Now that we've set up our experiment, let's instantiate and train a CTPF model on our corpus. Furthermore, in the interest of time, we'll also go ahead and GPU accelerate it.
 
 ```julia
 Random.seed!(2);
@@ -540,7 +540,7 @@ end
 @show mean(accuracy) # mean(accuracy) = 0.904
 ```
 
-We can see that, on average, our model ranks the true hidden reader in the top 9.7% of all non-readers for each document.
+We can see that, on average, our model ranks the true hidden reader in the top 9.6% of all non-readers for each document.
 
 Let's also take a look at the top recommendations for a particular document,
 
@@ -562,7 +562,7 @@ showdrecs(model, 1, 190)
 190. #user3741
 ```
 
-For evaluating user recommendations, let's take a more holistic approach.
+For evaluating our model's user recommendations, let's take a more holistic approach.
 
 Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library,
 
