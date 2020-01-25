@@ -514,7 +514,7 @@ sum([isempty(doc.readers) for doc in corp]) # = 158
 
 Fortunately, since CTPF can if need be depend entirely on thematic structure when making recommendations, this poses no problem for the model.
 
-Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus. Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics (K=30), and then run it for a relatively short number of iterations (iter=20).
+Now that we have set up our experiment, we instantiate and train a CTPF model on our corpus. Furthermore, since we're not interested in the interpretability of the topics, we'll instantiate our model with a larger than usual number of topics, and then run it for a relatively short number of iterations.
 
 ```julia
 Random.seed!(2);
@@ -535,7 +535,7 @@ for (d, u) in enumerate(ukeys_test)
     push!(accuracy, (nrlen - urank) / (nrlen - 1))
 end
 
-@show mean(accuracy) # mean(accuracy) = 0.903
+@show mean(accuracy) # mean(accuracy) = 0.904
 ```
 
 We can see that, on average, our model ranks the true hidden reader in the top 9.7% of all non-readers for each document.
@@ -544,20 +544,20 @@ Let's also take a look at the top recommendations for a particular document,
 
 ```julia
 ukeys_test[1] # = 3741
-accuracy[1] # = 0.965
+accuracy[1] # = 0.966
 ### user3741's library test document was placed in the top 3.5% of his or her recommendations.
 
-showdrecs(model, 1, 192)
+showdrecs(model, 1, 190)
 ```
 ```
  ●●● doc 1
  ●●● The metabolic world of Escherichia coli is not small
 ...
-188. #user4803
-189. #user3652
-190. #user1254
-191. #user5052
-192. #user3741
+186. #user653
+187. #user2641
+188. #user895
+189. #user4803
+190. #user3741
 ```
 
 For evaluating user recommendations, let's take a more holistic approach.
@@ -604,54 +604,54 @@ showurecs(model, 1741, 50)
  ●●● user 1741
 1.  On Understanding Types, Data Abstraction, and Polymorphism
 2.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-3.  Haskell's overlooked object system
-4.  Contracts for higher-order functions
-5.  Why Dependent Types Matter
-6.  Modern {C}ompiler {I}mplementation in {J}ava
-7.  Generalising monads to arrows
-8.  Functional programming with bananas, lenses, envelopes and barbed wire
-9.  Featherweight Java: A Minimal Core Calculus for Java and GJ
-10. On the expressive power of programming languages
-11. Ownership types for safe programming: preventing data races and deadlocks
-12. Dependent Types in Practical Programming
-13. The essence of compiling with continuations
-14. Types and programming languages
-15. A {S}yntactic {T}heory of {D}ynamic {B}inding
-16. Principles of programming with compvocab objects and collection types
-17. Functional pearl: implicit configurations--or, type classes reflect the values of types
-18. Typed Memory Management in a Calculus of Capabilities
-19. Type Classes with Functional Dependencies
-20. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
-21. Dynamic optimization for functional reactive programming using generalized algebraic data types
-22. Monadic Parsing in Haskell
-23. Monadic Parser Combinators
-24. Types, abstraction and parametric polymorphism
-25. Fast and Loose Reasoning Is Morally Correct
-26. Scrap your boilerplate: a practical design pattern for generic programming
-27. A comparative study of language support for generic programming
-28. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
-29. Definitional interpreters for higher-order programming languages
-30. A new notation for arrows
-31. The design and implementation of typed scheme
-32. A theory of type polymorphism in programming
-33. Sets for Mathematics
-34. Adoption and focus: practical linear types for imperative programming
-35. Languages of the Future
+3.  Modern {C}ompiler {I}mplementation in {J}ava
+4.  Haskell's overlooked object system
+5.  Contracts for higher-order functions
+6.  Dynamic optimization for functional reactive programming using generalized algebraic data types
+7.  Why Dependent Types Matter
+8.  Generalising monads to arrows
+9.  Functional programming with bananas, lenses, envelopes and barbed wire
+10. Ownership types for safe programming: preventing data races and deadlocks
+11. Featherweight Java: A Minimal Core Calculus for Java and GJ
+12. On the expressive power of programming languages
+13. Functional pearl: implicit configurations--or, type classes reflect the values of types
+14. A {S}yntactic {T}heory of {D}ynamic {B}inding
+15. Dependent Types in Practical Programming
+16. Types and programming languages
+17. The essence of compiling with continuations
+18. Principles of programming with complex objects and collection types
+19. Sets for Mathematics
+20. Typed Memory Management in a Calculus of Capabilities
+21. Type Classes with Functional Dependencies
+22. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
+23. Monadic Parsing in Haskell
+24. The design and implementation of typed scheme
+25. Types, abstraction and parametric polymorphism
+26. Monadic Parser Combinators
+27. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
+28. Languages of the Future
+29. Fast and Loose Reasoning Is Morally Correct
+30. Scrap your boilerplate: a practical design pattern for generic programming
+31. A comparative study of language support for generic programming
+32. Definitional interpreters for higher-order programming languages
+33. A new notation for arrows
+34. The next 700 programming languages
+35. A theory of type polymorphism in programming
 36. The {Calculus of Constructions}
-37. Scrap your nameplate: (functional pearl)
-38. Foundations for structured programming with GADTs
-39. Synthesizing Object-Oriented and Functional Design to Promote Re-Use
+37. Foundations for structured programming with GADTs
+38. Type Systems
+39. Adoption and focus: practical linear types for imperative programming
 40. A Tutorial on (Co)Algebras and (Co)Induction
-41. The next 700 programming languages
-42. Visual Programming
-43. The Definition of Standard ML - Revised
-44. Call-by-name, call-by-value, and the $\lambda$-calculus
-45. Stack-Based Typed Assembly Language
-46. Associated types with class
-47. Programming Languages: Application and Interpretation
-48. Type Systems
-49. Ott: Effective Tool Support for the Working Semanticist
-50. Typed Contracts for Functional Programming
+41. Programming Languages: Application and Interpretation
+42. Parsing expression grammars: a recognition-based syntactic foundation
+43. Scrap your nameplate: (functional pearl)
+44. Ott: Effective Tool Support for the Working Semanticist
+45. The Definition of Standard ML - Revised
+46. Synthesizing Object-Oriented and Functional Design to Promote Re-Use
+47. Visual Programming
+48. The evolution of Lisp
+49. Domain specific embedded compilers
+50. Call-by-name, call-by-value, and the $\lambda$-calculus
 ```
 
 Raw scores, as well as document and user recommendations, may be accessed via,
