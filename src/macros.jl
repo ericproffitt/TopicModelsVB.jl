@@ -148,9 +148,6 @@ macro gpu(expr::Expr)
 			model.phi ./= sum(model.phi, dims=1)
 			nothing
 
-		#elseif isa(model, fLDA)
-		#	nothing
-
 		elseif isa(model, CTM)
 			gpumodel = gpuCTM(Corpus(), 1)
 			gpumodel.corp = model.corp
@@ -185,9 +182,6 @@ macro gpu(expr::Expr)
 
 			model.beta ./= sum(model.beta, dims=2)
 			model.phi ./= sum(model.phi, dims=1)
-			nothing
-
-		elseif isa(model, fCTM)
 			nothing
 
 		elseif isa(model, CTPF)
