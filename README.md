@@ -387,7 +387,7 @@ model.sigma[6,7] # = 9.280
 
 ### Top 2 negative entries:
 model.sigma[5,6] # = -32.034
-model.sigma[2,3] # = -21.081
+model.sigma[2,3] # = -21.080
 ```
 
 According to the list above, the most closely related topics are topics 5 and 8, which correspond to the *Mathematics* and *Computer Science* topics, followed by 6 and 7, corresponding *Molecular Biology* and *Ecology*.
@@ -467,7 +467,7 @@ Now let's take a look at the predicted topic distributions for these five docume
 
 ```julia
 for d in 1:5
-	println("Document ", 4995 + d, ": ", round.(topicdist(test_model, d), digits=3))
+    println("Document ", 4995 + d, ": ", round.(topicdist(test_model, d), digits=3))
 end
 ```
 
@@ -555,6 +555,8 @@ showdrecs(model, 1, 190)
 189. #user4803
 190. #user3741
 ```
+
+The above output tells us that the test document corresponding to user 3741 placed him or her in the top 3.4% (position 190) of all non-readers.
 
 For evaluating our model's user recommendations, let's take a more holistic approach.
 
