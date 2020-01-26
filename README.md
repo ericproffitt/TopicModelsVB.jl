@@ -306,22 +306,22 @@ showtopics(artificial_model, cols=9)
 ```
 
 ```
-topic 1      topic 2       topic 3        topic 4        topic 5          topic 6          topic 7         topic 8        topic 9
-plant        research      research       research       data             research         theory          models         research
-cell         study         students       system         species          project          problems        study          university
-protein      chemistry     systems        design         research         data             study           research       dr
-cells        high          program        systems        study            study            research        data           support
-molecular    chemical      science        project        project          economic         equations       model          program
-genetic      studies       information    data           important        social           work            numerical      award
-proteins     surface       data           earthquake     studies          theory           geometry        methods        science
-gene         reactions     important      performance    time             important        groups          theoretical    students
-studies      metal         engineering    control        provide          understanding    differential    problems       sciences
-dna          materials     activities     analysis       patterns         development      project         physics        project
-plants       electron      project        based          ocean            work             algebraic       theory         scientists
-genes        organic       provide        algorithms     field            models           principal       time           projects
-research     structure     work           parallel       climate          analysis         mathematical    systems        national
-study        program       workshop       computer       understanding    policy           investigator    flow           scientific
-important    properties    field          developed      water            provide          analysis        work           months
+topic 1        topic 2        topic 3       topic 4      topic 5        topic 6         topic 7      topic 8        topic 9
+research       models         research      protein      research       research        data         research       theory
+project        study          study         plant        system         dr              research     students       problems
+data           research       chemistry     cell         systems        university      species      program        study
+system         data           surface       cells        design         support         project      science        equations
+design         methods        high          dna          data           award           study        conference     research
+systems        theoretical    materials     genetic      earthquake     program         provide      university     work
+study          model          chemical      gene         project        project         time         support        project
+information    numerical      metal         proteins     program        sciences        important    scientists     groups
+earthquake     problems       electron      molecular    developed      months          studies      engineering    geometry
+theory         theory         studies       plants       control        mathematical    analysis     provide        differential
+models         physics        properties    studies      based          professor       processes    workshop       algebraic
+analysis       analysis       organic       research     techniques     equipment       climate      faculty        investigator
+control        work           program       genes        performance    science         results      graduate       mathematical
+work           systems        reactions     important    time           scientists      field        national       systems
+performance    flow           phase         system       high           year            water        scientific     principal
 ```
 
 ### CTM
