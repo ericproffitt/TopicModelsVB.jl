@@ -46,6 +46,7 @@ mutable struct gpuCTM <: TopicModel
 	lambda_hess_buffer::cl.Buffer{Float32}
 	lambda_dist_buffer::cl.Buffer{Float32}
 	vsq_buffer::cl.Buffer{Float32}
+	p_buffer::cl.Buffer{Float32}
 	logzeta_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
 
@@ -357,6 +358,7 @@ update_vsq(	long niter,
 			float ntol,
 			long K,
 			const global long *C,
+			global float *p,
 			const global float *invsigma,
 			const global float *lambda,
 			const global float *logzeta,
@@ -367,7 +369,6 @@ update_vsq(	long niter,
 
 			float vsq_grad;
 			float vsq_invhess;
-			float p;
 
 			for (long _=0; _<niter; _++)
 			{
@@ -379,15 +380,17 @@ update_vsq(	long niter,
 					vsq_grad = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) - 1 / vsq[K * d + i]);
 					vsq_invhess = -1 / (0.25f * C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) + 0.5f / (vsq[K * d + i] * vsq[K * d + i]));
 				
-					p = vsq_grad * vsq_invhess;
-					while (vsq[K * d + i] - rho * p <= 0)
+					p[K * d + i] = vsq_grad * vsq_invhess;
+					while (vsq[K * d + i] - rho * p[K * d + i] <= 0)
 						rho *= 0.5f;
 
-					vsq[K * d + i] -= rho * p;
 					acc += vsq_grad * vsq_grad;
 				}
+
+				for (long i=0; i<K; i++)
+					vsq[K * d + i] -= rho * p[K * d + i];
 				
-				if (sqrt(acc) < ntol)
+				if (rho * sqrt(acc) < ntol)
 					break;
 			}
 
@@ -400,7 +403,7 @@ function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update vsq."
 	"Interior-point Newton's method with log-barrier and back-tracking line search."
 
-	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
+	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.C_buffer, model.p_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
 const CTM_logzeta_c = 

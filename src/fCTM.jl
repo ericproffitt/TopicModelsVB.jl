@@ -217,7 +217,7 @@ function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 		end	
 		model.vsq[d] -= rho * p
 		
-		if norm(vsq_grad) < ntol
+		if rho * norm(vsq_grad) < ntol
 			break
 		end
 	end
