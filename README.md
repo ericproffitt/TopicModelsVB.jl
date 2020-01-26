@@ -244,12 +244,6 @@ model.beta
 ### V = number of vocabulary terms, ordered identically to the keys in model.corp.vocab.
 ```
 
-For the CTPF models, you may access the raw topic distributions by computing,
-
-```julia
-model.alef ./ model.bet
-```
-
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.
 
 For instance, document 1 has topic breakdown,
@@ -654,6 +648,12 @@ showurecs(model, 1741, 50)
 48. The evolution of Lisp
 49. Domain specific embedded compilers
 50. Call-by-name, call-by-value, and the $\lambda$-calculus
+```
+
+For the CTPF models, you may access the raw topic distributions by computing,
+
+```julia
+model.alef ./ model.bet
 ```
 
 Raw scores, as well as document and user recommendations, may be accessed via,
