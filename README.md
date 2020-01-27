@@ -408,7 +408,7 @@ test_corp = copy(corp)
 test_corp.docs = test_corp[4996:5000];
 ```
 
-Now we can train our LDA model on just the training corpus, and then use that trained model to predict the topic distributions of the ten documents in our test corpus,
+Now we can train our LDA model on just the training corpus, and then use that trained model to predict the topic distributions of the five documents in our test corpus,
 
 ```julia
 Random.seed!(10);
