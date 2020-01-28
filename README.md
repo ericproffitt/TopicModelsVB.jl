@@ -694,7 +694,7 @@ model = LDA(corp, 16)
 ### On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
 
-**Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently, since checking the ELBO for GPU models requires expensive memory allocations on the CPU.
+**Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently, since checking the ELBO requires expensive memory allocations and single threaded computation on the CPU.
 
 Here is the benchmark of the above model's coordinate ascent algorithm against the equivalent algorithm run on the CPU,
 
