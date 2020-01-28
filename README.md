@@ -147,7 +147,7 @@ Whenever you load a corpus into a model, a copy of that corpus is made, such tha
 
 1. Using `fixcorp!` to modify the documents of a corpus will not result in corpus defects, but will cause them also to be changed in all other corpora which contain them.
 
-2. If you would like to make a copy a corpus with independent documents, use `deepcopy(corp)`.
+2. If you would like to make a copy of a corpus with independent documents, use `deepcopy(corp)`.
 
 3. Manually modifying documents is dangerous, and can result in corpus defects which cannot be fixed by `fixcorp!`. It is advised that you don't do this without good reason.
 
