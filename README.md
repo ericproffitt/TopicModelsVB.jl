@@ -421,7 +421,7 @@ test_model = predict(test_corp, train_model)
 
 The `predict` function works by taking in a corpus of new, unseen documents, and a trained model, and returning a new model of the same type. This new model can then be inspected directly, or using `topicdist`, in order to see the topic distribution for the documents in the test corpus.
 
-Let's first take a look at the topics for the trained model, as well as the documents in our test corpus,
+Let's first take a look at both the topics for the trained model and the documents in our test corpus,
 
 ```julia
 showtopics(train_model, cols=9, 20)
@@ -555,7 +555,7 @@ showdrecs(model, 1, 190)
 190. #user3741
 ```
 
-The above output tells us that the test document corresponding to user 3741 placed him or her in the top 3.4% (position 190) of all non-readers.
+What the above output tells us is that user 3741's test document placed him or her in the top 3.4% (position 190) of all non-readers.
 
 For evaluating our model's user recommendations, let's take a more holistic approach.
 
