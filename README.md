@@ -559,7 +559,7 @@ What the above output tells us is that user 3741's test document placed him or h
 
 For evaluating our model's user recommendations, let's take a more holistic approach.
 
-Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a modestly sized relatively focused library,
+Since large heterogenous libraries make the qualitative assessment of recommendations difficult, let's search for a user with a small focused library,
 
 ```julia
 showlibs(model, 1741)
