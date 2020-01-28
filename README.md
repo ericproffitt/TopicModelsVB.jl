@@ -541,7 +541,6 @@ Let's also take a look at the top recommendations for a particular document,
 ```julia
 ukeys_test[1] # = 3741
 accuracy[1] # = 0.966
-### user3741's library test document was placed in the top 3.5% of his or her recommendations.
 
 showdrecs(model, 1, 190)
 ```
