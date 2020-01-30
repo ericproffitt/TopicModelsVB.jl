@@ -1,7 +1,3 @@
-### Macros for TopicModelsVB
-### Eric Proffitt
-### December 3, 2019
-
 macro juliadots(str::String)
 	"Print Julia dots before bolded string output."
 	"For vanilla strings."

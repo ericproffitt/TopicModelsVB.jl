@@ -1,7 +1,3 @@
-### Model utilites for TopicModelsVB
-### Eric Proffitt
-### December 3, 2019
-
 struct TopicModelError <: Exception
     msg::AbstractString
 end

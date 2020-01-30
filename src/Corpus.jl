@@ -1,7 +1,3 @@
-### Document and Corpus data structures for TopicModelsVB.
-### Eric Proffitt
-### December 3, 2019
-
 mutable struct Document
 	"Document mutable struct"
 
