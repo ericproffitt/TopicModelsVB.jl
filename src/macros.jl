@@ -240,11 +240,11 @@ macro gpu(expr::Expr)
 				terms = model.corp[d].terms
 				readers = model.corp[d].readers
 
-				model.phi[d] = exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.bet_old) .+ digamma.(model.alef_old[:,terms]))
-				model.phi[d] ./= sum(model.phi[d], dims=1)
+				gpumodel.phi[d] = exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.bet_old) .+ digamma.(model.alef_old[:,terms]))
+				gpumodel.phi[d] ./= sum(gpumodel.phi[d], dims=1)
 
-				model.xi[d] = vcat(exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])), exp.(digamma.(model.zayin_old[d]) - log.(model.het_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])))
-				model.xi[d] ./= sum(model.xi[d], dims=1)
+				gpumodel.xi[d] = vcat(exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])), exp.(digamma.(model.zayin_old[d]) - log.(model.het_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])))
+				gpumodel.xi[d] ./= sum(gpumodel.xi[d], dims=1)
 			end
 
 			gpumodel.elbo = model.elbo
