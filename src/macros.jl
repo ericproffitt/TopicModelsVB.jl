@@ -131,6 +131,7 @@ macro gpu(expr::Expr)
 			gpumodel.beta = model.beta
 			gpumodel.Elogtheta = model.Elogtheta
 			gpumodel.gamma = model.gamma
+			gpumodel.phi = [Array{Float32}(undef, 0, 0) for d in 1:model.M]
 
 			for d in 1:model.M
 				terms = model.corp[d].terms
@@ -145,9 +146,9 @@ macro gpu(expr::Expr)
 			model.topics = gpumodel.topics
 			model.alpha = gpumodel.alpha
 			model.beta = gpumodel.beta
-			model.beta_old = gpumodel.beta
+			model.beta_old = copy(model.beta)
 			model.Elogtheta = gpumodel.Elogtheta
-			model.Elogtheta_old = gpumodel.Elogtheta
+			model.Elogtheta_old = deepcopy(model.Elogtheta)
 			model.gamma = gpumodel.gamma
 			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
 			model.elbo = gpumodel.elbo
@@ -172,7 +173,14 @@ macro gpu(expr::Expr)
 			gpumodel.lambda = model.lambda
 			gpumodel.vsq = model.vsq
 			gpumodel.logzeta = model.logzeta
-			gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
+			gpumodel.phi = [Array{Float32}(undef, 0, 0) for d in 1:model.M]
+
+			for d in 1:model.M
+				terms = model.corp[d].terms
+				@positive gpumodel.phi[d] = additive_logistic(log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
+				gpumodel.phi[d] ./= sum(gpumodel.phi[d], dims=1)
+			end
+
 			gpumodel.elbo = model.elbo
 			
 			train!(gpumodel; kwargs...)
@@ -182,7 +190,9 @@ macro gpu(expr::Expr)
 			model.sigma = convert(Symmetric{Float64,Array{Float64,2}}, model.sigma)
 			model.invsigma = convert(Symmetric{Float64,Array{Float64,2}}, model.invsigma)
 			model.beta = gpumodel.beta
+			model.beta_old = copy(model.beta)
 			model.lambda = gpumodel.lambda
+			model.lambda_old = deepcopy(model.lambda)
 			model.vsq = gpumodel.vsq
 			model.logzeta = gpumodel.logzeta
 			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
@@ -223,8 +233,20 @@ macro gpu(expr::Expr)
 			gpumodel.zayin = model.zayin
 			gpumodel.dalet = model.dalet
 			gpumodel.het = model.het
-			gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
-			gpumodel.xi = [ones(2model.K, model.R[d]) / 2model.K for d in 1:model.M]
+			gpumodel.phi = [Array{Float32}(undef, 0, 0) for d in 1:model.M]
+			gpumodel.xi = [Array{Float32}(undef, 0, 0) for d in 1:model.M]
+
+			for d in 1:model.M
+				terms = model.corp[d].terms
+				readers = model.corp[d].readers
+
+				model.phi[d] = exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.bet_old) .+ digamma.(model.alef_old[:,terms]))
+				model.phi[d] ./= sum(model.phi[d], dims=1)
+
+				model.xi[d] = vcat(exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])), exp.(digamma.(model.zayin_old[d]) - log.(model.het_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])))
+				model.xi[d] ./= sum(model.xi[d], dims=1)
+			end
+
 			gpumodel.elbo = model.elbo
 			
 			train!(gpumodel; kwargs...)
@@ -234,13 +256,21 @@ macro gpu(expr::Expr)
 			model.drecs = gpumodel.drecs
 			model.urecs = gpumodel.urecs
 			model.alef = gpumodel.alef
+			model.alef_old = copy(model.alef)
 			model.he = gpumodel.he
+			model.he_old = copy(model.he)
 			model.bet = gpumodel.bet
+			model.bet_old = copy(model.bet)
 			model.vav = gpumodel.vav
+			model.vav_old = copy(model.vav)
 			model.gimel = gpumodel.gimel
+			model.gimel_old = deepcopy(model.gimel)
 			model.zayin = gpumodel.zayin
+			model.zayin_old = deepcopy(model.zayin)
 			model.dalet = gpumodel.dalet
+			model.dalet_old = copy(model.dalet)
 			model.het = gpumodel.het
+			model.het_old = copy(model.het)
 			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
 			model.xi = gpumodel.xi[1:min(gpumodel.M, 1)]
 			model.elbo = gpumodel.elbo

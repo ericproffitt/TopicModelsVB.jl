@@ -43,10 +43,10 @@ mutable struct fLDA <: TopicModel
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
 		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
-		Elogtheta_old = copy(Elogtheta)
+		Elogtheta_old = deepcopy(Elogtheta)
 		gamma = [ones(K) for _ in 1:M]
 		tau = [fill(eta, N[d]) for d in 1:M]
-		tau_old = copy(tau)
+		tau_old = deepcopy(tau)
 		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo = 0
 	

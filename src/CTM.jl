@@ -38,7 +38,7 @@ mutable struct CTM <: TopicModel
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
 		lambda = [zeros(K) for _ in 1:M]
-		lambda_old = copy(lambda)
+		lambda_old = deepcopy(lambda)
 		vsq = [ones(K) for _ in 1:M]
 		logzeta = fill(0.5, M)
 		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]

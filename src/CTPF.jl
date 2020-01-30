@@ -77,9 +77,9 @@ mutable struct CTPF <: TopicModel
 		vav = ones(K)
 		vav_old = copy(vav)
 		gimel = [ones(K) for _ in 1:M]
-		gimel_old = copy(gimel)
+		gimel_old = deepcopy(gimel)
 		zayin = [ones(K) for _ in 1:M]
-		zayin_old = copy(zayin)
+		zayin_old = deepcopy(zayin)
 		dalet = ones(K)
 		dalet_old = copy(dalet)
 		het = ones(K)

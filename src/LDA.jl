@@ -33,7 +33,7 @@ mutable struct LDA <: TopicModel
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
 		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
-		Elogtheta_old = copy(Elogtheta)
+		Elogtheta_old = deepcopy(Elogtheta)
 		gamma = [ones(K) for _ in 1:M]
 		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
 		elbo = 0

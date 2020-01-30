@@ -139,12 +139,12 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 
 	@host model.Elogtheta_sum_buffer
 
-	nu = model.K
+	nu = Float32(model.K)
 	for _ in 1:niter
 		rho = 1.0f0
-		alpha_grad = (nu ./ model.alpha + model.M * (digamma(sum(model.alpha)) .- digamma.(model.alpha))) + model.Elogtheta_sum
+		alpha_grad = (nu ./ model.alpha + Float32(model.M) * (digamma(sum(model.alpha)) .- digamma.(model.alpha))) + model.Elogtheta_sum
 		alpha_invhess_diag = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
-		p = (alpha_grad .- dot(alpha_grad, alpha_invhess_diag)  * (model.M * trigamma(sum(model.alpha)) + sum(alpha_invhess_diag))) .* alpha_invhess_diag
+		p = (alpha_grad .- dot(alpha_grad, alpha_invhess_diag)  * (Float32(model.M) * trigamma(sum(model.alpha)) + sum(alpha_invhess_diag))) .* alpha_invhess_diag
 		
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5f0
@@ -154,7 +154,7 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 		if (rho * norm(alpha_grad) < ntol) & (nu / model.K < ntol)
 			break
 		end
-		nu *= 0.5
+		nu *= 0.5f0
 	end
 	@positive model.alpha
 	@buffer model.alpha

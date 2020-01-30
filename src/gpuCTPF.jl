@@ -97,7 +97,7 @@ mutable struct gpuCTPF <: TopicModel
 		bet = ones(K)
 		vav = ones(K)
 		gimel = [ones(K) for _ in 1:M]
-		gimel_old = copy(gimel)
+		gimel_old = deepcopy(gimel)
 		zayin = [ones(K) for _ in 1:M]
 		dalet = ones(K)
 		het = ones(K)
