@@ -131,7 +131,13 @@ macro gpu(expr::Expr)
 			gpumodel.beta = model.beta
 			gpumodel.Elogtheta = model.Elogtheta
 			gpumodel.gamma = model.gamma
-			gpumodel.phi = [ones(model.K, model.N[d]) / model.K for d in 1:model.M]
+
+			for d in 1:model.M
+				terms = model.corp[d].terms
+				@positive gpumodel.phi[d] = model.beta_old[:,terms] .* exp.(model.Elogtheta_old[d])
+				gpumodel.phi[d] ./= sum(gpumodel.phi[d], dims=1)
+			end
+
 			gpumodel.elbo = model.elbo
 			
 			train!(gpumodel; kwargs...)
@@ -141,6 +147,7 @@ macro gpu(expr::Expr)
 			model.beta = gpumodel.beta
 			model.beta_old = gpumodel.beta
 			model.Elogtheta = gpumodel.Elogtheta
+			model.Elogtheta_old = gpumodel.Elogtheta
 			model.gamma = gpumodel.gamma
 			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
 			model.elbo = gpumodel.elbo
