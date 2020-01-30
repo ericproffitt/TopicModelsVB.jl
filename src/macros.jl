@@ -139,6 +139,7 @@ macro gpu(expr::Expr)
 			model.topics = gpumodel.topics
 			model.alpha = gpumodel.alpha
 			model.beta = gpumodel.beta
+			model.beta_old = gpumodel.beta
 			model.Elogtheta = gpumodel.Elogtheta
 			model.gamma = gpumodel.gamma
 			model.phi = gpumodel.phi[1:min(gpumodel.M, 1)]
