@@ -701,7 +701,8 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 end
 
 showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
-showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(corp, collect(user_range))
+showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(model, collect(user_range))
+showlibs(model::Union{CTPF, gpuCTPF}) = showlibs(model, 1:length(model.libs))
 
 function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}}, U::Integer=min(16, model.U); cols::Integer=4)
 	"Display the top U user recommendations for a document(s)."
