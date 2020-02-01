@@ -639,22 +639,22 @@ function gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
 	return corp
 end
 
-function showtopics(model::TopicModel, T::Integer=15; topics::Union{<:Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
+function showtopics(model::TopicModel, V::Integer=15; topics::Union{<:Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
 	"Display the top T terms for each topic."
 	"topics parameter controls which topics are displayed."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	(T > 0)									|| throw(ArgumentError("Number of displayed terms must be a positive integer."))
+	(V > 0)									|| throw(ArgumentError("Number of displayed terms must be a positive integer."))
 	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("Some topic indices are outside range."))
 	(cols > 0)								|| throw(ArgumentError("cols must be a positive integer."))
-	T = min(T, model.V)	
+	V = min(V, model.V)	
 	cols = min(cols, length(topics))
 
 	maxjspacings = [maximum([length(model.corp.vocab[j]) for j in topic[1:T]]) for topic in model.topics]
 	topic_blocks = Iterators.partition(topics, cols)
 
 	for (n, topic_block) in enumerate(topic_blocks)
-		for j in 0:T
+		for j in 0:V
 			for (k, i) in enumerate(topic_block)
 				if j == 0
 					jspacing = max(4, maxjspacings[i] - length("$i") - 2)
@@ -746,7 +746,7 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:In
 	end
 end
 
-function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}}, M::Integer=min(10, model.M); cols::Integer=1)
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, M::Integer=10; cols::Integer=1)
 	"# Show the top 'M' document recommendations for a user(s)."
 	"If a document has no title, the document's index in the corpus will be shown instead."
 
