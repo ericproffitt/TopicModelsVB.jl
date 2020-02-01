@@ -650,7 +650,7 @@ function showtopics(model::TopicModel, V::Integer=15; topics::Union{<:Integer, V
 	V = min(V, model.V)	
 	cols = min(cols, length(topics))
 
-	maxjspacings = [maximum([length(model.corp.vocab[j]) for j in topic[1:T]]) for topic in model.topics]
+	maxjspacings = [maximum([length(model.corp.vocab[j]) for j in topic[1:V]]) for topic in model.topics]
 	topic_blocks = Iterators.partition(topics, cols)
 
 	for (n, topic_block) in enumerate(topic_blocks)
