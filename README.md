@@ -519,14 +519,14 @@ train!(model, iter=50, check_elbo=5)
 ### training...
 ```
 
-Finally, we evaluate the accuracy of our model against the test set.
+Finally, we evaluate the performance of our model on the test set.
 
 ```julia
-accuracy = Float64[]
+ranks = Float64[]
 for (d, u) in enumerate(ukeys_test)
     urank = findall(model.drecs[d] .== u)[1]
     nrlen = length(model.drecs[d])
-    push!(accuracy, (nrlen - urank) / (nrlen - 1))
+    push!(ranks, (nrlen - urank) / (nrlen - 1))
 end
 ```
 
@@ -537,20 +537,18 @@ The following histogram shows the proportional ranking of each test user for the
 Let's also take a look at the top recommendations for a particular document,
 
 ```julia
-ukeys_test[1] # = 3741
-accuracy[1] # = 0.966
+ukeys_test[1] # = 3949
+ranks[1] # = 0.999
 
-showdrecs(model, 1, 190)
+showdrecs(model, 1, 4, cols=1)
 ```
 ```
  ●●● doc 1
  ●●● The metabolic world of Escherichia coli is not small
-...
-186. #user653
-187. #user2641
-188. #user895
-189. #user4803
-190. #user3741
+1. #user4730
+2. #user2073
+3. #user1904
+4. #user3949
 ```
 
 What the above output tells us is that user 3741's test document placed him or her in the top 3.4% (position 190) of all non-readers.
