@@ -688,7 +688,7 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 		
 		for d in model.libs[u]
 			print(Crayon(foreground=:yellow, bold=true), " • ")
-			isempty(model.corp[d].title) ? print(Crayon(foreground=:white, bold=false), "Document $d\n") : print(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)\n")
+			isempty(model.corp[d].title) ? println(Crayon(foreground=:white, bold=false), "Document $d") : println(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)")
 		end
 		print()
 	end

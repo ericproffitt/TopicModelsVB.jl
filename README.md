@@ -485,7 +485,7 @@ For our final model, we take a look at the collaborative topic Poisson factoriza
 CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
-Random.seed!(2);
+Random.seed!(1);
 
 corp = readcorp(:citeu)
 
@@ -513,15 +513,13 @@ Fortunately, since CTPF can if need be depend entirely on thematic structure whe
 Now that we've set up our experiment, let's instantiate and train a CTPF model on our corpus. Furthermore, in the interest of time, we'll also go ahead and GPU accelerate it.
 
 ```julia
-Random.seed!(2);
-
-model = gpuCTPF(corp, 30)
-train!(model, iter=20, check_elbo=5)
+model = gpuCTPF(corp, 100)
+train!(model, iter=50, check_elbo=5)
 
 ### training...
 ```
 
-Finally, we evaluate the accuracy of our model against the test set, where baseline for mean accuracy is 0.5.
+Finally, we evaluate the accuracy of our model against the test set.
 
 ```julia
 accuracy = Float64[]
@@ -530,11 +528,7 @@ for (d, u) in enumerate(ukeys_test)
     nrlen = length(model.drecs[d])
     push!(accuracy, (nrlen - urank) / (nrlen - 1))
 end
-
-@show mean(accuracy) # mean(accuracy) = 0.904
 ```
-
-We can see that, on average, our model ranks the true hidden reader in the top 9.6% of all non-readers for each document.
 
 Let's also take a look at the top recommendations for a particular document,
 
@@ -599,56 +593,56 @@ showurecs(model, 1741, 50)
 
 ```
  ●●● user 1741
-1.  On Understanding Types, Data Abstraction, and Polymorphism
+1.  A {S}yntactic {T}heory of {D}ynamic {B}inding
 2.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-3.  Modern {C}ompiler {I}mplementation in {J}ava
-4.  Haskell's overlooked object system
-5.  Contracts for higher-order functions
-6.  Dynamic optimization for functional reactive programming using generalized algebraic data types
-7.  Why Dependent Types Matter
-8.  Generalising monads to arrows
-9.  Functional programming with bananas, lenses, envelopes and barbed wire
-10. Ownership types for safe programming: preventing data races and deadlocks
-11. Featherweight Java: A Minimal Core Calculus for Java and GJ
-12. On the expressive power of programming languages
-13. Functional pearl: implicit configurations--or, type classes reflect the values of types
-14. A {S}yntactic {T}heory of {D}ynamic {B}inding
-15. Dependent Types in Practical Programming
-16. Types and programming languages
-17. The essence of compiling with continuations
-18. Principles of programming with complex objects and collection types
-19. Sets for Mathematics
-20. Typed Memory Management in a Calculus of Capabilities
-21. Type Classes with Functional Dependencies
-22. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
-23. Monadic Parsing in Haskell
-24. The design and implementation of typed scheme
-25. Types, abstraction and parametric polymorphism
-26. Monadic Parser Combinators
-27. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
-28. Languages of the Future
-29. Fast and Loose Reasoning Is Morally Correct
-30. Scrap your boilerplate: a practical design pattern for generic programming
-31. A comparative study of language support for generic programming
-32. Definitional interpreters for higher-order programming languages
-33. A new notation for arrows
-34. The next 700 programming languages
-35. A theory of type polymorphism in programming
-36. The {Calculus of Constructions}
-37. Foundations for structured programming with GADTs
-38. Type Systems
-39. Adoption and focus: practical linear types for imperative programming
-40. A Tutorial on (Co)Algebras and (Co)Induction
-41. Programming Languages: Application and Interpretation
-42. Parsing expression grammars: a recognition-based syntactic foundation
-43. Scrap your nameplate: (functional pearl)
-44. Ott: Effective Tool Support for the Working Semanticist
-45. The Definition of Standard ML - Revised
-46. Synthesizing Object-Oriented and Functional Design to Promote Re-Use
-47. Visual Programming
-48. The evolution of Lisp
-49. Domain specific embedded compilers
-50. Call-by-name, call-by-value, and the $\lambda$-calculus
+3.  Monadic Parser Combinators
+4.  Multi-stage programming with functors and monads: eliminating abstraction overhead from generic code
+5.  Functional programming with bananas, lenses, envelopes and barbed wire
+6.  Total Functional Programming
+7.  Domain specific embedded compilers
+8.  A new notation for arrows
+9.  Lazy functional state threads
+10. A correspondence between continuation passing style and static single assignment form
+11. Dynamic Applications From the Ground Up
+12. Template meta-programming for Haskell
+13. Applicative Programming with Effects
+14. Fast and Loose Reasoning Is Morally Correct
+15. DSL implementation using staging and monads
+16. Monadic Parsing in Haskell
+17. seL4: Formal Verification of an {OS} Kernel
+18. Formal certification of a compiler back-end or: programming a compiler with a proof assistant
+19. Dynamic class loading in the Java virtual machine
+20. Foundational Calculi for Programming Languages
+21. Generalising monads to arrows
+22. Dynamic optimization for functional reactive programming using generalized algebraic data types
+23. Ribo-gnome: The Big World of Small RNAs
+24. When is a Functional Program Not a Functional Program?
+25. On the expressive power of programming languages
+26. Purely functional data structures
+27. Implementing deterministic declarative concurrency using sieves
+28. Scrap your boilerplate: a practical design pattern for generic programming
+29. Proof-Carrying Code
+30. Adaptive Functional Programming
+31. The Zipper
+32. Ownership types for safe programming: preventing data races and deadlocks
+33. Scientific Illiteracy and the Partisan Takeover of Biology
+34. Generic Programming: An Introduction
+35. Types and programming languages
+36. Dependent Types in Practical Programming
+37. An embedded domain-specific language for type-safe server-side web scripting
+38. Dynamic Typing as Staged Type Inference
+39. The next 700 programming languages
+40. A formal model for an expressive fragment of XSLT
+41. Modular Domain Specific Languages and Tools
+42. Abstract interpretation: a unified lattice model for static analysis of programs by construction or approximation of fixpoints
+43. Tracking Down Software Bugs Using Automatic Anomaly Detection
+44. The design and implementation of typed scheme
+45. Packrat Parsing: Simple, Powerful, Lazy, Linear Time
+46. What is dynamic programming?
+47. A call-by-need lambda calculus
+48. {The Design of a Pretty-printing Library}
+49. Functional {D}ata {S}tructures
+50. Arrows, robots, and functional reactive programming
 ```
 
 For the CTPF models, you may access the raw topic distributions by computing,
