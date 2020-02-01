@@ -551,7 +551,7 @@ showdrecs(model, 1, 4, cols=1)
 4. #user3949
 ```
 
-What the above output tells us is that user 3741's test document placed him or her in the top 3.4% (position 190) of all non-readers.
+What the above output tells us is that user 3949's test document placed him or her in the top 0.1% (position 4) of all non-readers.
 
 For evaluating our model's user recommendations, let's take a more holistic approach.
 
