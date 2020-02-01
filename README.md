@@ -874,19 +874,19 @@ function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Inte
 function gendoc(model::TopicModel, laplace_smooth::Real=0.0)
 	"Generate a generic document from model parameters by running the associated graphical model as a generative process."
 
-function gencorp(model::TopicModel, corpsize::Int, laplace_smooth::Real=0.0)
+function gencorp(model::TopicModel, M::Integer, laplace_smooth::Real=0.0)
 	"Generate a generic corpus of size 'corpsize' from model parameters."
 
-function showtopics(model::TopicModel, N::Integer=min(15, model.V); topics::Union{Integer, Vector{Integer}}=collect(1:model.K), cols::Integer=4)
+function showtopics(model::TopicModel, V::Integer=15; topics::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
 	"Display the top 'N' words for each topic in 'topics', defaults to 4 columns per line."
 
-function showlibs(model::Union{CTPF, gpuCTPF}, users)
+function showlibs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}})
 	"Show the document(s) in a user's library."
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs, U)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, U::Integer=16; cols=4)
 	"Show the top 'U' user recommendations for a document(s)."
 
-function showurecs(ctpf::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{Integer}}, M::Integer=min(10, ctpf.M))
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, M::Integer=10; cols=1)
 	"Show the top 'M' document recommendations for a user(s)."
 
 function predict(corp::Corpus, train_model::Union{LDA, gpuLDA, CTM, gpuCTM, fCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
