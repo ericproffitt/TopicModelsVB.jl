@@ -530,7 +530,7 @@ for (d, u) in enumerate(ukeys_test)
 end
 ```
 
-![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/ctpfbar.png)
+![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/ctpfbar2.png)
 
 Let's also take a look at the top recommendations for a particular document,
 
