@@ -619,7 +619,7 @@ function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
 	term_count = Dict{Int, Int}()
 	for _ in 1:C
 		z = rand(topicdist)
-		w = rand(lexdist[z])
+		w = rand(vocab_dist[z])
 		haskey(term_count, w) ? term_count[w] += 1 : term_count[w] = 1
 	end
 
