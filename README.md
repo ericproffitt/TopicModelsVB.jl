@@ -530,6 +530,8 @@ for (d, u) in enumerate(ukeys_test)
 end
 ```
 
+The following histogram shows the proportional ranking of each test user for their corresponding document.
+
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/ctpfbar.png)
 
 Let's also take a look at the top recommendations for a particular document,
