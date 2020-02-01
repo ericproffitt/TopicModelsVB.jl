@@ -700,7 +700,9 @@ As we can see, running the LDA model on the GPU is approximatey 1500% faster tha
 
 Note, it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
-## Types
+## Glossary
+
+### Types
 
 ```julia
 mutable struct Document
