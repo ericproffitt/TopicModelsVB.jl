@@ -90,7 +90,7 @@ mutable struct gpuCTPF <: TopicModel
 
 		drecs = Vector{Int}[]
 		for d in 1:M
-			push!(drecs, collect(setdiff(1:U, model.corp[d].readers)))
+			push!(drecs, collect(setdiff(1:U, corp[d].readers)))
 		end
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
