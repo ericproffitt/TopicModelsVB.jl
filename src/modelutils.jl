@@ -704,14 +704,13 @@ showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
 showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(model, collect(user_range))
 showlibs(model::Union{CTPF, gpuCTPF}) = showlibs(model, 1:length(model.libs))
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, U::Integer=16; cols::Integer=4)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=16; cols::Integer=4)
 	"Display the top U user recommendations for a document(s)."
 	"cols parameter controls the number of topic columns displayed per line."
 
 	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("Some document indices are outside range."))
 	(U > 0) 							|| throw(ArgumentError("Number of displayed users must be a positive integer."))
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
-	isa(docs, Vector) || (docs = [docs])
 	U = min(U, model.U)
 
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
@@ -746,19 +745,21 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:In
 	end
 end
 
-function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, M::Integer=10; cols::Integer=1)
+showdrecs(model::Union{CTPF, gpuCTPF}, doc::Integer, U::Integer=16; cols::Integer=4) = showdrecs(model, [doc], U; cols=cols)
+showdrecs(model::Union{CTPF, gpuCTPF}, docs::UnitRange{<:Integer}, U::Integer=16; cols::Integer=4) = showdrecs(model, collect(docs), U; cols=cols)
+
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=10; cols::Integer=1)
 	"# Show the top 'M' document recommendations for a user(s)."
 	"If a document has no title, the document's index in the corpus will be shown instead."
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	(M > 0) 							|| throw(ArgumentError("Number of displayed documents must be a positive integer."))
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
-	isa(users, Vector) || (users = [users])
 	M = min(M, model.M)
 
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
 
-	for (n, u) in length(users)
+	for (n, u) in enumerate(users)
 		@juliadots "user $u\n"
 		try 
 			if corp.users[u][1:5] != "#user"
@@ -793,6 +794,9 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 		end
 	end
 end
+
+showurecs(model::Union{CTPF, gpuCTPF}, user::Integer, M::Integer=16; cols::Integer=4) = showurecs(model, [user], M; cols=cols)
+showurecs(model::Union{CTPF, gpuCTPF}, users::UnitRange{<:Integer}, M::Integer=16; cols::Integer=4) = showurecs(model, collect(users), M; cols=cols)
 
 function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10, tol::Real=1/train_model.K^2)
 	"Predict topic distributions for corpus of documents based on trained LDA model."
