@@ -704,17 +704,19 @@ showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
 showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(model, collect(user_range))
 showlibs(model::Union{CTPF, gpuCTPF}) = showlibs(model, 1:length(model.libs))
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}}, U::Integer=min(16, model.U); cols::Integer=4)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, U::Integer=16; cols::Integer=4)
 	"Display the top U user recommendations for a document(s)."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	checkbounds(Bool, 1:model.U, U) 	|| throw(ArgumentError("Some user indices are outside range."))
 	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("Some document indices are outside range."))
+	(U > 0) 							|| throw(ArgumentError("Number of displayed users must be a positive integer."))
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	isa(docs, Vector) || (docs = [docs])
+	U = min(U, model.U)
+
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
-	for d in docs
+	for (n, d) in enumerate(docs)
 		@juliadots "doc $d\n"
 		if !isempty(corp[d].title)
 			@juliadots corp[d].title * "\n"
@@ -737,7 +739,10 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:In
 			end
 			println()
 		end
-		println()
+
+		if n < length(docs)
+			println()
+		end
 	end
 end
 
@@ -746,13 +751,14 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 	"If a document has no title, the document's index in the corpus will be shown instead."
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
-	checkbounds(Bool, 1:model.M, M) 	|| throw(ArgumentError("Some document indices are outside range."))
+	(M > 0) 							|| throw(ArgumentError("Number of displayed documents must be a positive integer."))
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	isa(users, Vector) || (users = [users])
+	M = min(M, model.M)
 
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
 
-	for u in users
+	for (n, u) in length(users)
 		@juliadots "user $u\n"
 		try 
 			if corp.users[u][1:5] != "#user"
@@ -781,7 +787,10 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:I
 			end
 			println()
 		end
-		println()
+
+		if n < length(users)
+			println()
+		end
 	end
 end
 
