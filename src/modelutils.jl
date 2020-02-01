@@ -716,7 +716,7 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Inte
 	corp, drecs, users = model.corp, model.drecs, model.corp.users
 
 	for (n, d) in enumerate(docs)
-		@juliadots "doc $d\n"
+		@juliadots "Document $d\n"
 		if !isempty(corp[d].title)
 			@juliadots corp[d].title * "\n"
 		end
