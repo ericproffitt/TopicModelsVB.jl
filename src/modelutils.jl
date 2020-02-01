@@ -627,46 +627,49 @@ function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
 	return doc
 end
 
-function gencorp(model::TopicModel, corp_size::Integer; laplace_smooth::Real=0.0)
+function gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
 	"Generate artificial corpus using specified generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
-	(corp_size > 0 )		|| throw(ArgumentError("corp_size parameter must be a positive integer."))
+	(M > 0)					|| throw(ArgumentError("corp_size parameter must be a positive integer."))
 	(laplace_smooth >= 0)	|| throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	corp = Corpus(vocab=model.corp.vocab, users=model.corp.users)
-	corp.docs = [gendoc(model, laplace_smooth) for d in 1:corp_size]
+	corp.docs = [gendoc(model, laplace_smooth) for d in 1:M]
 	return corp
 end
 
-function showtopics(model::TopicModel, top_n_terms::Integer=min(15, model.V); topics::Union{<:Integer, Vector{<:Integer}}=collect(1:model.K), cols::Integer=4)
-	"Display the top n terms for each topic."
+function showtopics(model::TopicModel, T::Integer=15; topics::Union{<:Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
+	"Display the top T terms for each topic."
 	"topics parameter controls which topics are displayed."
 	"cols parameter controls the number of topic columns displayed per line."
 
-	(top_n_terms <= model.V)				|| throw(ArgumentError("Number of displayed terms must be less than vocab size."))
+	(T > 0)									|| throw(ArgumentError("Number of displayed terms must be a positive integer."))
 	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("Some topic indices are outside range."))
 	(cols > 0)								|| throw(ArgumentError("cols must be a positive integer."))
-	
+	T = min(T, model.V)	
 	cols = min(cols, length(topics))
 
-	vocab = model.corp.vocab
-	maxjspacings = [maximum([length(vocab[j]) for j in topic[1:top_n_terms]]) for topic in model.topics]
+	maxjspacings = [maximum([length(model.corp.vocab[j]) for j in topic[1:T]]) for topic in model.topics]
+	topic_blocks = Iterators.partition(topics, cols)
 
-	for block in Iterators.partition(topics, cols)
-		for j in 0:top_n_terms
-			for (k, i) in enumerate(block)
+	for (n, topic_block) in enumerate(topic_blocks)
+		for j in 0:T
+			for (k, i) in enumerate(topic_block)
 				if j == 0
 					jspacing = max(4, maxjspacings[i] - length("$i") - 2)
 					k == cols ? print(Crayon(foreground=:yellow, bold=true), "topic $i") : print(Crayon(foreground=:yellow, bold=true), "topic $i" * " "^jspacing)
 				else
-					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(vocab[model.topics[i][j]]) + 4
-					k == cols ? print(Crayon(foreground=:white, bold=false), vocab[model.topics[i][j]]) : print(Crayon(foreground=:white, bold=false), vocab[model.topics[i][j]] * " "^jspacing)
+					jspacing = max(6 + length("$i"), maxjspacings[i]) - length(model.corp.vocab[model.topics[i][j]]) + 4
+					k == cols ? print(Crayon(foreground=:white, bold=false), model.corp.vocab[model.topics[i][j]]) : print(Crayon(foreground=:white, bold=false), model.corp.vocab[model.topics[i][j]] * " "^jspacing)
 				end
 			end
 			println()
 		end
-		println()
+
+		if n < length(topic_blocks)
+			println()
+		end
 	end
 end
 
@@ -675,7 +678,7 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	
-	for u in users
+	for (n, u) in enumerate(users)
 		@juliadots "user $u\n"
 		try
 			if model.corp.users[u][1:5] != "#user"
@@ -690,11 +693,15 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 			print(Crayon(foreground=:yellow, bold=true), " • ")
 			isempty(model.corp[d].title) ? println(Crayon(foreground=:white, bold=false), "Document $d") : println(Crayon(foreground=:white, bold=false), "$(model.corp[d].title)")
 		end
-		print()
+
+		if n < length(users)
+			println()
+		end
 	end
 end
 
 showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
+showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(corp, collect(user_range))
 
 function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}}, U::Integer=min(16, model.U); cols::Integer=4)
 	"Display the top U user recommendations for a document(s)."
