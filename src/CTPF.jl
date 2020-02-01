@@ -57,12 +57,15 @@ mutable struct CTPF <: TopicModel
 		scores = zeros(M, U)
 
 		libs = [Int[] for _ in 1:U]
+		urecs = [Int[] for _ in 1:U]
 		for u in 1:U, d in 1:M
-			u in corp[d].readers && push!(libs[u], d)
+			u in corp[d].readers ? push!(libs[u], d) : push!(urecs[u], d)
 		end
 
-		drecs = Vector[]
-		urecs = Vector[]
+		drecs = Vector{Int}[]
+		for d in 1:M
+			push!(drecs, collect(setdiff(1:U, model.corp[d].readers)))
+		end
 
 		a, b, c, d, e, f, g, h = fill(0.1, 8)
 
@@ -402,13 +405,13 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 
 	model.drecs = Vector{Int}[]
 	for d in 1:model.M
-		nr = collect(setdiff(keys(model.corp.users), model.corp[d].readers))
+		nr = collect(setdiff(1:model.U, model.corp[d].readers))
 		push!(model.drecs, nr[reverse(sortperm(vec(model.scores[d,nr])))])
 	end
 
 	model.urecs = Vector{Int}[]
 	for u in 1:model.U
-		ur = filter(d -> !(u in model.corp[d].readers), collect(1:model.M))
+		ur = [d for d in 1:model.M if !(u in model.corp[d].readers)]
 		push!(model.urecs, ur[reverse(sortperm(model.scores[ur,u]))])
 	end
 	nothing
