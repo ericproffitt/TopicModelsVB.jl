@@ -489,7 +489,7 @@ Random.seed!(1);
 
 corp = readcorp(:citeu)
 
-ukeys_test = Int[]
+ukeys_test = Int[];
 for doc in corp
     index = sample(1:length(doc.readers), 1)[1]
     push!(ukeys_test, doc.readers[index])
@@ -522,7 +522,7 @@ train!(model, iter=50, check_elbo=5)
 Finally, we evaluate the performance of our model on the test set.
 
 ```julia
-ranks = Float64[]
+ranks = Float64[];
 for (d, u) in enumerate(ukeys_test)
     urank = findall(model.drecs[d] .== u)[1]
     nrlen = length(model.drecs[d])
