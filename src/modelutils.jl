@@ -941,7 +941,13 @@ function topicdist(model::Union{CTPF, gpuCTPF}, d::Integer)
 
 	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
 
-	x = model.gimel[d] ./ model.dalet
+	terms = model.corp[d].terms
+	counts = model.corp[d].counts
+
+	phi = exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]))
+	phi ./= sum(phi, dims=1)
+	
+	x = phi * counts
 	topic_distribution = x / sum(x)
 
 	return topic_distribution
