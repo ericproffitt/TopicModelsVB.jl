@@ -592,7 +592,7 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 end
 
 function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
-	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
+	"Generic function to ensure that a Corpus object can be loaded into a TopicModel object."
 	"Contains optional keyword arguments."
 
 	pad_corp ? pad_corp!(corp) : trim_docs!(corp)
