@@ -171,13 +171,13 @@ Collaborative topic Poisson factorization model with K topics.
 
 ### GPU Models
 ```julia
-gpuLDA(corp, K, batchsize)
+gpuLDA(corp, K)
 GPU accelerated latent Dirichlet allocation model with K topics.
 
-gpuCTM(corp, K, batchsize)
+gpuCTM(corp, K)
 GPU accelerated correlated topic model with K topics.
 
-gpuCTPF(corp, K, batchsize)
+gpuCTPF(corp, K)
 GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
