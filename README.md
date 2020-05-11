@@ -177,7 +177,7 @@ GPU accelerated latent Dirichlet allocation model with K topics.
 gpuCTM(corp, K, batchsize)
 GPU accelerated correlated topic model with K topics.
 
-gpuCTPF(corp, K, batchsize, basemodel)
+gpuCTPF(corp, K, batchsize)
 GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
