@@ -836,10 +836,10 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp
 	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
 	"Contains optional keyword arguments."
 
-function showdocs(corp::Corpus, docs/doc_indices)
+function showdocs(corp::Corpus, docs / doc_indices)
 	"Display document(s) in readable format."
 
-function showtitles(corp::Corpus, docs/doc_indices)
+function showtitles(corp::Corpus, docs / doc_indices)
 	"Display document title(s) in readable format."
 
 function getvocab(corp::Corpus)
@@ -850,10 +850,10 @@ function getusers(corp::Corpus)
 ### Model Functions
 
 ```julia
-function showdocs(model::TopicModel, docs/doc_indices)
+function showdocs(model::TopicModel, docs / doc_indices)
 	"Display document(s) in readable format."
 
-function showtitles(model::TopicModel, docs/doc_indices)
+function showtitles(model::TopicModel, docs / doc_indices)
 	"Display document title(s) in readable format."
 
 function check_model(model::TopicModel)
