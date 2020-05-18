@@ -275,8 +275,11 @@ macro gpu(expr::Expr)
 			model.xi ./= sum(model.xi, dims=1)
 			nothing
 
-		else
+		elseif isa(model, fCTM)
 			nothing
+
+		else
+			train!(model; kwargs...)
 		end
 	end
 end
