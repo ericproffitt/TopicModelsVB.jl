@@ -85,14 +85,14 @@ mutable struct gpuLDA <: TopicModel
 end
 
 function Elogptheta(model::gpuLDA, d::Int)
-	"Compute E[log(P(theta))]."
+	"Compute E_q[log(P(theta))]."
 
 	x = finite(loggamma(sum(model.alpha))) - finite(sum(loggamma.(model.alpha))) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
 function Elogpz(model::gpuLDA, d::Int)
-	"Compute E[log(P(z))]."
+	"Compute E_q[log(P(z))]."
 
 	counts = model.corp[d].counts
 	x = dot(model.phi[d] * counts, model.Elogtheta[d])
@@ -100,7 +100,7 @@ function Elogpz(model::gpuLDA, d::Int)
 end
 
 function Elogpw(model::gpuLDA, d::Int)
-	"Compute E[log(P(w))]."
+	"Compute E_q[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[d] .* log.(@boink model.beta[:,terms]) * counts)
@@ -108,14 +108,14 @@ function Elogpw(model::gpuLDA, d::Int)
 end
 
 function Elogqtheta(model::gpuLDA, d::Int)
-	"Compute E[log(q(theta))]."
+	"Compute E_q[log(q(theta))]."
 
 	x = -entropy(Dirichlet(model.gamma[d]))
 	return x
 end
 
 function Elogqz(model::gpuLDA, d::Int)
-	"Compute E[log(q(z))]."
+	"Compute E_q[log(q(z))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])

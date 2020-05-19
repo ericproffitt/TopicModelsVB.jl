@@ -100,14 +100,14 @@ mutable struct gpuCTM <: TopicModel
 end
 
 function Elogpeta(model::gpuCTM, d::Int)
-	"Compute E[log(P(eta))]."
+	"Compute E_q[log(P(eta))]."
 
 	x = 0.5 * (logdet(model.invsigma) - model.K * log(2pi) - dot(diag(model.invsigma), model.vsq[d]) - dot(model.lambda[d] - model.mu, model.invsigma * (model.lambda[d] - model.mu)))
 	return x
 end
 
 function Elogpz(model::gpuCTM, d::Int)
-	"Compute E[log(P(z))]."
+	"Compute E_q[log(P(z))]."
 
 	counts = model.corp[d].counts
 	x = dot(model.phi[d]' * model.lambda[d], counts) + model.C[d] * model.logzeta[d]
@@ -115,7 +115,7 @@ function Elogpz(model::gpuCTM, d::Int)
 end
 
 function Elogpw(model::gpuCTM, d::Int)
-	"Compute E[log(P(w))]."
+	"Compute E_q[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[d] .* log.(@boink model.beta[:,terms]) * counts)
@@ -123,14 +123,14 @@ function Elogpw(model::gpuCTM, d::Int)
 end
 
 function Elogqeta(model::gpuCTM, d::Int)
-	"Compute E[log(q(eta))]."
+	"Compute E_q[log(q(eta))]."
 
 	x = -entropy(MvNormal(model.lambda[d], diagm(model.vsq[d])))
 	return x
 end
 
 function Elogqz(model::gpuCTM, d::Int)
-	"Compute E[log(q(z))]."
+	"Compute E_q[log(q(z))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])

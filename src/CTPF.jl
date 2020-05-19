@@ -98,7 +98,7 @@ mutable struct CTPF <: TopicModel
 end
 
 function Elogpya(model::CTPF, d::Int)
-	"Compute E[log(P(ya))]."
+	"Compute E_q[log(P(ya))]."
 
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
@@ -110,7 +110,7 @@ function Elogpya(model::CTPF, d::Int)
 end
 
 function Elogpyb(model::CTPF, d::Int)
-	"Compute E[log(P(yb))]."
+	"Compute E_q[log(P(yb))]."
 
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
@@ -122,7 +122,7 @@ function Elogpyb(model::CTPF, d::Int)
 end
 
 function Elogpz(model::CTPF, d::Int)
-	"Compute E[log(P(z))]."
+	"Compute E_q[log(P(z))]."
 
 	x = 0
 	terms, counts = model.corp[d].terms, model.corp[d].counts
@@ -134,7 +134,7 @@ function Elogpz(model::CTPF, d::Int)
 end
 
 function Elogpbeta(model::CTPF)
-	"Compute E[log(P(beta))]."
+	"Compute E_q[log(P(beta))]."
 
 	x = model.V * model.K * (model.a * log(model.b) - loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
@@ -144,7 +144,7 @@ function Elogpbeta(model::CTPF)
 end
 
 function Elogptheta(model::CTPF, d::Int)
-	"Compute E[log(P(theta))]."
+	"Compute E_q[log(P(theta))]."
 
 	x = model.K * (model.c * log(model.d) - loggamma(model.c))
 	for i in 1:model.K
@@ -154,7 +154,7 @@ function Elogptheta(model::CTPF, d::Int)
 end
 
 function Elogpeta(model::CTPF)
-	"Compute E[log(P(eta))]."
+	"Compute E_q[log(P(eta))]."
 
 	x = model.U * model.K * (model.e * log(model.f) - loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
@@ -164,7 +164,7 @@ function Elogpeta(model::CTPF)
 end
 
 function Elogpepsilon(model::CTPF, d::Int)
-	"Compute E[log(P(epsilon))]."
+	"Compute E_q[log(P(epsilon))]."
 
 	x = model.K * (model.g * log(model.h) - loggamma(model.g))
 	for i in 1:model.K
@@ -174,7 +174,7 @@ function Elogpepsilon(model::CTPF, d::Int)
 end
 
 function Elogqy(model::CTPF, d::Int)
-	"Compute E[log(q(y))]."
+	"Compute E_q[log(q(y))]."
 
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
@@ -184,7 +184,7 @@ function Elogqy(model::CTPF, d::Int)
 end
 
 function Elogqz(model::CTPF, d::Int)
-	"Compute E[log(q(z))]."
+	"Compute E_q[log(q(z))]."
 
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
@@ -194,7 +194,7 @@ function Elogqz(model::CTPF, d::Int)
 end
 
 function Elogqbeta(model::CTPF)
-	"Compute E[log(q(beta))]."
+	"Compute E_q[log(q(beta))]."
 
 	x = 0
 	for j in 1:model.V, i in 1:model.K
@@ -204,7 +204,7 @@ function Elogqbeta(model::CTPF)
 end
 
 function Elogqtheta(model::CTPF, d::Int)
-	"Compute E[log(q(theta))]."
+	"Compute E_q[log(q(theta))]."
 
 	x = 0
 	for i in 1:model.K
@@ -214,7 +214,7 @@ function Elogqtheta(model::CTPF, d::Int)
 end
 
 function Elogqeta(model::CTPF)
-	"Compute E[log(q(eta))]."
+	"Compute E_q[log(q(eta))]."
 
 	x = 0
 	for u in 1:model.U, i in 1:model.K
@@ -224,7 +224,7 @@ function Elogqeta(model::CTPF)
 end	
 
 function Elogqepsilon(model::CTPF, d::Int)
-	"Compute E[log(q(epsilon))]."
+	"Compute E_q[log(q(epsilon))]."
 
 	x = 0
 	for i in 1:model.K

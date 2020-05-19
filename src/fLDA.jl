@@ -57,14 +57,14 @@ mutable struct fLDA <: TopicModel
 end
 
 function Elogptheta(model::fLDA, d::Int)
-	"Compute E[log(P(theta))]."
+	"Compute E_q[log(P(theta))]."
 
 	x = finite(loggamma(sum(model.alpha))) - finite(sum(loggamma.(model.alpha))) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
 function Elogpc(model::fLDA, d::Int)
-	"Compute E[log(P(c))]."
+	"Compute E_q[log(P(c))]."
 
 	counts = model.corp[d].counts
 	x = log(@boink model.eta^dot(model.tau[d], counts) * (1 - model.eta)^(model.C[d] - dot(model.tau[d], counts)))
@@ -72,7 +72,7 @@ function Elogpc(model::fLDA, d::Int)
 end
 
 function Elogpz(model::fLDA, d::Int)
-	"Compute E[log(P(z))]."
+	"Compute E_q[log(P(z))]."
 
 	counts = model.corp[d].counts
 	x = dot(model.phi[1] * counts, model.Elogtheta[d])
@@ -80,7 +80,7 @@ function Elogpz(model::fLDA, d::Int)
 end
 
 function Elogpw(model::fLDA, d::Int)
-	"Compute E[log(P(w))]."
+	"Compute E_q[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
@@ -88,14 +88,14 @@ function Elogpw(model::fLDA, d::Int)
 end
 
 function Elogqtheta(model::fLDA, d::Int)
-	"Compute E[log(q(theta))]."
+	"Compute E_q[log(q(theta))]."
 
 	x = -entropy(Dirichlet(model.gamma[d]))
 	return x
 end
 
 function Elogqc(model::fLDA, d::Int)
-	"Compute E[log(q(c))]."
+	"Compute E_q[log(q(c))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Bernoulli(model.tau[d][n])) for (n, c) in enumerate(counts)])
@@ -103,7 +103,7 @@ function Elogqc(model::fLDA, d::Int)
 end
 
 function Elogqz(model::fLDA, d::Int)
-	"Compute E[log(q(z))]."
+	"Compute E_q[log(q(z))]."
 
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[1][:,n])) for (n, c) in enumerate(counts)])

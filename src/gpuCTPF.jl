@@ -143,7 +143,7 @@ mutable struct gpuCTPF <: TopicModel
 end
 
 function Elogpya(model::gpuCTPF, d::Int)
-	"Compute E[log(P(ya))]."
+	"Compute E_q[log(P(ya))]."
 
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
@@ -155,7 +155,7 @@ function Elogpya(model::gpuCTPF, d::Int)
 end
 
 function Elogpyb(model::gpuCTPF, d::Int)
-	"Compute E[log(P(yb))]."
+	"Compute E_q[log(P(yb))]."
 
 	x = 0
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
@@ -167,7 +167,7 @@ function Elogpyb(model::gpuCTPF, d::Int)
 end
 
 function Elogpz(model::gpuCTPF, d::Int)
-	"Compute E[log(P(z))]."
+	"Compute E_q[log(P(z))]."
 
 	x = 0
 	terms, counts = model.corp[d].terms, model.corp[d].counts
@@ -179,7 +179,7 @@ function Elogpz(model::gpuCTPF, d::Int)
 end
 
 function Elogpbeta(model::gpuCTPF)
-	"Compute E[log(P(beta))]."
+	"Compute E_q[log(P(beta))]."
 
 	x = model.V * model.K * (model.a * log(model.b) - loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
@@ -189,7 +189,7 @@ function Elogpbeta(model::gpuCTPF)
 end
 
 function Elogptheta(model::gpuCTPF, d::Int)
-	"Compute E[log(P(theta))]."
+	"Compute E_q[log(P(theta))]."
 
 	x = model.K * (model.c * log(model.d) - loggamma(model.c))
 	for i in 1:model.K
@@ -199,7 +199,7 @@ function Elogptheta(model::gpuCTPF, d::Int)
 end
 
 function Elogpeta(model::gpuCTPF)
-	"Compute E[log(P(eta))]."
+	"Compute E_q[log(P(eta))]."
 
 	x = model.U * model.K * (model.e * log(model.f) - loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
@@ -209,7 +209,7 @@ function Elogpeta(model::gpuCTPF)
 end
 
 function Elogpepsilon(model::gpuCTPF, d::Int)
-	"Compute E[log(P(epsilon))]."
+	"Compute E_q[log(P(epsilon))]."
 
 	x = model.K * (model.g * log(model.h) - loggamma(model.g))
 	for i in 1:model.K
@@ -219,7 +219,7 @@ function Elogpepsilon(model::gpuCTPF, d::Int)
 end
 
 function Elogqy(model::gpuCTPF, d::Int)
-	"Compute E[log(q(y))]."
+	"Compute E_q[log(q(y))]."
 
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
@@ -229,7 +229,7 @@ function Elogqy(model::gpuCTPF, d::Int)
 end
 
 function Elogqz(model::gpuCTPF, d::Int)
-	"Compute E[log(q(z))]."
+	"Compute E_q[log(q(z))]."
 
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
@@ -239,7 +239,7 @@ function Elogqz(model::gpuCTPF, d::Int)
 end
 
 function Elogqbeta(model::gpuCTPF)
-	"Compute E[log(q(beta))]."
+	"Compute E_q[log(q(beta))]."
 
 	x = 0
 	for j in 1:model.V, i in 1:model.K
@@ -249,7 +249,7 @@ function Elogqbeta(model::gpuCTPF)
 end
 
 function Elogqtheta(model::gpuCTPF, d::Int)
-	"Compute E[log(q(theta))]."
+	"Compute E_q[log(q(theta))]."
 
 	x = 0
 	for i in 1:model.K
@@ -259,7 +259,7 @@ function Elogqtheta(model::gpuCTPF, d::Int)
 end
 
 function Elogqeta(model::gpuCTPF)
-	"Compute E[log(q(eta))]."
+	"Compute E_q[log(q(eta))]."
 
 	x = 0
 	for u in 1:model.U, i in 1:model.K
@@ -269,7 +269,7 @@ function Elogqeta(model::gpuCTPF)
 end	
 
 function Elogqepsilon(model::gpuCTPF, d::Int)
-	"Compute E[log(q(epsilon))]."
+	"Compute E_q[log(q(epsilon))]."
 
 	x = 0
 	for i in 1:model.K
