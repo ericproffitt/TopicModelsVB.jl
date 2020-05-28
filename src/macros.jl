@@ -9,7 +9,7 @@ macro juliadots(str::String)
 				print(Crayon(foreground=:white, bold=true), $str);
 				)
 	
-	return expr_out
+	return esc(expr_out)
 end
 
 macro juliadots(expr::Expr)
@@ -20,46 +20,46 @@ macro juliadots(expr::Expr)
 				print(Crayon(foreground=:red, bold=true), " ●");
 				print(Crayon(foreground=:green, bold=true), "●");
 				print(Crayon(foreground=:blue, bold=true), "● ");
-				print(Crayon(foreground=:white, bold=true), :($($expr)))
+				print(Crayon(foreground=:white, bold=true), $expr)
 				)
 	
-	return expr_out
+	return esc(expr_out)
 end
 
 macro boink(expr::Expr)
 	"Add EPSILON to a numerical variable or array."
 
-	expr_out = :(:($($expr)) .+ EPSILON)
-	return expr_out
+	expr_out = :($expr .+ EPSILON)
+	return esc(expr_out)
 end
 
 macro positive(expr::Expr)
 	"Add EPSILON to a numerical variable or array during variable assignment."
 
 	if (expr.head == :.) || (expr.head == :ref)
-		expr_out = :(:($($expr)) .+= EPSILON)
+		expr_out = :($expr .+= EPSILON)
 	
 	elseif expr.head == :(=)
-		expr_out = :(:($($(expr.args[1]))) = EPSILON .+ :($($(expr.args[2]))))
+		expr_out = :($(expr.args[1]) = EPSILON .+ $(expr.args[2]))
 	end
 
-	return expr_out
+	return esc(expr_out)
 end
 
 macro finite(expr::Expr)
 	"Prevent overflow of floating point to Inf by returning floatmax() of value."
 
 	if (expr.head == :.) || (expr.head == :ref)
-		expr_out = :(:($($expr)) = sign.(:($($expr))) .* min.(abs.(:($($expr))), floatmax.(:($($expr)))))
+		expr_out = :($expr = sign.($expr) .* min.(abs.($expr), floatmax.($expr)))
 	
 	elseif expr.head == :(=)
-		expr_out = :(:($($(expr.args[1]))) = sign.(:($($(expr.args[2])))) .* min.(abs.(:($($(expr.args[2])))), floatmax.(:($($(expr.args[2]))))))
+		expr_out = :($(expr.args[1]) = sign.($(expr.args[2])) .* min.(abs.($(expr.args[2])), floatmax.($(expr.args[2]))))
 
 	elseif expr.head == :(-=)
-		expr_out = :(:($($(expr.args[1]))) = sign.(:($($(expr.args[1])))) .* min.(abs.(:($($(expr.args[1]))) - :($($(expr.args[2])))), floatmax.(:($($(expr.args[1]))) - :($($(expr.args[2]))))))
+		expr_out = :($(expr.args[1]) = sign.($(expr.args[1])) .* min.(abs.($(expr.args[1]) - $(expr.args[2])), floatmax.($(expr.args[1]) - $(expr.args[2]))))
 	end
 
-	return expr_out
+	return esc(expr_out)
 end
 
 macro buffer(expr::Expr)
