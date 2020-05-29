@@ -112,7 +112,7 @@ fixcorp!(corp)
 or
 
 ```julia
-fixcorp!(corp; pad=true)
+fixcorp!(corp, pad=true)
 ```
 
 Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
