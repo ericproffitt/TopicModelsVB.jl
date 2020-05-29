@@ -374,7 +374,7 @@ end
 ### The exception to the above rule is the stop_corp! function, which removes stop words from both the Corpus vocab dictionary and associated keys in the documents.
 
 function abridge_corp!(corp::Corpus, n::Integer=0)
-	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
+	"All terms which appear less than n times in the corpus are removed from all documents."
 
 	doc_vkeys = Set(vcat([doc.terms for doc in unique(corp)]...))
 	vocab_count = Dict(Int(j) => 0 for j in doc_vkeys)
@@ -384,7 +384,7 @@ function abridge_corp!(corp::Corpus, n::Integer=0)
 	end
 
 	for doc in unique(corp)
-		keep = Bool[vocab_count[j] > n for j in doc.terms]
+		keep = Bool[vocab_count[j] >= n for j in doc.terms]
 		doc.terms = doc.terms[keep]
 		doc.counts = doc.counts[keep]
 	end
@@ -417,6 +417,11 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 			doc.readers = [ukey_map[r] for r in doc.readers]
 		end
 	end
+	nothing
+end
+
+function clip_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
+	"Keep top n terms."
 	nothing
 end
 
@@ -540,7 +545,7 @@ function stop_corp!(corp::Corpus)
 	datasets_path = joinpath(join(split(@__DIR__, '/')[1:end-1], '/'), "datasets")
 
 	#stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
-	stop_words = vec(readdlm(joinpath(dataset_path, "stopwords.txt"), String))
+	stop_words = vec(readdlm(joinpath(datasets_path, "stopwords.txt"), String))
 	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
 	
 	for doc in unique(corp)
@@ -591,20 +596,22 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 	nothing
 end
 
-function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
+function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop::Bool=false, trim::Bool=false)
 	"Generic function to ensure that a Corpus object can be loaded into a TopicModel object."
-	"Contains optional keyword arguments."
+	"Either pad_corp! or trim_docs!."
+	"compact_corp!."
+	"Contains other optional keyword arguments."
 
-	pad_corp ? pad_corp!(corp) : trim_docs!(corp)
+	pad ? pad_corp!(corp) : trim_docs!(corp)
 
 	remove_empty_docs 	&& remove_empty_docs!(corp)
-	condense_corp 		&& condense_corp!(corp)
+	condense 			&& condense_corp!(corp)
 	remove_redundant	&& remove_redundant!(corp)
-	abridge_corp > 0 	&& abridge_corp!(corp)
-	pad_corp 			&& pad_corp!(corp, vocab=vocab, users=users)
-	trim_corp 			&& trim_corp!(corp, vocab=vocab, users=users)
-	stop_corp 			&& stop_corp!(corp)
-	alphabetize_corp 	&& alphabetize_corp!(corp, vocab=vocab, users=users)
+	abridge > 0 		&& abridge_corp!(corp, abridge)
+	pad 				&& pad_corp!(corp, vocab=vocab, users=users)
+	trim 				&& trim_corp!(corp, vocab=vocab, users=users)
+	stop 				&& stop_corp!(corp)
+	alphabetize 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
 
 	compact_corp!(corp)
 	nothing

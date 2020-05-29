@@ -801,7 +801,7 @@ function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userf
 	"Write a corpus."
 
 function abridge_corp!(corp::Corpus, n::Integer=0)
-	"All terms which appear less than or equal to n times in the corpus are removed from all documents."
+	"All terms which appear less than n times in the corpus are removed from all documents."
 
 function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	"Alphabetize vocab and/or user dictionaries."
@@ -832,9 +832,11 @@ function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 	"Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents."
 
-function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge_corp::Integer=0, alphabetize_corp::Bool=false, compact_corp::Bool=false, condense_corp::Bool=false, pad_corp::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop_corp::Bool=false, trim_corp::Bool=false)
-	"Generic function to ensure that a Corpus object can be loaded ino a TopicModel object."
-	"Contains optional keyword arguments."
+function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop::Bool=false, trim::Bool=false)
+	"Generic function to ensure that a Corpus object can be loaded into a TopicModel object."
+	"Either pad_corp! or trim_docs!."
+	"compact_corp!."
+	"Contains other optional keyword arguments."
 
 function showdocs(corp::Corpus, docs / doc_indices)
 	"Display document(s) in readable format."
