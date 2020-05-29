@@ -112,7 +112,7 @@ fixcorp!(corp)
 or
 
 ```julia
-fixcorp!(corp; pad_corp=true)
+fixcorp!(corp; pad=true)
 ```
 
 Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
@@ -132,7 +132,7 @@ the quick brown fox jumped over the lazy dog
 ```
 
 ```Julia
-fixcorp!(corp, condense_corp=true)
+fixcorp!(corp, condense=true)
 showdocs(corp)
 ```
 
@@ -195,7 +195,7 @@ Random.seed!(10);
 corp = readcorp(:nsf) 
 
 corp.docs = corp[1:5000];
-fixcorp!(corp, trim_corp=true)
+fixcorp!(corp, trim=true)
 ### It's strongly recommended that you trim your corpus when reducing its size in order to remove excess vocabulary. 
 
 ### Notice that the post-fix vocabulary is smaller after removing all but the first 5000 docs.
