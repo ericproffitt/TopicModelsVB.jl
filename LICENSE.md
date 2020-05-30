@@ -22,6 +22,7 @@ The TopicModelsVB.jl package is licensed under the MIT "Expat" License:
 > SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 This software uses supporting software with their own licenses:
+
 https://github.com/JuliaLang/julia/blob/master/LICENSE.md
 https://github.com/JuliaMath/SpecialFunctions.jl/blob/master/LICENSE
 https://github.com/JuliaStats/Distributions.jl/blob/master/LICENSE.md
