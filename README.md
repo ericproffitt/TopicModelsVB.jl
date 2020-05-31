@@ -139,7 +139,7 @@ fixcorp!(corp, stop=true, abridge=200, alphabetize=true, trim=true)
 
 After removing stop words and abridging our corpus, the vocabulary size has gone from 8000 to 1692.
 
-A consequence of removing so many terms from our corpus is that some documents may now by empty. We can remove these documents from our corpus by doing the following,
+A consequence of removing so many terms from our corpus is that some documents may now by empty. We can remove these documents from our corpus with the following command,
 
 ```julia
 fixcorp!(corp, remove_empty_docs=true)
