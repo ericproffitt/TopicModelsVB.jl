@@ -132,7 +132,7 @@ readcorp(:citeu)
 A standard preprocessing step might involve removing stop words, removing terms which appear less than 200 times, and alphabetizing our corpus.
 
 ```julia
-fixcorp!(corp, alphabetize=true, stop=true, abridge=200, trim=true)
+fixcorp!(corp, stop=true, abridge=200, alphabetize=true, trim=true)
 ### Generally you will also want to trim your corpus.
 ### Setting trim=true will remove leftover terms from the corpus vocabulary.
 ```
