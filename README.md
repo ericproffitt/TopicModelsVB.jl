@@ -134,7 +134,7 @@ A standard preprocessing step might involve removing stop words, removing terms 
 ```julia
 fixcorp!(corp, alphabetize=true, stop=true, abridge=200, trim=true)
 ### Generally you will also want to trim your corpus.
-### Setting trim=true will remove leftover terms from the corpus vocabulary (in this case stop words).
+### Setting trim=true will remove leftover terms from the corpus vocabulary.
 ```
 
 After removing stop words and abridging our corpus, the vocabulary size has gone from 8000 to 1692.
