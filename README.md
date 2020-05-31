@@ -129,7 +129,7 @@ readcorp(:citeu)
 # * 5551 users
 ```
 
-A standard preprocessing step might involve removing stop words, removing terms which appear less than 200 times, and alphabetizing the corpus.
+A standard preprocessing step might involve removing stop words, removing terms which appear less than 200 times, and alphabetizing our corpus.
 
 ```julia
 fixcorp!(corp, alphabetize=true, stop=true, abridge=200, trim=true)
