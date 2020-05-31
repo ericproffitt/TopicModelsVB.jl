@@ -129,21 +129,21 @@ readcorp(:citeu)
 # * 5551 users
 ```
 
-A standard preprocessing step might involve alphabetizing our corpus and removing stop words.
+A standard preprocessing step might involve removing stop words, removing terms which appear less than 200 times, and alphabetizing the corpus.
 
 ```julia
-fixcorp!(corp, alphabetize=true, stop=true, trim=true)
+fixcorp!(corp, alphabetize=true, stop=true, abridge=200, trim=true)
 ### Generally you will also want to trim your corpus.
 ### Setting trim=true will remove leftover terms from the corpus vocabulary (in this case stop words).
 ```
 
-Now suppose that the CiteULike vocabulary is still larger than we want, we might also consider removing terms which appear less than 100 times in the corpus.
+After removing stop words and abridging our corpus, the vocabulary size has gone from 8000 to 1692.
+
+A consequence of removing so many terms from our corpus is that some documents may now by empty. We can remove these documents from our corpus by doing,
 
 ```julia
-fixcorp!(corp, abridge=100, trim=true)
+fixcorp!(corp, remove_empty_docs=true)
 ```
-
-After removing stop words and abridging our corpus, the vocabulary size has gone from 8000 to 2928.
 
 In addition, if you would like to preserve term order in your documents, then you should refrain from condesing your corpus.
 
