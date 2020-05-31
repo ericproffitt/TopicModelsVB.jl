@@ -609,8 +609,8 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Int
 	remove_redundant	&& remove_redundant!(corp)
 	abridge > 0 		&& abridge_corp!(corp, abridge)
 	pad 				&& pad_corp!(corp, vocab=vocab, users=users)
-	trim 				&& trim_corp!(corp, vocab=vocab, users=users)
 	stop 				&& stop_corp!(corp)
+	trim 				&& trim_corp!(corp, vocab=vocab, users=users)
 	alphabetize 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
 
 	compact_corp!(corp)
