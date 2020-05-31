@@ -117,6 +117,31 @@ fixcorp!(corp, pad=true)
 
 Padding a corpus will ensure that any documents which contain vocab or user keys not in the vocab or user dictionaries are not removed. Instead, generic vocab and user keys will be added as necessary to the vocab and user dictionaries (resp.).
 
+The `fixcorp!` function allows for significant customization of your corpus object. For example, let's load the CiteULike corpus,
+
+```julia
+readcorp(:citeu)
+### Corpus with:
+### * 16980 docs
+### * 8000 vocab
+### * 5551 users
+```
+
+A standard preprocessing step might involve alphabetizing our corpus and removing stop words.
+
+```julia
+fixcorp!(corp, alphabetize=true, stop=true, trim=true)
+### Generally you will also want to trim your corp, this will remove leftover terms from the corpus vocabulary (in this case stop words).
+```
+
+Now suppose that the vocabulary is still larger than we want, we might also want to remove which appear less than 100 times in the corpus.
+
+```julia
+fixcorp!(corp, abridge=100, trim=true)
+```
+
+After removing stop words and abridging our corpus, the vocabulary size went from 8000 to 2928.
+
 In addition, if you would like to preserve term order in your documents, then you should refrain from condesing your corpus.
 
 For example,
