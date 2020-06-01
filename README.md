@@ -119,10 +119,10 @@ Padding a corpus will ensure that any documents which contain vocab or user keys
 
 The `fixcorp!` function allows for significant customization of the corpus object.
 
-For example, let's load the CiteULike corpus,
+For example, let's begin by loading the CiteULike corpus,
 
 ```julia
-readcorp(:citeu)
+corp = readcorp(:citeu)
 # Corpus with:
 # * 16980 docs
 # * 8000 vocab
