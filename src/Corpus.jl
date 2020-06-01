@@ -295,7 +295,7 @@ end
 function readcorp(corp_symbol::Symbol)
 	"Shortcuts for prepackaged corpora."
 
-	datasets_path = joinpath(join(split(@__DIR__, '/')[1:end-1], '/'), "datasets")
+	datasets_path = joinpath((@__DIR__)[1:end-3], "datasets")
 
 	#if corp_symbol == :nsf
 	#	docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfdocs.txt"
@@ -542,7 +542,7 @@ end
 function stop_corp!(corp::Corpus)
 	"Filter stop words in the associated corpus."
 
-	datasets_path = joinpath(join(split(@__DIR__, '/')[1:end-1], '/'), "datasets")
+	datasets_path = joinpath((@__DIR__)[1:end-3], "datasets")
 
 	#stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
 	stop_words = vec(readdlm(joinpath(datasets_path, "stopwords.txt"), String))
