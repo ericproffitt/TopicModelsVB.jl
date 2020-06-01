@@ -123,10 +123,10 @@ For example, let's begin by loading the CiteULike corpus,
 
 ```julia
 corp = readcorp(:citeu)
-# Corpus with:
-# * 16980 docs
-# * 8000 vocab
-# * 5551 users
+### Corpus with:
+### * 16980 docs
+### * 8000 vocab
+### * 5551 users
 ```
 
 A standard preprocessing step might involve removing stop words, removing terms which appear less than 200 times, and alphabetizing our corpus.
