@@ -564,14 +564,14 @@ function update_host!(model::gpuCTPF)
 	model.xi = [xi_host[:,R_cumsum[d]+1:R_cumsum[d+1]] for d in 1:model.M]
 end
 
-function check_elbo!(model::TopicModel, check_elbo::Real, k::Int, tol::Real)
+function check_elbo!(model::TopicModel, check_elbo::Real, print_elbo::Bool, k::Int, tol::Real)
 	"Check and print value of delta_elbo."
 	"If abs(delta_elbo) < tol, terminate algorithm."
 
 	if k % check_elbo == 0
 		update_host!(model)
 		delta_elbo = -(model.elbo - update_elbo!(model))
-		println(k, " ∆elbo: ", round(delta_elbo, digits=3))
+		print_elbo && println(k, " ∆elbo: ", round(delta_elbo, digits=3))
 
 		if abs(delta_elbo) < tol
 			return true

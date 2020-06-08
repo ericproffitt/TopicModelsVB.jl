@@ -357,7 +357,7 @@ function update_xi!(model::CTPF, d::Int)
 	model.xi[1] ./= sum(model.xi[1], dims=1)
 end
 
-function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
+function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
 	"Coordinate ascent optimization procedure for collaborative topic Poisson factorization variational Bayes algorithm."
 
 	check_model(model)
@@ -388,7 +388,7 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 		update_bet!(model)
 		update_vav!(model)
 
-		if check_elbo!(model, check_elbo, k, tol)
+		if check_elbo!(model, check_elbo, print_elbo, k, tol)
 			break
 		end
 	end

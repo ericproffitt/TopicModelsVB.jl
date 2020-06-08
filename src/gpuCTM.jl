@@ -497,7 +497,7 @@ function update_phi!(model::gpuCTM)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
-function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
+function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
 	"Coordinate ascent optimization procedure for GPU accelerated correlated topic model variational Bayes algorithm."
 
 	ntol = Float32(ntol)
@@ -523,7 +523,7 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		update_sigma!(model)
 		update_mu!(model)
 
-		if check_elbo!(model, check_elbo, k, tol)
+		if check_elbo!(model, check_elbo, print_elbo, k, tol)
 			break
 		end
 	end

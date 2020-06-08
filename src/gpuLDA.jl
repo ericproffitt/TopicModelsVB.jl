@@ -350,7 +350,7 @@ function update_phi!(model::gpuLDA)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
-function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
+function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
 	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
 
 	check_model(model)
@@ -373,7 +373,7 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)
 		
-		if check_elbo!(model, check_elbo, k, tol)
+		if check_elbo!(model, check_elbo, print_elbo, k, tol)
 			break
 		end
 	end

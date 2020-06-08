@@ -193,7 +193,7 @@ function update_phi!(model::CTM, d::Int)
 	model.phi[1] = additive_logistic(log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
-function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1)
+function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
 	"Coordinate ascent optimization procedure for correlated topic model variational Bayes algorithm."
 
 	check_model(model)
@@ -220,7 +220,7 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		update_sigma!(model)
 		update_mu!(model)
 		
-		if check_elbo!(model, check_elbo, k, tol)
+		if check_elbo!(model, check_elbo, print_elbo, k, tol)
 			break
 		end
 	end
