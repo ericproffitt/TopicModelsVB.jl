@@ -885,7 +885,7 @@ function showtitles(model::TopicModel, docs / doc_indices)
 function check_model(model::TopicModel)
 	"Check model parameters."
 
-function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, chkelbo::Integer=1)
+function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Union{Integer, Inf}=1, print_elbo::Bool=true)
 	"Train TopicModel."
 
 	### 'iter'		- maximum number of iterations through the corpus.
@@ -895,6 +895,7 @@ function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Inte
 	### 'viter'		- maximum number of iterations for optimizing variational parameters (at the document level).
 	### 'vtol'		- tolerance for change in variational parameter values as stopping criterion.
 	### 'check_elbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
+	### 'print_elbo'	- if true, print ∆elbo to REPL.
 
 @gpu train!
 	"Train model on GPU."
