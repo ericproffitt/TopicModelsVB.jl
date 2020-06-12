@@ -3,7 +3,7 @@
 ### Resulting EPSILON is approx. 1.6e-30.
 const EPSILON = eps(1e-14)
 
-### EPSILON32 is 1e-30.
+### EPSILON32 is 1f-30.
 const EPSILON32 = "0.000000000000000000000000000001f"
 
 ### Numerical approximation to the digamma function.
