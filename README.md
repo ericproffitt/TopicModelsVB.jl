@@ -8,7 +8,7 @@ Topic models are Bayesian hierarchical models designed to discover the latent lo
 
 Markov chain Monte Carlo is slow but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian inference is fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, VBI may be characterized in the language of numerical optimization, and thus is naturally equipped in the assessment of convergence to local optima.
+Contrarily, variational Bayesian inference is fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, VBI may be characterized in the language of numerical optimization, and is thus naturally equipped in the assessment of convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
