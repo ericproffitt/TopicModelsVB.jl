@@ -4,11 +4,11 @@
 
 A Julia package for variational Bayesian topic modeling.
 
-Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora. Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational Bayesian](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) inference (VBI).
+Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora. Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational inference](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VI).
 
 Markov chain Monte Carlo is slow but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
 
-Contrarily, variational Bayesian inference is fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, VBI may be characterized in the language of numerical optimization, and is thus naturally equipped in the assessment of convergence to local optima.
+Contrarily, variational inference is fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, VI may be characterized in the language of numerical optimization, and is thus naturally equipped in the assessment of convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
