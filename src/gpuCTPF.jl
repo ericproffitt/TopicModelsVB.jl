@@ -93,20 +93,20 @@ mutable struct gpuCTPF <: TopicModel
 			push!(drecs, collect(setdiff(1:U, corp[d].readers)))
 		end
 
-		a, b, c, d, e, f, g, h = fill(0.1, 8)
+		a, b, c, d, e, f, g, h = fill(0.1f0, 8)
 
-		alef = exp.(rand(Dirichlet(V, 1.0), K)' .- 0.5)
-		he = ones(K, U)
-		bet = ones(K)
-		vav = ones(K)
-		gimel = [ones(K) for _ in 1:M]
+		alef = exp.(rand(Dirichlet(V, 1.0f0), K)' .- 0.5f0)
+		he = ones(Float32, K, U)
+		bet = ones(Float32, K)
+		vav = ones(Float32, K)
+		gimel = [ones(Float32, K) for _ in 1:M]
 		gimel_old = deepcopy(gimel)
-		zayin = [ones(K) for _ in 1:M]
-		dalet = ones(K)
-		het = ones(K)
-		phi = [ones(K, N[d]) / K for d in 1:M]
-		xi = [ones(2K, R[d]) / 2K for d in 1:M]
-		elbo = 0
+		zayin = [ones(Float32, K) for _ in 1:M]
+		dalet = ones(Float32, K)
+		het = ones(Float32, K)
+		phi = [fill(Float32(1/K), K, N[d]) for d in 1:M]
+		xi = [fill(Float32(1/2K), 2K, R[d]) for d in 1:M]
+		elbo = 0f0
 
 		device, context, queue = cl.create_compute_context()		
 

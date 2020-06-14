@@ -49,15 +49,13 @@ mutable struct gpuLDA <: TopicModel
 		
 		topics = [collect(1:V) for _ in 1:K]
 
-		alpha = ones(K)
-		beta = rand(Dirichlet(V, 1.0), K)'
-		beta_old = copy(beta)
-		beta_temp = zeros(K, V)
-		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		alpha = ones(Float32, K)
+		beta = rand(Dirichlet(V, 1.0f0), K)'
+		Elogtheta = [fill(Float32(-(Base.MathConstants.eulergamma + digamma(K))), K) for _ in 1:M]
 		Elogtheta_sum = sum([Elogtheta; [zeros(Float32, K)]])
 		Elogtheta_dist = zeros(M)
-		gamma = [ones(K) for _ in 1:M]
-		phi = [ones(K, N[d]) / K for d in 1:M]
+		gamma = [ones(Float32, K) for _ in 1:M]
+		phi = [fill(Float32(1/K), K, N[d]) for d in 1:M]
 		elbo = 0
 
 		device, context, queue = cl.create_compute_context()

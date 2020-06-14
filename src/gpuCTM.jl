@@ -60,16 +60,16 @@ mutable struct gpuCTM <: TopicModel
 
 		topics = [collect(1:V) for _ in 1:K]
 
-		mu = zeros(K)
+		mu = zeros(Float32, K)
 		sigma = Symmetric(Matrix{Float32}(I, K, K))
 		invsigma = copy(sigma)
-		beta = rand(Dirichlet(V, 1.0), K)'
-		lambda = [zeros(K) for _ in 1:M]
-		lambda_dist = zeros(M)
-		vsq = [ones(K) for _ in 1:M]
-		logzeta = fill(0.5, M)
-		phi = [ones(K, N[d]) / K for d in 1:M]
-		elbo = 0
+		beta = rand(Dirichlet(V, 1.0f0), K)'
+		lambda = [zeros(Float32, K) for _ in 1:M]
+		lambda_dist = zeros(Float32, M)
+		vsq = [ones(Float32, K) for _ in 1:M]
+		logzeta = fill(0.5f0, M)
+		phi = [fill(Float32(1/K), K, N[d]) for d in 1:M]
+		elbo = 0f0
 
 		device, context, queue = cl.create_compute_context()
 
