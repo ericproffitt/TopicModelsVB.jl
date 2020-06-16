@@ -142,7 +142,6 @@ macro gpu(expr::Expr)
 			model.topics = gpumodel.topics
 			model.alpha = gpumodel.alpha
 			model.beta = gpumodel.beta
-			model.beta_old = copy(model.beta)
 			model.Elogtheta = gpumodel.Elogtheta
 			model.Elogtheta_old = deepcopy(model.Elogtheta)
 			model.gamma = gpumodel.gamma
@@ -150,6 +149,7 @@ macro gpu(expr::Expr)
 			model.elbo = gpumodel.elbo
 
 			model.beta ./= sum(model.beta, dims=2)
+			model.beta_old = copy(model.beta)
 			model.phi ./= sum(model.phi, dims=1)
 			nothing
 
@@ -186,7 +186,6 @@ macro gpu(expr::Expr)
 			model.sigma = convert(Symmetric{Float64,Array{Float64,2}}, model.sigma)
 			model.invsigma = convert(Symmetric{Float64,Array{Float64,2}}, model.invsigma)
 			model.beta = gpumodel.beta
-			model.beta_old = copy(model.beta)
 			model.lambda = gpumodel.lambda
 			model.lambda_old = deepcopy(model.lambda)
 			model.vsq = gpumodel.vsq
@@ -195,6 +194,7 @@ macro gpu(expr::Expr)
 			model.elbo = gpumodel.elbo
 
 			model.beta ./= sum(model.beta, dims=2)
+			model.beta_old = copy(model.beta)
 			model.phi ./= sum(model.phi, dims=1)
 			nothing
 
