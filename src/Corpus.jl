@@ -604,14 +604,14 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Int
 
 	pad ? pad_corp!(corp) : trim_docs!(corp)
 
-	remove_empty_docs 	&& remove_empty_docs!(corp)
 	condense 			&& condense_corp!(corp)
-	remove_redundant	&& remove_redundant!(corp)
 	abridge > 0 		&& abridge_corp!(corp, abridge)
 	pad 				&& pad_corp!(corp, vocab=vocab, users=users)
 	stop 				&& stop_corp!(corp)
 	trim 				&& trim_corp!(corp, vocab=vocab, users=users)
 	alphabetize 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
+	remove_redundant	&& remove_redundant!(corp)
+	remove_empty_docs 	&& remove_empty_docs!(corp)
 
 	compact_corp!(corp)
 	nothing
