@@ -171,7 +171,7 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
-	update_elbo!(model)
+	(check_elbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for d in 1:model.M	
