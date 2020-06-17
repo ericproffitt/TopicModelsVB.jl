@@ -406,12 +406,12 @@ function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10
 	model.drecs = Vector{Int}[]
 	for d in 1:model.M
 		nr = collect(setdiff(1:model.U, model.corp[d].readers))
-		push!(model.drecs, nr[reverse(sortperm(vec(model.scores[d,nr])))])
+		push!(model.drecs, nr[reverse(sortperm(model.scores[d,nr]))])
 	end
 
 	model.urecs = Vector{Int}[]
 	for u in 1:model.U
-		ur = [d for d in 1:model.M if !(u in model.corp[d].readers)]
+		ur = collect(setdiff(1:model.M, model.libs[u]))
 		push!(model.urecs, ur[reverse(sortperm(model.scores[ur,u]))])
 	end
 	nothing
