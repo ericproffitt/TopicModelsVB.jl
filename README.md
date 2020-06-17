@@ -538,7 +538,7 @@ Now that we've set up our experiment, let's instantiate and train a CTPF model o
 
 ```julia
 model = gpuCTPF(corp, 100)
-train!(model, iter=50, check_elbo=5)
+train!(model, iter=50, check_elbo=10)
 
 ### training...
 ```
