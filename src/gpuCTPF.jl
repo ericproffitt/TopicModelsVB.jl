@@ -83,9 +83,13 @@ mutable struct gpuCTPF <: TopicModel
 		scores = zeros(M, U)
 
 		libs = [Int[] for _ in 1:U]
-		urecs = [Int[] for _ in 1:U]
-		for u in 1:U, d in 1:M
-			u in corp[d].readers ? push!(libs[u], d) : push!(urecs[u], d)
+		for d in 1:M, u in corp[d].readers
+			push!(libs[u], d)
+		end
+
+		urecs = Vector{Int}[]
+		for u in 1:U
+			push!(urecs, collect(setdiff(1:M, libs[u])))
 		end
 
 		drecs = Vector{Int}[]
