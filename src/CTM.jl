@@ -45,12 +45,6 @@ mutable struct CTM <: TopicModel
 		elbo=0
 
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, logzeta, phi, elbo)
-		
-		for d in 1:model.M
-			model.phi[1] = ones(K, N[d]) / K
-			model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)
-		end
-
 		return model
 	end
 end

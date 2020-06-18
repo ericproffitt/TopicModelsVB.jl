@@ -94,7 +94,6 @@ mutable struct gpuCTM <: TopicModel
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, lambda, lambda_dist, vsq, logzeta, phi, elbo, device, context, queue, mu_kernel, sigma_kernel, beta_kernel, beta_norm_kernel, lambda_kernel, vsq_kernel, logzeta_kernel, phi_kernel, phi_norm_kernel)
-		update_elbo!(model)
 		return model
 	end
 end

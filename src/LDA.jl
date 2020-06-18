@@ -39,7 +39,6 @@ mutable struct LDA <: TopicModel
 		elbo = 0
 	
 		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, phi, elbo)
-		update_elbo!(model)
 		return model
 	end
 end

@@ -77,7 +77,6 @@ mutable struct gpuLDA <: TopicModel
 		phi_norm_kernel = cl.Kernel(phi_norm_program, "normalize_phi")
 
 		model = new(K, M, V, N, C, copy(corp), topics, alpha, beta, Elogtheta, Elogtheta_sum, Elogtheta_dist, gamma, phi, elbo, device, context, queue, beta_kernel, beta_norm_kernel, Elogtheta_kernel, Elogtheta_sum_kernel, gamma_kernel, phi_kernel, phi_norm_kernel)
-		update_elbo!(model)	
 		return model
 	end
 end

@@ -57,7 +57,6 @@ mutable struct fCTM <: TopicModel
 		elbo = 0
 
 		model = new(K, M, V, N, C, copy(corp), topics, eta, mu, sigma, invsigma, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, lambda, lambda_old, vsq, logzeta, tau, tau_old, phi, elbo)
-		update_elbo!(model)
 		return model
 	end
 end

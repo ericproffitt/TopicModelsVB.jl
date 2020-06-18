@@ -87,14 +87,18 @@ mutable struct gpuCTPF <: TopicModel
 			push!(libs[u], d)
 		end
 
-		urecs = Vector{Int}[]
+		urecs = Vector{Vector{Int}}(undef, U)
 		for u in 1:U
-			push!(urecs, collect(setdiff(1:M, libs[u])))
+			ur = trues(M)
+			ur[libs[u]] .= false
+			urecs[u] = findall(ur)
 		end
 
-		drecs = Vector{Int}[]
+		drecs = Vector{Vector{Int}}(undef, M)
 		for d in 1:M
-			push!(drecs, collect(setdiff(1:U, corp[d].readers)))
+			nr = trues(U)
+			nr[corp[d].readers] .= false
+			drecs[d] = findall(nr)
 		end
 
 		a, b, c, d, e, f, g, h = fill(0.1f0, 8)
@@ -141,7 +145,6 @@ mutable struct gpuCTPF <: TopicModel
 		xi_norm_kernel = cl.Kernel(xi_norm_program, "normalize_xi")
 
 		model = new(K, M, V, U, N, C, R, copy(corp), topics, scores, libs, drecs, urecs, a, b, c, d, e, f, g, h, alef, he, bet, vav, gimel, gimel_old, zayin, dalet, het, phi, xi, elbo, device, context, queue, alef_kernel, he_kernel, bet_kernel, vav_kernel, gimel_kernel, zayin_kernel, dalet_kernel, het_kernel, phi_kernel, phi_norm_kernel, xi_kernel, xi_norm_kernel)
-		update_elbo!(model)
 		return model
 	end
 end
@@ -710,16 +713,18 @@ function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer
 		model.scores[d,:] = sum(Eeta .* (Etheta + Eepsilon), dims=1)
 	end
 
-	model.drecs = Vector{Int}[]
-	for d in 1:model.M
-		nr = collect(setdiff(1:model.U, model.corp[d].readers))
-		push!(model.drecs, nr[reverse(sortperm(model.scores[d,nr]))])
+	model.urecs = Vector{Vector{Int}}(undef, model.U)
+	for u in 1:model.U
+		ur = trues(model.M)
+    	ur[model.libs[u]] .= false
+		model.urecs[u] = findall(ur)[reverse(sortperm(model.scores[ur,u]))]
 	end
 
-	model.urecs = Vector{Int}[]
-	for u in 1:model.U
-		ur = collect(setdiff(1:model.M, model.libs[u]))
-		push!(model.urecs, ur[reverse(sortperm(model.scores[ur,u]))])
+	model.drecs = Vector{Vector{Int}}(undef, model.M)
+	for d in 1:model.M
+    	nr = trues(model.U)
+    	nr[model.corp[d].readers] .= false
+    	model.drecs[d] = findall(nr)[reverse(sortperm(model.scores[d,nr]))]
 	end
 	nothing
 end
