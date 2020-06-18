@@ -538,7 +538,7 @@ Now that we've set up our experiment, let's instantiate and train a CTPF model o
 
 ```julia
 model = gpuCTPF(corp, 100)
-train!(model, iter=50, check_elbo=10)
+train!(model, iter=50, check_elbo=Inf)
 
 ### training...
 ```
@@ -611,10 +611,10 @@ showlibs(model, 1741)
  
  The 20 articles in user 1741's library suggest that he or she is interested in programming language theory. 
  
- Now compare this with the top 50 recommendations (the top 0.3%) made by our model,
+ Now compare this with the top 30 recommendations (the top 0.2%) made by our model,
  
 ```julia
-showurecs(model, 1741, 50)
+showurecs(model, 1741, 30)
 ```
 
 ```
@@ -649,26 +649,6 @@ showurecs(model, 1741, 50)
 28. Scrap your boilerplate: a practical design pattern for generic programming
 29. Proof-Carrying Code
 30. Adaptive Functional Programming
-31. The Zipper
-32. Ownership types for safe programming: preventing data races and deadlocks
-33. Scientific Illiteracy and the Partisan Takeover of Biology
-34. Generic Programming: An Introduction
-35. Types and programming languages
-36. Dependent Types in Practical Programming
-37. An embedded domain-specific language for type-safe server-side web scripting
-38. Dynamic Typing as Staged Type Inference
-39. The next 700 programming languages
-40. A formal model for an expressive fragment of XSLT
-41. Modular Domain Specific Languages and Tools
-42. Abstract interpretation: a unified lattice model for static analysis of programs by construction or approximation of fixpoints
-43. Tracking Down Software Bugs Using Automatic Anomaly Detection
-44. The design and implementation of typed scheme
-45. Packrat Parsing: Simple, Powerful, Lazy, Linear Time
-46. What is dynamic programming?
-47. A call-by-need lambda calculus
-48. {The Design of a Pretty-printing Library}
-49. Functional {D}ata {S}tructures
-50. Arrows, robots, and functional reactive programming
 ```
 
 For the CTPF models, you may access the raw topic distributions by computing,
