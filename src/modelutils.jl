@@ -610,8 +610,7 @@ function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
 	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
-	theta = rand(MvNormal(model.mu, model.sigma))
-	theta = additive_logistic(theta)
+	theta = additive_logistic(rand(MvNormal(model.mu, model.sigma)))
 	
 	topic_dist = Categorical(theta)
 	vocab_dist = [Categorical((model.beta[i,:] .+ laplace_smooth) / (1 + laplace_smooth * model.V)) for i in 1:model.K]
