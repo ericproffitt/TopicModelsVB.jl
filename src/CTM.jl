@@ -42,7 +42,7 @@ mutable struct CTM <: TopicModel
 		vsq = [ones(K) for _ in 1:M]
 		logzeta = fill(0.5, M)
 		phi = [ones(K, N[d]) / K for d in 1:min(M, 1)]
-		elbo=0
+		elbo = 0
 
 		model = new(K, M, V, N, C, copy(corp), topics, mu, sigma, invsigma, beta, beta_old, beta_temp, lambda, lambda_old, vsq, logzeta, phi, elbo)
 		return model
