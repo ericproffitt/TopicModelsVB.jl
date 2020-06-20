@@ -154,19 +154,21 @@ function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	"Update vsq."
 	"Newton's method with back-tracking line search."
 
-	for _ in 1:niter
-		rho = 1.0
-		vsq_grad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]) - 1 ./ model.vsq[d])
-		vsq_invhess_diag = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]) + 0.5 ./ model.vsq[d].^2)
-		p = vsq_invhess_diag .* vsq_grad
+	for i in 1:model.K
+		for _ in 1:niter
+			rho = 1.0
+			vsq_grad = -0.5 * (model.invsigma[i,i] + model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) - 1 / model.vsq[d][i])
+			vsq_invhess_diag = -1 / (0.25 * model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) + 0.5 / model.vsq[d][i]^2)
+			p = vsq_invhess_diag * vsq_grad
 		
-		while minimum(model.vsq[d] - rho * p) <= 0
-			rho *= 0.5
-		end	
-		model.vsq[d] -= rho * p
-		
-		if rho * norm(vsq_grad) < ntol
-			break
+			while minimum(model.vsq[d][i] - rho * p) <= 0
+				rho *= 0.5
+			end	
+			model.vsq[d][i] -= rho * p
+			
+			if rho * abs(vsq_grad) < ntol
+				break
+			end
 		end
 	end
 	@positive model.vsq[d]
@@ -187,15 +189,15 @@ function update_phi!(model::CTM, d::Int)
 	model.phi[1] = additive_logistic(log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
-function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
+function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	"Coordinate ascent optimization procedure for correlated topic model variational Bayes algorithm."
 
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
-	(check_elbo <= iter) && update_elbo!(model)
+	(checkelbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for d in 1:model.M
@@ -214,7 +216,7 @@ function train!(model::CTM; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		update_sigma!(model)
 		update_mu!(model)
 		
-		if check_elbo!(model, check_elbo, print_elbo, k, tol)
+		if check_elbo!(model, checkelbo, printelbo, k, tol)
 			break
 		end
 	end

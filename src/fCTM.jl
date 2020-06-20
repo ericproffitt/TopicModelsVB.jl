@@ -248,15 +248,15 @@ function update_phi!(model::fCTM, d::Int)
 	model.phi[1] = additive_logistic(model.tau[d]' .* log.(@boink model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
-function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)	
+function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)	
 	"Coordinate ascent optimization procedure for filtered correlated topic model variational Bayes algorithm."
 
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
-	(check_elbo <= iter) && update_elbo!(model)
+	(checkelbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for d in 1:model.M
@@ -279,7 +279,7 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 		update_mu!(model)
 		#update_eta!(model)
 		
-		if check_elbo!(model, check_elbo, print_elbo, k, tol)
+		if check_elbo!(model, checkelbo, printelbo, k, tol)
 			break
 		end
 	end

@@ -228,7 +228,7 @@ model = LDA(corp, 9)
 
 train!(model, iter=150, tol=0)
 ### Setting tol=0 will ensure that all 150 iterations are completed.
-### If you don't want to watch the ∆elbo, set check_elbo=Inf.
+### If you don't want to watch the ∆elbo, set checkelbo=Inf.
 
 ### training...
 
@@ -322,7 +322,7 @@ artificial_corp = gencorp(model, 5000, laplace_smooth=1e-5)
 ### The laplace_smooth argument governs the amount of Laplace smoothing (defaults to 0).
 
 artificial_model = LDA(artificial_corp, 9)
-train!(artificial_model, iter=150, tol=0, check_elbo=10)
+train!(artificial_model, iter=150, tol=0, checkelbo=10)
 
 ### training...
 
@@ -357,7 +357,7 @@ Filtering the correlated topic model will dynamically identify and suppress stop
 Random.seed!(77777);
 
 model = fCTM(corp, 9)
-train!(model, tol=0, check_elbo=Inf)
+train!(model, tol=0, checkelbo=Inf)
 
 ### training...
 
@@ -438,7 +438,7 @@ Now we can train our LDA model on just the training corpus, and then use that tr
 Random.seed!(10);
 
 train_model = LDA(train_corp, 9)
-train!(train_model, check_elbo=Inf)
+train!(train_model, checkelbo=Inf)
 
 test_model = predict(test_corp, train_model)
 ```
@@ -538,7 +538,7 @@ Now that we've set up our experiment, let's instantiate and train a CTPF model o
 
 ```julia
 model = gpuCTPF(corp, 100)
-train!(model, iter=50, check_elbo=Inf)
+train!(model, iter=50, checkelbo=Inf)
 
 ### training...
 ```
@@ -685,7 +685,7 @@ There's no reason to instantiate the GPU models directly, instead you can simply
 corp = readcorp(:nsf)
 
 model = LDA(corp, 16)
-@time @gpu train!(model, iter=150, tol=0, check_elbo=Inf)
+@time @gpu train!(model, iter=150, tol=0, checkelbo=Inf)
 ### Let's time it as well to get an exact benchmark. 
 
 ### training...
@@ -865,7 +865,7 @@ function showtitles(model::TopicModel, docs / doc_indices)
 function check_model(model::TopicModel)
 	"Check model parameters."
 
-function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Union{Integer, Inf}=1, print_elbo::Bool=true)
+function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Union{Integer, Inf}=1, printelbo::Bool=true)
 	"Train TopicModel."
 
 	### 'iter'		- maximum number of iterations through the corpus.
@@ -874,8 +874,8 @@ function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Inte
 	### 'ntol'		- tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
 	### 'viter'		- maximum number of iterations for optimizing variational parameters (at the document level).
 	### 'vtol'		- tolerance for change in variational parameter values as stopping criterion.
-	### 'check_elbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
-	### 'print_elbo'	- if true, print ∆elbo to REPL.
+	### 'checkelbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
+	### 'printelbo'	- if true, print ∆elbo to REPL.
 
 @gpu train!
 	"Train model on GPU."

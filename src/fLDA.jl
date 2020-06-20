@@ -223,13 +223,13 @@ function update_phi!(model::fLDA, d::Int)
 	model.phi[1] = additive_logistic(model.tau[d]' .* log.(@boink model.beta[:,terms]) .+ model.Elogtheta[d], dims=1)
 end
 
-function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
+function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	"Coordinate ascent optimization procedure for filtered latent Dirichlet allocation variational Bayes algorithm."
 
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf)	|| throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
 	update_elbo!(model)
 
@@ -252,7 +252,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		update_alpha!(model, niter, ntol)
 		update_eta!(model)	
 		
-		if check_elbo!(model, check_elbo, print_elbo, k, tol)
+		if check_elbo!(model, checkelbo, printelbo, k, tol)
 			break
 		end
 	end

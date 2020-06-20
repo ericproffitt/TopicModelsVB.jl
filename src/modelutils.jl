@@ -434,7 +434,6 @@ function update_buffer!(model::gpuCTM)
 	model.lambda_hess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
 	model.lambda_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M + 64 - model.M % 64))
 	model.vsq_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.p_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
 	model.logzeta_buffer = cl.Buffer(Float32, model.context, :rw, model.M + 64 - model.M % 64)
 	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
 end
@@ -564,14 +563,14 @@ function update_host!(model::gpuCTPF)
 	model.xi = [xi_host[:,R_cumsum[d]+1:R_cumsum[d+1]] for d in 1:model.M]
 end
 
-function check_elbo!(model::TopicModel, check_elbo::Real, print_elbo::Bool, k::Int, tol::Real)
+function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int, tol::Real)
 	"Check and print value of delta_elbo."
 	"If abs(delta_elbo) < tol, terminate algorithm."
 
-	if k % check_elbo == 0
+	if k % checkelbo == 0
 		update_host!(model)
 		delta_elbo = -(model.elbo - update_elbo!(model))
-		print_elbo && println(k, " ∆elbo: ", round(delta_elbo, digits=3))
+		printelbo && println(k, " ∆elbo: ", round(delta_elbo, digits=3))
 
 		if abs(delta_elbo) < tol
 			return true

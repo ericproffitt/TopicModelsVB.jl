@@ -347,15 +347,15 @@ function update_phi!(model::gpuLDA)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
-function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
+function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
 
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf) || throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
-	(check_elbo <= iter) && update_elbo!(model)
+	(checkelbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for v in 1:viter
@@ -370,7 +370,7 @@ function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		update_beta!(model)
 		update_alpha!(model, niter, ntol)
 		
-		if check_elbo!(model, check_elbo, print_elbo, k, tol)
+		if check_elbo!(model, checkelbo, printelbo, k, tol)
 			break
 		end
 	end

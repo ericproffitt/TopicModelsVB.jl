@@ -46,7 +46,6 @@ mutable struct gpuCTM <: TopicModel
 	lambda_hess_buffer::cl.Buffer{Float32}
 	lambda_dist_buffer::cl.Buffer{Float32}
 	vsq_buffer::cl.Buffer{Float32}
-	p_buffer::cl.Buffer{Float32}
 	logzeta_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
 
@@ -357,7 +356,6 @@ update_vsq(	long niter,
 			float ntol,
 			long K,
 			const global long *C,
-			global float *p,
 			const global float *invsigma,
 			const global float *lambda,
 			const global float *logzeta,
@@ -365,36 +363,30 @@ update_vsq(	long niter,
 			
 			{
 			long d = get_global_id(0);
+			long i = get_global_id(1);
 
 			float vsq_grad;
 			float vsq_invhess;
+			float p;
 
 			for (long _=0; _<niter; _++)
 			{
-				float acc = 0.0f;
 				float rho = 1.0f;
 
-				for (long i=0; i<K; i++)
-				{
-					vsq_grad = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) - 1 / vsq[K * d + i]);
-					vsq_invhess = -1 / (0.25f * C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) + 0.5f / (vsq[K * d + i] * vsq[K * d + i]));
+				vsq_grad = -0.5f * (invsigma[K * i + i] + C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) - 1 / vsq[K * d + i]);
+				vsq_invhess = -1 / (0.25f * C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]) + 0.5f / (vsq[K * d + i] * vsq[K * d + i]));
+				p = vsq_grad * vsq_invhess;
 				
-					p[K * d + i] = vsq_grad * vsq_invhess;
-					while (vsq[K * d + i] - rho * p[K * d + i] <= 0)
-						rho *= 0.5f;
+				while (vsq[K * d + i] - rho * p <= 0)
+					rho *= 0.5f;
 
-					acc += vsq_grad * vsq_grad;
-				}
-
-				for (long i=0; i<K; i++)
-					vsq[K * d + i] -= rho * p[K * d + i];
+				vsq[K * d + i] -= rho * p;
 				
-				if (rho * sqrt(acc) < ntol)
+				if (rho * fabs(vsq_grad) < ntol)
 					break;
 			}
 
-			for (long i=0; i<K; i++)
-				vsq[K * d + i] += $(EPSILON32);
+			vsq[K * d + i] += $(EPSILON32);
 			}
 			"""
 
@@ -402,7 +394,7 @@ function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update vsq."
 	"Newton's method with back-tracking line search."
 
-	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.C_buffer, model.p_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
+	model.queue(model.vsq_kernel, (model.M, model.K), nothing, niter, ntol, model.K, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
 const CTM_logzeta_c = 
@@ -496,16 +488,16 @@ function update_phi!(model::gpuCTM)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
-function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, check_elbo::Real=1, print_elbo::Bool=true)
+function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	"Coordinate ascent optimization procedure for GPU accelerated correlated topic model variational Bayes algorithm."
 
 	ntol = Float32(ntol)
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	(isa(check_elbo, Integer) & (check_elbo > 0)) | (check_elbo == Inf) || throw(ArgumentError("check_elbo parameter must be a positive integer or Inf."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf) || throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
-	(check_elbo <= iter) && update_elbo!(model)
+	(checkelbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for v in 1:viter
@@ -522,7 +514,7 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 		update_sigma!(model)
 		update_mu!(model)
 
-		if check_elbo!(model, check_elbo, print_elbo, k, tol)
+		if check_elbo!(model, checkelbo, printelbo, k, tol)
 			break
 		end
 	end
