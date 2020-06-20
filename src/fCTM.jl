@@ -76,7 +76,7 @@ function Elogpc(model::fCTM, d::Int)
 	return x
 end
 
-function Elogpz(model::CTM, d::Int)
+function Elogpz(model::fCTM, d::Int)
 	"Compute E_q[log(P(z))]."
 
 	counts = model.corp[d].counts

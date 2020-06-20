@@ -104,11 +104,11 @@ function Elogpeta(model::gpuCTM, d::Int)
 	return x
 end
 
-function Elogpz(model::CTM, d::Int)
+function Elogpz(model::gpuCTM, d::Int)
 	"Compute E_q[log(P(z))]."
 
 	counts = model.corp[d].counts
-	x = dot(model.phi[1]' * model.lambda[d], counts) - model.C[d] * (sum(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])) + model.logzeta[d] - 1)
+	x = dot(model.phi[d]' * model.lambda[d], counts) - model.C[d] * (sum(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])) + model.logzeta[d] - 1)
 	return x
 end
 
