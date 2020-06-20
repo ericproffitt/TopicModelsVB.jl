@@ -400,7 +400,7 @@ update_vsq(	long niter,
 
 function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update vsq."
-	"Interior-point Newton's method with log-barrier and back-tracking line search."
+	"Newton's method with back-tracking line search."
 
 	model.queue(model.vsq_kernel, model.M, nothing, niter, ntol, model.K, model.C_buffer, model.p_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end

@@ -203,7 +203,7 @@ end
 
 function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	"Update vsq."
-	"Interior-point Newton's method with log-barrier and back-tracking line search."
+	"Newton's method with back-tracking line search."
 
 	for _ in 1:niter
 		rho = 1.0
