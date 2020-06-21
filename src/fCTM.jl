@@ -201,7 +201,7 @@ function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	end
 end
 
-function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
+function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	"Update vsq."
 	"Newton's method with back-tracking line search."
 
