@@ -201,23 +201,25 @@ function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	end
 end
 
-function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
+function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 	"Update vsq."
 	"Newton's method with back-tracking line search."
 
-	for _ in 1:niter
-		rho = 1.0
-		vsq_grad = -0.5 * (diag(model.invsigma) + model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]) - 1 ./ model.vsq[d])
-		vsq_invhess_diag = -1 ./ (0.25 * model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d]) + 0.5 ./ model.vsq[d].^2)
-		p = vsq_invhess_diag .* vsq_grad
+	for i in 1:model.K
+		for _ in 1:niter
+			rho = 1.0
+			vsq_grad = -0.5 * (model.invsigma[i,i] + model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) - 1 / model.vsq[d][i])
+			vsq_invhess_diag = -1 / (0.25 * model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) + 0.5 / model.vsq[d][i]^2)
+			p = vsq_invhess_diag * vsq_grad
 		
-		while minimum(model.vsq[d] - rho * p) <= 0
-			rho *= 0.5
-		end	
-		model.vsq[d] -= rho * p
-		
-		if rho * norm(vsq_grad) < ntol
-			break
+			while minimum(model.vsq[d][i] - rho * p) <= 0
+				rho *= 0.5
+			end	
+			model.vsq[d][i] -= rho * p
+			
+			if rho * abs(vsq_grad) < ntol
+				break
+			end
 		end
 	end
 	@positive model.vsq[d]
