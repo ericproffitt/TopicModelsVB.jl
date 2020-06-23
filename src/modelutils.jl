@@ -102,7 +102,7 @@ function check_model(model::fLDA)
 	all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])						|| throw(TopicModelError("tau must belong to the interval [0,1]."))
 	isfinite(model.elbo)															|| throw(TopicModelError("elbo must be finite."))
 	nothing
-#end
+end
 
 function check_model(model::CTM)
 	"Check CTM parameters."
