@@ -212,7 +212,7 @@ function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 			vsq_invhess_diag = -1 / (0.25 * model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) + 0.5 / model.vsq[d][i]^2)
 			p = vsq_invhess_diag * vsq_grad
 		
-			while minimum(model.vsq[d][i] - rho * p) <= 0
+			while model.vsq[d][i] - rho * p <= 0
 				rho *= 0.5
 			end	
 			model.vsq[d][i] -= rho * p
