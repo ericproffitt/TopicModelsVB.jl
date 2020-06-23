@@ -126,7 +126,8 @@ function update_eta!(model::fLDA)
 	"Update eta."
 	"Analytic."
 
-	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
+	counts = model.corp[d].counts
+	model.eta = sum([dot(model.tau[d], counts) for d in 1:model.M]) / sum(model.C)
 end
 
 function update_alpha!(model::fLDA, niter::Integer, ntol::Real)
