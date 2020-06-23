@@ -82,7 +82,7 @@ function Elogpw(model::fLDA, d::Int)
 	"Compute E_q[log(P(w))]."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
-	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * (model.tau[d] .* counts)) + dot(1 .- model.tau[d], log.(@boink model.kappa[terms]))
+	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * (counts .* model.tau[d])) + dot(counts .* (1 .- model.tau[d]), log.(@boink model.kappa[terms]))
 	return x
 end
 
