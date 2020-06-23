@@ -851,7 +851,7 @@ function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/
 	end
 
 	return model
-#end
+end
 
 function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
 	"Predict topic distributions for corpus of documents based on trained CTM model."
