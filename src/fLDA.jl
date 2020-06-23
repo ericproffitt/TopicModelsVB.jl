@@ -51,7 +51,6 @@ mutable struct fLDA <: TopicModel
 		elbo = 0
 	
 		model = new(K, M, V, N, C, copy(corp), topics, eta, alpha, kappa, kappa_old, kappa_temp, beta, beta_old, beta_temp, Elogtheta, Elogtheta_old, gamma, tau, tau_old, phi, elbo)
-		update_elbo!(model)
 		return model
 	end
 end
@@ -231,7 +230,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
 	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
-	update_elbo!(model)
+	(checkelbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for d in 1:model.M	
@@ -244,8 +243,8 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 					break
 				end
 			end
-			update_kappa!(model, d)
 			update_beta!(model, d)
+			update_kappa!(model, d)
 		end
 		update_beta!(model)
 		update_kappa!(model)

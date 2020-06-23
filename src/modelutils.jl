@@ -23,7 +23,7 @@ getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
 
 ### Display output for TopicModel objects.
 Base.show(io::IO, model::LDA) = print(io, "Latent Dirichlet allocation model with $(model.K) topics.")
-#Base.show(io::IO, model::fLDA) = print(io, "Filtered latent Dirichlet allocation model with $(model.K) topics.")
+Base.show(io::IO, model::fLDA) = print(io, "Filtered latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::CTM) = print(io, "Correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::fCTM) = print(io, "Filtered correlated topic model with $(model.K) topics.")
 Base.show(io::IO, model::CTPF) = print(io, "Collaborative topic Poisson factorization model with $(model.K) topics.")
@@ -63,45 +63,45 @@ function check_model(model::LDA)
 	nothing
 end
 
-#function check_model(model::fLDA)
-#	"Check fLDA parameters."
+function check_model(model::fLDA)
+	"Check fLDA parameters."
 
-#	check_corp(model.corp)
-#	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
-#	isequal(model.M, length(model.corp))											|| throw(TopicModelError("M must equal the number of documents in the corpus."))
-#	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError("N must contain document lengths."))
-#	isequal(model.C, [sum(doc.counts) for doc in model.corp])						|| throw(TopicModelError("C must contain sums of document counts."))
-#	(0 <= model.eta <= 1)															|| throw(TopicModelError("eta must belong to the interval [0,1]."))
-#	isequal(length(model.alpha), model.K)											|| throw(TopicModelError("alpha must be of length K."))
-#	all(isfinite.(model.alpha))														|| throw(TopicModelError("alpha must be finite."))
-#	all(model.alpha .> 0)															|| throw(TopicModelError("alpha must be positive."))
-#	isequal(length(model.kappa), model.V)											|| throw(TopicModelError("kappa must be of length V"))
-#	(isprobvec(model.kappa) | isempty(model.kappa))									|| throw(TopicModelError("kappa must be a probability vector."))
-#	isequal(length(model.kappa_old), model.V)										|| throw(TopicModelError("kappa_old must be of length V."))
-#	(isprobvec(model.kappa_old) | isempty(model.kappa_old))							|| throw(TopicModelError("kappa_old must be a probability vector."))
-#	isequal(model.kappa_temp, zeros(model.V))										|| throw(TopicModelError("kappa_temp must be a zero vector of length V."))
-#	isequal(size(model.beta), (model.K, model.V))									|| throw(TopicModelError("beta must be of size (K, V)."))
-#	(isstochastic(model.beta, dims=2) | isempty(model.beta))						|| throw(TopicModelError("beta must be a right stochastic matrix."))
-#	isequal(size(model.beta_old), (model.K, model.V))								|| throw(TopicModelError("beta_old must be of size (K, V)."))
-#	(isstochastic(model.beta_old, dims=2) | isempty(model.beta_old))				|| throw(TopicModelError("beta_old must be a right stochastic matrix."))
-#	isequal(model.beta_temp, zeros(model.K, model.V))								|| throw(TopicModelError("beta_temp must be a zero matrix of size (K, V)."))
-#	isequal(length(model.Elogtheta), model.M)										|| throw(TopicModelError("Elogtheta must be of length M."))
-#	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("Elogtheta must contain vectors of length K."))
-#	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])				|| throw(TopicModelError("Elogtheta must be finite."))
-#	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])						|| throw(TopicModelError("Elogtheta must be nonpositive."))
-#	isequal(length(model.Elogtheta_old), model.M)									|| throw(TopicModelError("Elogtheta_old must be of length M."))
-#	all(Bool[isequal(length(model.Elogtheta_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("Elogtheta_old must contain vectors of length K."))
-#	all(Bool[all(isfinite.(model.Elogtheta_old[d])) for d in 1:model.M])			|| throw(TopicModelError("Elogtheta_old must be finite."))
-#	all(Bool[all(model.Elogtheta_old[d] .<= 0) for d in 1:model.M])					|| throw(TopicModelError("Elogtheta_old must be nonpositive."))
-#	isequal(length(model.gamma), model.M)											|| throw(TopicModelError("gamma must be of length M."))
-#	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])			|| throw(TopicModelError("gamma must contain vectors of length K."))
-#	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])					|| throw(TopicModelError("gamma must be finite."))
-#	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])							|| throw(TopicModelError("gamma must be positive."))
-#	isequal(length(model.tau), model.M)												|| throw(TopicModelError("tau must be of length M."))
-#	all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])			|| throw(TopicModelError("tau must contain vectors of lengths N."))
-#	all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])						|| throw(TopicModelError("tau must belong to the interval [0,1]."))
-#	isfinite(model.elbo)															|| throw(TopicModelError("elbo must be finite."))
-#	nothing
+	check_corp(model.corp)
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(model.M, length(model.corp))											|| throw(TopicModelError("M must equal the number of documents in the corpus."))
+	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError("N must contain document lengths."))
+	isequal(model.C, [sum(doc.counts) for doc in model.corp])						|| throw(TopicModelError("C must contain sums of document counts."))
+	(0 <= model.eta <= 1)															|| throw(TopicModelError("eta must belong to the interval [0,1]."))
+	isequal(length(model.alpha), model.K)											|| throw(TopicModelError("alpha must be of length K."))
+	all(isfinite.(model.alpha))														|| throw(TopicModelError("alpha must be finite."))
+	all(model.alpha .> 0)															|| throw(TopicModelError("alpha must be positive."))
+	isequal(length(model.kappa), model.V)											|| throw(TopicModelError("kappa must be of length V"))
+	(isprobvec(model.kappa) | isempty(model.kappa))									|| throw(TopicModelError("kappa must be a probability vector."))
+	isequal(length(model.kappa_old), model.V)										|| throw(TopicModelError("kappa_old must be of length V."))
+	(isprobvec(model.kappa_old) | isempty(model.kappa_old))							|| throw(TopicModelError("kappa_old must be a probability vector."))
+	isequal(model.kappa_temp, zeros(model.V))										|| throw(TopicModelError("kappa_temp must be a zero vector of length V."))
+	isequal(size(model.beta), (model.K, model.V))									|| throw(TopicModelError("beta must be of size (K, V)."))
+	(isstochastic(model.beta, dims=2) | isempty(model.beta))						|| throw(TopicModelError("beta must be a right stochastic matrix."))
+	isequal(size(model.beta_old), (model.K, model.V))								|| throw(TopicModelError("beta_old must be of size (K, V)."))
+	(isstochastic(model.beta_old, dims=2) | isempty(model.beta_old))				|| throw(TopicModelError("beta_old must be a right stochastic matrix."))
+	isequal(model.beta_temp, zeros(model.K, model.V))								|| throw(TopicModelError("beta_temp must be a zero matrix of size (K, V)."))
+	isequal(length(model.Elogtheta), model.M)										|| throw(TopicModelError("Elogtheta must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta[d]), model.K) for d in 1:model.M])		|| throw(TopicModelError("Elogtheta must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta[d])) for d in 1:model.M])				|| throw(TopicModelError("Elogtheta must be finite."))
+	all(Bool[all(model.Elogtheta[d] .<= 0) for d in 1:model.M])						|| throw(TopicModelError("Elogtheta must be nonpositive."))
+	isequal(length(model.Elogtheta_old), model.M)									|| throw(TopicModelError("Elogtheta_old must be of length M."))
+	all(Bool[isequal(length(model.Elogtheta_old[d]), model.K) for d in 1:model.M])	|| throw(TopicModelError("Elogtheta_old must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.Elogtheta_old[d])) for d in 1:model.M])			|| throw(TopicModelError("Elogtheta_old must be finite."))
+	all(Bool[all(model.Elogtheta_old[d] .<= 0) for d in 1:model.M])					|| throw(TopicModelError("Elogtheta_old must be nonpositive."))
+	isequal(length(model.gamma), model.M)											|| throw(TopicModelError("gamma must be of length M."))
+	all(Bool[isequal(length(model.gamma[d]), model.K) for d in 1:model.M])			|| throw(TopicModelError("gamma must contain vectors of length K."))
+	all(Bool[all(isfinite.(model.gamma[d])) for d in 1:model.M])					|| throw(TopicModelError("gamma must be finite."))
+	all(Bool[all(model.gamma[d] .> 0) for d in 1:model.M])							|| throw(TopicModelError("gamma must be positive."))
+	isequal(length(model.tau), model.M)												|| throw(TopicModelError("tau must be of length M."))
+	all(Bool[isequal(length(model.tau[d]), model.N[d]) for d in 1:model.M])			|| throw(TopicModelError("tau must contain vectors of lengths N."))
+	all(Bool[all(0 .<= model.tau[d] .<= 1) for d in 1:model.M])						|| throw(TopicModelError("tau must belong to the interval [0,1]."))
+	isfinite(model.elbo)															|| throw(TopicModelError("elbo must be finite."))
+	nothing
 #end
 
 function check_model(model::CTM)
@@ -579,7 +579,7 @@ function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int
 	false
 end
 
-function gendoc(model::Union{LDA, gpuLDA}, laplace_smooth::Real=0.0)
+function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
 	"Generate artificial document from LDA or gpuLDA generative model."
 	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
 
@@ -824,33 +824,33 @@ function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10
 	return model
 end
 
-#function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/train_model.K^2)
-#	"Predict topic distributions for corpus of documents based on trained fLDA model."
+function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/train_model.K^2)
+	"Predict topic distributions for corpus of documents based on trained fLDA model."
 
-#	check_corp(corp)
-#	check_model(train_model)
-#	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
-#	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
-#	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
+	check_corp(corp)
+	check_model(train_model)
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
+	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
+	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
 
-#	model = fLDA(corp, train_model.K)
-#	model.alpha = train_model.alpha
-#	model.beta = train_model.beta
-#	model.topics = train_model.topics
+	model = fLDA(corp, train_model.K)
+	model.alpha = train_model.alpha
+	model.beta = train_model.beta
+	model.topics = train_model.topics
 
-#	for d in 1:model.M
-#		for v in 1:iter
-#			update_phi!(model, d)
-#			update_tau!(model, d)
-#			update_gamma!(model, d)
-#			update_Elogtheta!(model, d)
-#			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
-#				break
-#			end
-#		end
-#	end
+	for d in 1:model.M
+		for v in 1:iter
+			update_phi!(model, d)
+			update_tau!(model, d)
+			update_gamma!(model, d)
+			update_Elogtheta!(model, d)
+			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
+				break
+			end
+		end
+	end
 
-#	return model
+	return model
 #end
 
 function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
@@ -916,7 +916,7 @@ function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/
 	return model
 end
 
-function topicdist(model::Union{LDA, gpuLDA}, d::Integer)
+function topicdist(model::Union{LDA, gpuLDA, fLDA}, d::Integer)
 	"Get the LDA topic distribution for a document as a probability vector."
 
 	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
@@ -925,7 +925,7 @@ function topicdist(model::Union{LDA, gpuLDA}, d::Integer)
 	return topic_distribution
 end
 
-function topicdist(model::Union{CTM, fCTM, gpuCTM}, d::Integer)
+function topicdist(model::Union{CTM, gpuCTM, fCTM}, d::Integer)
 	"Get the CTM topic distribution for document as a probability vector."
 
 	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))

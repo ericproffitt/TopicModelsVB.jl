@@ -297,19 +297,6 @@ function readcorp(corp_symbol::Symbol)
 
 	datasets_path = joinpath((@__DIR__)[1:end-3], "datasets")
 
-	#if corp_symbol == :nsf
-	#	docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfdocs.txt"
-	#	vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsfvocab.txt"
-	#	titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/nsf/nsftitles.txt"
-	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, titlefile=titlefile, counts=true)
-
-	#elseif corp_symbol == :citeu
-	#	docfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeudocs.txt"
-	#	vocabfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuvocab.txt"
-	#	userfile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeuusers.txt"
-	#	titlefile = homedir() * "/GitHub/TopicModelsVB.jl/datasets/citeu/citeutitles.txt"
-	#	corp = readcorp(docfile=docfile, vocabfile=vocabfile, userfile=userfile, titlefile=titlefile, counts=true, readers=true)
-
 	if corp_symbol == :nsf
 		docfile = joinpath(datasets_path, "nsf/nsfdocs.txt")
 		vocabfile = joinpath(datasets_path, "nsf/nsfvocab.txt")
@@ -424,6 +411,21 @@ function clip_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	"Keep top n terms."
 	nothing
 end
+
+function remove_terms!(corp::Corpus; terms::Vector{String}=[])
+	"Vocab keys for specified terms are removed from all documents."
+
+	remove_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in terms, collect(keys(corp.vocab)))
+	
+	for doc in unique(corp)
+		keep = Bool[!(j in remove_keys) for j in doc.terms]
+		doc.terms = doc.terms[keep]
+		doc.counts = doc.counts[keep]
+	end
+	nothing
+end
+
+remove_terms!(corp::Corpus, term::String) = remove_vocab!(corp, terms=[term])
 
 function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	"Relabel vocab and/or user keys so that they form a unit range starting at 1."
@@ -544,7 +546,6 @@ function stop_corp!(corp::Corpus)
 
 	datasets_path = joinpath((@__DIR__)[1:end-3], "datasets")
 
-	#stop_words = vec(readdlm(pwd() * "/GitHub/TopicModelsVB.jl/datasets/stopwords.txt", String))
 	stop_words = vec(readdlm(joinpath(datasets_path, "stopwords.txt"), String))
 	stop_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in stop_words, collect(keys(corp.vocab)))
 	
@@ -596,7 +597,7 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 	nothing
 end
 
-function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, stop::Bool=false, trim::Bool=false)
+function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, remove_terms::Vector{String}=[], stop::Bool=false, trim::Bool=false)
 	"Generic function to ensure that a Corpus object can be loaded into a TopicModel object."
 	"Either pad_corp! or trim_docs!."
 	"compact_corp!."
@@ -604,14 +605,15 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Int
 
 	pad ? pad_corp!(corp) : trim_docs!(corp)
 
-	remove_redundant	&& remove_redundant!(corp)
-	condense 			&& condense_corp!(corp)
-	abridge > 0 		&& abridge_corp!(corp, abridge)
-	pad 				&& pad_corp!(corp, vocab=vocab, users=users)
-	stop 				&& stop_corp!(corp)
-	trim 				&& trim_corp!(corp, vocab=vocab, users=users)
-	alphabetize 		&& alphabetize_corp!(corp, vocab=vocab, users=users)
-	remove_empty_docs 	&& remove_empty_docs!(corp)
+	remove_redundant			&& remove_redundant!(corp)
+	condense 					&& condense_corp!(corp)
+	abridge > 0 				&& abridge_corp!(corp, abridge)
+	pad 						&& pad_corp!(corp, vocab=vocab, users=users)
+	length(remove_terms) > 0	&& remove_terms!(corp, terms=remove_terms)
+	stop 						&& stop_corp!(corp)
+	trim 						&& trim_corp!(corp, vocab=vocab, users=users)
+	alphabetize 				&& alphabetize_corp!(corp, vocab=vocab, users=users)
+	remove_empty_docs 			&& remove_empty_docs!(corp)
 
 	compact_corp!(corp)
 	nothing

@@ -10,7 +10,7 @@ using Crayons
 
 export Document, Corpus
 export TopicModel
-export LDA, CTM, fCTM, CTPF, gpuLDA, gpuCTM, gpuCTPF
+export LDA, fLDA, CTM, fCTM, CTPF, gpuLDA, gpuCTM, gpuCTPF
 export readcorp, writecorp, abridge_corp!, alphabetize_corp!, compact_corp!, condense_corp!, pad_corp!, remove_empty_docs!, remove_redundant!, stop_corp!, trim_corp!, trim_docs!, fixcorp!, showdocs, showtitles, getvocab, getusers
 export train!
 export @gpu
@@ -21,6 +21,7 @@ include("utils.jl")
 include("Corpus.jl")
 include("TopicModel.jl")
 include("LDA.jl")
+include("fLDA.jl")
 include("CTM.jl")
 include("fCTM.jl")
 include("CTPF.jl")

@@ -272,8 +272,8 @@ function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol:
 					break
 				end
 			end
-			update_kappa!(model, d)
 			update_beta!(model, d)
+			update_kappa!(model, d)
 		end
 		update_beta!(model)
 		update_kappa!(model)
