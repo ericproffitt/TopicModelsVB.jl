@@ -116,7 +116,7 @@ function update_elbo!(model::fLDA)
 	for d in 1:model.M
 		terms = model.corp[d].terms
 		model.phi[1] = additive_logistic(model.tau_old[d]' .* log.(@boink model.beta_old[:,terms]) .+ model.Elogtheta_old[d], dims=1)
-		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqc(model, d) - Elogqz(model, d)
+		model.elbo += Elogptheta(model, d) + Elogpc(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqc(model, d) - Elogqz(model, d)
 	end
 
 	return model.elbo
