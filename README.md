@@ -676,7 +676,7 @@ Note, as was done by Blei et al. in their original paper, if you would like to w
 
 ```julia
 ctpf_model.alef = exp.(model.beta)
-### For model of type: LDA, CTM, fCTM, gpuLDA, gpuCTM.
+### For model of type: LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM.
 ```
 
 ### GPU Acceleration
