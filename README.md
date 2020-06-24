@@ -181,10 +181,10 @@ The available models are as follows:
 ### CPU Models
 ```julia
 LDA(corp, K)
-Latent Dirichlet Allocation model with K topics.
+Latent Dirichlet allocation model with K topics.
 
 fLDA(corp, K)
-Filtered latent Dirichlet Allocation model with K topics.
+Filtered latent Dirichlet allocation model with K topics.
 
 CTM(corp, K)
 Correlated topic model with K topics.
