@@ -192,7 +192,7 @@ Correlated topic model with K topics.
 fCTM(corp, K)
 Filtered correlated topic model with K topics.
 
-CTPF(corp, K, basemodel)
+CTPF(corp, K)
 Collaborative topic Poisson factorization model with K topics.
 ```
 
