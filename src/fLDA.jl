@@ -249,7 +249,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		update_beta!(model)
 		update_kappa!(model)
 		update_alpha!(model, niter, ntol)
-		update_eta!(model)	
+		#update_eta!(model)	
 		
 		if check_elbo!(model, checkelbo, printelbo, k, tol)
 			break
