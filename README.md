@@ -747,6 +747,13 @@ mutable struct LDA <: TopicModel
 	K::Int
 	...
 
+mutable struct fLDA <: TopicModel
+	"fLDA mutable struct."
+
+	corpus::Corpus
+	K::Int
+	...
+
 mutable struct CTM <: TopicModel
 	"CTM mutable struct."
 
