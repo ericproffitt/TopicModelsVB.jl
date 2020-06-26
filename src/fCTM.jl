@@ -192,7 +192,7 @@ function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	counts = model.corp[d].counts
 	for _ in 1:niter
 		lambda_grad = model.invsigma * (model.mu - model.lambda[d]) + model.phi[1] * counts - model.C[d] * exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])
-		lambda_hess = -1 * (model.invsigma + model.C[d] * diagm(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])))
+		lambda_hess = -1.0 * (model.invsigma + model.C[d] * Diagonal(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])))
 		model.lambda[d] -= lambda_hess \ lambda_grad
 		
 		if norm(lambda_grad) < ntol
@@ -208,13 +208,13 @@ function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	for i in 1:model.K
 		for _ in 1:niter
 			rho = 1.0
-			vsq_grad = -0.5 * (model.invsigma[i,i] + model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) - 1 / model.vsq[d][i])
-			vsq_invhess_diag = -1 / (0.25 * model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) + 0.5 / model.vsq[d][i]^2)
+			vsq_grad = -0.5 * (model.invsigma[i,i] + model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) - 1.0 / model.vsq[d][i])
+			vsq_invhess_diag = -1.0 / (0.25 * model.C[d] * exp(model.lambda[d][i] + 0.5 * model.vsq[d][i] - model.logzeta[d]) + 0.5 / model.vsq[d][i]^2)
 			p = vsq_invhess_diag * vsq_grad
 		
 			while model.vsq[d][i] - rho * p <= 0
 				rho *= 0.5
-			end	
+			end
 			model.vsq[d][i] -= rho * p
 			
 			if rho * abs(vsq_grad) < ntol
