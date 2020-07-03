@@ -82,11 +82,8 @@ rref(long K, long D, long d, global float *A, global float *b)
 			{
 				float c = -A[D + K * j + (i + 1)] / A[D + K * j + j];
 		
-				for (long l=j; l<K; l++)
-					if (l == j)
-						A[D + K * l + (i + 1)] = 0.0f;
-					else
-						A[D + K * l + (i + 1)] += c * A[D + K * l + j];
+				for (long l=j+1; l<K; l++)
+					A[D + K * l + (i + 1)] += c * A[D + K * l + j];
 
 				b[K * d + (i + 1)] += c * b[K * d + j];
 			}

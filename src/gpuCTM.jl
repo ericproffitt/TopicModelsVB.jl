@@ -48,6 +48,7 @@ mutable struct gpuCTM <: TopicModel
 	vsq_buffer::cl.Buffer{Float32}
 	logzeta_buffer::cl.Buffer{Float32}
 	phi_buffer::cl.Buffer{Float32}
+	phi_count_buffer::cl.Buffer{Float32}
 
 	function gpuCTM(corp::Corpus, K::Integer)
 		check_corp(corp)
@@ -274,6 +275,7 @@ update_lambda(	long niter,
 				global float *lambda_old,
 				global float *lambda_grad,
 				global float *lambda_hess,
+				global float *phi_count,
 				const global long *C,
 				const global long *N_cumsum,
 				const global long *counts,
@@ -293,21 +295,23 @@ update_lambda(	long niter,
 				float acc;
 
 				for (long i=0; i<K; i++)
+				{
 					lambda_old[K * d + i] = lambda[K * d + i];
+
+					phi_count[K * d + i] = 0.0f;
+					for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
+						phi_count[K * d + i] += phi[K * n + i] * counts[n];
+				}
 
 				for (long _=0; _<niter; _++)
 				{
 					for (long i=0; i<K; i++)
 					{
 						acc = 0.0f;
-
 						for (long j=0; j<K; j++)
 							acc += invsigma[K * j + i] * (mu[j] - lambda[K * d + j]);
 
-						for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
-							acc += phi[K * n + i] * counts[n];
-
-						lambda_grad[K * d + i] = acc - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
+						lambda_grad[K * d + i] = acc + phi_count[K * d + i] - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
 					}
 
 					for (long j=0; j<K; j++)
@@ -333,7 +337,6 @@ update_lambda(	long niter,
 				}
 
 				acc = 0.0f;
-
 				for (long i=0; i<K; i++)
 					acc += pow(lambda[K * d + i] - lambda_old[K * d + i], 2);
 
@@ -345,7 +348,7 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
 	"Newton's method."
 	
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.lambda_old_buffer, model.lambda_grad_buffer, model.lambda_hess_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.lambda_old_buffer, model.lambda_grad_buffer, model.lambda_hess_buffer, model.phi_count_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
 end
 
@@ -495,7 +498,7 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf) || throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	(checkelbo <= iter) && update_elbo!(model)
 
