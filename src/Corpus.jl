@@ -197,7 +197,7 @@ showdocs(corp::Corpus, d::Integer) = showdocs(corp, [d])
 showdocs(corp::Corpus) = showdocs(corp, 1:length(corp))
 
 function showtitles(corp::Corpus, docs::Vector{Document})
-	"Display document title in readable format."
+	"Display document title(s) in readable format."
 
 	issubset(vcat([doc.terms for doc in docs]...), keys(corp.vocab)) || throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
 
@@ -214,7 +214,7 @@ function showtitles(corp::Corpus, docs::Vector{Document})
 end
 
 function showtitles(corp::Corpus, doc_indices::Vector{<:Integer})
-	"Display document title in readable format."
+	"Display document title(s) in readable format."
 
 	issubset(doc_indices, 1:length(corp))											|| throw(CorpusError("Some document indices outside corpus range."))
 	issubset(vcat([doc.terms for doc in corp[doc_indices]]...), keys(corp.vocab))	|| throw(DocumentError("Some documents contain term keys not found in Corpus vocabulary."))
