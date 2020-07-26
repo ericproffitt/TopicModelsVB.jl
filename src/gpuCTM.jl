@@ -331,7 +331,7 @@ update_lambda(	long niter,
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 
-					rref(K, D, d, z, lambda_hess_doc, lambda_grad_doc);
+					rref(K, z, lambda_hess_doc, lambda_grad_doc);
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 

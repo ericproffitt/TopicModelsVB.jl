@@ -49,7 +49,7 @@ digamma(float x)
 const RREF_c =
 """
 inline void
-rref(long K, long D, long d, long z, local float *A, local float *b)
+rref(long K, long z, local float *A, local float *b)
 			
 	{
 	for (long j=0; j<K-1; j++)
