@@ -49,54 +49,62 @@ digamma(float x)
 const RREF_c =
 """
 inline void
-rref(long K, long D, long d, global float *A, global float *b)
+rref(long K, long D, long d, long z, local float *A, local float *b)
 			
+	{
+	for (long j=0; j<K-1; j++)
+	{
+		if (z == 0)
 		{
-		for (long j=0; j<K; j++)
-		{
-			float maxval = fabs(A[D + K * j + j]);
+			float maxval = fabs(A[K * j + j]);
 
 			long maxrow = j;
 
 			for (long i=j+1; i<K; i++)
 			{
-				if (fabs(A[D + K * j + i]) > maxval)
+				if (fabs(A[K * j + i]) > maxval)
 				{
-					maxval = fabs(A[D + K * j + i]);
+					maxval = fabs(A[K * j + i]);
 					maxrow = i;
 				}
 			}
 				
 			for (long l=0; l<K; l++)
 			{
-				float A_temp = A[D + K * l + maxrow];
-				A[D + K * l + maxrow] = A[D + K * l + j];
-				A[D + K * l + j] = A_temp;
+				float A_temp = A[K * l + maxrow];
+				A[K * l + maxrow] = A[K * l + j];
+				A[K * l + j] = A_temp;
 			}
 
-			float b_temp = b[K * d + maxrow];
-			b[K * d + maxrow] = b[K * d + j];
-			b[K * d + j] = b_temp;
-
-			for (long i=j; i<K-1; i++)
-			{
-				float c = -A[D + K * j + (i + 1)] / A[D + K * j + j];
-		
-				for (long l=j+1; l<K; l++)
-					A[D + K * l + (i + 1)] += c * A[D + K * l + j];
-
-				b[K * d + (i + 1)] += c * b[K * d + j];
-			}
+			float b_temp = b[maxrow];
+			b[maxrow] = b[j];
+			b[j] = b_temp;
 		}
+		barrier(CLK_LOCAL_MEM_FENCE);
 
-		for (long j=K-1; j>0; j--)
-			for (long i=j-1; i>=0; i--)
-				b[K * d + i] -= b[K * d + j] * A[D + K * j + i] / A[D + K * j + j];
+		if (z >= j)
+		{
+			float c = -A[K * j + (z + 1)] / A[K * j + j];
 
-		for (long j=0; j<K; j++)
-			b[K * d + j] *= 1 / A[D + K * j + j];
-		}			
-		"""
+		    for (long l=j+1; l<K; l++)
+		        A[K * l + (z + 1)] += c * A[K * l + j];
+
+		    b[z + 1] += c * b[j];
+		}
+		barrier(CLK_LOCAL_MEM_FENCE);
+	}
+
+	for (long j=K-1; j>0; j--)
+	{
+		if (z < j)
+			b[z] -= b[j] * A[K * j + z] / A[K * j + j];
+
+		barrier(CLK_LOCAL_MEM_FENCE);
+	}
+
+	b[z] *= 1 / A[K * z + z];
+	}			
+	"""
 
 "Type alias for a vector of vectors."
 VectorList{T} = Vector{Vector{T}}

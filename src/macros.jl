@@ -97,7 +97,7 @@ macro host(expr::Expr)
 	elseif expr.args[2] == :(:gimel_buffer)
 		expr_out = 
 		quote
-		gimel_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimel_buffer), $(esc(model)).K, $(esc(model)).M + 64 - $(esc(model)).M % 64)
+		gimel_host = reshape(cl.read($(esc(model)).queue, $(esc(model)).gimel_buffer), $(esc(model)).K, $(esc(model)).M)
 		$(esc(model)).gimel = [gimel_host[:,d] for d in 1:$(esc(model)).M]
 		end
 	end

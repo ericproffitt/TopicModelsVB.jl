@@ -394,11 +394,11 @@ function update_buffer!(model::gpuLDA)
 
 	model.alpha_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alpha)
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
-	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.Elogtheta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.Elogtheta...))
 	model.Elogtheta_sum_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.K))
-	model.Elogtheta_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M + 64 - model.M % 64))
-	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
-	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
+	model.Elogtheta_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M))
+	model.gamma_buffer = cl.Buffer(Float32, model.context, :rw, model.K * model.M)
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * sum(model.N))
 end
 
 function update_buffer!(model::gpuCTM)
@@ -428,15 +428,18 @@ function update_buffer!(model::gpuCTM)
 	model.invsigma_buffer = cl.Buffer(Float32, model.context, (:r, :copy), hostbuf=Matrix(model.invsigma))
 	model.mu_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.mu)
 	model.beta_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.beta)
-	model.lambda_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.lambda..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.lambda_old_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
-	model.lambda_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
-	model.lambda_hess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * (model.M + 64 - model.M % 64))
-	model.lambda_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M + 64 - model.M % 64))
-	model.vsq_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.vsq..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.logzeta_buffer = cl.Buffer(Float32, model.context, :rw, model.M + 64 - model.M % 64)
-	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
-	model.phi_count_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (model.M + 64 - model.M % 64))
+	model.lambda_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.lambda...))
+	model.lambda_old_buffer = cl.Buffer(Float32, model.context, :rw, model.K * model.M)
+	model.lambda_grad_buffer = cl.Buffer(Float32, model.context, :rw, model.K * model.M)
+	model.lambda_hess_buffer = cl.Buffer(Float32, model.context, :rw, model.K^2 * model.M)
+	model.lambda_dist_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=zeros(Float32, model.M))
+	model.vsq_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.vsq...))
+	model.logzeta_buffer = cl.Buffer(Float32, model.context, :rw, model.M)
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * sum(model.N))
+	model.phi_count_buffer = cl.Buffer(Float32, model.context, :rw, model.K * model.M)
+
+	cl.set_arg!(model.lambda_kernel, 18, cl.LocalMem(Float32, model.K))
+	cl.set_arg!(model.lambda_kernel, 19, cl.LocalMem(Float32, model.K^2))
 end
 
 function update_buffer!(model::gpuCTPF)
@@ -483,12 +486,12 @@ function update_buffer!(model::gpuCTPF)
 	model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
 	model.bet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.bet)
 	model.vav_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
-	model.gimel_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel..., zeros(Float32, model.K, 64 - model.M % 64)))
-	model.zayin_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin..., zeros(Float32, model.K, 64 - model.M % 64)))
+	model.gimel_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel...))
+	model.zayin_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.zayin...))
 	model.dalet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet)
 	model.het_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het)
-	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * (sum(model.N) + 64 - sum(model.N) % 64))
-	model.xi_buffer = cl.Buffer(Float32, model.context, :rw, 2 * model.K * (sum(model.R) + 64 - sum(model.R) % 64))
+	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * sum(model.N))
+	model.xi_buffer = cl.Buffer(Float32, model.context, :rw, 2 * model.K * sum(model.R))
 end
 
 function update_host!(model::TopicModel)
@@ -504,13 +507,13 @@ function update_host!(model::gpuLDA)
 	end
 
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)	
-	Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M + 64 - model.M % 64)
+	Elogtheta_host = reshape(cl.read(model.queue, model.Elogtheta_buffer), model.K, model.M)
 	model.Elogtheta = [Elogtheta_host[:,d] for d in 1:model.M]
 	model.Elogtheta_sum = cl.read(model.queue, model.Elogtheta_sum_buffer)
 	model.Elogtheta_dist = cl.read(model.queue, model.Elogtheta_dist_buffer)[1:model.M]
-	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M + 64 - model.M % 64)
+	gamma_host = reshape(cl.read(model.queue, model.gamma_buffer), model.K, model.M)
 	model.gamma = [gamma_host[:,d] for d in 1:model.M]
-	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N))
 	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
@@ -525,13 +528,13 @@ function update_host!(model::gpuCTM)
 	model.mu = cl.read(model.queue, model.mu_buffer)
 	model.sigma = Symmetric(reshape(cl.read(model.queue, model.sigma_buffer), model.K, model.K))
 	model.beta = reshape(cl.read(model.queue, model.beta_buffer), model.K, model.V)
-	lambda_host = reshape(cl.read(model.queue, model.lambda_buffer), model.K, model.M + 64 - model.M % 64)
+	lambda_host = reshape(cl.read(model.queue, model.lambda_buffer), model.K, model.M)
 	model.lambda = [lambda_host[:,d] for d in 1:model.M]
 	model.lambda_dist = cl.read(model.queue,  model.lambda_dist_buffer)[1:model.M]
-	vsq_host = reshape(cl.read(model.queue, model.vsq_buffer), model.K, model.M + 64 - model.M % 64)
+	vsq_host = reshape(cl.read(model.queue, model.vsq_buffer), model.K, model.M)
 	model.vsq = [vsq_host[:,d] for d in 1:model.M]
 	model.logzeta = cl.read(model.queue, model.logzeta_buffer)[1:model.M]
-	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N))
 	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
@@ -552,15 +555,15 @@ function update_host!(model::gpuCTPF)
 	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U)
 	model.bet = cl.read(model.queue, model.bet_buffer)
 	model.vav = cl.read(model.queue, model.vav_buffer)
-	gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M + 64 - model.M % 64)
+	gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M)
 	model.gimel = [gimel_host[:,d] for d in 1:model.M]
-	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, model.M + 64 - model.M % 64)
+	zayin_host = reshape(cl.read(model.queue, model.zayin_buffer), model.K, model.M)
 	model.zayin = [zayin_host[:,d] for d in 1:model.M]	
 	model.dalet = cl.read(model.queue, model.dalet_buffer)
 	model.het = cl.read(model.queue, model.het_buffer)
-	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N) + 64 - sum(model.N) % 64)
+	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N))
 	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
-	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R) + 64 - sum(model.R) % 64)
+	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R))
 	model.xi = [xi_host[:,R_cumsum[d]+1:R_cumsum[d+1]] for d in 1:model.M]
 end
 

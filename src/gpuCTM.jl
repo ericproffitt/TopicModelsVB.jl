@@ -285,62 +285,72 @@ update_lambda(	long niter,
 				const global float *logzeta,
 				const global float *phi,
 				global float *lambda,
-				global float *lambda_dist)
+				global float *lambda_dist,
+				local float *lambda_grad_doc,
+				local float *lambda_hess_doc)
 	
 				{
-				long d = get_global_id(0);
+				long d = get_group_id(0);
+				long z = get_local_id(0);
 
 				long D = K * K * d;
 
-				float acc;
+				lambda_grad_doc[z] = lambda_grad[K * d + z];
 
 				for (long i=0; i<K; i++)
-				{
-					lambda_old[K * d + i] = lambda[K * d + i];
+					lambda_hess_doc[K * z + i] = lambda_hess[D + K * z + i];
 
-					phi_count[K * d + i] = 0.0f;
-					for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
-						phi_count[K * d + i] += phi[K * n + i] * counts[n];
-				}
+				float acc;
+
+				lambda_old[K * d + z] = lambda[K * d + z];
+
+				phi_count[K * d + z] = 0.0f;
+				for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
+					phi_count[K * d + z] += phi[K * n + z] * counts[n];
+
+				barrier(CLK_LOCAL_MEM_FENCE);
 
 				for (long _=0; _<niter; _++)
 				{
-					for (long i=0; i<K; i++)
-					{
-						acc = 0.0f;
-						for (long j=0; j<K; j++)
-							acc += invsigma[K * j + i] * (mu[j] - lambda[K * d + j]);
+					acc = 0.0f;
+					for (long j=0; j<K; j++)
+						acc += invsigma[K * j + z] * (mu[j] - lambda[K * d + j]);
 
-						lambda_grad[K * d + i] = acc + phi_count[K * d + i] - C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
-					}
+					lambda_grad_doc[z] = acc + phi_count[K * d + z] - C[d] * exp(lambda[K * d + z] + 0.5f * vsq[K * d + z] - logzeta[d]);
 
 					for (long j=0; j<K; j++)
-						for (long i=0; i<K; i++)
-						{
-							lambda_hess[D + K * j + i] = -invsigma[K * j + i];
+						lambda_hess_doc[K * j + z] = -invsigma[K * j + z];
 
-							if (i == j)
-								lambda_hess[D + K * j + i] -= C[d] * exp(lambda[K * d + i] + 0.5f * vsq[K * d + i] - logzeta[d]);
-						}
+					lambda_hess_doc[K * z + z] -= C[d] * exp(lambda[K * d + z] + 0.5f * vsq[K * d + z] - logzeta[d]);
+
+					barrier(CLK_LOCAL_MEM_FENCE);
 
 					acc = 0.0f;
 					for (long i=0; i<K; i++)
-						acc += lambda_grad[K * d + i] * lambda_grad[K * d + i];
+						acc += lambda_grad_doc[i] * lambda_grad_doc[i];
 
-					rref(K, D, d, lambda_hess, lambda_grad);	
+					barrier(CLK_LOCAL_MEM_FENCE);
 
-					for (long i=0; i<K; i++)
-						lambda[K * d + i] -= lambda_grad[K * d + i];
+					rref(K, D, d, z, lambda_hess_doc, lambda_grad_doc);
+
+					barrier(CLK_LOCAL_MEM_FENCE);
+
+					lambda[K * d + z] -= lambda_grad_doc[z];
+
+					barrier(CLK_LOCAL_MEM_FENCE);
 					
 					if (sqrt(acc) < ntol)
 						break;
 				}
 
-				acc = 0.0f;
-				for (long i=0; i<K; i++)
-					acc += pow(lambda[K * d + i] - lambda_old[K * d + i], 2);
+				if (z == 0)
+				{
+					acc = 0.0f;
+					for (long i=0; i<K; i++)
+						acc += pow(lambda[K * d + i] - lambda_old[K * d + i], 2);
 
-				lambda_dist[d] = sqrt(acc);
+					lambda_dist[d] = sqrt(acc);
+				}
 				}
 				"""
 
@@ -348,7 +358,7 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
 	"Newton's method."
 	
-	model.queue(model.lambda_kernel, model.M, nothing, niter, ntol, model.K, model.lambda_old_buffer, model.lambda_grad_buffer, model.lambda_hess_buffer, model.phi_count_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	model.queue(model.lambda_kernel, model.M * model.K, model.K, niter, ntol, model.K, model.lambda_old_buffer, model.lambda_grad_buffer, model.lambda_hess_buffer, model.phi_count_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
 end
 
@@ -498,7 +508,7 @@ function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=
 	check_model(model)
 	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
 	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf) || throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf) 	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	(checkelbo <= iter) && update_elbo!(model)
 
