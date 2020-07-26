@@ -41,9 +41,6 @@ mutable struct gpuCTM <: TopicModel
 	invsigma_buffer::cl.Buffer{Float32}
 	beta_buffer::cl.Buffer{Float32}
 	lambda_buffer::cl.Buffer{Float32}
-	lambda_old_buffer::cl.Buffer{Float32}
-	lambda_grad_buffer::cl.Buffer{Float32}
-	lambda_hess_buffer::cl.Buffer{Float32}
 	lambda_dist_buffer::cl.Buffer{Float32}
 	vsq_buffer::cl.Buffer{Float32}
 	logzeta_buffer::cl.Buffer{Float32}
