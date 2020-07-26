@@ -272,9 +272,6 @@ kernel void
 update_lambda(	long niter,
 				float ntol,
 				long K,
-				global float *lambda_old,
-				global float *lambda_grad,
-				global float *lambda_hess,
 				global float *phi_count,
 				const global long *C,
 				const global long *N_cumsum,
@@ -286,23 +283,17 @@ update_lambda(	long niter,
 				const global float *phi,
 				global float *lambda,
 				global float *lambda_dist,
-				local float *lambda_grad_doc,
-				local float *lambda_hess_doc)
+				local float *lambda_old,
+				local float *lambda_grad,
+				local float *lambda_hess)
 	
 				{
 				long d = get_group_id(0);
 				long z = get_local_id(0);
 
-				long D = K * K * d;
-
-				lambda_grad_doc[z] = lambda_grad[K * d + z];
-
-				for (long i=0; i<K; i++)
-					lambda_hess_doc[K * z + i] = lambda_hess[D + K * z + i];
-
 				float acc;
 
-				lambda_old[K * d + z] = lambda[K * d + z];
+				lambda_old[z] = lambda[K * d + z];
 
 				phi_count[K * d + z] = 0.0f;
 				for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
@@ -316,26 +307,26 @@ update_lambda(	long niter,
 					for (long j=0; j<K; j++)
 						acc += invsigma[K * j + z] * (mu[j] - lambda[K * d + j]);
 
-					lambda_grad_doc[z] = acc + phi_count[K * d + z] - C[d] * exp(lambda[K * d + z] + 0.5f * vsq[K * d + z] - logzeta[d]);
+					lambda_grad[z] = acc + phi_count[K * d + z] - C[d] * exp(lambda[K * d + z] + 0.5f * vsq[K * d + z] - logzeta[d]);
 
 					for (long j=0; j<K; j++)
-						lambda_hess_doc[K * j + z] = -invsigma[K * j + z];
+						lambda_hess[K * j + z] = -invsigma[K * j + z];
 
-					lambda_hess_doc[K * z + z] -= C[d] * exp(lambda[K * d + z] + 0.5f * vsq[K * d + z] - logzeta[d]);
+					lambda_hess[K * z + z] -= C[d] * exp(lambda[K * d + z] + 0.5f * vsq[K * d + z] - logzeta[d]);
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 
 					acc = 0.0f;
 					for (long i=0; i<K; i++)
-						acc += lambda_grad_doc[i] * lambda_grad_doc[i];
+						acc += lambda_grad[i] * lambda_grad[i];
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 
-					rref(K, z, lambda_hess_doc, lambda_grad_doc);
+					rref(K, z, lambda_hess, lambda_grad);
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 
-					lambda[K * d + z] -= lambda_grad_doc[z];
+					lambda[K * d + z] -= lambda_grad[z];
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 					
@@ -347,7 +338,7 @@ update_lambda(	long niter,
 				{
 					acc = 0.0f;
 					for (long i=0; i<K; i++)
-						acc += pow(lambda[K * d + i] - lambda_old[K * d + i], 2);
+						acc += pow(lambda[K * d + i] - lambda_old[i], 2);
 
 					lambda_dist[d] = sqrt(acc);
 				}
@@ -358,7 +349,7 @@ function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
 	"Update lambda."
 	"Newton's method."
 	
-	model.queue(model.lambda_kernel, model.M * model.K, model.K, niter, ntol, model.K, model.lambda_old_buffer, model.lambda_grad_buffer, model.lambda_hess_buffer, model.phi_count_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
+	model.queue(model.lambda_kernel, model.M * model.K, model.K, niter, ntol, model.K, model.phi_count_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
 end
 
