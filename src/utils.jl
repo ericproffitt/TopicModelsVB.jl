@@ -82,7 +82,7 @@ rref(long K, long z, local float *A, local float *b)
 		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 
-		if (z >= j)
+		if ((j <= z) && (z < K-1))
 		{
 			float c = -A[K * j + (z + 1)] / A[K * j + j];
 
