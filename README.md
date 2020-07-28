@@ -701,7 +701,7 @@ model = LDA(corp, 16)
 
 Here is the benchmark of the above model's coordinate ascent algorithm against the equivalent algorithm run on the CPU,
 
-![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/ldabar.png)
+![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/gpubar.png)
 
 As we can see, running the LDA model on the GPU is approximatey 1500% faster than running it on the CPU.
 
