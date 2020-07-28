@@ -699,7 +699,7 @@ Here are the benchmarks of the GPU algorithms for the LDA model's coordinate asc
 
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/gpubar.png)
 
-As we can see, running the your model on the GPU is significantly faster than running it on the CPU.
+As we can see, running your model on the GPU is significantly faster than running it on the CPU.
 
 Note that it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
