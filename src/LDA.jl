@@ -165,12 +165,12 @@ end
 function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	"Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm."
 
-	#check_model(model)
-	#all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	#all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
-	#(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
-	#all([isempty(doc) for doc in model.corp]) && (iter = 0)
-	#(checkelbo <= iter) && update_elbo!(model)
+	check_model(model)
+	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
+	all([isempty(doc) for doc in model.corp]) && (iter = 0)
+	(checkelbo <= iter) && update_elbo!(model)
 
 	for k in 1:iter
 		for d in 1:model.M	
@@ -192,6 +192,6 @@ function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=100
 		end
 	end
 
-	#model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
+	model.topics = [reverse(sortperm(vec(model.beta[i,:]))) for i in 1:model.K]
 	nothing
 end

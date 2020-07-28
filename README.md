@@ -680,15 +680,15 @@ ctpf_model.alef = exp.(model.beta)
 ```
 
 ### GPU Acceleration
-GPU accelerating your model runs its performance bottlenecks on the GPU rather than the CPU.
+GPU accelerating your model runs its performance bottlenecks on the GPU.
 
-There's no reason to instantiate the GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU,
+There's no reason to instantiate GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU,
 
 ```julia
 corp = readcorp(:nsf)
 
 model = LDA(corp, 20)
-@gpu train!(model, tol=0, checkelbo=Inf)
+@gpu train!(model, checkelbo=Inf)
 
 ### training...
 ```
