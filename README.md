@@ -687,25 +687,21 @@ There's no reason to instantiate the GPU models directly, instead you can simply
 ```julia
 corp = readcorp(:nsf)
 
-model = LDA(corp, 16)
-@time @gpu train!(model, iter=150, tol=0, checkelbo=Inf)
-### Let's time it as well to get an exact benchmark. 
+model = LDA(corp, 20)
+@gpu train!(model, tol=0, checkelbo=Inf)
 
 ### training...
-
-### 214.126210 seconds (102.17 M allocations: 10.590 GiB, 1.69% gc time)
-### On an Intel Iris Plus Graphics 640 1536 MB GPU.
 ```
 
 **Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently, since checking the ELBO requires expensive memory allocations and single threaded computation on the CPU.
 
-Here is the benchmark of the above model's coordinate ascent algorithm against the equivalent algorithm run on the CPU,
+Here are the benchmarks of the GPU algorithms for the LDA model's coordinate ascent algorithms for gpuLDA, gpuCTM, and gpuCTPF, compared against their equivalents run on the CPU,
 
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/gpubar.png)
 
-As we can see, running the LDA model on the GPU is approximatey 1500% faster than running it on the CPU.
+As we can see, running the your model on the GPU is significantly faster than running it on the CPU.
 
-Note, it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
+Note that it's expected that your computer will lag when training on the GPU, since you're effectively siphoning off its rendering resources to fit your model.
 
 ## Glossary
 
