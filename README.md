@@ -231,7 +231,7 @@ model = LDA(corp, 9)
 
 train!(model, iter=150, tol=0)
 ### Setting tol=0 will ensure that all 150 iterations are completed.
-### If you don't want to watch the ∆elbo, set checkelbo=Inf.
+### If you don't want to compute the ∆elbo, set checkelbo=Inf.
 
 ### training...
 
