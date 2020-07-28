@@ -271,7 +271,7 @@ function readcorp(;docfile::String="", vocabfile::String="", userfile::String=""
 		vkeys = vocab[:,1]
 		terms = [string(j) for j in vocab[:,2]]
 		corp.vocab = Dict{Int, String}(zip(vkeys, terms))
-		@assert all(collect(keys(corp.vocab)) .> 0)
+		all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
 	end
 
 	if !isempty(userfile)
@@ -279,7 +279,7 @@ function readcorp(;docfile::String="", vocabfile::String="", userfile::String=""
 		ukeys = users[:,1]
 		users = [string(u) for u in users[:,2]]
 		corp.users = Dict{Int, String}(zip(ukeys, users))
-		@assert all(collect(keys(corp.users)) .> 0)
+		all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
 	end
 
 	if !isempty(titlefile)
