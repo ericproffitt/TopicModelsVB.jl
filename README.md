@@ -695,7 +695,7 @@ model = LDA(corp, 20)
 
 **Important.** Notice that we didn't check the ELBO at all during training. While you can check the ELBO if you wish, it's recommended that you do so infrequently, since checking the ELBO requires expensive memory allocations and single threaded computation on the CPU.
 
-Here are the benchmarks of the GPU algorithms for the LDA model's coordinate ascent algorithms for gpuLDA, gpuCTM, and gpuCTPF, compared against their equivalents run on the CPU,
+Here are the benchmarks of the coordinate ascent algorithms for gpuLDA, gpuCTM, and gpuCTPF, compared against their equivalents run on the CPU,
 
 ![GPU Benchmark](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/images/gpubar.png)
 
