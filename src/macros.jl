@@ -275,6 +275,9 @@ macro gpu(expr::Expr)
 			model.xi ./= sum(model.xi, dims=1)
 			nothing
 
+		elseif isa(model, fLDA)
+			nothing
+
 		elseif isa(model, fCTM)
 			nothing
 
