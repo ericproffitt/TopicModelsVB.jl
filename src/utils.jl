@@ -46,7 +46,7 @@ digamma(float x)
 		"""
 
 ### Parallel Gauss-Jordan elimination (reduced row echelon form) algorithm for solving the linear system Ax=b.
-### Partial pivoting unnecessary for symmetric positive-definite matrices. Source,
+### Partial pivoting unnecessary for symmetric positive-definite matrices. Ref,
 ### "Accuracy and Stability of Numerical Algorithms" Higham, 2002.
 const LINSOLVE_c =
 """
