@@ -46,10 +46,10 @@ digamma(float x)
 		"""
 
 ### Gauss-Jordan (reduced row echelon form) algorithm for solving the linear system Ax=b.
-const RREF_c =
+const LINSOLVE_c =
 """
 inline void
-rref(long K, long z, local float *A, local float *b)
+linsolve(long K, long z, local float *A, local float *b)
 			
 	{
 	for (long j=0; j<K-1; j++)

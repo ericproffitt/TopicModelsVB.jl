@@ -263,7 +263,7 @@ end
 
 const CTM_LAMBDA_c =
 """
-$(RREF_c)
+$(LINSOLVE_c)
 
 kernel void
 update_lambda(	long niter,
@@ -319,7 +319,7 @@ update_lambda(	long niter,
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 
-					rref(K, z, lambda_hess, lambda_grad);
+					linsolve(K, z, lambda_hess, lambda_grad);
 
 					barrier(CLK_LOCAL_MEM_FENCE);
 
