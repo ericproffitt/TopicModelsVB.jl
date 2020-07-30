@@ -45,7 +45,9 @@ digamma(float x)
 		}
 		"""
 
-### Gauss-Jordan (reduced row echelon form) algorithm for solving the linear system Ax=b.
+### Gauss-Jordan elimination (reduced row echelon form) algorithm for solving the linear system Ax=b.
+### Partial pivoting unnecessary for symmetric positive-definite matrices.
+### "Accuracy and Stability of Numerical Algorithms" Higham, 2002.
 const LINSOLVE_c =
 """
 inline void
@@ -54,34 +56,6 @@ linsolve(long K, long z, local float *A, local float *b)
 	{
 	for (long j=0; j<K-1; j++)
 	{
-		if (z == 0)
-		{
-			float maxval = fabs(A[K * j + j]);
-
-			long maxrow = j;
-
-			for (long i=j+1; i<K; i++)
-			{
-				if (fabs(A[K * j + i]) > maxval)
-				{
-					maxval = fabs(A[K * j + i]);
-					maxrow = i;
-				}
-			}
-				
-			for (long l=0; l<K; l++)
-			{
-				float A_temp = A[K * l + maxrow];
-				A[K * l + maxrow] = A[K * l + j];
-				A[K * l + j] = A_temp;
-			}
-
-			float b_temp = b[maxrow];
-			b[maxrow] = b[j];
-			b[j] = b_temp;
-		}
-		barrier(CLK_LOCAL_MEM_FENCE);
-
 		if ((j <= z) && (z < K-1))
 		{
 			float c = -A[K * j + (z + 1)] / A[K * j + j];
