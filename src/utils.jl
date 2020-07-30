@@ -53,32 +53,32 @@ const LINSOLVE_c =
 inline void
 linsolve(long K, long z, local float *A, local float *b)
 			
-	{
-	for (long j=0; j<K-1; j++)
-	{
-		if ((j <= z) && (z < K-1))
 		{
-			float c = -A[K * j + (z + 1)] / A[K * j + j];
+		for (long j=0; j<K-1; j++)
+		{
+			if ((j <= z) && (z < K-1))
+			{
+				float c = -A[K * j + (z + 1)] / A[K * j + j];
 
-		    for (long l=j+1; l<K; l++)
-		        A[K * l + (z + 1)] += c * A[K * l + j];
+			    for (long l=j+1; l<K; l++)
+			        A[K * l + (z + 1)] += c * A[K * l + j];
 
-		    b[z + 1] += c * b[j];
+			    b[z + 1] += c * b[j];
+			}
+			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-		barrier(CLK_LOCAL_MEM_FENCE);
-	}
 
-	for (long j=K-1; j>0; j--)
-	{
-		if (z < j)
-			b[z] -= b[j] * A[K * j + z] / A[K * j + j];
+		for (long j=K-1; j>0; j--)
+		{
+			if (z < j)
+				b[z] -= b[j] * A[K * j + z] / A[K * j + j];
 
-		barrier(CLK_LOCAL_MEM_FENCE);
-	}
+			barrier(CLK_LOCAL_MEM_FENCE);
+		}
 
-	b[z] *= 1 / A[K * z + z];
-	}			
-	"""
+		b[z] *= 1 / A[K * z + z];
+		}			
+		"""
 
 "Type alias for a vector of vectors."
 VectorList{T} = Vector{Vector{T}}
