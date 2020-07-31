@@ -76,7 +76,7 @@ mutable struct gpuCTM <: TopicModel
 		beta_norm_program = cl.Program(context, source=CTM_BETA_NORM_c) |> cl.build!
 		lambda_program = cl.Program(context, source=CTM_LAMBDA_c) |> cl.build!
 		vsq_program = cl.Program(context, source=CTM_VSQ_c) |> cl.build!
-		logzeta_program = cl.Program(context, source=CTM_logzeta_c) |> cl.build!
+		logzeta_program = cl.Program(context, source=CTM_LOGZETA_c) |> cl.build!
 		phi_program = cl.Program(context, source=CTM_PHI_c) |> cl.build!
 		phi_norm_program = cl.Program(context, source=CTM_PHI_NORM_c) |> cl.build!
 
@@ -398,7 +398,7 @@ function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
 	model.queue(model.vsq_kernel, (model.M, model.K), nothing, niter, ntol, model.K, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
-const CTM_logzeta_c = 
+const CTM_LOGZETA_c = 
 """
 kernel void
 update_logzeta(	long K,
