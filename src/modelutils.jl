@@ -679,7 +679,7 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	
 	for (n, u) in enumerate(users)
-		@juliadots "user $u\n"
+		@juliadots "User $u\n"
 		try
 			if model.corp.users[u][1:5] != "#user"
 				@juliadots model.corp.users[u] * "\n"
@@ -760,7 +760,7 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Int
 	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
 
 	for (n, u) in enumerate(users)
-		@juliadots "user $u\n"
+		@juliadots "User $u\n"
 		try 
 			if corp.users[u][1:5] != "#user"
 				@juliadots corp.users[u] * "\n"

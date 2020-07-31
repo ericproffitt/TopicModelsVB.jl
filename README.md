@@ -27,7 +27,7 @@ Crayons
 ## Install
 
 ```julia
-(@v1.4) pkg> add TopicModelsVB
+(@v1.4) pkg> add https://github.com/ericproffitt/TopicModelsVB.jl
 ```
 
 ## Datasets
