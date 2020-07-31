@@ -281,7 +281,7 @@ function update_he!(model::CTPF)
 	"Update he."
 	"Analytic."
 
-	model.he_old = copy(model.he)
+	model.he_old = model.he
 	model.he = model.he_temp
 	model.he_temp = fill(model.e, model.K, model.U)
 end
