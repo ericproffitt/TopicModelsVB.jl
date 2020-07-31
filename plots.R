@@ -18,9 +18,9 @@ p = ggplot(df, aes(x=x, y=Seconds, fill=Processor)) +
 
 p
 
+# 12 x 8
 df = data.frame(p=1-x)
-
-p = ggplot(df, aes(x=p))+
+p = ggplot(df, aes(x=p)) +
     geom_histogram(color="white", fill="#5168ed", bins=50) +
     scale_x_continuous(breaks=0:10/10) +
     scale_y_continuous(breaks=c(0,1000,2000,3000,4000,5000)) +
