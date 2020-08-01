@@ -156,7 +156,7 @@ function Elogpya(model::gpuCTPF, d::Int)
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
 		binom = Binomial(ra, model.xi[d][i,u])
-		x += (ra * model.xi[d][i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
+		x += (ra * model.xi[d][i,u] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
@@ -168,7 +168,7 @@ function Elogpyb(model::gpuCTPF, d::Int)
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
 		binom = Binomial(ra, model.xi[d][model.K+i,u])
-		x += (ra * model.xi[d][model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - (model.zayin[d][i] / model.het[i]) * (model.he[i,re] / model.vav[i]) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
+		x += (ra * model.xi[d][model.K+i,u] * (digamma(model.zayin[d][i]) - log(model.het[i]) + digamma(model.he[i,re]) - log(model.vav[i])) - sum([pdf(binom, y) * loggamma(y + 1) for y in 0:ra]))
 	end
 	return x
 end
@@ -180,7 +180,7 @@ function Elogpz(model::gpuCTPF, d::Int)
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
 		binom = Binomial(c, model.phi[d][i,n])
-		x += (c * model.phi[d][i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i])) - (model.gimel[d][i] / model.dalet[i]) * (model.alef[i,j] / model.bet[i]) - sum([pdf(binom, z) * loggamma(z + 1) for z in 0:c]))
+		x += (c * model.phi[d][i,n] * (digamma(model.gimel[d][i]) - log(model.dalet[i]) + digamma(model.alef[i,j]) - log(model.bet[i])) - sum([pdf(binom, z) * loggamma(z + 1) for z in 0:c]))
 	end
 	return x
 end
