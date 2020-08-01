@@ -152,7 +152,7 @@ end
 function Elogpya(model::gpuCTPF, d::Int)
 	"Compute E_q[log(P(ya))]."
 
-	x = 0
+	x = -dot(model.gimel[d] ./ (model.dalet .* model.vav), sum(model.he, dims=2))
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
 		binom = Binomial(ra, model.xi[d][i,u])
@@ -164,7 +164,7 @@ end
 function Elogpyb(model::gpuCTPF, d::Int)
 	"Compute E_q[log(P(yb))]."
 
-	x = 0
+	x = -dot(model.zayin[d] ./ (model.het .* model.vav), sum(model.he, dims=2))
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
 		binom = Binomial(ra, model.xi[d][model.K+i,u])
@@ -176,7 +176,7 @@ end
 function Elogpz(model::gpuCTPF, d::Int)
 	"Compute E_q[log(P(z))]."
 
-	x = 0
+	x = -dot(model.gimel[d] ./ (model.dalet .* model.bet), sum(model.alef, dims=2))
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
 		binom = Binomial(c, model.phi[d][i,n])
