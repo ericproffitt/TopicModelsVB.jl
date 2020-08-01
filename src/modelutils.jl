@@ -588,7 +588,7 @@ function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int
 		delta_elbo = -(model.elbo - update_elbo!(model))
 		printelbo && println(k, " ∆elbo: ", round(delta_elbo, digits=3))
 
-		if abs(delta_elbo) < tol
+		if delta_elbo < tol
 			return true
 		end
 	end
