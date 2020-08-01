@@ -1,6 +1,6 @@
 1. smooth out fLDA and fCTM.
 2. figure out way to preserve ordering of documents so showdocs() is comprehensible.
-3. use feather or paraquet or some fead read-in binary file format for default corpora in order to speed up their loading times.
+3. use feather or paraquet or some fast read-in binary file format for default corpora in order to speed up their loading times.
 4. deal with counts situation.
 5. why is nu variable used in Newton's method for alpha in LDA but not vsq in CTM?
 6. when different vocab keys map to the same word, need to merge these in fixcorp. functions (may have done this).
@@ -22,3 +22,4 @@
 22. write Metal GPU algorithms.
 23. improve filtered models if possible.
 24. write GPU algorithms for filtered models.
+
