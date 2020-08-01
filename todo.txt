@@ -8,17 +8,16 @@
 8. stream documents from disk.
 9. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite
 10. should sigma for CTM be required to be positive definite or just positive semidefinite? test with 2 topics maybe. could set inv(model.sigma) to pinv(model.sigma)
-11. get NaNs with LDA with 1 topic. Basically, gamma and alpha go to Inf with 1 topic because that increasing the likelihood (may have been fixed).
-12. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
-13. findall for docs in corpus not working, need to understand how to do this correctly.
-14. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF
-15. need to deal with beta and fbeta in filtered models, predict function, etc.
-16. need to deal with mu and lambda in CTM with floatmax, etc.
-17. when you initialize beta as ones(K, V) / V, it doesn't train.
-18. errors in showdocs, showtitles need to be standardized, show at the bad doc index, or check all indices at the beginning.
-19. need to set up predict to return GPU models
-20. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
-21. consider batch/stochastic optimization.
-22. write CUDA GPU algorithms.
-23. improve filtered models if possible.
-24. write GPU algorithms for filtered models.
+11. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
+12. findall for docs in corpus not working, need to understand how to do this correctly.
+13. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF
+14. need to deal with beta and fbeta in filtered models, predict function, etc.
+15. need to deal with mu and lambda in CTM with floatmax, etc.
+16. when you initialize beta as ones(K, V) / V, it doesn't train.
+17. errors in showdocs, showtitles need to be standardized, show at the bad doc index, or check all indices at the beginning.
+18. need to set up predict to return GPU models
+19. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
+20. consider batch/stochastic optimization.
+21. write CUDA GPU algorithms.
+22. improve filtered models if possible.
+23. write GPU algorithms for filtered models.
