@@ -9,7 +9,7 @@
 9. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite
 10. should sigma for CTM be required to be positive definite or just positive semidefinite? test with 2 topics maybe. could set inv(model.sigma) to pinv(model.sigma)
 11. get NaNs with LDA with 1 topic. Basically, gamma and alpha go to Inf with 1 topic because that increasing the likelihood (may have been fixed).
-12. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0) (possibly related to PR).
+12. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
 13. findall for docs in corpus not working, need to understand how to do this correctly.
 14. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF
 15. need to deal with beta and fbeta in filtered models, predict function, etc.
