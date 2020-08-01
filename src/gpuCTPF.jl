@@ -461,7 +461,7 @@ function update_he!(model::gpuCTPF)
 	"Update he."
 	"Analytic."
 
-	model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_cumsum_buffer, model.ratings_buffer, model.readers_sortperm_buffer, model.xi_buffer, model.he_buffer)
+	(model.U > 0) && model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_cumsum_buffer, model.ratings_buffer, model.readers_sortperm_buffer, model.xi_buffer, model.he_buffer)
 end
 
 const CTPF_VAV_c = 
@@ -667,7 +667,7 @@ function update_xi!(model::gpuCTPF)
 	"Analytic."
 
 	model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_cumsum_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
-	model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
+	(sum(model.R) > 0) && model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
 end
 
 function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
@@ -686,6 +686,7 @@ function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer
 			update_phi!(model)
 			update_zayin!(model)
 			update_gimel!(model)
+			
 			if sum([norm(model.gimel[d] - model.gimel_old[d]) for d in 1:model.M]) < model.M * vtol
 				break
 			end

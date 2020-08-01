@@ -470,18 +470,15 @@ function update_buffer!(model::gpuCTPF)
 	model.terms_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms)
 	model.terms_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=terms_sortperm)
 	model.counts_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=counts)
-
-	model.readers_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers)
-	model.ratings_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=ratings)
-	model.readers_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=readers_sortperm)
-
+	model.readers_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=[readers; 0])
+	model.ratings_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=[ratings; 0])
+	model.readers_sortperm_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=[readers_sortperm; 0])
 	model.N_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=N_cumsum)
 	model.J_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=J_cumsum)
 	model.R_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=R_cumsum)
 	model.Y_cumsum_buffer = cl.Buffer(Int, model.context, (:r, :copy), hostbuf=Y_cumsum)
 
 	model.alef_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.alef)
-	model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
 	model.bet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.bet)
 	model.vav_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.vav)
 	model.gimel_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=hcat(model.gimel...))
@@ -489,7 +486,18 @@ function update_buffer!(model::gpuCTPF)
 	model.dalet_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.dalet)
 	model.het_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.het)
 	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * sum(model.N))
-	model.xi_buffer = cl.Buffer(Float32, model.context, :rw, 2 * model.K * sum(model.R))
+
+	if model.U > 0
+		model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=model.he)
+	else
+		model.he_buffer = cl.Buffer(Float32, model.context, (:rw, :copy), hostbuf=Float32[0])
+	end
+
+	if sum(model.R) > 0
+		model.xi_buffer = cl.Buffer(Float32, model.context, :rw, 2 * model.K * sum(model.R))
+	else
+		model.xi_buffer = cl.Buffer(Float32, model.context, :rw, 1)
+	end
 end
 
 function update_host!(model::TopicModel)
@@ -550,7 +558,6 @@ function update_host!(model::gpuCTPF)
 	end
 
 	model.alef = reshape(cl.read(model.queue, model.alef_buffer), model.K, model.V)
-	model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U)
 	model.bet = cl.read(model.queue, model.bet_buffer)
 	model.vav = cl.read(model.queue, model.vav_buffer)
 	gimel_host = reshape(cl.read(model.queue, model.gimel_buffer), model.K, model.M)
@@ -561,8 +568,15 @@ function update_host!(model::gpuCTPF)
 	model.het = cl.read(model.queue, model.het_buffer)
 	phi_host = reshape(cl.read(model.queue, model.phi_buffer), model.K, sum(model.N))
 	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
-	xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R))
-	model.xi = [xi_host[:,R_cumsum[d]+1:R_cumsum[d+1]] for d in 1:model.M]
+
+	if model.U > 0
+		model.he = reshape(cl.read(model.queue, model.he_buffer), model.K, model.U)
+	end
+
+	if sum(model.R) > 0
+		xi_host = reshape(cl.read(model.queue, model.xi_buffer), 2 * model.K, sum(model.R))
+		model.xi = [xi_host[:,R_cumsum[d]+1:R_cumsum[d+1]] for d in 1:model.M]
+	end
 end
 
 function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int, tol::Real)
