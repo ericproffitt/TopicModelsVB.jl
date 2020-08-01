@@ -666,8 +666,10 @@ function update_xi!(model::gpuCTPF)
 	"Update xi."
 	"Analytic."
 
-	model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_cumsum_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
-	(sum(model.R) > 0) && model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
+	if sum(model.R) > 0
+		model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_cumsum_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
+		model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
+	end
 end
 
 function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
