@@ -22,4 +22,4 @@
 22. write Metal GPU algorithms.
 23. improve filtered models if possible.
 24. write GPU algorithms for filtered models.
-25. Make Document and Corpus parametric types for Int16 and Int32 to save memory.
+25. make Document and Corpus parametric types for Int16 and Int32 to save memory.
