@@ -20,5 +20,5 @@
 20. consider batch/stochastic optimization.
 21. write CUDA GPU algorithms.
 22. write Metal GPU algorithms.
-22. improve filtered models if possible.
-23. write GPU algorithms for filtered models.
+23. improve filtered models if possible.
+24. write GPU algorithms for filtered models.
