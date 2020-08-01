@@ -693,6 +693,10 @@ function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	
 	for (n, u) in enumerate(users)
+		if isempty(model.libs[u])
+			continue
+		end
+
 		@juliadots "User $u\n"
 		try
 			if model.corp.users[u][1:5] != "#user"
@@ -718,7 +722,7 @@ showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
 showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(model, collect(user_range))
 showlibs(model::Union{CTPF, gpuCTPF}) = showlibs(model, 1:length(model.libs))
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=16; cols::Integer=4)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=16; cols::Integer=1)
 	"Display the top U user recommendations for a document(s)."
 	"cols parameter controls the number of topic columns displayed per line."
 
@@ -727,24 +731,26 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Inte
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	U = min(U, model.U)
 
-	corp, drecs, users = model.corp, model.drecs, model.corp.users
-
 	for (n, d) in enumerate(docs)
-		@juliadots "Document $d\n"
-		if !isempty(corp[d].title)
-			@juliadots corp[d].title * "\n"
+		if isempty(model.drecs[d])
+			continue
 		end
 
-		usercols = collect(Iterators.partition(drecs[d][1:U], Int(ceil(U / cols))))
+		@juliadots "Document $d\n"
+		if !isempty(model.corp[d].title)
+			@juliadots model.corp[d].title * "\n"
+		end
+
+		usercols = collect(Iterators.partition(model.drecs[d][1:U], Int(ceil(U / cols))))
 		rankcols = collect(Iterators.partition(1:U, Int(ceil(U / cols))))
 
 		for i in 1:length(usercols[1])
 			for j in 1:length(usercols)
 				try
-					uspacing = maximum([length(users[u]) for u in usercols[j]]) - length(users[usercols[j][i]]) + 4
+					uspacing = maximum([length(model.corp.users[u]) for u in usercols[j]]) - length(model.corp.users[usercols[j][i]]) + 4
 					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
 					print(Crayon(foreground=:yellow, bold=true), string(rankcols[j][i]) * ". " * " "^rspacing)
-					j == length(usercols) ? print(Crayon(foreground=:white, bold=false), users[usercols[j][i]]) : print(Crayon(foreground=:white, bold=false), users[usercols[j][i]] * " "^uspacing)
+					j == length(usercols) ? print(Crayon(foreground=:white, bold=false), model.corp.users[usercols[j][i]]) : print(Crayon(foreground=:white, bold=false), users[usercols[j][i]] * " "^uspacing)
 				
 				catch
 					nothing
@@ -759,8 +765,8 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Inte
 	end
 end
 
-showdrecs(model::Union{CTPF, gpuCTPF}, doc::Integer, U::Integer=16; cols::Integer=4) = showdrecs(model, [doc], U, cols=cols)
-showdrecs(model::Union{CTPF, gpuCTPF}, docs::UnitRange{<:Integer}, U::Integer=16; cols::Integer=4) = showdrecs(model, collect(docs), U, cols=cols)
+showdrecs(model::Union{CTPF, gpuCTPF}, doc::Integer, U::Integer=16; cols::Integer=1) = showdrecs(model, [doc], U, cols=cols)
+showdrecs(model::Union{CTPF, gpuCTPF}, docs::UnitRange{<:Integer}, U::Integer=16; cols::Integer=1) = showdrecs(model, collect(docs), U, cols=cols)
 
 function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=10; cols::Integer=1)
 	"# Show the top 'M' document recommendations for a user(s)."
@@ -771,27 +777,29 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Int
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	M = min(M, model.M)
 
-	corp, urecs, docs = model.corp, model.urecs, model.corp.docs
-
 	for (n, u) in enumerate(users)
+		if isempty(model.urecs[u])
+			continue
+		end
+
 		@juliadots "User $u\n"
 		try 
-			if corp.users[u][1:5] != "#user"
-				@juliadots corp.users[u] * "\n"
+			if model.corp.users[u][1:5] != "#user"
+				@juliadots model.corp.users[u] * "\n"
 			end
 		
 		catch 
-			@juliadots corp.users[u] * "\n"
+			@juliadots model.corp.users[u] * "\n"
 		end
 
-		docucols = collect(Iterators.partition(urecs[u][1:M], Int(ceil(M / cols))))
+		docucols = collect(Iterators.partition(model.urecs[u][1:M], Int(ceil(M / cols))))
 		rankcols = collect(Iterators.partition(1:M, Int(ceil(M / cols))))
 
 		for i in 1:length(docucols[1])
 			for j in 1:length(docucols)
 				try
-					!isempty(corp[docucols[j][i]].title) ? title = corp[docucols[j][i]].title : title = "Document $(docucols[j][i])"
-					dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(docs[d].title)) for d in docucols[j]]) - length(title) + 4
+					!isempty(model.corp[docucols[j][i]].title) ? title = model.corp[docucols[j][i]].title : title = "Document $(docucols[j][i])"
+					dspacing = maximum([max(4 + length("$(docucols[j][i])"), length(model.corp[d].title)) for d in docucols[j]]) - length(title) + 4
 					rspacing = maximum([length("$r") for r in rankcols[j]]) - length(string(rankcols[j][i]))
 					print(Crayon(foreground=:yellow, bold=true), string(rankcols[j][i]) * ". " * " "^rspacing)
 					j == length(docucols) ? print(Crayon(foreground=:white, bold=false), title) : print(Crayon(foreground=:white, bold=false), title * " "^dspacing)
