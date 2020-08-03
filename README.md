@@ -615,7 +615,7 @@ showlibs(model, 1741)
  Now compare this with the top 50 recommendations (the top 0.3%) made by our model,
  
 ```julia
-showurecs(model, 1741, 30)
+showurecs(model, 1741, 50)
 ```
 
 ```
