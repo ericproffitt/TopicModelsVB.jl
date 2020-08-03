@@ -567,7 +567,7 @@ Let's also take a look at the top recommendations for a particular document,
 ukeys_test[1] # = 2016
 ranks[1] # = 0.9998
 
-showdrecs(model, 1, 2, cols=1)
+showdrecs(model, 1, 2)
 ```
 ```
  ●●● doc 1
