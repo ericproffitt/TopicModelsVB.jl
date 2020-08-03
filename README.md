@@ -512,7 +512,7 @@ For our final model, we take a look at the collaborative topic Poisson factoriza
 CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
-Random.seed!(2);
+Random.seed!(10);
 
 corp = readcorp(:citeu)
 
@@ -564,19 +564,22 @@ The following histogram shows the proportional ranking of each test user within 
 Let's also take a look at the top recommendations for a particular document,
 
 ```julia
-ukeys_test[1] # = 2016
-ranks[1] # = 0.9998
+ukeys_test[1] # = 4919
+ranks[1] # = 0.958
 
-showdrecs(model, 1, 2)
+showdrecs(model, 1, 231)
 ```
 ```
  ●●● doc 1
  ●●● The metabolic world of Escherichia coli is not small
-1. #user994
-2. #user2016
+ ...
+228. #user4415
+229. #user5167
+230. #user429
+231. #user4919
 ```
 
-What the above output tells us is that user 3949's test document placed him or her in the top 0.1% (position 4) of all non-readers.
+What the above output tells us is that user 4919's test document placed him or her in the top 4.2% (position 231) of all non-readers.
 
 For evaluating our model's user recommendations, let's take a more holistic approach.
 
@@ -621,55 +624,55 @@ showurecs(model, 1741, 50)
 ```
  ●●● User 1741
 1.  Sets for Mathematics
-2.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-3.  Functional programming with bananas, lenses, envelopes and barbed wire
-4.  Foundations for structured programming with GADTs
-5.  Universal coalgebra: a theory of systems
-6.  Contracts for higher-order functions
-7.  The categorical abstract machine
-8.  Fast and Loose Reasoning Is Morally Correct
-9.  Monadic Parser Combinators
-10. Probabilistic reasoning by neurons
-11. A {S}yntactic {T}heory of {D}ynamic {B}inding
-12. The Category Theoretic Understanding of Universal Algebra: Lawvere Theories and Monads
-13. Purely functional data structures
-14. Membrane fusion
-15. Investigating Causal Relations by Econometric Models and Cross-Spectral Methods
-16. Total Functional Programming
-17. Definitional interpreters for higher-order programming languages
-18. Functional {D}ata {S}tructures
-19. In praise of tedious anatomy.
-20. Reproducibility Distinguishes Conscious from Nonconscious Neural Representations
+2.  On Understanding Types, Data Abstraction, and Polymorphism
+3.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
+4.  Types and programming languages
+5.  Haskell's overlooked object system
+6.  Obol: integrating language and meaning in bio-ontologies
+7.  The Definition of Standard ML - Revised
+8.  Advanced Topics in Types and Programming Languages
+9.  Principles of programming with complex objects and collection types
+10. Why Dependent Types Matter
+11. Functional programming with bananas, lenses, envelopes and barbed wire
+12. Featherweight Java: A Minimal Core Calculus for Java and GJ
+13. On the expressive power of programming languages
+14. Modern {C}ompiler {I}mplementation in {J}ava
+15. Functional pearl: implicit configurations--or, type classes reflect the values of types
+16. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
+17. Foundations for structured programming with GADTs
+18. Universal coalgebra: a theory of systems
+19. Dependent Types in Practical Programming
+20. The essence of compiling with continuations
 21. Categories for the Working Mathematician (Graduate Texts in Mathematics)
-22. Interpreting the BOLD signal.
-23. The {Calculus of Constructions}
-24. Scrap your boilerplate with class: extensible generic functions
-25. The next 700 programming languages
-26. Composing contracts: an adventure in financial engineering (functional pearl)
-27. Typed Contracts for Functional Programming
-28. The neural basis of financial risk taking.
-29. Categories for the Working Mathematician
-30. A method for using blocked and event-related fMRI data to study "resting state" functional connectivity.
-31. On the expressive power of programming languages
-32. Views: a way for pattern matching to cohabit with data abstraction
-33. A completeness theorem for {K}leene algebras and the algebra of regular events
+22. A {S}yntactic {T}heory of {D}ynamic {B}inding
+23. The ontology of biological sequences.
+24. Additional gene ontology structure for improved biological reasoning.
+25. Domain specific embedded compilers
+26. Abstract interpretation: a unified lattice model for static analysis of programs by construction or approximation of fixpoints
+27. Type Classes with Functional Dependencies
+28. A Tutorial on (Co)Algebras and (Co)Induction
+29. Languages of the Future
+30. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
+31. Categories for the Working Mathematician
+32. Types, abstraction and parametric polymorphism
+33. The categorical abstract machine
 34. Monadic Parsing in Haskell
-35. A Tutorial on (Co)Algebras and (Co)Induction
-36. Evaluating causal relations in neural systems: Granger causality, directed transfer function and statistical assessment of significance
-37. A simplex method for function minimization
-38. Building interpreters by composing monads
-39. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
-40. Functional Programming with Overloading and Higher-Order Polymorphism
-41. Implementing Lazy Functional Languages on Stock Hardware: The Spineless Tagless G-Machine
-42. Stochastic lambda calculus and monads of probability distributions
-43. The Meaning of Einstein's Equation
-44. G protein coupled receptor structure and activation.
-45. Subtyping Recursive Types
-46. Modeling and Rendering Architecture from Photographs: {A} Hybrid Geometry- and Image-Based Approach
-47. Why Do Computers Stop and What Can Be Done About It?
-48. A correspondence between continuation passing style and static single assignment form
-49. Linear types can change the world!
-50. {Modular Software Design with Crosscutting Interfaces}
+35. A relation based measure of semantic similarity for Gene Ontology annotations
+36. Representing Control: A study of the CPS transformation
+37. The design and implementation of typed scheme
+38. Cloning-based context-sensitive pointer alias analysis using binary decision diagrams
+39. Monadic Parser Combinators
+40. Lectures on the Curry-Howard isomorphism
+41. The {Calculus of Constructions}
+42. Dynamic optimization for functional reactive programming using generalized algebraic data types
+43. Fast and Loose Reasoning Is Morally Correct
+44. Scrap your boilerplate: a practical design pattern for generic programming
+45. Ownership types for safe programming: preventing data races and deadlocks
+46. Parsing expression grammars: a recognition-based syntactic foundation
+47. Finger trees: a simple general-purpose data structure
+48. Adaptive Functional Programming
+49. Definitional interpreters for higher-order programming languages
+50. A new notation for arrows
 ```
 
 For the CTPF models, you may access the raw topic distributions by computing,
