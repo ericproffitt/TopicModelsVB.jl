@@ -409,12 +409,12 @@ Now let's take a look at the topic-covariance matrix,
 model.sigma
 
 ### Top 2 off-diagonal positive entries:
-model.sigma[5,8] # = 16.856
+model.sigma[5,8] # = 16.847
 model.sigma[6,7] # = 9.280
 
 ### Top 2 negative entries:
-model.sigma[5,6] # = -32.034
-model.sigma[2,3] # = -21.080
+model.sigma[5,6] # = -32.017
+model.sigma[2,3] # = -21.092
 ```
 
 According to the list above, the most closely related topics are topics 5 and 8, which correspond to the *Mathematics* and *Computer Science* topics, followed by 6 and 7, corresponding *Molecular Biology* and *Ecology*.
@@ -512,7 +512,7 @@ For our final model, we take a look at the collaborative topic Poisson factoriza
 CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
-Random.seed!(1);
+Random.seed!(2);
 
 corp = readcorp(:citeu)
 
@@ -564,18 +564,16 @@ The following histogram shows the proportional ranking of each test user within 
 Let's also take a look at the top recommendations for a particular document,
 
 ```julia
-ukeys_test[1] # = 3949
-ranks[1] # = 0.999
+ukeys_test[1] # = 2016
+ranks[1] # = 1.0
 
-showdrecs(model, 1, 4, cols=1)
+showdrecs(model, 1, 2, cols=1)
 ```
 ```
  ●●● doc 1
  ●●● The metabolic world of Escherichia coli is not small
-1. #user4730
-2. #user2073
-3. #user1904
-4. #user3949
+1. #user994
+2. #user2016
 ```
 
 What the above output tells us is that user 3949's test document placed him or her in the top 0.1% (position 4) of all non-readers.
@@ -614,44 +612,64 @@ showlibs(model, 1741)
  
  The 20 articles in user 1741's library suggest that he or she is interested in programming language theory. 
  
- Now compare this with the top 30 recommendations (the top 0.2%) made by our model,
+ Now compare this with the top 50 recommendations (the top 0.3%) made by our model,
  
 ```julia
 showurecs(model, 1741, 30)
 ```
 
 ```
- ●●● user 1741
-1.  A {S}yntactic {T}heory of {D}ynamic {B}inding
+ ●●● User 1741
+1.  Sets for Mathematics
 2.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-3.  Monadic Parser Combinators
-4.  Multi-stage programming with functors and monads: eliminating abstraction overhead from generic code
-5.  Functional programming with bananas, lenses, envelopes and barbed wire
-6.  Total Functional Programming
-7.  Domain specific embedded compilers
-8.  A new notation for arrows
-9.  Lazy functional state threads
-10. A correspondence between continuation passing style and static single assignment form
-11. Dynamic Applications From the Ground Up
-12. Template meta-programming for Haskell
-13. Applicative Programming with Effects
-14. Fast and Loose Reasoning Is Morally Correct
-15. DSL implementation using staging and monads
-16. Monadic Parsing in Haskell
-17. seL4: Formal Verification of an {OS} Kernel
-18. Formal certification of a compiler back-end or: programming a compiler with a proof assistant
-19. Dynamic class loading in the Java virtual machine
-20. Foundational Calculi for Programming Languages
-21. Generalising monads to arrows
-22. Dynamic optimization for functional reactive programming using generalized algebraic data types
-23. Ribo-gnome: The Big World of Small RNAs
-24. When is a Functional Program Not a Functional Program?
-25. On the expressive power of programming languages
-26. Purely functional data structures
-27. Implementing deterministic declarative concurrency using sieves
-28. Scrap your boilerplate: a practical design pattern for generic programming
-29. Proof-Carrying Code
-30. Adaptive Functional Programming
+3.  Functional programming with bananas, lenses, envelopes and barbed wire
+4.  Foundations for structured programming with GADTs
+5.  Universal coalgebra: a theory of systems
+6.  Contracts for higher-order functions
+7.  The categorical abstract machine
+8.  Fast and Loose Reasoning Is Morally Correct
+9.  Monadic Parser Combinators
+10. Probabilistic reasoning by neurons
+11. A {S}yntactic {T}heory of {D}ynamic {B}inding
+12. The Category Theoretic Understanding of Universal Algebra: Lawvere Theories and Monads
+13. Purely functional data structures
+14. Membrane fusion
+15. Investigating Causal Relations by Econometric Models and Cross-Spectral Methods
+16. Total Functional Programming
+17. Definitional interpreters for higher-order programming languages
+18. Functional {D}ata {S}tructures
+19. In praise of tedious anatomy.
+20. Reproducibility Distinguishes Conscious from Nonconscious Neural Representations
+21. Categories for the Working Mathematician (Graduate Texts in Mathematics)
+22. Interpreting the BOLD signal.
+23. The {Calculus of Constructions}
+24. Scrap your boilerplate with class: extensible generic functions
+25. The next 700 programming languages
+26. Composing contracts: an adventure in financial engineering (functional pearl)
+27. Typed Contracts for Functional Programming
+28. The neural basis of financial risk taking.
+29. Categories for the Working Mathematician
+30. A method for using blocked and event-related fMRI data to study "resting state" functional connectivity.
+31. On the expressive power of programming languages
+32. Views: a way for pattern matching to cohabit with data abstraction
+33. A completeness theorem for {K}leene algebras and the algebra of regular events
+34. Monadic Parsing in Haskell
+35. A Tutorial on (Co)Algebras and (Co)Induction
+36. Evaluating causal relations in neural systems: Granger causality, directed transfer function and statistical assessment of significance
+37. A simplex method for function minimization
+38. Building interpreters by composing monads
+39. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
+40. Functional Programming with Overloading and Higher-Order Polymorphism
+41. Implementing Lazy Functional Languages on Stock Hardware: The Spineless Tagless G-Machine
+42. Stochastic lambda calculus and monads of probability distributions
+43. The Meaning of Einstein's Equation
+44. G protein coupled receptor structure and activation.
+45. Subtyping Recursive Types
+46. Modeling and Rendering Architecture from Photographs: {A} Hybrid Geometry- and Image-Based Approach
+47. Why Do Computers Stop and What Can Be Done About It?
+48. A correspondence between continuation passing style and static single assignment form
+49. Linear types can change the world!
+50. {Modular Software Design with Crosscutting Interfaces}
 ```
 
 For the CTPF models, you may access the raw topic distributions by computing,
