@@ -16,10 +16,8 @@ p = ggplot(df, aes(x=x, y=Seconds, fill=Processor)) +
     theme(plot.margin=unit(c(0.5,0.5,1.05,0.5), 'cm')) +
     labs(caption="LDA and CTM run for 10 iterations : 100,000 NSF documents with 30 topics.\n\nCTPF run for 10 iterations : CiteULike dataset with 100 topics.")
 
-p
-
 # 12 x 8
-df = data.frame(p=1-x)
+df = data.frame(p=1-ranks)
 p = ggplot(df, aes(x=p)) +
     geom_histogram(color="white", fill="#5168ed", bins=50) +
     scale_x_continuous(breaks=0:10/10) +
@@ -30,7 +28,3 @@ p = ggplot(df, aes(x=p)) +
     xlab("\nCiteULike Science Article Database : Collaborative topic Poisson factorization model with 100 topics.") +
     ylab("Documents") +
     theme(plot.background=element_rect(fill='white', color=NA), panel.background=element_rect(fill='white'), panel.grid.major=element_blank(), panel.grid.minor=element_blank())
-
-p
-
-
