@@ -22,4 +22,5 @@
 22. write Metal GPU algorithms.
 23. improve filtered models if possible.
 24. write GPU algorithms for filtered models.
-25. make Document and Corpus parametric types for Int16 and Int32 to save memory.
+25. Decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
+26. make Document and Corpus parametric types for Int16 and Int32 to save memory.
