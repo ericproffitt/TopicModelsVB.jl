@@ -408,11 +408,11 @@ Now let's take a look at the topic-covariance matrix,
 ```julia
 model.sigma
 
-### Top 2 off-diagonal positive entries:
+### Top two off-diagonal positive entries:
 model.sigma[4,9] # = 11.219
 model.sigma[1,8] # = 4.639
 
-### Top 2 negative entries:
+### Top two negative entries:
 model.sigma[4,8] # = -34.815
 model.sigma[8,9] # = -13.546
 ```
