@@ -357,7 +357,7 @@ For our next model, let's upgrade to a (filtered) correlated topic model.
 Filtering the correlated topic model will dynamically identify and suppress stop words which would otherwise clutter up the topic distribution output.
 
 ```julia
-Random.seed!(77777);
+Random.seed!(10);
 
 model = fCTM(corp, 9)
 train!(model, tol=0, checkelbo=Inf)
@@ -368,40 +368,40 @@ showtopics(model, 20, cols=9)
 ```
 
 ```
-topic 1           topic 2         topic 3        topic 4          topic 5         topic 6        topic 7         topic 8          topic 9
-earthquake        social          chemistry      science          theory          plant          water           design           solar
-data              economic        program        support          problems        cell           ocean           system           flow
-soil              theory          students       university       equations       protein        species         algorithms       waves
-damage            policy          materials      sciences         geometry        cells          sea             parallel         stars
-seismic           political       molecular      students         investigator    genetic        marine          systems          scale
-buildings         public          chemical       program          algebraic       gene           climate         performance      magnetic
-sites             women           reactions      mathematical     mathematical    plants         pacific         language         observations
-response          labor           university     scientific       principal       species        ice             problems         particles
-san               market          metal          months           differential    molecular      measurements    processing       measurements
-ground            decision        electron       year             space           genes          global          based            optical
-archaeological    change          organic        national         problem         dna            flow            networks         particle
-hazard            people          surface        scientists       solutions       proteins       forest          network          wave
-species           human           temperature    academic         groups          regulation     change          computer         numerical
-materials         case            molecules      conference       finite          expression     rates           control          mass
-earthquakes       individuals     compounds      engineering      nonlinear       function       circulation     software         motion
-october           interviews      laser          equipment        mathematics     growth         history         programming      equipment
-site              empirical       reaction       institute        spaces          populations    north           communication    imaging
-collection        factors         physics        workshop         dimensional     specific       data            distributed      physics
-california        differences     quantum        faculty          manifolds       biology        samples         problem          velocity
-history           implications    properties     international    functions       mechanisms     sediment        applications     image
+topic 1         topic 2         topic 3        topic 4          topic 5        topic 6          topic 7         topic 8         topic 9
+design          materials       economic       species          earthquake     students         chemistry       theory          cell
+system          flow            social         ocean            data           university       reactions       problems        protein
+systems         temperature     theory         populations      seismic        science          university      equations       cells
+algorithms      surface         policy         water            soil           support          metal           geometry        gene
+parallel        phase           political      data             damage         program          organic         investigator    plant
+performance     high            public         climate          university     scientists       molecular       algebraic       proteins
+based           optical         decision       marine           stars          sciences         chemical        groups          genes
+networks        laser           labor          sea              buildings      conference       compounds       principal       dna
+network         properties      market         plant            ground         scientific       molecules       mathematical    molecular
+control         liquid          data           population       response       national         professor       differential    plants
+computer        measurements    children       patterns         solar          year             reaction        space           genetic
+processing      experimental    science        evolutionary     equipment      engineering      synthesis       problem         regulation
+problems        heat            change         plants           nsf            faculty          program         solutions       expression
+software        growth          people         genetic          national       workshop         electron        mathematics     growth
+programming     electron        women          north            california     mathematical     complexes       spaces          specific
+distributed     films           human          pacific          san            months           department      nonlinear       function
+neural          gas             factors        change           program        graduate         energy          finite          binding
+applications    fluid           groups         samples          hazard         projects         species         manifolds       cellular
+efficient       quantum         individuals    environmental    earthquakes    academic         spectroscopy    functions       membrane
+problem         solid           case           history          october        international    carbon          dimensional     sequence
 ```
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
-* topic 1: *Earthquakes*
-* topic 2: *Social Science*
-* topic 3: *Chemistry*
-* topic 4: *Academia*
-* topic 5: *Mathematics*
-* topic 6: *Molecular Biology*
-* topic 7: *Ecology*
-* topic 8: *Computer Science*
-* topic 9: *Physics*
+* topic 1: *Computer Science*
+* topic 2: *Physics*
+* topic 3: *Economics*
+* topic 4: *Ecology*
+* topic 5: *Earthquakes*
+* topic 6: *Academia*
+* topic 7: *Chemistry*
+* topic 8: *Mathematics*
+* topic 9: *Molecular Biology*
 
 Now let's take a look at the topic-covariance matrix,
 
@@ -409,17 +409,17 @@ Now let's take a look at the topic-covariance matrix,
 model.sigma
 
 ### Top 2 off-diagonal positive entries:
-model.sigma[5,8] # = 16.847
-model.sigma[6,7] # = 9.280
+model.sigma[4,9] # = 11.219
+model.sigma[1,8] # = 4.639
 
 ### Top 2 negative entries:
-model.sigma[5,6] # = -32.017
-model.sigma[2,3] # = -21.092
+model.sigma[4,8] # = -34.815
+model.sigma[8,9] # = -13.546
 ```
 
-According to the list above, the most closely related topics are topics 5 and 8, which correspond to the *Mathematics* and *Computer Science* topics, followed by 6 and 7, corresponding *Molecular Biology* and *Ecology*.
+According to the list above, the most closely related topics are topics 4 and 9, which correspond to the *Ecology* and *Molecular Biology* topics, followed by 1 and 8, corresponding to *Computer Science* and *Mathematics*.
 
-As for the most unlikely topic pairings, most strongly negatively correlated are topics 5 and 6, corresponding to *Mathematics* and *Molecular Biology*, followed by topics 2 and 3, corresponding to *Social Science* and *Chemistry*.
+As for the most unlikely topic pairings, most strongly negatively correlated are topics 4 and 8, corresponding to *Ecology* and *Mathematics*, followed by topics 8 and 9, corresponding to *Mathematics* and *Molecular Biology*.
 
 ### Topic Prediction
 
