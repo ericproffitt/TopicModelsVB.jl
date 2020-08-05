@@ -584,7 +584,7 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 		end
 	end
 
-	if terms
+	if readers
 		doc_ukeys = Set(vcat([doc.readers for doc in corp]...))
 		bogus_ukeys = setdiff(doc_ukeys, keys(corp.users))
 		for doc in unique(corp)
