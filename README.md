@@ -95,7 +95,7 @@ title5
 
 The order of these titles correspond to the order of document blocks in the associated docfile.
 
-To read a corpus into TopicModelsVB.jl, use the following function,
+To read a corpus into Julia, use the following function,
 
 ```julia
 readcorp(;docfile="", vocabfile="", userfile="", titlefile="", delim=',', counts=false, readers=false, ratings=false)

@@ -13,7 +13,7 @@ mutable struct Document
 	ratings::Vector{Int}
 	title::String
 
-	function Document(;terms=Int[], counts=ones(length(terms)), readers=Int[], ratings=ones(length(readers)), title="")
+	function Document(;terms=[], counts=ones(length(terms)), readers=[], ratings=ones(length(readers)), title="")
 		doc = new(terms, counts, readers, ratings, title)
 		check_doc(doc)
 		return doc
@@ -53,18 +53,11 @@ mutable struct Corpus
 	users::Dict{Int, String}
 
 	function Corpus(;docs=Document[], vocab=[], users=[])
-		isa(vocab, Dict) || (vocab = Dict(vkey => term for (vkey, term) in enumerate(vocab)))
-		isa(users, Dict) || (users = Dict(ukey => user for (ukey, user) in enumerate(users)))
+		isa(vocab, Vector) && (vocab = Dict(vkey => term for (vkey, term) in enumerate(string.(vocab))))
+		isa(users, Vector) && (users = Dict(ukey => user for (ukey, user) in enumerate(string.(users))))
 
 		corp = new(docs, vocab, users)
-
-		for (d, doc) in enumerate(corp)
-			try
-				check_doc(doc)
-			catch
-				throw(CorpusError("Document $d failed check."))
-			end
-		end
+		check_docs(corp)
 
 		all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
 		all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
@@ -84,8 +77,8 @@ end
 
 Base.showerror(io::IO, e::CorpusError) = print(io, "CorpusError: ", e.msg)
 
-function check_corp(corp::Corpus)
-	"Check Corpus parameters."
+ function check_docs(corp::Corpus)
+ 	"Check Corpus documents."
 
 	for (d, doc) in enumerate(corp)
 		try
@@ -94,6 +87,12 @@ function check_corp(corp::Corpus)
 			throw(CorpusError("Document $d failed check."))
 		end
 	end
+end
+
+function check_corp(corp::Corpus)
+	"Check Corpus parameters."
+
+	check_docs(corp)
 
 	all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
 	all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
@@ -603,6 +602,8 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Int
 	"compact_corp!."
 	"Contains other optional keyword arguments."
 
+	check_docs(corp)
+ 
 	pad ? pad_corp!(corp) : trim_docs!(corp)
 
 	remove_redundant			&& remove_redundant!(corp)
