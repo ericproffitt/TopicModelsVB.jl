@@ -603,6 +603,9 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Int
 	"Contains other optional keyword arguments."
 
 	check_docs(corp)
+
+	all(collect(keys(corp.vocab)) .> 0) || throw(CorpusError("All vocab keys must be positive integers."))
+	all(collect(keys(corp.users)) .> 0) || throw(CorpusError("All user keys must be positive integers."))
  
 	pad ? pad_corp!(corp) : trim_docs!(corp)
 
