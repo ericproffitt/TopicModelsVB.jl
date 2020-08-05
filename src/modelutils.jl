@@ -18,8 +18,8 @@ showtitles(model::TopicModel, doc_indices::Vector{<:Integer}) = showtitles(model
 showtitles(model::TopicModel, doc_range::UnitRange{<:Integer}) = showtitles(model.corp, collect(doc_range))
 showtitles(model::TopicModel) = showtitles(model.corp)
 
-getvocab(model::TopicModel) = sort(collect(values(model.corp.vocab)))
-getusers(model::TopicModel) = sort(collect(values(model.corp.users)))
+getvocab(model::TopicModel) = getvocab(model.corp)
+getusers(model::TopicModel) = getusers(model.corp)
 
 ### Display output for TopicModel objects.
 Base.show(io::IO, model::LDA) = print(io, "Latent Dirichlet allocation model with $(model.K) topics.")
