@@ -25,3 +25,4 @@
 25. decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
 26. make Document and Corpus parametric types for Int16 and Int32 to save memory.
 27. further improve Document and Corpus error handling.
+28. improve performance for gendoc, gencorp and predict.
