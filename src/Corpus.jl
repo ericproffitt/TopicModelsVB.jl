@@ -489,7 +489,7 @@ end
 function remove_empty_docs!(corp::Corpus)
 	"Documents with no terms are removed from the corpus."
 
-	keep = Bool[length(doc.terms) > 0 for doc in corp]
+	keep = Bool[length(doc) > 0 for doc in corp]
 	corp.docs = corp[keep]
 	nothing
 end
