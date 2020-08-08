@@ -87,14 +87,14 @@ mutable struct gpuCTPF <: TopicModel
 			push!(libs[u], d)
 		end
 
-		urecs = Vector{Vector{Int}}(undef, U)
+		urecs = VectorList{Int}(undef, U)
 		for u in 1:U
 			ur = trues(M)
 			ur[libs[u]] .= false
 			urecs[u] = findall(ur)
 		end
 
-		drecs = Vector{Vector{Int}}(undef, M)
+		drecs = VectorList{Int}(undef, M)
 		for d in 1:M
 			nr = trues(U)
 			nr[corp[d].readers] .= false
@@ -716,14 +716,14 @@ function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer
 		model.scores[d,:] = sum(Eeta .* (Etheta + Eepsilon), dims=1)
 	end
 
-	model.urecs = Vector{Vector{Int}}(undef, model.U)
+	model.urecs = VectorList{Int}(undef, model.U)
 	for u in 1:model.U
 		ur = trues(model.M)
     	ur[model.libs[u]] .= false
 		model.urecs[u] = findall(ur)[reverse(sortperm(model.scores[ur,u]))]
 	end
 
-	model.drecs = Vector{Vector{Int}}(undef, model.M)
+	model.drecs = VectorList{Int}(undef, model.M)
 	for d in 1:model.M
     	nr = trues(model.U)
     	nr[model.corp[d].readers] .= false
