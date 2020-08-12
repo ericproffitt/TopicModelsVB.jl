@@ -2,7 +2,7 @@
 2. figure out way to preserve ordering of documents so showdocs() is comprehensible.
 3. use feather or paraquet or some fast read-in binary file format for default corpora in order to speed up their load times.
 4. deal with counts situation.
-5. why is nu variable used in Newton's method for alpha in LDA but not vsq in CTM?
+5. review update_alpha! for LDA models, determine if interior point Newton's method with sequence of decreasing barrier parameters nu is correctly designed.
 6. save/load trained models see issue #13.
 7. stream documents from disk.
 8. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite.
