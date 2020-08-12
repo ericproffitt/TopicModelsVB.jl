@@ -27,4 +27,4 @@
 27. further improve Document and Corpus error handling.
 28. improve performance for gendoc, gencorp and predict.
 29. determine if OpenCL kernels for phi and xi can be made more performant.
-30. consider switching over of update_lambda! and update_vsq! and update_mu! and update_sigma! in coordinate ascent algorithm for CTM, gpuCTM and fCTM
+30. consider switching over of update_lambda! and update_vsq!, and update_mu! and update_sigma! in coordinate ascent algorithm for CTM, gpuCTM and fCTM
