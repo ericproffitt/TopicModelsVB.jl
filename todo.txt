@@ -6,7 +6,7 @@
 6. save/load trained models see issue #13.
 7. stream documents from disk.
 8. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite.
-9. CTM models appear to be overflow safe for large variational parameters (additive_logistic is overflow safe, and since logzeta is updated first it prevents overflow in update_lambda! and update_vsq!), however large mu and/or large sigma will result in overflow at update_lambda!.
+9. CTM models appear to be overflow safe for large variational parameters (both additive_logistic and logsumexp are overflow safe, and since logzeta is updated first it prevents overflow in update_lambda! and update_vsq!), however large mu and/or large sigma will result in overflow at update_lambda!.
 19. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
 11. findall for docs in corpus not working, need to understand how to do this correctly.
 12. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF.
