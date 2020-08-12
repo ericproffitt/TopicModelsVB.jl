@@ -14,17 +14,16 @@
 14. need to deal with beta and fbeta in filtered models, predict function, etc.
 15. need to deal with mu and lambda in CTM with floatmax, etc.
 16. when you initialize beta as ones(K, V) / V, it doesn't train.
-17. errors in showdocs, showtitles need to be standardized, show at the bad doc index, or check all indices at the beginning.
-18. need to set up predict to return GPU models.
-19. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
-20. consider batch/stochastic optimization.
-21. write CUDA GPU algorithms.
-22. write Metal GPU algorithms.
-23. improve filtered models if possible.
-24. write GPU algorithms for filtered models.
-25. decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
-26. make Document and Corpus parametric types for Int16 and Int32 to save memory.
-27. further improve Document and Corpus error handling.
-28. improve performance for gendoc, gencorp and predict.
-29. determine if OpenCL kernels for phi and xi can be made more performant.
-30. consider switching order of update_lambda! and update_vsq!, and update_mu! and update_sigma! (basically update mean before variance) in coordinate ascent algorithm for CTM models.
+17. need to set up predict to return GPU models.
+18. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
+19. consider batch/stochastic optimization.
+20. write CUDA GPU algorithms.
+21. write Metal GPU algorithms.
+22. improve filtered models if possible.
+23. write GPU algorithms for filtered models.
+24. decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
+25. make Document and Corpus parametric types for Int16 and Int32 to save memory.
+26. further improve Document and Corpus error handling.
+27. improve performance for gendoc, gencorp and predict.
+28. determine if OpenCL kernels for phi and xi can be made more performant.
+29. consider switching order of update_lambda! and update_vsq!, and update_mu! and update_sigma! (basically update mean before variance) in coordinate ascent algorithm for CTM models.
