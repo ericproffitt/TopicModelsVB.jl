@@ -3,27 +3,26 @@
 3. use feather or paraquet or some fast read-in binary file format for default corpora in order to speed up their load times.
 4. deal with counts situation.
 5. why is nu variable used in Newton's method for alpha in LDA but not vsq in CTM?
-6. when different vocab keys map to the same word, need to merge these in fixcorp. functions (may have done this).
-7. save/load trained models see issue #13.
-8. stream documents from disk.
-9. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite.
-10. CTM models appear to be overflow safe for large variational parameters (additive_logistic is overflow safe, and since logzeta is updated first it prevents overflow in update_lambda! and update_vsq!), however large mu and/or large sigma will result in overflow at update_lambda!.
-11. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
-12. findall for docs in corpus not working, need to understand how to do this correctly.
-13. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF.
-14. need to deal with beta and fbeta in filtered models, predict function, etc.
-15. need to deal with mu and lambda in CTM with floatmax, etc.
-16. when you initialize beta as ones(K, V) / V, it doesn't train.
-17. need to set up predict to return GPU models.
-18. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
-19. consider batch/stochastic optimization.
-20. write CUDA GPU algorithms.
-21. write Metal GPU algorithms.
-22. improve filtered models if possible.
-23. write GPU algorithms for filtered models.
-24. decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
-25. make Document and Corpus parametric types for Int16 and Int32 to save memory.
-26. further improve Document and Corpus error handling.
-27. improve performance for gendoc, gencorp and predict.
-28. determine if OpenCL kernels for phi and xi can be made more performant.
-29. consider switching order of update_lambda! and update_vsq!, and update_mu! and update_sigma! (basically update mean before variance) in coordinate ascent algorithm for CTM models.
+6. save/load trained models see issue #13.
+7. stream documents from disk.
+8. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite.
+9. CTM models appear to be overflow safe for large variational parameters (additive_logistic is overflow safe, and since logzeta is updated first it prevents overflow in update_lambda! and update_vsq!), however large mu and/or large sigma will result in overflow at update_lambda!.
+19. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
+11. findall for docs in corpus not working, need to understand how to do this correctly.
+12. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF.
+13. need to deal with beta and fbeta in filtered models, predict function, etc.
+14. need to deal with mu and lambda in CTM with floatmax, etc.
+15. when you initialize beta as ones(K, V) / V, it doesn't train.
+16. need to set up predict to return GPU models.
+17. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
+18. consider batch/stochastic optimization.
+19. write CUDA GPU algorithms.
+20. write Metal GPU algorithms.
+21. improve filtered models if possible.
+22. write GPU algorithms for filtered models.
+23. decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
+24. make Document and Corpus parametric types for Int16 and Int32 to save memory.
+25. further improve Document and Corpus error handling.
+26. improve performance for gendoc, gencorp and predict.
+27. determine if OpenCL kernels for phi and xi can be made more performant.
+28. consider switching order of update_lambda! and update_vsq!, and update_mu! and update_sigma! (basically update mean before variance) in coordinate ascent algorithm for CTM models.
