@@ -7,7 +7,7 @@
 7. save/load trained models see issue #13.
 8. stream documents from disk.
 9. what variables *must* be finite in check_model, currently sigma and invsigma not required to be finite.
-10. need to make update_mu! overflow safe in CTM, gpuCTM and fCTM.
+10. CTM models appear to be overflow safe for large variational parameters (additive_logistic is overflow safe, and since logzeta is updated first it prevents overflow in update_lambda! and update_vsq!), however large mu and/or large sigma will result in overflow at update_lambda!.
 11. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
 12. findall for docs in corpus not working, need to understand how to do this correctly.
 13. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF.
@@ -27,4 +27,4 @@
 27. further improve Document and Corpus error handling.
 28. improve performance for gendoc, gencorp and predict.
 29. determine if OpenCL kernels for phi and xi can be made more performant.
-30. consider switching over of update_lambda! and update_vsq!, and update_mu! and update_sigma! in coordinate ascent algorithm for CTM, gpuCTM and fCTM.
+30. consider switching over of update_lambda! and update_vsq!, and update_mu! and update_sigma! in coordinate ascent algorithm for CTM models.
