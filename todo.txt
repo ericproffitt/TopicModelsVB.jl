@@ -27,3 +27,4 @@
 27. determine if OpenCL kernels for phi and xi can be made more performant.
 28. should consider switching order of update_lambda! and update_vsq!, and update_mu! and update_sigma! (basically update mean before variance) in coordinate ascent algorithm for CTM models.
 29. for LDA models, large alpha causes overflow in update_Elogtheta! and problems with update_alpha!, update_Elogtheta! can be handeled by approx. digamma(∑x) ≈ log(∑x) for x >> 0, and then use overflow safe log(∑x), however update_alpha! still problematic.
+30. test on other datasets.
