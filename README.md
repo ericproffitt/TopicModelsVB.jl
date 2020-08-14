@@ -706,9 +706,7 @@ GPU accelerating your model runs its performance bottlenecks on the GPU.
 There's no reason to instantiate GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU,
 
 ```julia
-corp = readcorp(:nsf)
-
-model = LDA(corp, 20)
+model = LDA(readcorp(:nsf), 20)
 @gpu train!(model, checkelbo=Inf)
 
 ### training...
