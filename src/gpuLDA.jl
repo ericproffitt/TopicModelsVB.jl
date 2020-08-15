@@ -51,7 +51,7 @@ mutable struct gpuLDA <: TopicModel
 
 		alpha = ones(Float32, K)
 		beta = rand(Dirichlet(V, 1.0f0), K)'
-		Elogtheta = [fill(Float32(-(Base.MathConstants.eulergamma + digamma(K))), K) for _ in 1:M]
+		Elogtheta = [fill(Float32(-(eulergamma + digamma(K))), K) for _ in 1:M]
 		Elogtheta_sum = sum([Elogtheta; [zeros(Float32, K)]])
 		Elogtheta_dist = zeros(Float32, M)
 		gamma = [ones(Float32, K) for _ in 1:M]

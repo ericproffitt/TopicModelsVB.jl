@@ -42,7 +42,7 @@ mutable struct fLDA <: TopicModel
 		beta = rand(Dirichlet(V, 1.0), K)'
 		beta_old = copy(beta)
 		beta_temp = zeros(K, V)
-		Elogtheta = [-Base.MathConstants.eulergamma * ones(K) .- digamma(K) for _ in 1:M]
+		Elogtheta = [-eulergamma * ones(K) .- digamma(K) for _ in 1:M]
 		Elogtheta_old = deepcopy(Elogtheta)
 		gamma = [ones(K) for _ in 1:M]
 		tau = [fill(eta, N[d]) for d in 1:M]

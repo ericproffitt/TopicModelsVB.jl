@@ -229,7 +229,7 @@ function update_logzeta!(model::fCTM, d::Int)
 	"Update logzeta."
 	"Analytic."
 
-	model.logzeta[d] = Distributions.logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
+	model.logzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function update_tau!(model::fCTM, d::Int)

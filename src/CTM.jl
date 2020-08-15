@@ -94,7 +94,6 @@ function update_elbo!(model::CTM)
 	for d in 1:model.M
 		terms = model.corp[d].terms
 		model.phi[1] = additive_logistic(log.(model.beta_old[:,terms]) .+ model.lambda_old[d], dims=1)
-		model.phi[1] ./= sum(model.phi[1], dims=1)
 		model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)
 	end
 
@@ -178,7 +177,7 @@ function update_logzeta!(model::CTM, d::Int)
 	"Update logzeta."
 	"Analytic."
 
-	model.logzeta[d] = Distributions.logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
+	model.logzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function update_phi!(model::CTM, d::Int)

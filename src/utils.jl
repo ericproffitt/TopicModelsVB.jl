@@ -6,6 +6,10 @@ const EPSILON = eps(1e-14)
 ### EPSILON32 is 1f-30.
 const EPSILON32 = "0.000000000000000000000000000001f"
 
+### Euler–Mascheroni constant.
+### γ = 0.5772156649015...
+import Base.MathConstants.eulergamma
+
 ### Numerical approximation to the digamma function.
 ### Based on eq. (12), without looking at the accompanying source
 ### code, of: K. S. Kölbig, "Programs for computing the logarithm of
@@ -86,7 +90,12 @@ VectorList{T} = Vector{Vector{T}}
 "Type alias for a vector of matrices."
 MatrixList{T} = Vector{Matrix{T}}
 
+"Prevent overflow to ±Inf."
 finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = sign.(x) .* min.(abs.(x), floatmax.(x))
+
+### LogSumExp function.
+### Overflow safe.
+import Distributions.logsumexp
 
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
 	"Additive logistic function of a real-valued matrix over the given dimension."
