@@ -580,7 +580,7 @@ update_phi(	long K,
 			float gdb = digamma(gimel[K * d + i]) - log(dalet[i]) - log(bet[i]);
 
 			for (long n=N_cumsum[d]; n<N_cumsum[d+1]; n++)
-				phi[K * n + i] = exp(gdb + digamma(alef[K * terms[n] + i]));
+				phi[K * n + i] = gdb + digamma(alef[K * terms[n] + i]);
 			}
 			"""
 
@@ -593,13 +593,22 @@ normalize_phi(	long K,
 				{
 				long dn = get_global_id(0);
 
+				float maxval = 0.0f;
+
+				for (long i=0; i<K; i++)				
+					if (phi[K * dn + i] > maxval)
+						maxval = phi[K * dn + i];
+
 				float normalizer = 0.0f;
-											
-				for (long i=0; i<K; i++)
-					normalizer += phi[K * dn + i];
 
 				for (long i=0; i<K; i++)
-					phi[K * dn + i] /= normalizer;
+				{
+					phi[K * dn + i] -= maxval;
+					normalizer += exp(phi[K * dn + i]);
+				}
+
+				for (long i=0; i<K; i++)
+					phi[K * dn + i] = exp(phi[K * dn + i]) / normalizer;
 				}
 				"""
 
@@ -637,8 +646,8 @@ update_xi(	long K,
 
 			for (long r=R_cumsum[d]; r<R_cumsum[d+1]; r++)
 			{
-				xi[2 * K * r + i] = exp(gdv + digamma(he[K * readers[r] + i]));
-				xi[K * (2 * r + 1) + i] = exp(zhv + digamma(he[K * readers[r] + i]));			
+				xi[2 * K * r + i] = gdv + digamma(he[K * readers[r] + i]);
+				xi[K * (2 * r + 1) + i] = zhv + digamma(he[K * readers[r] + i]);			
 			}
 			}
 			"""
@@ -652,13 +661,22 @@ normalize_xi(	long K,
 				{
 				long dr = get_global_id(0);
 
+				float maxval = 0.0f;
+
+				for (long i=0; i<2*K; i++)				
+					if (xi[2 * K * dr + i] > maxval)
+						maxval = xi[2 * K * dr + i];
+
 				float normalizer = 0.0f;
 											
 				for (long i=0; i<2*K; i++)
-					normalizer += xi[2 * K * dr + i];
+				{
+					xi[2 * K * dr + i] -= maxval;
+					normalizer += exp(xi[2 * K * dr + i]);
+				}
 
 				for (long i=0; i<2*K; i++)
-					xi[2 * K * dr + i] /= normalizer;
+					xi[2 * K * dr + i] = exp(xi[2 * K * dr + i]) / normalizer;
 				}
 				"""
 

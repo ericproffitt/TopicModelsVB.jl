@@ -248,11 +248,8 @@ function update_elbo!(model::CTPF)
 		terms = model.corp[d].terms
 		readers = model.corp[d].readers
 
-		model.phi[1] = exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.bet_old) .+ digamma.(model.alef_old[:,terms]))
-		model.phi[1] ./= sum(model.phi[1], dims=1)
-
-		model.xi[1] = vcat(exp.(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])), exp.(digamma.(model.zayin_old[d]) - log.(model.het_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])))
-		model.xi[1] ./= sum(model.xi[1], dims=1)
+		model.phi[1] = additive_logistic(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.bet_old) .+ digamma.(model.alef_old[:,terms]), dims=1)
+		model.xi[1] = additive_logistic(vcat(digamma.(model.gimel_old[d]) - log.(model.dalet_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers]), digamma.(model.zayin_old[d]) - log.(model.het_old) - log.(model.vav_old) .+ digamma.(model.he_old[:,readers])), dims=1)
 		
 		model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
 	end
@@ -351,8 +348,7 @@ function update_phi!(model::CTPF, d::Int)
 	"Analytic."
 
 	terms = model.corp[d].terms
-	model.phi[1] = exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]))
-	model.phi[1] ./= sum(model.phi[1], dims=1)
+	model.phi[1] = additive_logistic(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]), dims=1)
 end
 
 function update_xi!(model::CTPF, d::Int)
@@ -360,8 +356,7 @@ function update_xi!(model::CTPF, d::Int)
 	"Analytic."
 
 	readers = model.corp[d].readers
-	model.xi[1] = vcat(exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.vav) .+ digamma.(model.he[:,readers])), exp.(digamma.(model.zayin[d]) - log.(model.het) - log.(model.vav) .+ digamma.(model.he[:,readers])))
-	model.xi[1] ./= sum(model.xi[1], dims=1)
+	model.xi[1] = additive_logistic(vcat(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.vav) .+ digamma.(model.he[:,readers]), digamma.(model.zayin[d]) - log.(model.het) - log.(model.vav) .+ digamma.(model.he[:,readers])), dims=1)
 end
 
 function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
