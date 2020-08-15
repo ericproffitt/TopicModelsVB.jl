@@ -352,7 +352,7 @@ performance    flow           phase         system       high           year    
 ```
 
 ### Correlated Topic Model
-For our next model, let's upgrade to a (filtered) correlated topic model.
+For our next model, let's upgrade to a (filtered) correlated topic model (fCTM).
 
 Filtering the correlated topic model will dynamically identify and suppress stop words which would otherwise clutter up the topic distribution output.
 
