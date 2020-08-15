@@ -209,7 +209,7 @@ GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
 ## Tutorial
-### LDA
+### Latent Dirichlet Allocation
 Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 9 topics, trained on the first 5000 documents from the NSF corpus.
 
 ```julia
@@ -351,7 +351,7 @@ work           systems        reactions     important    time           scientis
 performance    flow           phase         system       high           year            water        scientific     principal
 ```
 
-### CTM
+### Correlated Topic Model
 For our next model, let's upgrade to a (filtered) correlated topic model.
 
 Filtering the correlated topic model will dynamically identify and suppress stop words which would otherwise clutter up the topic distribution output.
@@ -506,7 +506,7 @@ Document 4999: [0.002, 0.002, 0.247, 0.037, 0.019, 0.227, 0.002, 0.026, 0.438]
 Document 5000: [0.785, 0.178, 0.001, 0.0, 0.034, 0.001, 0.001, 0.001, 0.0]
 ```
 
-### CTPF
+### Collaborative Topic Poisson Factorization
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.
 
 CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
