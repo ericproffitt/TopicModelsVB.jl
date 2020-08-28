@@ -722,7 +722,7 @@ showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
 showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(model, collect(user_range))
 showlibs(model::Union{CTPF, gpuCTPF}) = showlibs(model, 1:length(model.libs))
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=16; cols::Integer=1)
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=15; cols::Integer=1)
 	"Display the top U user recommendations for a document(s)."
 	"cols parameter controls the number of topic columns displayed per line."
 
@@ -765,10 +765,10 @@ function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Inte
 	end
 end
 
-showdrecs(model::Union{CTPF, gpuCTPF}, doc::Integer, U::Integer=16; cols::Integer=1) = showdrecs(model, [doc], U, cols=cols)
-showdrecs(model::Union{CTPF, gpuCTPF}, docs::UnitRange{<:Integer}, U::Integer=16; cols::Integer=1) = showdrecs(model, collect(docs), U, cols=cols)
+showdrecs(model::Union{CTPF, gpuCTPF}, doc::Integer, U::Integer=15; cols::Integer=1) = showdrecs(model, [doc], U, cols=cols)
+showdrecs(model::Union{CTPF, gpuCTPF}, docs::UnitRange{<:Integer}, U::Integer=15; cols::Integer=1) = showdrecs(model, collect(docs), U, cols=cols)
 
-function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=10; cols::Integer=1)
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=15; cols::Integer=1)
 	"# Show the top 'M' document recommendations for a user(s)."
 	"If a document has no title, the document's index in the corpus will be shown instead."
 
@@ -817,8 +817,8 @@ function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Int
 	end
 end
 
-showurecs(model::Union{CTPF, gpuCTPF}, user::Integer, M::Integer=16; cols::Integer=1) = showurecs(model, [user], M, cols=cols)
-showurecs(model::Union{CTPF, gpuCTPF}, users::UnitRange{<:Integer}, M::Integer=16; cols::Integer=1) = showurecs(model, collect(users), M, cols=cols)
+showurecs(model::Union{CTPF, gpuCTPF}, user::Integer, M::Integer=15; cols::Integer=1) = showurecs(model, [user], M, cols=cols)
+showurecs(model::Union{CTPF, gpuCTPF}, users::UnitRange{<:Integer}, M::Integer=15; cols::Integer=1) = showurecs(model, collect(users), M, cols=cols)
 
 function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10, tol::Real=1/train_model.K^2)
 	"Predict topic distributions for corpus of documents based on trained LDA model."
