@@ -29,4 +29,3 @@
 29. for LDA models, large alpha causes overflow in update_Elogtheta! and problems with update_alpha!, update_Elogtheta! can be handeled by approx. digamma(∑x) ≈ log(∑x) for x >> 0, and then use overflow safe log(∑x), however update_alpha! still problematic.
 30. test on other datasets.
 31. could counts and ratings be allowed to be floating point?
-32. decide if Document/Corpus/TopicModelError msg fields should be String or AbstractString (currently Document/Corpus are String and TopicModel is AbstractString).

@@ -1,5 +1,5 @@
 struct TopicModelError <: Exception
-    msg::AbstractString
+    msg::String
 end
 
 Base.showerror(io::IO, e::TopicModelError) = print(io, "TopicModelError: ", e.msg)
@@ -963,15 +963,7 @@ function topicdist(model::Union{CTPF, gpuCTPF}, d::Integer)
 
 	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
 
-	terms = model.corp[d].terms
-	counts = model.corp[d].counts
-
-	phi = exp.(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]))
-	phi ./= sum(phi, dims=1)
-	
-	x = phi * counts
-	topic_distribution = x / sum(x)
-
+	topic_distribution = model.gimel[d] / sum(model.gimel[d])
 	return topic_distribution
 end
 
