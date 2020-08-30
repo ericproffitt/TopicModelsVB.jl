@@ -950,7 +950,7 @@ function topicdist(model::Union{LDA, gpuLDA, fLDA}, d::Integer)
 end
 
 function topicdist(model::Union{CTM, gpuCTM, fCTM}, d::Integer)
-	"Get the CTM topic distribution for document as a probability vector."
+	"Get the CTM topic distribution for a document as a probability vector."
 
 	(d <= length(model.corp)) || throw(CorpusError("Document index outside corpus range."))
 
