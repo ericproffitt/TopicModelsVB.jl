@@ -29,4 +29,4 @@
 29. for LDA models, large alpha causes overflow in update_Elogtheta! and problems with update_alpha!, update_Elogtheta! can be handeled by approx. digamma(∑x) ≈ log(∑x) for x >> 0, and then use overflow safe log(∑x), however update_alpha! still problematic.
 30. test on other datasets.
 31. could counts and ratings be allowed to be floating point?
-32. topicdist for CTM is just an approx. to E_q[exp(x_i)/∑exp(x)], is there a better approx.? 
+32. topicdist for CTM is just a (very good) approx. to E_q[exp(x_i)/∑exp(x)].
