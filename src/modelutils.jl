@@ -943,7 +943,7 @@ end
 function topicdist(model::Union{LDA, gpuLDA, fLDA}, d::Integer)
 	"Get the LDA topic distribution for a document as a probability vector."
 
-	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+	(d <= length(model.corp)) || throw(CorpusError("Document index outside corpus range."))
 
 	topic_distribution = model.gamma[d] / sum(model.gamma[d])
 	return topic_distribution
@@ -952,7 +952,7 @@ end
 function topicdist(model::Union{CTM, gpuCTM, fCTM}, d::Integer)
 	"Get the CTM topic distribution for document as a probability vector."
 
-	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+	(d <= length(model.corp)) || throw(CorpusError("SDocument index outside corpus range."))
 
 	topic_distribution = additive_logistic(model.lambda[d] + 0.5 * model.vsq[d])
 	return topic_distribution
@@ -961,7 +961,7 @@ end
 function topicdist(model::Union{CTPF, gpuCTPF}, d::Integer)
 	"Get the CTPF topic distribution for a document as a probability vector."
 
-	(d <= length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+	(d <= length(model.corp)) || throw(CorpusError("Document index outside corpus range."))
 
 	topic_distribution = model.gimel[d] / sum(model.gimel[d])
 	return topic_distribution
