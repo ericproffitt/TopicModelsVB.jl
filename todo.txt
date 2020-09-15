@@ -32,3 +32,4 @@
 32. topicdist for CTM is just a (very good) approx. to E_q[exp(x_i)/∑exp(x)].
 33. CTM models appear to degenerate along a topic dimension for very large iterations, see issue #14, as a consequence of only having K-1 degress of freedom, potentially resolvable by applying suggested proj. normalization, or re-introducing Tikhonov regularization, make sure negative oscillatory behavior doesn't return.
 34. change iter and tol to viter and vtol in predict functions.
+35. need to copy/deepcopy train_model variables to model, otherwise pass by reference risk between train_model and model.
