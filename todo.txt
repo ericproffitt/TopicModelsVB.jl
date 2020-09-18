@@ -9,27 +9,25 @@
 9. CTM models appear to be overflow safe for large variational parameters (both additive_logistic and logsumexp are overflow safe, and since logzeta is updated first it prevents overflow in update_lambda! and update_vsq!), however large mu will result in overflow at update_lambda!, not sure about large sigma/invsigma.
 19. pull request to Distributions.jl for Dirichlet with length 1 parameter, entropy should always be zero, but it's not for maxfloat(1.0).
 11. findall for docs in corpus not working, need to understand how to do this correctly.
-12. should possibly define abstract types, AbstractLDA = Union{LDA, fLDA, gpuLDA}, same with CTM and CTPF.
-13. need to deal with beta and fbeta in filtered models, predict function, etc.
-14. need to deal with mu and lambda in CTM with floatmax, etc.
-15. when you initialize beta as ones(K, V) / V, it doesn't train.
-16. need to set up predict to return GPU models.
-17. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
-18. consider batch/stochastic optimization.
-19. write CUDA GPU algorithms.
-20. write Metal GPU algorithms.
-21. improve filtered models if possible.
-22. write GPU algorithms for filtered models.
-23. decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
-24. make Document and Corpus parametric types for Int16 and Int32 to save memory.
-25. further improve Document and Corpus error handling.
-26. improve performance for gendoc, gencorp and predict.
-27. determine if OpenCL kernels for phi and xi can be made more performant.
-28. should consider switching order of update_lambda! and update_vsq!, and update_mu! and update_sigma! (basically update mean before variance) in coordinate ascent algorithm for CTM models.
-29. for LDA models, large alpha causes overflow in update_Elogtheta! and problems with update_alpha!, update_Elogtheta! can be handeled by approx. digamma(∑x) ≈ log(∑x) for x >> 0, and then use overflow safe log(∑x), however update_alpha! still problematic.
-30. test on other datasets.
-31. could counts and ratings be allowed to be floating point?
-32. topicdist for CTM is just a (very good) approx. to E_q[exp(x_i)/∑exp(x)].
-33. CTM models appear to degenerate along a topic dimension for very large iterations, see issue #14, as a consequence of only having K-1 degress of freedom, potentially resolvable by applying suggested proj. normalization, or re-introducing Tikhonov regularization, make sure negative oscillatory behavior doesn't return.
-34. change iter and tol to viter and vtol in predict functions.
-35. need to copy/deepcopy train_model variables to model in predict functions, otherwise pass by reference risk between train_model and model.
+12. need to deal with mu and lambda in CTM with floatmax, etc.
+13. when you initialize beta as ones(K, V) / V, it doesn't train.
+14. need to set up predict to return GPU models.
+15. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
+16. consider batch/stochastic optimization.
+17. write CUDA GPU algorithms.
+18. write Metal GPU algorithms.
+19. improve filtered models if possible.
+20. write GPU algorithms for filtered models.
+21. decide whether to replace check_doc, check_corp, check_model with checkdoc, checkcorp, and checkmodel.
+22. make Document and Corpus parametric types for Int16 and Int32 to save memory.
+23. further improve Document and Corpus error handling.
+24. improve performance for gendoc, gencorp and predict.
+25. determine if OpenCL kernels for phi and xi can be made more performant.
+26. should consider switching order of update_lambda! and update_vsq!, and update_mu! and update_sigma! (basically update mean before variance) in coordinate ascent algorithm for CTM models.
+27. for LDA models, large alpha causes overflow in update_Elogtheta! and problems with update_alpha!, update_Elogtheta! can be handeled by approx. digamma(∑x) ≈ log(∑x) for x >> 0, and then use overflow safe log(∑x), however update_alpha! still problematic.
+28. test on other datasets.
+19. could counts and ratings be allowed to be floating point?
+30. topicdist for CTM is just a (very good) approx. to E_q[exp(x_i)/∑exp(x)].
+31. CTM models appear to degenerate along a topic dimension for very large iterations, see issue #14, as a consequence of only having K-1 degress of freedom, potentially resolvable by applying suggested proj. normalization, or re-introducing Tikhonov regularization, make sure negative oscillatory behavior doesn't return.
+32. change iter and tol to viter and vtol in predict functions.
+33. need to copy/deepcopy train_model variables to model in predict functions, otherwise pass by reference risk between train_model and model.
