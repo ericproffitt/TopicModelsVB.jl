@@ -13,7 +13,7 @@
 13. when you initialize beta as ones(K, V) / V, it doesn't train.
 14. need to set up predict to return GPU models.
 15. change hardcoded K, V, M, etc. in check_model functions to string imputed values for model.
-16. consider batch/stochastic optimization.
+16. consider stochastic variational inference possibly with natural gradient.
 17. write CUDA GPU algorithms.
 18. write Metal GPU algorithms.
 19. improve filtered models if possible.
