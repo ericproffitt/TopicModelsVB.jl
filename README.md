@@ -570,7 +570,7 @@ ranks[1] # = 0.922
 showdrecs(model, 1, 434)
 ```
 ```
- ●●● doc 1
+ ●●● Document 1
  ●●● The metabolic world of Escherichia coli is not small
  ...
 431. #user1647
@@ -590,7 +590,7 @@ showlibs(model, 1741)
 ```
 
 ```
- ●●● user 1741
+ ●●● User 1741
  • Region-Based Memory Management
  • A Syntactic Approach to Type Soundness
  • Imperative Functional Programming
