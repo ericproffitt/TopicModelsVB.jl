@@ -564,22 +564,22 @@ The following histogram shows the proportional ranking of each test user within 
 Let's also take a look at the top recommendations for a particular document,
 
 ```julia
-ukeys_test[1] # = 4919
-ranks[1] # = 0.958
+ukeys_test[1] # = 216
+ranks[1] # = 0.922
 
-showdrecs(model, 1, 231)
+showdrecs(model, 1, 434)
 ```
 ```
  ●●● doc 1
  ●●● The metabolic world of Escherichia coli is not small
  ...
-228. #user4415
-229. #user5167
-230. #user429
-231. #user4919
+431. #user1647
+432. #user1178
+433. #user5315
+434. #user216
 ```
 
-What the above output tells us is that user 4919's test document placed him or her in the top 4.2% (position 231) of all non-readers.
+What the above output tells us is that user 216's test document placed him or her in the top 8% (position 434) of all non-readers.
 
 For evaluating our model's user recommendations, let's take a more holistic approach.
 
@@ -624,55 +624,55 @@ showurecs(model, 1741, 50)
 ```
  ●●● User 1741
 1.  Sets for Mathematics
-2.  On Understanding Types, Data Abstraction, and Polymorphism
-3.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-4.  Types and programming languages
-5.  Haskell's overlooked object system
-6.  Obol: integrating language and meaning in bio-ontologies
-7.  The Definition of Standard ML - Revised
-8.  Advanced Topics in Types and Programming Languages
-9.  Principles of programming with complex objects and collection types
-10. Why Dependent Types Matter
-11. Functional programming with bananas, lenses, envelopes and barbed wire
-12. Featherweight Java: A Minimal Core Calculus for Java and GJ
-13. On the expressive power of programming languages
-14. Modern {C}ompiler {I}mplementation in {J}ava
-15. Functional pearl: implicit configurations--or, type classes reflect the values of types
-16. Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
-17. Foundations for structured programming with GADTs
-18. Universal coalgebra: a theory of systems
-19. Dependent Types in Practical Programming
-20. The essence of compiling with continuations
-21. Categories for the Working Mathematician (Graduate Texts in Mathematics)
-22. A {S}yntactic {T}heory of {D}ynamic {B}inding
-23. The ontology of biological sequences.
-24. Additional gene ontology structure for improved biological reasoning.
-25. Domain specific embedded compilers
-26. Abstract interpretation: a unified lattice model for static analysis of programs by construction or approximation of fixpoints
-27. Type Classes with Functional Dependencies
-28. A Tutorial on (Co)Algebras and (Co)Induction
-29. Languages of the Future
-30. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
-31. Categories for the Working Mathematician
-32. Types, abstraction and parametric polymorphism
-33. The categorical abstract machine
-34. Monadic Parsing in Haskell
-35. A relation based measure of semantic similarity for Gene Ontology annotations
-36. Representing Control: A study of the CPS transformation
-37. The design and implementation of typed scheme
-38. Cloning-based context-sensitive pointer alias analysis using binary decision diagrams
-39. Monadic Parser Combinators
-40. Lectures on the Curry-Howard isomorphism
-41. The {Calculus of Constructions}
-42. Dynamic optimization for functional reactive programming using generalized algebraic data types
-43. Fast and Loose Reasoning Is Morally Correct
-44. Scrap your boilerplate: a practical design pattern for generic programming
-45. Ownership types for safe programming: preventing data races and deadlocks
-46. Parsing expression grammars: a recognition-based syntactic foundation
-47. Finger trees: a simple general-purpose data structure
-48. Adaptive Functional Programming
-49. Definitional interpreters for higher-order programming languages
-50. A new notation for arrows
+2.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
+3.  On Understanding Types, Data Abstraction, and Polymorphism
+4.  Views: a way for pattern matching to cohabit with data abstraction
+5.  Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
+6.  Functional pearl: implicit configurations--or, type classes reflect the values of types
+7.  Semantic Structures
+8.  Haskell's overlooked object system
+9.  Discriminative Reranking for Natural Language Parsing
+10. Discrimination of non-native consonant contrasts varying in perceptual assimilation to the listener's native phonological system.
+11. Dynamic optimization for functional reactive programming using generalized algebraic data types
+12. Language identification in the limit
+13. Modern {C}ompiler {I}mplementation in {J}ava
+14. Contracts for higher-order functions
+15. The faculty of language: what's special about it?
+16. The motor theory of speech perception revised
+17. Visual Programming
+18. Functional programming with bananas, lenses, envelopes and barbed wire
+19. Why Dependent Types Matter
+20. Featherweight Java: A Minimal Core Calculus for Java and GJ
+21. The dual of substitution is redecoration
+22. Dynamic Logic
+23. On the expressive power of programming languages
+24. Principles of programming with complex objects and collection types
+25. Dependent Types in Practical Programming
+26. The Zipper
+27. Restrictions on biological adaptation in language evolution.
+28. The essence of compiling with continuations
+29. Recursive syntactic pattern learning by songbirds
+30. The effects of common ground and perspective on domains of referential interpretation
+31. A {S}yntactic {T}heory of {D}ynamic {B}inding
+32. Parsing expression grammars: a recognition-based syntactic foundation
+33. Packrat Parsing: Simple, Powerful, Lazy, Linear Time
+34. Foundations for structured programming with GADTs
+35. Type Classes with Functional Dependencies
+36. Attention, Intentions, and the Structure of Discourse
+37. The TRACE model of speech perception.
+38. Types and programming languages
+39. Adaptive Functional Programming
+40. Neuromimetic Semantics
+41. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
+42. The Java Memory Model
+43. Types, abstraction and parametric polymorphism
+44. Learning, Bottlenecks and the Evolution of Recursive Syntax
+45. Recognizing spoken words: the neighborhood activation model.
+46. The categorical abstract machine
+47. Monadic Parsing in Haskell
+48. The neurology of syntax: Language use without Broca's area
+49. A machine-oriented logic based on the resolution principle
+50. The evolution of language
 ```
 
 For the CTPF models, you may access the raw topic distributions by computing,
