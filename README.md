@@ -152,7 +152,7 @@ showdocs(corp)
 
 ```
  ●●● Document 1
-the quick brown fox jumped over the lazy dog
+jumped fox over the quick dog lazy brown the
 ```
 
 ```Julia
