@@ -4,11 +4,11 @@
 
 A Julia package for variational Bayesian topic modeling.
 
-Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora. Like most probabilistic graphical models, topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational inference](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VI).
+Topic models are Bayesian hierarchical models designed to discover the latent low-dimensional thematic structure within corpora. Topic models are fit using either [Markov chain Monte Carlo](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo) (MCMC), or [variational inference](https://en.wikipedia.org/wiki/Variational_Bayesian_methods) (VI).
 
-Markov chain Monte Carlo is slow but consistent, given infinite time MCMC will fit the desired model exactly. Unfortunately, the lack of an objective metric for assessing convergence means that it's difficult to state unequivocally that MCMC has reached an optimal steady-state.
+Markov chain Monte Carlo is slow but consistent, given unlimited time MCMC will fit the desired model exactly. Unfortunately, without an objective metric for assessing convergence it's difficult to know unequivocally when MCMC has reached steady-state.
 
-Contrarily, variational inference is fast but inconsistent, since one must approximate distributions in order to ensure tractability. Fortunately, VI may be characterized in the language of numerical optimization, and its performance evaluated objectively via the assessment of convergence to local optima.
+Contrarily, variational inference is fast but inconsistent, since one must approximate distributions in order to ensure tractability. In addition, its performance is easily evaluated by assessing convergence to local optima.
 
 This package takes the latter approach to topic modeling.
 
