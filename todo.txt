@@ -33,3 +33,4 @@
 33. need to copy/deepcopy train_model variables to model in predict functions, otherwise pass by reference risk between train_model and model.
 34. need to put newlines at the end of each src file.
 35. remove corp constant arguments to OpenCL kernels and replace with get_global/local/etc._id(0/1/2).
+36. make comments lowercase at start of sentence and remove periods.
