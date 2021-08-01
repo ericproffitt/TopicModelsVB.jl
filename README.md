@@ -152,7 +152,7 @@ showdocs(corp)
 
 ```
  ●●● Document 1
-jumped fox over the quick dog lazy brown the
+the quick brown fox jumped over the lazy dog
 ```
 
 ```Julia
@@ -162,7 +162,7 @@ showdocs(corp)
 
 ```
  ●●● Document 1
-the fox dog quick brown jumped lazy over the
+jumped fox over the quick dog lazy brown the
 ````
 
 **Important.** A corpus is only a container for documents. 
