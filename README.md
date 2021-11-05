@@ -10,6 +10,12 @@ Markov chain Monte Carlo methods are slow but consistent, and given enough time 
 
 This package takes the latter approach to topic modeling.
 
+## Installation
+
+```julia
+(@v1.6) pkg> add TopicModelsVB
+```
+
 ## Dependencies
 
 ```julia
@@ -20,12 +26,6 @@ Random
 Distributions
 OpenCL
 Crayons
-```
-
-## Install
-
-```julia
-(@v1.6) pkg> add TopicModelsVB
 ```
 
 ## Datasets
