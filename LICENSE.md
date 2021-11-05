@@ -1,6 +1,6 @@
 The TopicModelsVB.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2020: Eric Proffitt.
+> Copyright (c) 2021: Eric Proffitt.
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
