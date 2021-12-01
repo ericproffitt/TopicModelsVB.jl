@@ -13,7 +13,7 @@ This package takes the latter approach to topic modeling.
 ## Installation
 
 ```julia
-(@v1.6) pkg> add TopicModelsVB
+(@v1.7) pkg> add TopicModelsVB
 ```
 
 ## Dependencies
