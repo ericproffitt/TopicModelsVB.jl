@@ -53,10 +53,10 @@ None of these files are mandatory to read a corpus, and in fact reading no files
 
 The docfile should be a plaintext file containing lines of delimited numerical values. Each document is a block of lines, the number of which depends on what information is known about the documents. Since a document is at its essence a list of terms, each document *must* contain at least one line containing a nonempty list of delimited positive integer values corresponding to the terms of which it is composed. Any further lines in a document block are optional, however if they are present they must be present for all documents and must come in the following order:
 
-##### terms - A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).
-##### counts - A line of delimited positive integers, equal in length to terms, corresponding to the number of times a term appears in a document.
-##### readers - A line of delimited positive integers corresponding to those users which have read the document.
-##### ratings - A line of delimited positive integers, equal in length to readers, corresponding to the rating each reader gave the document.
+#### terms - A line of delimited positive integers corresponding to the terms which make up the document (this line is mandatory).
+#### counts - A line of delimited positive integers, equal in length to terms, corresponding to the number of times a term appears in a document.
+#### readers - A line of delimited positive integers corresponding to those users which have read the document.
+#### ratings - A line of delimited positive integers, equal in length to readers, corresponding to the rating each reader gave the document.
 
 An example of a single doc block from a docfile with all possible lines included,
 
@@ -127,8 +127,8 @@ A standard preprocessing step might involve removing stop words, removing terms 
 
 ```julia
 fixcorp!(corp, stop=true, abridge=200, alphabetize=true, trim=true)
-### Generally you will also want to trim your corpus.
-### Setting trim=true will remove leftover terms from the corpus vocabulary.
+## Generally you will also want to trim your corpus.
+## Setting trim=true will remove leftover terms from the corpus vocabulary.
 ```
 
 After removing stop words and abridging our corpus, the vocabulary size has gone from 8000 to 1692.
@@ -176,7 +176,7 @@ Whenever you load a corpus into a model, a copy of that corpus is made, such tha
 ## Models
 The available models are as follows:
 
-### CPU Models
+## CPU Models
 ```julia
 LDA(corp, K)
 Latent Dirichlet allocation model with K topics.
@@ -194,7 +194,7 @@ CTPF(corp, K)
 Collaborative topic Poisson factorization model with K topics.
 ```
 
-### GPU Models
+## GPU Models
 ```julia
 gpuLDA(corp, K)
 GPU accelerated latent Dirichlet allocation model with K topics.
@@ -207,7 +207,7 @@ GPU accelerated collaborative topic Poisson factorization model with K topics.
 ```
 
 ## Tutorial
-### Latent Dirichlet Allocation
+## Latent Dirichlet Allocation
 Let's begin our tutorial with a simple latent Dirichlet allocation (LDA) model with 9 topics, trained on the first 5000 documents from the NSF corpus.
 
 ```julia
@@ -215,58 +215,58 @@ using TopicModelsVB
 using Random
 using Distributions
 
-Random.seed!(10);
+Random.seed!(7);
 
 corp = readcorp(:nsf) 
 
 corp.docs = corp[1:5000];
 fixcorp!(corp, trim=true)
-### It's strongly recommended that you trim your corpus when reducing its size in order to remove excess vocabulary. 
+## It's strongly recommended that you trim your corpus when reducing its size in order to remove excess vocabulary. 
 
-### Notice that the post-fix vocabulary is smaller after removing all but the first 5000 docs.
+## Notice that the post-fix vocabulary is smaller after removing all but the first 5000 docs.
 
 model = LDA(corp, 9)
 
 train!(model, iter=150, tol=0)
-### Setting tol=0 will ensure that all 150 iterations are completed.
-### If you don't want to compute the ∆elbo, set checkelbo=Inf.
+## Setting tol=0 will ensure that all 150 iterations are completed.
+## If you don't want to compute the ∆elbo, set checkelbo=Inf.
 
-### training...
+## training...
 
 showtopics(model, cols=9, 20)
 ```
 
 ```
-topic 1          topic 2        topic 3        topic 4          topic 5          topic 6        topic 7          topic 8          topic 9
-plant            research       models         research         data             research       research         research         theory
-cell             chemistry      research       project          research         system         dr               students         problems
-protein          study          study          study            species          systems        university       science          study
-cells            high           data           data             study            design         support          program          research
-genetic          chemical       model          social           project          data           award            university       equations
-gene             studies        numerical      theory           important        project        program          conference       work
-molecular        surface        theoretical    economic         provide          earthquake     sciences         support          geometry
-studies          materials      methods        understanding    studies          performance    project          scientists       project
-proteins         metal          problems       important        time             control        months           provide          groups
-dna              reactions      theory         work             field            based          mathematical     engineering      algebraic
-plants           properties     physics        information      ocean            computer       professor        workshop         differential
-genes            organic        work           development      water            analysis       year             faculty          investigator
-research         program        systems        policy           analysis         algorithms     science          graduate         space
-study            electron       flow           models           understanding    parallel       equipment        national         principal
-specific         phase          analysis       behavior         determine        developed      scientists       scientific       mathematical
-system           structure      time           provide          results          techniques     institute        international    systems
-important        temperature    processes      analysis         climate          information    scientific       undergraduate    analysis
-function         molecular      solar          political        patterns         time           collaboration    held             spaces
-understanding    systems        large          model            large            network        projects         projects         problem
-development      project        project        public           processes        structures     national         project          solutions
+topic 1        topic 2        topic 3        topic 4         topic 5         topic 6          topic 7          topic 8         topic 9
+research       system         data           theory          research        research         research         research        plant
+problems       research       earthquake     study           university      data             project          study           cell
+design         data           project        problems        support         project          study            chemistry       species
+systems        systems        research       research        students        study            data             high            protein
+algorithms     control        study          equations       program         ocean            social           studies         cells
+parallel       time           soil           work            science         water            understanding    properties      plants
+data           design         damage         investigator    award           studies          economic         chemical        studies
+project        project        seismic        principal       scientists      processes        important        materials       research
+based          analysis       response       project         dr              provide          information      structure       genetic
+models         processing     structures     geometry        sciences        field            policy           program         gene
+model          solar          sites          mathematical    projects        time             development      surface         study
+system         computer       ground         systems         conference      important        work             reactions       molecular
+analysis       information    analysis       differential    scientific      climate          theory           electron        proteins
+techniques     high           information    algebraic       national        marine           provide          metal           dna
+methods        techniques     materials      groups          engineering     models           political        experimental    dr
+problem        development    provide        space           provide         measurements     science          molecular       genes
+performance    models         buildings      analysis        project         sea              models           systems         important
+computer       developed      results        methods         year            species          change           energy          understanding
+work           based          important      solutions       researchers     understanding    scientific       project         specific
+developed      image          program        finite          mathematical    global           studies          phase           determine
 ```
 
 If you are interested in the raw topic distributions. For LDA and CTM models, you may access them via the matrix,
 
 ```julia
 model.beta
-### K x V matrix
-### K = number of topics.
-### V = number of vocabulary terms, ordered identically to the keys in model.corp.vocab.
+## K x V matrix
+## K = number of topics.
+## V = number of vocabulary terms, ordered identically to the keys in model.corp.vocab.
 ```
 
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.
@@ -275,13 +275,13 @@ For instance, document 1 has topic breakdown,
 
 ```julia
 println(round.(topicdist(model, 1), digits=3))
-### = [0.161, 0.0, 0.0, 0.063, 0.774, 0.0, 0.0, 0.0, 0.0]
+## = [0.0, 0.0, 0.0, 0.0, 0.0, 0.435, 0.082, 0.0, 0.482]
 ```
 This vector of topic weights suggests that document 1 is mostly about biology, and in fact looking at the document text confirms this observation,
 
 ```julia
 showdocs(model, 1)
-### Could also have done showdocs(corp, 1).
+## Could also have done showdocs(corp, 1).
 ```
 
 ```
@@ -296,7 +296,7 @@ Just for fun, let's consider one more document (document 25),
 
 ```julia
 println(round.(topicdist(model, 25), digits=3))
-### = [0.0, 0.0, 0.583, 0.0, 0.0, 0.0, 0.0, 0.0, 0.415]
+## = [0.0, 0.0, 0.0, 0.849, 0.0, 0.149, 0.0, 0.0, 0.0]
 
 showdocs(model, 25)
 ```
@@ -310,95 +310,95 @@ analysis partial differential equations form basis studies primary goals underst
 internal presence vortex rings arise density stratification due salinity temperature...
 ```
 
-We see that in this case document 25 appears to be about mathematical physics, which corresponds precisely to topics 3 and 9.
+We see that in this case document 25 appears to be about environmental computational fluid dynamics, which corresponds precisely to topics 4 and 6.
 
 Furthermore, if we want to, we can also generate artificial corpora by using the ```gencorp``` function.
 
 Generating artificial corpora will in turn run the underlying probabilistic graphical model as a generative process in order to produce entirely new collections of documents, let's try it out,
 
 ```julia
-Random.seed!(10);
+Random.seed!(7);
 
 artificial_corp = gencorp(model, 5000, laplace_smooth=1e-5)
-### The laplace_smooth argument governs the amount of Laplace smoothing (defaults to 0).
+## The laplace_smooth argument governs the amount of Laplace smoothing (defaults to 0).
 
 artificial_model = LDA(artificial_corp, 9)
 train!(artificial_model, iter=150, tol=0, checkelbo=10)
 
-### training...
+## training...
 
 showtopics(artificial_model, cols=9)
 ```
 
 ```
-topic 1        topic 2        topic 3       topic 4      topic 5        topic 6         topic 7      topic 8        topic 9
-research       models         research      protein      research       research        data         research       theory
-project        study          study         plant        system         dr              research     students       problems
-data           research       chemistry     cell         systems        university      species      program        study
-system         data           surface       cells        design         support         project      science        equations
-design         methods        high          dna          data           award           study        conference     research
-systems        theoretical    materials     genetic      earthquake     program         provide      university     work
-study          model          chemical      gene         project        project         time         support        project
-information    numerical      metal         proteins     program        sciences        important    scientists     groups
-earthquake     problems       electron      molecular    developed      months          studies      engineering    geometry
-theory         theory         studies       plants       control        mathematical    analysis     provide        differential
-models         physics        properties    studies      based          professor       processes    workshop       algebraic
-analysis       analysis       organic       research     techniques     equipment       climate      faculty        investigator
-control        work           program       genes        performance    science         results      graduate       mathematical
-work           systems        reactions     important    time           scientists      field        national       systems
-performance    flow           phase         system       high           year            water        scientific     principal
+topic 1        topic 2      topic 3          topic 4       topic 5         topic 6        topic 7        topic 8         topic 9
+system         plant        research         research      research        research       project        theory          data
+research       species      project          design        study           university     data           study           research
+data           cell         study            problems      chemistry       support        earthquake     problems        project
+systems        studies      data             algorithms    high            students       research       research        study
+control        protein      social           systems       properties      program        structures     equations       water
+project        cells        important        parallel      studies         science        study          work            ocean
+models         genetic      economic         project       chemical        award          response       geometry        field
+processing     plants       understanding    data          materials       scientists     soil           investigator    provide
+high           research     policy           models        reactions       sciences       program        principal       important
+analysis       molecular    information      based         program         dr             materials      mathematical    earthquake
+solar          dna          development      system        phase           scientific     information    project         analysis
+design         gene         work             model         structure       projects       structural     differential    effects
+time           proteins     political        analysis      experimental    engineering    seismic        algebraic       studies
+computer       study        provide          methods       surface         national       sites          groups          time
+performance    genes        models           techniques    electron        conference     provide        systems         marine
 ```
 
-### Correlated Topic Model
+## Correlated Topic Model
 For our next model, let's upgrade to a (filtered) correlated topic model (fCTM).
 
 Filtering the correlated topic model will dynamically identify and suppress stop words which would otherwise clutter up the topic distribution output.
 
 ```julia
-Random.seed!(10);
+Random.seed!(7);
 
 model = fCTM(corp, 9)
 train!(model, tol=0, checkelbo=Inf)
 
-### training...
+## training...
 
 showtopics(model, 20, cols=9)
 ```
 
 ```
-topic 1         topic 2         topic 3        topic 4          topic 5        topic 6          topic 7         topic 8         topic 9
-design          materials       economic       species          earthquake     students         chemistry       theory          cell
-system          flow            social         ocean            data           university       reactions       problems        protein
-systems         temperature     theory         populations      seismic        science          university      equations       cells
-algorithms      surface         policy         water            soil           support          metal           geometry        gene
-parallel        phase           political      data             damage         program          organic         investigator    plant
-performance     high            public         climate          university     scientists       molecular       algebraic       proteins
-based           optical         decision       marine           stars          sciences         chemical        groups          genes
-networks        laser           labor          sea              buildings      conference       compounds       principal       dna
-network         properties      market         plant            ground         scientific       molecules       mathematical    molecular
-control         liquid          data           population       response       national         professor       differential    plants
-computer        measurements    children       patterns         solar          year             reaction        space           genetic
-processing      experimental    science        evolutionary     equipment      engineering      synthesis       problem         regulation
-problems        heat            change         plants           nsf            faculty          program         solutions       expression
-software        growth          people         genetic          national       workshop         electron        mathematics     growth
-programming     electron        women          north            california     mathematical     complexes       spaces          specific
-distributed     films           human          pacific          san            months           department      nonlinear       function
-neural          gas             factors        change           program        graduate         energy          finite          binding
-applications    fluid           groups         samples          hazard         projects         species         manifolds       cellular
-efficient       quantum         individuals    environmental    earthquakes    academic         spectroscopy    functions       membrane
-problem         solid           case           history          october        international    carbon          dimensional     sequence
+topic 1          topic 2           topic 3         topic 4         topic 5         topic 6        topic 7         topic 8        topic 9
+algorithms       earthquake        theory          students        ocean           economic       chemistry       physics        protein
+design           data              problems        science         water           social         chemical        optical        cell
+parallel         soil              equations       support         sea             theory         metal           solar          cells
+system           damage            geometry        university      climate         policy         reactions       high           plant
+systems          species           investigator    research        marine          political      molecular       laser          species
+performance      seismic           mathematical    program         measurements    market         surface         particle       gene
+problems         ground            principal       sciences        data            labor          materials       quantum        genetic
+network          sites             algebraic       conference      pacific         decision       organic         devices        proteins
+networks         response          differential    scientific      global          women          molecules       electron       dna
+control          buildings         space           scientists      atmospheric     factors        compounds       materials      plants
+based            forest            groups          national        species         human          reaction        radiation      molecular
+problem          hazard            solutions       projects        trace           children       flow            temperature    genes
+processing       site              mathematics     workshop        ice             public         liquid          plasma         regulation
+computer         san               nonlinear       year            sediment        examine        phase           particles      expression
+software         national          spaces          engineering     circulation     change         electron        magnetic       function
+efficient        human             finite          faculty         north           management     properties      stars          populations
+programming      archaeological    problem         mathematical    flow            population     gas             energy         specific
+neural           october           manifolds       months          chemical        life           experimental    waves          binding
+computational    earthquakes       dimensional     academic        samples         individuals    temperature     wave           mechanisms
+distributed      patterns          numerical       equipment       mantle          competition    spectroscopy    ray            evolutionary
 ```
 
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
 * topic 1: *Computer Science*
-* topic 2: *Physics*
-* topic 3: *Economics*
-* topic 4: *Ecology*
-* topic 5: *Earthquakes*
-* topic 6: *Academia*
+* topic 2: *Earthquakes*
+* topic 3: *Mathematics*
+* topic 4: *Academia*
+* topic 5: *Earth Science*
+* topic 6: *Economics*
 * topic 7: *Chemistry*
-* topic 8: *Mathematics*
+* topic 8: *Physics*
 * topic 9: *Molecular Biology*
 
 Now let's take a look at the topic-covariance matrix,
@@ -406,20 +406,20 @@ Now let's take a look at the topic-covariance matrix,
 ```julia
 model.sigma
 
-### Top two off-diagonal positive entries:
-model.sigma[4,9] # = 11.219
-model.sigma[1,8] # = 4.639
+## Top two off-diagonal positive entries:
+model.sigma[1,3] # = 18.275
+model.sigma[5,9] # = 11.393
 
-### Top two negative entries:
-model.sigma[4,8] # = -34.815
-model.sigma[8,9] # = -13.546
+## Top two negative entries:
+model.sigma[3,9] # = -27.430
+model.sigma[3,5] # = -19.441
 ```
 
-According to the list above, the most closely related topics are topics 4 and 9, which correspond to the *Ecology* and *Molecular Biology* topics, followed by 1 and 8, corresponding to *Computer Science* and *Mathematics*.
+According to the list above, the most closely related topics are topics 1 and 3, which correspond to the *Computer Science* and *Mathematics* topics, followed by 5 and 9, corresponding to *Earth Science* and *Molecular Biology*.
 
-As for the most unlikely topic pairings, most strongly negatively correlated are topics 4 and 8, corresponding to *Ecology* and *Mathematics*, followed by topics 8 and 9, corresponding to *Mathematics* and *Molecular Biology*.
+As for the most unlikely topic pairings, most strongly negatively correlated are topics 3 and 9, corresponding to *Mathematics* and *Molecular Biology*, followed by topics 3 and 5, corresponding to *Mathematics* and *Earth Science*.
 
-### Topic Prediction
+## Topic Prediction
 
 The topic models so far discussed can also be used to train a classification algorithm designed to predict the topic distribution of new, unseen documents.
 
@@ -436,7 +436,7 @@ test_corp.docs = test_corp[4996:5000];
 Now we can train our LDA model on just the training corpus, and then use that trained model to predict the topic distributions of the five documents in our test corpus,
 
 ```julia
-Random.seed!(10);
+Random.seed!(7);
 
 train_model = LDA(train_corp, 9)
 train!(train_model, checkelbo=Inf)
@@ -453,27 +453,27 @@ showtopics(train_model, cols=9, 20)
 ```
 
 ```
-topic 1          topic 2         topic 3        topic 4          topic 5          topic 6        topic 7          topic 8          topic 9
-plant            research        models         research         data             research       research         research         theory
-cell             chemistry       research       project          research         system         dr               students         problems
-protein          study           study          study            species          systems        university       science          study
-cells            high            data           data             study            design         support          program          research
-genetic          chemical        model          theory           project          data           award            university       equations
-gene             studies         numerical      social           important        project        program          conference       work
-molecular        surface         methods        economic         provide          earthquake     sciences         support          geometry
-studies          materials       theoretical    understanding    studies          performance    project          scientists       groups
-proteins         metal           problems       important        time             control        months           provide          algebraic
-dna              reactions       theory         work             field            based          mathematical     engineering      project
-plants           properties      work           information      ocean            computer       professor        workshop         differential
-genes            organic         physics        development      analysis         analysis       year             faculty          investigator
-research         program         systems        policy           water            algorithms     science          graduate         space
-study            electron        analysis       models           understanding    parallel       equipment        national         mathematical
-specific         phase           flow           provide          determine        information    scientists       scientific       principal
-system           structure       time           behavior         results          techniques     institute        international    systems
-important        temperature     large          analysis         climate          developed      scientific       undergraduate    spaces
-function         molecular       processes      political        patterns         time           collaboration    held             analysis
-understanding    systems         solar          model            large            network        projects         project          solutions
-development      measurements    project        public           processes        structures     national         projects         mathematics
+topic 1        topic 2        topic 3        topic 4         topic 5         topic 6          topic 7          topic 8         topic 9
+research       system         data           theory          research        research         research         research        plant
+design         research       earthquake     study           university      data             project          study           cell
+problems       data           project        problems        support         project          study            chemistry       species
+systems        systems        research       research        students        study            data             high            protein
+algorithms     control        study          equations       program         ocean            social           studies         cells
+parallel       time           soil           work            science         water            understanding    chemical        plants
+data           project        damage         investigator    award           studies          economic         properties      research
+based          design         seismic        principal       scientists      processes        important        materials       studies
+project        analysis       response       project         dr              provide          information      structure       genetic
+models         solar          structures     geometry        sciences        field            policy           program         gene
+model          processing     ground         mathematical    projects        time             development      surface         study
+system         information    sites          systems         conference      important        work             reactions       molecular
+analysis       high           analysis       differential    scientific      climate          theory           electron        proteins
+techniques     development    information    algebraic       national        marine           provide          metal           dna
+methods        techniques     materials      groups          engineering     sea              political        experimental    dr
+performance    computer       provide        space           provide         models           science          molecular       genes
+problem        developed      buildings      analysis        project         species          models           systems         important
+computer       models         program        methods         year            measurements     change           project         understanding
+work           based          important      solutions       researchers     understanding    scientific       energy          specific
+developed      image          results        finite          mathematical    global           studies          phase           determine
 ```
 
 ```julia
@@ -497,20 +497,20 @@ end
 ```
 
 ```
-Document 4996: [0.0, 0.001, 0.207, 0.188, 0.452, 0.151, 0.0, 0.0, 0.0]
-Document 4997: [0.001, 0.026, 0.001, 0.043, 0.001, 0.001, 0.012, 0.386, 0.53]
-Document 4998: [0.0, 0.019, 0.583, 0.0, 0.268, 0.122, 0.0, 0.007, 0.0]
-Document 4999: [0.002, 0.002, 0.247, 0.037, 0.019, 0.227, 0.002, 0.026, 0.438]
-Document 5000: [0.785, 0.178, 0.001, 0.0, 0.034, 0.001, 0.001, 0.001, 0.0]
+Document 4996: [0.372, 0.003, 0.0, 0.0, 0.001, 0.588, 0.035, 0.001, 0.0]
+Document 4997: [0.0, 0.0, 0.0, 0.538, 0.385, 0.001, 0.047, 0.027, 0.001]
+Document 4998: [0.0, 0.418, 0.0, 0.0, 0.001, 0.462, 0.0, 0.118, 0.0]
+Document 4999: [0.46, 0.04, 0.002, 0.431, 0.031, 0.002, 0.015, 0.002, 0.016]
+Document 5000: [0.0, 0.044, 0.0, 0.001, 0.001, 0.001, 0.0, 0.173, 0.78]
 ```
 
-### Collaborative Topic Poisson Factorization
+## Collaborative Topic Poisson Factorization
 For our final model, we take a look at the collaborative topic Poisson factorization (CTPF) model.
 
 CTPF is a collaborative filtering topic model which uses the latent thematic structure of documents to improve the quality of document recommendations beyond what would be possible using just the document-user matrix alone. This blending of thematic structure with known user prefrences not only improves recommendation accuracy, but also mitigates the cold-start problem of recommending to users never-before-seen documents. As an example, let's load the CiteULike dataset into a corpus and then randomly remove a single reader from each of the documents.
 
 ```julia
-Random.seed!(10);
+Random.seed!(1);
 
 corp = readcorp(:citeu)
 
@@ -541,7 +541,7 @@ Now that we've set up our experiment, let's instantiate and train a CTPF model o
 model = gpuCTPF(corp, 100)
 train!(model, iter=50, checkelbo=Inf)
 
-### training...
+## training...
 ```
 
 Finally, we evaluate the performance of our model on the test set.
@@ -562,19 +562,19 @@ The following histogram shows the proportional ranking of each test user within 
 Let's also take a look at the top recommendations for a particular document,
 
 ```julia
-ukeys_test[1] # = 216
-ranks[1] # = 0.922
+ukeys_test[1] # = 997
+ranks[1] # = 0.978
 
-showdrecs(model, 1, 434)
+showdrecs(model, 1, 120)
 ```
 ```
  ●●● Document 1
  ●●● The metabolic world of Escherichia coli is not small
  ...
-431. #user1647
-432. #user1178
-433. #user5315
-434. #user216
+117. #user4586
+118. #user5395
+119. #user531
+120. #user997
 ```
 
 What the above output tells us is that user 216's test document placed him or her in the top 8% (position 434) of all non-readers.
@@ -613,64 +613,39 @@ showlibs(model, 1741)
  
  The 20 articles in user 1741's library suggest that he or she is interested in programming language theory. 
  
- Now compare this with the top 50 recommendations (the top 0.3%) made by our model,
+ Now compare this with the top 25 recommendations (the top 0.15%) made by our model,
  
 ```julia
-showurecs(model, 1741, 50)
+showurecs(model, 1741, 25)
 ```
 
 ```
  ●●● User 1741
-1.  Sets for Mathematics
-2.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
-3.  On Understanding Types, Data Abstraction, and Polymorphism
-4.  Views: a way for pattern matching to cohabit with data abstraction
-5.  Recursive Functions of Symbolic Expressions and Their Computation by Machine, Part I
-6.  Functional pearl: implicit configurations--or, type classes reflect the values of types
-7.  Semantic Structures
-8.  Haskell's overlooked object system
-9.  Discriminative Reranking for Natural Language Parsing
-10. Discrimination of non-native consonant contrasts varying in perceptual assimilation to the listener's native phonological system.
-11. Dynamic optimization for functional reactive programming using generalized algebraic data types
-12. Language identification in the limit
-13. Modern {C}ompiler {I}mplementation in {J}ava
-14. Contracts for higher-order functions
-15. The faculty of language: what's special about it?
-16. The motor theory of speech perception revised
-17. Visual Programming
-18. Functional programming with bananas, lenses, envelopes and barbed wire
-19. Why Dependent Types Matter
-20. Featherweight Java: A Minimal Core Calculus for Java and GJ
-21. The dual of substitution is redecoration
-22. Dynamic Logic
-23. On the expressive power of programming languages
-24. Principles of programming with complex objects and collection types
-25. Dependent Types in Practical Programming
-26. The Zipper
-27. Restrictions on biological adaptation in language evolution.
-28. The essence of compiling with continuations
-29. Recursive syntactic pattern learning by songbirds
-30. The effects of common ground and perspective on domains of referential interpretation
-31. A {S}yntactic {T}heory of {D}ynamic {B}inding
-32. Parsing expression grammars: a recognition-based syntactic foundation
-33. Packrat Parsing: Simple, Powerful, Lazy, Linear Time
-34. Foundations for structured programming with GADTs
-35. Type Classes with Functional Dependencies
-36. Attention, Intentions, and the Structure of Discourse
-37. The TRACE model of speech perception.
-38. Types and programming languages
-39. Adaptive Functional Programming
-40. Neuromimetic Semantics
-41. Macros as multi-stage computations: type-safe, generative, binding macros in MacroML
-42. The Java Memory Model
-43. Types, abstraction and parametric polymorphism
-44. Learning, Bottlenecks and the Evolution of Recursive Syntax
-45. Recognizing spoken words: the neighborhood activation model.
-46. The categorical abstract machine
-47. Monadic Parsing in Haskell
-48. The neurology of syntax: Language use without Broca's area
-49. A machine-oriented logic based on the resolution principle
-50. The evolution of language
+1.  On Understanding Types, Data Abstraction, and Polymorphism
+2.  Functional programming with bananas, lenses, envelopes and barbed wire
+3.  Can programming be liberated from the von {N}eumann style? {A} functional style and its algebra of programs
+4.  Monadic Parser Combinators
+5.  Domain specific embedded compilers
+6.  Type Classes with Functional Dependencies
+7.  Theorems for Free!
+8.  Scrap your boilerplate: a practical design pattern for generic programming
+9.  Types, abstraction and parametric polymorphism
+10. Linear types can change the world!
+11. Haskell's overlooked object system
+12. Lazy functional state threads
+13. Functional response of a generalist insect predator to one of its prey species in the field.
+14. Improving literature based discovery support by genetic knowledge integration.
+15. A new notation for arrows
+16. Total Functional Programming
+17. Monadic Parsing in Haskell
+18. Types and programming languages
+19. Applicative Programming with Effects
+20. Triangle: {E}ngineering a {2D} {Q}uality {M}esh {G}enerator and {D}elaunay {T}riangulator
+21. Motion doodles: an interface for sketching character motion
+22. 'I've Got Nothing to Hide' and Other Misunderstandings of Privacy
+23. Human cis natural antisense transcripts initiated by transposable elements.
+24. Codata and Comonads in Haskell
+25. How to make ad-hoc polymorphism less ad hoc
 ```
 
 For the CTPF models, you may access the raw topic distributions by computing,
@@ -683,9 +658,9 @@ Raw scores, as well as document and user recommendations, may be accessed via,
 
 ```julia
 model.scores
-### M x U matrix
-### M = number of documents, ordered identically to the documents in model.corp.docs.
-### U = number of users, ordered identically to the keys in model.corp.users.
+## M x U matrix
+## M = number of documents, ordered identically to the documents in model.corp.docs.
+## U = number of users, ordered identically to the keys in model.corp.users.
 
 model.drecs
 model.urecs
@@ -695,10 +670,10 @@ Note, as was done by Blei et al. in their original paper, if you would like to w
 
 ```julia
 ctpf_model.alef = exp.(model.beta)
-### For model of type: LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM.
+## For model of type: LDA, fLDA, CTM, fCTM, gpuLDA, gpuCTM.
 ```
 
-### GPU Acceleration
+## GPU Acceleration
 GPU accelerating your model runs its performance bottlenecks on the GPU.
 
 There's no reason to instantiate GPU models directly, instead you can simply instantiate the normal version of a supported model, and then use the `@gpu` macro to train it on the GPU,
@@ -707,7 +682,7 @@ There's no reason to instantiate GPU models directly, instead you can simply ins
 model = LDA(readcorp(:nsf), 20)
 @gpu train!(model, checkelbo=Inf)
 
-### training...
+## training...
 ```
 
 **Important.** Notice that we did not check the ELBO at all during training. While you may check the ELBO if you wish, it's recommended that you do so infrequently, as computing the ELBO is done entirely on the CPU.
@@ -722,7 +697,7 @@ Note that it's expected that your computer will lag when training on the GPU, si
 
 ## Glossary
 
-### Types
+## Types
 
 ```julia
 mutable struct Document
@@ -810,7 +785,7 @@ mutable struct gpuCTPF <: TopicModel
 	...
 ```
 
-### Document/Corpus Functions
+## Document/Corpus Functions
 ```julia
 function check_doc(doc::Document)
 	"Check Document parameters."
@@ -821,8 +796,8 @@ function check_corp(corp::Corpus)
 function readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	"Load a Corpus object from text file(s)."
 
-	### readcorp(:nsf)   	- National Science Foundation Corpus.
-	### readcorp(:citeu)	- CiteULike Corpus.
+	## readcorp(:nsf)   	- National Science Foundation Corpus.
+	## readcorp(:citeu)	- CiteULike Corpus.
 
 function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
 	"Write a corpus."
@@ -879,7 +854,7 @@ function getvocab(corp::Corpus)
 function getusers(corp::Corpus)
 ```
 
-### Model Functions
+## Model Functions
 
 ```julia
 function showdocs(model::TopicModel, docs / doc_indices)
@@ -894,14 +869,14 @@ function check_model(model::TopicModel)
 function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Union{Integer, Inf}=1, printelbo::Bool=true)
 	"Train TopicModel."
 
-	### 'iter'	- maximum number of iterations through the corpus.
-	### 'tol'	- absolute tolerance for ∆elbo as a stopping criterion.
-	### 'niter'	- maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-	### 'ntol'	- tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-	### 'viter'	- maximum number of iterations for optimizing variational parameters (at the document level).
-	### 'vtol'	- tolerance for change in variational parameter values as stopping criterion.
-	### 'checkelbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
-	### 'printelbo'	- if true, print ∆elbo to REPL.
+	## 'iter'	- maximum number of iterations through the corpus.
+	## 'tol'	- absolute tolerance for ∆elbo as a stopping criterion.
+	## 'niter'	- maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
+	## 'ntol'	- tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
+	## 'viter'	- maximum number of iterations for optimizing variational parameters (at the document level).
+	## 'vtol'	- tolerance for change in variational parameter values as stopping criterion.
+	## 'checkelbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
+	## 'printelbo'	- if true, print ∆elbo to REPL.
 
 @gpu train!
 	"Train model on GPU."
@@ -933,7 +908,7 @@ function topicdist(model::TopicModel, doc_indices::Union{Integer, Vector{<:Integ
 
 ## Bibliography
 1. Latent Dirichlet Allocation (2003); Blei, Ng, Jordan. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiNgJordan2003.pdf)
-2. Filtered Latent Dirichlet Allocation: Variational Algorithm (2016); Proffitt. [pdf](https://github.com/esproff/TopicModelsVB.jl/blob/master/fLDA.pdf)
+2. Filtered Latent Dirichlet Allocation: Variational Algorithm (2016); Proffitt. [pdf](https://github.com/ericproffitt/TopicModelsVB.jl/blob/master/fLDA/fLDA.pdf)
 3. Correlated Topic Models (2006); Blei, Lafferty. [pdf](http://www.cs.columbia.edu/~blei/papers/BleiLafferty2006.pdf)
 4. Content-based Recommendations with Poisson Factorization (2014); Gopalan, Charlin, Blei. [pdf](http://www.cs.columbia.edu/~blei/papers/GopalanCharlinBlei2014.pdf)
 5. Numerical Optimization (2006); Nocedal, Wright. [Amazon](https://www.amazon.com/Numerical-Optimization-Operations-Financial-Engineering/dp/0387303030)
