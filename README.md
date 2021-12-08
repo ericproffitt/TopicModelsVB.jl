@@ -392,7 +392,7 @@ distributed      patterns          numerical       equipment       mantle       
 Based on the top 20 terms in each topic, we might tentatively assign the following topic labels:
 
 * topic 1: *Computer Science*
-* topic 2: *Earthquakes*
+* topic 2: *Archaeology*
 * topic 3: *Mathematics*
 * topic 4: *Academia*
 * topic 5: *Earth Science*
