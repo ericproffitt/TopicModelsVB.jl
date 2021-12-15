@@ -34,3 +34,4 @@
 34. need to put newlines at the end of each src file.
 35. remove corp constant arguments to OpenCL kernels and replace with get_global/local/etc._id(0/1/2).
 36. make comments lowercase at start of sentence and remove periods.
+37. OpenCL buffer size is limited to typemax(UInt32), see issue/PR on OpenCL.jl package github
