@@ -1,7 +1,7 @@
 library(ggplot2)
 
 # 12 x 9
-df = data.frame(x=c(1,2,3.5,4.5,6,7), label=c('gpuLDA', 'LDA', 'gpuCTM', 'CTM', 'gpuCTPF', 'CTPF'), Seconds=c(32, 404, 115, 1974, 27, 831), Processor=rep(c('Intel Iris Plus Graphics 640', '2.3 GHz Dual-Core Intel Core i5'), 3))
+df = data.frame(x=c(1,2,3.5,4.5,6,7), label=c('gpuLDA', 'LDA', 'gpuCTM', 'CTM', 'gpuCTPF', 'CTPF'), Seconds=c(26, 444, 276, 8612, 22, 693), Processor=rep(c('Apple M1 GPU', 'Apple M1 CPU'), 3))
 p = ggplot(df, aes(x=x, y=Seconds, fill=Processor)) +
     geom_bar(stat='identity', width=0.975) +
     scale_y_log10() +
@@ -14,7 +14,7 @@ p = ggplot(df, aes(x=x, y=Seconds, fill=Processor)) +
     theme(plot.background=element_rect(fill='white', color=NA), panel.background=element_rect(fill='white'), panel.grid.major=element_blank(), panel.grid.minor=element_blank()) +
     theme(plot.caption=element_text(color='#424242', hjust=1, vjust=-6, lineheight=0.5)) +
     theme(plot.margin=unit(c(0.5,0.5,1.05,0.5), 'cm')) +
-    labs(caption="LDA and CTM run for 10 iterations : 100,000 NSF documents with 30 topics.\n\nCTPF run for 10 iterations : CiteULike dataset with 100 topics.")
+    labs(caption="LDA and CTM run for 10 iterations : NSF corpus with 50 topics.\n\nCTPF run for 10 iterations : CiteULike corpus with 100 topics.")
 
 # 12 x 8
 df = data.frame(p=1-ranks)
