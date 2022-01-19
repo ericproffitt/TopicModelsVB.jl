@@ -130,7 +130,7 @@ function update_beta!(model::LDA)
 end
 
 function update_beta!(model::LDA, d::Int)
-	"Update beta"
+	"Update beta."
 	"Analytic."
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts

@@ -201,7 +201,7 @@ normalize_beta(	long K,
 				"""
 
 function update_beta!(model::gpuLDA)
-	"Update beta"
+	"Update beta."
 	"Analytic."
 
 	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_cumsum_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
