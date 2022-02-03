@@ -15,7 +15,7 @@ export LDA, fLDA, CTM, fCTM, CTPF, gpuLDA, gpuCTM, gpuCTPF
 export readcorp, writecorp, abridge_corp!, alphabetize_corp!, compact_corp!, condense_corp!, pad_corp!, remove_empty_docs!, remove_redundant!, stop_corp!, trim_corp!, trim_docs!, fixcorp!, showdocs, showtitles, getvocab, getusers
 export train!
 export @gpu
-export gendoc, gencorp, showtopics, showlibs, showdrecs, showurecs, predict, topicdist
+export gendoc, gencorp, showtopics, showlibs, showdrecs, showurecs, predict, topicdist, findcoherence
 
 include("macros.jl")
 include("utils.jl")
