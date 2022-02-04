@@ -269,6 +269,12 @@ model.beta
 ## V = number of vocabulary terms, ordered identically to the keys in model.corp.vocab.
 ```
 
+You can calculate the overall coherence of the topic words from a model to compare the human interpretability of two models.
+```
+findcoherence(model)
+## = 0.32954813289115364
+```
+
 Now that we've trained our LDA model we can, if we want, take a look at the topic proportions for individual documents.
 
 For instance, document 1 has topic breakdown,
