@@ -996,7 +996,7 @@ function findcoherence(model::TopicModel, num_topic_words::Int64=20)
 
 	confirmation_measures::Vector{Float64} = calculate_confirmation.(topic_word_pairs,Ref(model.corp))
 
-    coherence::Float64 = Statistics.mean(confirmation_measures)
+    coherence::Float64 = sum(confirmation_measures) / length(confirmation_measures)
     return coherence
 end
 
