@@ -424,7 +424,8 @@ function remove_terms!(corp::Corpus; terms::Vector{String}=[])
 	nothing
 end
 
-remove_terms!(corp::Corpus, term::String) = remove_vocab!(corp, terms=[term])
+remove_terms!(corp::Corpus, term::String) = remove_terms!(corp, terms=[term])
+remove_terms!(corp::Corpus, terms::Vector{String}) = remove_terms!(corp, terms=terms)
 
 function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	"Relabel vocab and/or user keys so that they form a unit range starting at 1."
