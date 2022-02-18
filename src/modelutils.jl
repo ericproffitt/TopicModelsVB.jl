@@ -982,49 +982,35 @@ end
 
 topicdist(model::TopicModel, doc_range::UnitRange{<:Integer}) = topicdist(model, collect(doc_range))
 
-function findcoherence_parallel(model::TopicModel, num_topic_words::Int64=20)
-	"""
-    Calculate the coherence of topic words based on the model's corpus.
-    This algorithm is based on a modified version of the UMass Coherence score.
-    """
-
-	topic_words = Matrix{Int64}(undef, num_topic_words, model.K)
-	for t in 1:model.K
-        topic_words[:,t] .= model.topics[t][1:num_topic_words]
-    end
-	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab)
-
-	sum_coherence = Atomic(0.0)
-    num_pairs = Atomic(0)
-    Threads.foreach(topic_word_pairs) do pair 
-        confirmation = calculate_confirmation(pair, model.corp)
-        @atomic sum_coherence.x += confirmation
-        @atomic num_pairs.x += 1
-    end
-    coherence = sum_coherence.x / num_pairs.x
-    return coherence
-end
-
 function findcoherence(model::TopicModel, num_topic_words::Int64=20)
 	"""
     Calculate the coherence of topic words based on the model's corpus.
     This algorithm is based on a modified version of the UMass Coherence score.
     """
-
+	# Get Top topic words
 	topic_words = Matrix{Int64}(undef, num_topic_words, model.K)
 	for t in 1:model.K
         topic_words[:,t] .= model.topics[t][1:num_topic_words]
     end
+	# Create Pair Generator Channel
 	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab)
-
-	sum_coherence = 0.0
-	num_pairs = 0
-    for pair in topic_word_pairs
-        confirmation = calculate_confirmation(pair, model.corp)
-        sum_coherence += confirmation
+	# Collect confirmation scores in a results channel
+	mean_coherence = Channel{Float64}(buffer) do ch
+        Threads.foreach(topic_word_pairs) do pair
+            confirmation = calculate_confirmation(pair, model.corp)
+            put!(ch, confirmation)
+        end
+    end
+    
+	# Accumulate results channel
+    sum_coherence = 0.0
+    num_pairs = 0
+    for r in mean_coherence
+        sum_coherence += r
         num_pairs += 1
     end
-    coherence = sum_coherence.x / num_pairs.x
+    coherence = sum_coherence / num_pairs
+
     return coherence
 end
 
