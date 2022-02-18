@@ -982,6 +982,29 @@ end
 
 topicdist(model::TopicModel, doc_range::UnitRange{<:Integer}) = topicdist(model, collect(doc_range))
 
+function findcoherence_parallel(model::TopicModel, num_topic_words::Int64=20)
+	"""
+    Calculate the coherence of topic words based on the model's corpus.
+    This algorithm is based on a modified version of the UMass Coherence score.
+    """
+
+	topic_words = Matrix{Int64}(undef, num_topic_words, model.K)
+	for t in 1:model.K
+        topic_words[:,t] .= model.topics[t][1:num_topic_words]
+    end
+	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab)
+
+	sum_coherence = Atomic(0.0)
+    num_pairs = Atomic(0)
+    Threads.foreach(topic_word_pairs) do pair 
+        confirmation = calculate_confirmation(pair, model.corp)
+        @atomic sum_coherence.x += confirmation
+        @atomic num_pairs.x += 1
+    end
+    coherence = sum_coherence.x / num_pairs.x
+    return coherence
+end
+
 function findcoherence(model::TopicModel, num_topic_words::Int64=20)
 	"""
     Calculate the coherence of topic words based on the model's corpus.
@@ -992,66 +1015,76 @@ function findcoherence(model::TopicModel, num_topic_words::Int64=20)
 	for t in 1:model.K
         topic_words[:,t] .= model.topics[t][1:num_topic_words]
     end
-	topic_word_pairs::Set{Tuple{Int64,Int64}} = make_one2prev_pairs(topic_words, model.corp.vocab)
+	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab)
 
-	confirmation_measures::Vector{Float64} = calculate_confirmation.(topic_word_pairs,Ref(model.corp))
-
-    coherence::Float64 = sum(confirmation_measures) / length(confirmation_measures)
+	sum_coherence = 0.0
+	num_pairs = 0
+    for pair in topic_word_pairs
+        confirmation = calculate_confirmation(pair, model.corp)
+        sum_coherence += confirmation
+        num_pairs += 1
+    end
+    coherence = sum_coherence.x / num_pairs.x
     return coherence
 end
 
-function make_one2prev_pairs(topic_words::Matrix{Int64}, vocab::Dict{Int64,String})
-    """
-    For each topic, create pairs for each word to words that are of higher salience
-    for that topic.
-    """
-    word_pairs::Set{Tuple{Int64,Int64}} = Set([])
-    for col in size(topic_words)[2]
-        for row in size(topic_words)[1]
-            for j in 1:row
-                current_word = topic_words[row, col]
-                previous_word = topic_words[j, col]
-                if !(
-                    occursin(vocab[current_word],vocab[previous_word]) || 
-                    occursin(vocab[previous_word],vocab[current_word]))
-                    push!(word_pairs, (current_word, previous_word))
+function one2prev_generator(topic_words::Matrix{Int64}, vocab::Dict{Int64,String}, buffer=Threads.nthreads())
+	"""
+	Create a channel the returns one topic word pair at a time
+	"""
+    Channel{Tuple{Int64,Int64}}(buffer) do ch
+        for col in 1:size(topic_words)[2]
+            for row in 1:size(topic_words)[1]
+                for j in 1:row
+                    current_tok = topic_words[row, col]
+                    previous_tok = topic_words[j, col]
+                    gram_overlap::Bool = false
+                    
+                    current_gram = vocab[current_tok]
+                    previous_gram = vocab[previous_tok]
+                    # If one token is a n-gram, split them and check if either token
+                    # Is completely contained in the other token
+                    if occursin(" ", current_gram*previous_gram)
+                        cur_gram_split = split(current_gram, " ")
+                        prev_gram_split = split(previous_gram, " ")
+                        gram_overlap = 
+                        sum([1 for w in cur_gram_split if w in prev_gram_split]) == length(cur_gram_split) ||
+                        sum([1 for w in prev_gram_split if w in cur_gram_split]) == length(previous_gram)
+                    end
+
+                    if !(gram_overlap)
+                        put!(ch, (current_tok, previous_tok))
+                    end
                 end
             end
         end
     end
-    return word_pairs
 end
 
 function calculate_confirmation(word_pair::Tuple{Int64,Int64}, docs::Corpus)
     """
 	Find the relationship between this word pair across all documents.
 	"""
-    # Split up docs into groups with or without the current word
-    docs_without_token::Vector{Int64} = []
-    docs_with_token::Vector{Int64} = []
-    for (i, doc) in enumerate(docs)
-        if word_pair[1] in doc.terms
-            push!(docs_with_token, i)
-        else
-            push!(docs_without_token, i)
+    # Count how many documents contain one word, the other, or both
+    num_w_current = 0
+    num_wo_current = 0
+    num_w_prev_not_current = 0
+    num_w_pair = 0
+    for doc in docs
+        terms = doc.terms
+        if word_pair[1] in terms
+            num_w_current += 1
+            if word_pair[2] in terms
+                num_w_pair += 1
+            end
+        else 
+            num_wo_current += 1
+            if word_pair[2] in terms
+                num_w_prev_not_current += 1
+            end
         end
     end
-    # Count number of docs with both words, one not the other, etc.
-    num_w_pair::Int64 = 0
-    for i in docs_with_token
-        if word_pair[2] in docs[i].terms
-            num_w_pair += 1
-        end
-    end
-    num_w_prev_not_current::Int64 = 0
-    for i in docs_without_token
-        if word_pair[2] in docs[i].terms
-            num_w_prev_not_current += 1
-        end
-    end
-    num_w_current = length(docs_with_token)
-    num_wo_current = length(docs_without_token)
-
+    
     # Calculate intermediate Probabilities
     p_prev_given_c = (num_w_pair/num_w_current)
     p_prev_given_not_c = (num_w_prev_not_current/num_wo_current)
