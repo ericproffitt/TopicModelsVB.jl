@@ -270,7 +270,7 @@ model.beta
 ```
 
 You can calculate the overall coherence of the topic words from a model to compare the human interpretability of two models.
-```
+```julia
 findcoherence(model)
 ## = 0.32954813289115364
 ```
