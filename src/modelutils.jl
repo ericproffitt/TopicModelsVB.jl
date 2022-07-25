@@ -989,6 +989,7 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20)
     """
 
     (num_topic_words > 0) || throw(ArgumentError("num_topic_words must be a positive integer."))
+    num_topic_words = min(num_topic_words, model.V)
 
 	## Get Top topic words
 	topic_words = Matrix{Int}(undef, num_topic_words, model.K)
