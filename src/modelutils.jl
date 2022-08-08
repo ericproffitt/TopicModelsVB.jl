@@ -1014,7 +1014,7 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20, buffer=Th
     for r in coherence_values
         sum_coherence += r
         num_pairs += 1
-    ends
+    end
     coherence = sum_coherence / num_pairs
 
     return coherence
