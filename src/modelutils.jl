@@ -1025,7 +1025,7 @@ function one2prev_generator(topic_words::Matrix{Int}, vocab::Dict{Int, String}, 
 
     Channel{Tuple{Int, Int}}(buffer) do ch
 		for i in CartesianIndices(topic_words)
-			row, col = c_i[1], c_i[2]
+			row, col = i[1], i[2]
 			for j in 1:row
 				current_tok = topic_words[i]
 				previous_tok = topic_words[j,col]
