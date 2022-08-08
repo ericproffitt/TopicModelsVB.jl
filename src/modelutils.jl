@@ -982,7 +982,7 @@ end
 
 topicdist(model::TopicModel, doc_range::UnitRange{<:Integer}) = topicdist(model, collect(doc_range))
 
-function findcoherence(model::TopicModel, num_topic_words::Integer=20)
+function findcoherence(model::TopicModel, num_topic_words::Integer=20, buffer=Threads.nthreads())
 	"""
     Calculate the coherence of topic words based on the model's corpus.
     This algorithm is based on a modified version of the UMass Coherence score.
@@ -1001,7 +1001,7 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20)
 	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab)
 
 	## Collect confirmation scores in a results channel
-	mean_coherence = Channel{Float64}(buffer) do ch
+	coherence_values = Channel{Float64}(buffer) do ch
         Threads.foreach(topic_word_pairs) do pair
             confirmation = calculate_confirmation(pair, model.corp)
             put!(ch, confirmation)
@@ -1011,7 +1011,7 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20)
 	## Accumulate results channel
     sum_coherence = 0.0
     num_pairs = 0
-    for r in mean_coherence
+    for r in coherence_values
         sum_coherence += r
         num_pairs += 1
     end
