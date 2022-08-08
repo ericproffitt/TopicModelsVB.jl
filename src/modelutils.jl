@@ -991,16 +991,16 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20, buffer=Th
     (num_topic_words > 0) || throw(ArgumentError("num_topic_words must be a positive integer."))
     num_topic_words = min(num_topic_words, model.V)
 
-	## Get Top topic words
+	# Get Top topic words
 	topic_words = Matrix{Int}(undef, num_topic_words, model.K)
 	for i in 1:model.K
         topic_words[:,i] .= model.topics[i][1:num_topic_words]
     end
 
-	## Create Pair Generator Channel
-	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab)
+	# Create Pair Generator Channel
+	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab, buffer)
 
-	## Collect confirmation scores in a results channel
+	# Collect confirmation scores in a results channel
 	coherence_values = Channel{Float64}(buffer) do ch
         Threads.foreach(topic_word_pairs) do pair
             confirmation = calculate_confirmation(pair, model.corp)
@@ -1008,13 +1008,13 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20, buffer=Th
         end
     end
     
-	## Accumulate results channel
+	# Accumulate results channel
     sum_coherence = 0.0
     num_pairs = 0
     for r in coherence_values
         sum_coherence += r
         num_pairs += 1
-    end
+    ends
     coherence = sum_coherence / num_pairs
 
     return coherence
@@ -1024,31 +1024,30 @@ function one2prev_generator(topic_words::Matrix{Int}, vocab::Dict{Int, String}, 
 	"Create a channel the returns one topic word pair at a time."
 
     Channel{Tuple{Int, Int}}(buffer) do ch
-        for col in 1:size(topic_words)[2]
-            for row in 1:size(topic_words)[1]
-                for j in 1:row
-                    current_tok = topic_words[row,col]
-                    previous_tok = topic_words[j,col]
-                    gram_overlap::Bool = false
-                    
-                    current_gram = vocab[current_tok]
-                    previous_gram = vocab[previous_tok]
+		for i in CartesianIndices(topic_words)
+			row, col = c_i[1], c_i[2]
+			for j in 1:row
+				current_tok = topic_words[i]
+				previous_tok = topic_words[j,col]
+				gram_overlap::Bool = false
+				
+				current_gram = vocab[current_tok]
+				previous_gram = vocab[previous_tok]
 
-                    ## If one token is a n-gram, split them and check if either token
-                    ## Is completely contained in the other token
-                    if occursin(" ", current_gram*previous_gram)
-                        cur_gram_split = split(current_gram, " ")
-                        prev_gram_split = split(previous_gram, " ")
-                        gram_overlap = 
-                        sum([1 for w in cur_gram_split if w in prev_gram_split]) == length(cur_gram_split) ||
-                        sum([1 for w in prev_gram_split if w in cur_gram_split]) == length(previous_gram)
-                    end
+				# If one token is a n-gram, split them and check if either token
+				# Is completely contained in the other token
+				if occursin(" ", current_gram*previous_gram)
+					cur_gram_split = split(current_gram, " ")
+					prev_gram_split = split(previous_gram, " ")
+					gram_overlap = 
+					sum([1 for w in cur_gram_split if w in prev_gram_split]) == length(cur_gram_split) ||
+					sum([1 for w in prev_gram_split if w in cur_gram_split]) == length(previous_gram)
+				end
 
-                    if !(gram_overlap)
-                        put!(ch, (current_tok, previous_tok))
-                    end
-                end
-            end
+				if !(gram_overlap)
+					put!(ch, (current_tok, previous_tok))
+				end
+			end
         end
     end
 end
@@ -1056,7 +1055,7 @@ end
 function calculate_confirmation(word_pair::Tuple{Int, Int}, corp::Corpus)
 	"Find the relationship between this word pair across all documents."
 
-    ## Count how many documents contain one word, the other, or both
+    # Count how many documents contain one word, the other, or both
     num_w_current = 0
     num_wo_current = 0
     num_w_prev_not_current = 0
@@ -1076,11 +1075,11 @@ function calculate_confirmation(word_pair::Tuple{Int, Int}, corp::Corpus)
         end
     end
     
-    ## Calculate intermediate Probabilities
+    # Calculate intermediate Probabilities
     p_prev_given_c = (num_w_pair / num_w_current)
     p_prev_given_not_c = (num_w_prev_not_current / num_wo_current)
     
-    ## Calculate confirmation measure
+    # Calculate confirmation measure
     confirmation = (p_prev_given_c - p_prev_given_not_c) / ((p_prev_given_c + p_prev_given_not_c))
 
     return confirmation
