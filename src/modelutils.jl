@@ -989,9 +989,10 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20, buffer=Th
     """
 
     (num_topic_words > 0) || throw(ArgumentError("num_topic_words must be a positive integer."))
+
     num_topic_words = min(num_topic_words, model.V)
 
-	## Get Top topic words
+	## Get top topic words
 	topic_words = Matrix{Int}(undef, num_topic_words, model.K)
 	for i in 1:model.K
         topic_words[:,i] .= model.topics[i][1:num_topic_words]
@@ -1010,12 +1011,22 @@ function findcoherence(model::TopicModel, num_topic_words::Integer=20, buffer=Th
     
 	## Accumulate results channel
     sum_coherence = 0.0
-    num_pairs = 0
+    coherence_val_count = 0
+	num_pairs = 0
     for r in coherence_values
-        sum_coherence += r
-        num_pairs += 1
+		num_pairs += 1
+		if isnan(r)
+			continue
+		else
+			sum_coherence += r
+			coherence_val_count += 1
+		end
     end
-    coherence = sum_coherence / num_pairs
+
+	(num_pairs > 0) || throw(error("None of the topic words appear in the vocabulary"))
+	(coherence_val_count > 0) || throw(error("None of the topic words appear in the coprus"))
+
+    coherence = sum_coherence / coherence_val_count
 
     return coherence
 end
@@ -1026,13 +1037,25 @@ function one2prev_generator(topic_words::Matrix{Int}, vocab::Dict{Int, String}, 
     Channel{Tuple{Int, Int}}(buffer) do ch
 		for i in CartesianIndices(topic_words)
 			row, col = i[1], i[2]
+			current_tok = topic_words[i]
+
+			## Skip this topic word if it is not found in the vocabulary
+			current_gram = if current_tok in keys(vocab)
+				vocab[current_tok]
+			else
+				continue
+			end
+
 			for j in 1:row
-				current_tok = topic_words[i]
 				previous_tok = topic_words[j,col]
 				gram_overlap::Bool = false
 				
-				current_gram = vocab[current_tok]
-				previous_gram = vocab[previous_tok]
+				## Skip this topic word pairing if previous is not found in the vocabulary
+				previous_gram = if previous_tok in keys(vocab)
+					vocab[previous_tok]
+				else
+					continue
+				end
 
 				## If one token is a n-gram, split them and check if either token
 				## Is completely contained in the other token
@@ -1075,7 +1098,13 @@ function calculate_confirmation(word_pair::Tuple{Int, Int}, corp::Corpus)
         end
     end
     
-    ## Calculate intermediate Probabilities
+	## If current word is in all documents, then there is no confirmation between the pair
+	(num_wo_current == 0) || return 0
+
+	## If either word is completely missing from the corpus, then we skip this confirmation
+	(num_w_current == 0) || (num_w_pair + num_w_prev_not_current == 0) || return NaN
+
+    ## Calculate intermediate probabilities
     p_prev_given_c = (num_w_pair / num_w_current)
     p_prev_given_not_c = (num_w_prev_not_current / num_wo_current)
     
