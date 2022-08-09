@@ -1098,11 +1098,11 @@ function calculate_confirmation(word_pair::Tuple{Int, Int}, corp::Corpus)
         end
     end
     
-	## If current word is in all documents, then there is no confirmation between the pair
-	(num_wo_current == 0) || return 0
-
 	## If either word is completely missing from the corpus, then we skip this confirmation
 	(num_w_current == 0) || (num_w_pair + num_w_prev_not_current == 0) || return NaN
+
+	## If current word is in all documents, then there is no confirmation between the pair
+	(num_wo_current == 0) || return 0
 
     ## Calculate intermediate probabilities
     p_prev_given_c = (num_w_pair / num_w_current)
