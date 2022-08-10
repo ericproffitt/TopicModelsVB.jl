@@ -141,7 +141,7 @@ function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
 	nu = Float32(model.K)
 	for _ in 1:niter
 		rho = 1.0f0
-		alpha_grad = nu ./ model.alpha + Float32(model.M) * (digamma(sum(model.alpha)) .- digamma.(model.alpha)) + Elogtheta_sum
+		alpha_grad = nu ./ model.alpha + Float32(model.M) * (digamma(sum(model.alpha)) .- digamma.(model.alpha)) + model.Elogtheta_sum
 		h_inv = -1 ./ (Float32(model.M) * trigamma.(model.alpha) + nu ./ model.alpha.^2)
 		p = (alpha_grad .- dot(alpha_grad, h_inv) / (1 / (Float32(model.M) * trigamma(sum(model.alpha))) + sum(h_inv))) .* h_inv
 		
