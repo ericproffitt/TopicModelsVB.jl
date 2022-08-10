@@ -1,6 +1,8 @@
 macro juliadots(str::String)
-	"Print Julia dots before bolded string output."
-	"For vanilla strings."
+	"""
+	Print Julia dots before bolded string output.
+	For vanilla strings.
+	"""
 
 	expr_out = :(	
 				print(Crayon(foreground=:red, bold=true), " ●");
@@ -13,8 +15,10 @@ macro juliadots(str::String)
 end
 
 macro juliadots(expr::Expr)
-	"Print Julia dots before bolded string output."
-	"For interpolated strings."
+	"""
+	Print Julia dots before bolded string output.
+	For interpolated strings.
+	"""
 
 	expr_out = :(	
 				print(Crayon(foreground=:red, bold=true), " ●");

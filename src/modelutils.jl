@@ -21,7 +21,7 @@ showtitles(model::TopicModel) = showtitles(model.corp)
 getvocab(model::TopicModel) = getvocab(model.corp)
 getusers(model::TopicModel) = getusers(model.corp)
 
-### Display output for TopicModel objects.
+## Display output for TopicModel objects.
 Base.show(io::IO, model::LDA) = print(io, "Latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::fLDA) = print(io, "Filtered latent Dirichlet allocation model with $(model.K) topics.")
 Base.show(io::IO, model::CTM) = print(io, "Correlated topic model with $(model.K) topics.")
@@ -580,8 +580,10 @@ function update_host!(model::gpuCTPF)
 end
 
 function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int, tol::Real)
-	"Check and print value of delta_elbo."
-	"If abs(delta_elbo) < tol, terminate algorithm."
+	"""
+	Check and print value of delta_elbo.
+	If abs(delta_elbo) < tol, terminate algorithm.
+	"""
 
 	if k % checkelbo == 0
 		update_host!(model)
@@ -596,8 +598,10 @@ function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int
 end
 
 function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
-	"Generate artificial document from LDA or gpuLDA generative model."
-	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
+	"""
+	Generate artificial document from LDA or gpuLDA generative model.
+		laplace_smooth: governs the amount of Laplace smoothing applied to the topic-term distribution.
+	"""
 
 	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
@@ -619,8 +623,10 @@ function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
 end
 
 function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
-	"Generate artificial document from CTM or gpuCTM generative model."
-	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
+	"""
+	Generate artificial document from CTM or gpuCTM generative model.
+		laplace_smooth: governs the amount of Laplace smoothing applied to the topic-term distribution.
+	"""
 
 	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
@@ -642,8 +648,10 @@ function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
 end
 
 function gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
-	"Generate artificial corpus using specified generative model."
-	"laplace_smooth governs the amount of Laplace smoothing applied to the topic-term distribution."
+	"""
+	Generate artificial corpus using specified generative model.
+		laplace_smooth: governs the amount of Laplace smoothing applied to the topic-term distribution.
+	"""
 
 	(M > 0)					|| throw(ArgumentError("corp_size parameter must be a positive integer."))
 	(laplace_smooth >= 0)	|| throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
@@ -654,9 +662,11 @@ function gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
 end
 
 function showtopics(model::TopicModel, V::Integer=15; topics::Union{<:Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
-	"Display the top T terms for each topic."
-	"topics parameter controls which topics are displayed."
-	"cols parameter controls the number of topic columns displayed per line."
+	"""
+	Display the top T terms for each topic.
+		topics: controls which topics are displayed.
+		cols: controls the number of topic columns displayed per line.
+	"""
 
 	(V > 0)									|| throw(ArgumentError("Number of displayed terms must be a positive integer."))
 	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("Some topic indices are outside range."))
@@ -723,8 +733,10 @@ showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showli
 showlibs(model::Union{CTPF, gpuCTPF}) = showlibs(model, 1:length(model.libs))
 
 function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=15; cols::Integer=1)
-	"Display the top U user recommendations for a document(s)."
-	"cols parameter controls the number of topic columns displayed per line."
+	"""
+	Display the top U user recommendations for a document(s).
+		cols: controls the number of topic columns displayed per line.
+	"""
 
 	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("Some document indices are outside range."))
 	(U > 0) 							|| throw(ArgumentError("Number of displayed users must be a positive integer."))
@@ -769,8 +781,10 @@ showdrecs(model::Union{CTPF, gpuCTPF}, doc::Integer, U::Integer=15; cols::Intege
 showdrecs(model::Union{CTPF, gpuCTPF}, docs::UnitRange{<:Integer}, U::Integer=15; cols::Integer=1) = showdrecs(model, collect(docs), U, cols=cols)
 
 function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=15; cols::Integer=1)
-	"# Show the top 'M' document recommendations for a user(s)."
-	"If a document has no title, the document's index in the corpus will be shown instead."
+	"""
+	Show the top 'M' document recommendations for a user(s).
+	If a document has no title, the document's index in the corpus will be shown instead.
+	"""
 
 	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
 	(M > 0) 							|| throw(ArgumentError("Number of displayed documents must be a positive integer."))

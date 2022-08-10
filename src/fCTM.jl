@@ -129,22 +129,28 @@ function update_elbo!(model::fCTM)
 end
 
 function update_eta!(model::fCTM)
-	"Update eta."
-	"Analytic."
+	"""
+	Update eta.
+	Analytic.
+	"""
 
 	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
 end
 
 function update_mu!(model::fCTM)
-	"Update mu."
-	"Analytic."
+	"""
+	Update mu.
+	Analytic.
+	"""
 
 	model.mu = sum(model.lambda) / model.M
 end
 
 function update_sigma!(model::fCTM)
-	"Update sigma."
-	"Analytic"
+	"""
+	Update sigma.
+	Analytic.
+	"""
 
 	model.sigma = Symmetric((diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M)
 	model.invsigma = inv(model.sigma)
@@ -152,7 +158,6 @@ end
 
 function update_kappa!(model::fCTM)
 	"Reset kappa variables."
-	"Analytic."
 
 	model.kappa_old = model.kappa
 	model.kappa = model.kappa_temp ./ sum(model.kappa_temp)
@@ -160,8 +165,10 @@ function update_kappa!(model::fCTM)
 end
 
 function update_kappa!(model::fCTM, d::Int)
-	"Update kappa."
-	"Analytic."
+	"""
+	Update kappa.
+	Analytic.
+	"""
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.kappa_temp[terms] += (1 .- model.tau[d]) .* counts
@@ -176,16 +183,20 @@ function update_beta!(model::fCTM)
 end
 
 function update_beta!(model::fCTM, d::Int)
-	"Update beta."
-	"Analytic."
+	"""
+	Update beta.
+	Analytic.
+	"""
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.beta_temp[:,terms] += model.phi[1] .* (model.tau[d] .* counts)'
 end
 
 function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
-	"Update lambda."
-	"Newton's method."
+	"""
+	Update lambda.
+	Newton's method.
+	"""
 
 	model.lambda_old[d] = model.lambda[d]
 
@@ -202,8 +213,10 @@ function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 end
 
 function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
-	"Update vsq."
-	"Newton's method with back-tracking line search."
+	"""
+	Update vsq.
+	Newton's method with back-tracking line search.
+	"""
 
 	for i in 1:model.K
 		for _ in 1:niter
@@ -226,15 +239,19 @@ function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 end
 
 function update_logzeta!(model::fCTM, d::Int)
-	"Update logzeta."
-	"Analytic."
+	"""
+	Update logzeta.
+	Analytic.
+	"""
 
 	model.logzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function update_tau!(model::fCTM, d::Int)
-	"Update tau."
-	"Analytic."
+	"""
+	Update tau.
+	Analytic.
+	"""
 
 	model.tau_old[d] = model.tau[d]
 
@@ -243,8 +260,10 @@ function update_tau!(model::fCTM, d::Int)
 end
 
 function update_phi!(model::fCTM, d::Int)
-	"Update phi."
-	"Analytic"
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	terms = model.corp[d].terms
 	model.phi[1] = additive_logistic(model.tau[d]' .* log.(@boink model.beta[:,terms]) .+ model.lambda[d], dims=1)

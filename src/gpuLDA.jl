@@ -131,8 +131,10 @@ function update_elbo!(model::gpuLDA)
 end
 
 function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
-	"Update alpha."
-	"Interior-point Newton's method with log-barrier and back-tracking line search."
+	"""
+	Update alpha.
+	Interior-point Newton's method with log-barrier and back-tracking line search.
+	"""
 
 	@host model.Elogtheta_sum_buffer
 
@@ -201,8 +203,10 @@ normalize_beta(	long K,
 				"""
 
 function update_beta!(model::gpuLDA)
-	"Update beta."
-	"Analytic."
+	"""
+	Update beta.
+	Analytic.
+	"""
 
 	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_cumsum_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
@@ -263,8 +267,10 @@ update_Elogtheta_sum(	long K,
 						"""
 
 function update_Elogtheta!(model::gpuLDA)
-	"Update E[log(theta)]."
-	"Analytic."
+	"""
+	Update E[log(theta)].
+	Analytic.
+	"""
 	
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.M, model.gamma_buffer, model.Elogtheta_buffer, model.Elogtheta_dist_buffer)
 	model.queue(model.Elogtheta_sum_kernel, model.K, nothing, model.K, model.M, model.Elogtheta_buffer, model.Elogtheta_sum_buffer)
@@ -295,8 +301,10 @@ update_gamma(	long K,
 				"""
 
 function update_gamma!(model::gpuLDA)
-	"Update gamma."
-	"Analytic."
+	"""
+	Update gamma.
+	Analytic.
+	"""
 
 	model.queue(model.gamma_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
@@ -340,8 +348,10 @@ normalize_phi(	long K,
 				"""
 
 function update_phi!(model::gpuLDA)
-	"Update phi."
-	"Analytic."
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)

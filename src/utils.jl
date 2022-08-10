@@ -1,20 +1,21 @@
-### The function eps() outputs the machine epsilon of the argument.
-### Argument currently set to 1e-14.
-### Resulting EPSILON is approx. 1.6e-30.
+## The function eps() outputs the machine epsilon of the argument.
+## eps(1e-14) ≈ 1.6e-30.
 const EPSILON = eps(1e-14)
 
-### EPSILON32 is 1f-30.
+## EPSILON32 is 1f-30.
 const EPSILON32 = "0.000000000000000000000000000001f"
 
-### Euler–Mascheroni constant.
-### γ = 0.5772156649015...
+## Euler–Mascheroni constant.
+## γ = 0.5772156649015...
 import Base.MathConstants.eulergamma
 
-### Numerical approximation to the digamma function.
-### Based on eq. (12), without looking at the accompanying source
-### code, of: K. S. Kölbig, "Programs for computing the logarithm of
-### the gamma function, and the digamma function, for complex
-### argument," Computer Phys. Commun. vol. 4, pp. 221–226 (1972).
+#=
+Numerical approximation to the digamma function.
+Based on eq. (12), without looking at the accompanying source
+code, of: K. S. Kölbig, "Programs for computing the logarithm of
+the gamma function, and the digamma function, for complex
+argument," Computer Phys. Commun. vol. 4, pp. 221–226 (1972).
+=#
 const DIGAMMA_c =
 """
 inline float
@@ -49,9 +50,11 @@ digamma(float x)
 		}
 		"""
 
-### Parallel Gauss-Jordan elimination (reduced row echelon form) algorithm for solving the linear system Ax=b.
-### Partial pivoting unnecessary for symmetric positive-definite matrices. Ref,
-### "Accuracy and Stability of Numerical Algorithms" Higham, 2002.
+#=
+Parallel Gauss-Jordan elimination (reduced row echelon form) algorithm for
+solving the linear system Ax=b. Partial pivoting unnecessary for symmetric
+positive-definite matrices. Ref, "Accuracy and Stability of Numerical Algorithms" Higham, 2002.
+=#
 const LINSOLVE_c =
 """
 inline void
@@ -93,13 +96,14 @@ MatrixList{T} = Vector{Matrix{T}}
 "Prevent overflow to ±Inf."
 finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = sign.(x) .* min.(abs.(x), floatmax.(x))
 
-### LogSumExp function.
-### Overflow safe.
+"LogSumExp function, overflow safe."
 import Distributions.logsumexp
 
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
-	"Additive logistic function of a real-valued matrix over the given dimension."
-	"Overflow safe."
+	"""
+	Additive logistic function of a real-valued matrix over the given dimension.
+	Overflow safe.
+	"""
 
 	if dims in [1,2]
 		x = exp.(x .- maximum(x, dims=dims))
@@ -110,8 +114,10 @@ function additive_logistic(x::Matrix{<:Real}; dims::Integer)
 end
 
 function additive_logistic(x::Vector{<:Real})
-	"Additive logistic function of a real-valued vector."
-	"Overflow safe."
+	"""
+	Additive logistic function of a real-valued vector.
+	Overflow safe.
+	"""
 
 	x = exp.(x .- maximum(x))
 	x = x / sum(x)
@@ -120,8 +126,10 @@ function additive_logistic(x::Vector{<:Real})
 end
 
 function additive_logistic(x::Matrix{<:Real})
-	"Additive logistic function of a real-valued matrix."
-	"Overflow safe."
+	"""
+	Additive logistic function of a real-valued matrix.
+	Overflow safe.
+	"""
 
 	x = exp.(x .- maximum(x))
 	x = x / sum(x)
@@ -130,9 +138,11 @@ function additive_logistic(x::Matrix{<:Real})
 end
 
 function isstochastic(P::Matrix{<:Real}; dims::Integer)
-	"Check to see if X is a stochastic matrix."
-	"if dims = 1, check for left stochastic matrix."
-	"if dims = 2, check for right stochastic matrix."
+	"""
+	Check to see if X is a stochastic matrix.
+		if dims = 1, check for left stochastic matrix.
+		if dims = 2, check for right stochastic matrix.
+	"""
 
 	if dims == 1
 		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
@@ -145,13 +155,13 @@ function isstochastic(P::Matrix{<:Real}; dims::Integer)
 	return x
 end
 
-### Keep until pull request is merged.
+## Keep until pull request is merged.
 import Distributions.xlogy
 import Distributions.binomlogpdf
 Distributions.xlogy(x::T, y::T) where {T<:Real} = x != zero(T) ? x * log(y) : zero(log(y))
 Distributions.binomlogpdf(n::Real, p::Real, k::Real) = (isinteger(k) & (zero(k) <= k <= n)) ? convert(typeof(float(p)), loggamma(n + 1) - loggamma(k + 1) - loggamma(n - k + 1) + xlogy(k, p) + xlogy(n - k, 1 - p)) : convert(typeof(float(p)), -Inf)
 
-### Keep until pull request is merged.
+## Keep until pull request is merged.
 function Distributions.entropy(d::Dirichlet)
     α = d.alpha
     α0 = d.alpha0

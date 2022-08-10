@@ -1,11 +1,13 @@
-mutable struct Document
-	"Document mutable struct"
 
-	"terms:   A vector{Int} containing keys for the Corpus vocab Dict."
-	"counts:  A Vector{Int} denoting the counts of each term in the Document."
-	"readers: A Vector{Int} denoting the keys for the Corpus users Dict."
-	"ratings: A Vector{Int} denoting the ratings for each reader in the Document."
-	"title:   The title of the document (String)."
+mutable struct Document
+	"""
+	Document mutable struct.
+		terms:   A vector{Int} containing keys for the Corpus vocab Dict.
+		counts:  A Vector{Int} denoting the counts of each term in the Document.
+		readers: A Vector{Int} denoting the keys for the Corpus users Dict.
+		ratings: A Vector{Int} denoting the ratings for each reader in the Document.
+		title:   The title of the document (String).
+	"""
 
 	terms::Vector{Int}
 	counts::Vector{Int}
@@ -20,7 +22,7 @@ mutable struct Document
 	end
 end
 
-### Document outer constructors.
+## Document outer constructors.
 Document(terms) = Document(terms=terms)
 
 struct DocumentError <: Exception
@@ -42,11 +44,12 @@ function check_doc(doc::Document)
  end
 
 mutable struct Corpus
-	"Corpus mutable struct."
-
-	"docs:  A Vector{Document} containing the documents which belong to the Corpus."
-	"vocab: A Dict{Int, String} containing a mapping term Int (key) => term String (value)."
-	"users: A Dict{Int, String} containing a mapping user Int (key) => user String (value)."
+	"""
+	Corpus mutable struct.
+		docs:  A Vector{Document} containing the documents which belong to the Corpus.
+		vocab: A Dict{Int, String} containing a mapping term Int (key) => term String (value).
+		users: A Dict{Int, String} containing a mapping user Int (key) => user String (value).
+	"""
 
 	docs::Vector{Document}
 	vocab::Dict{Int, String}
@@ -65,7 +68,7 @@ mutable struct Corpus
 	end
 end
 
-### Corpus outer constructors.
+## Corpus outer constructors.
 Corpus(docs::Vector{Document}) = Corpus(docs=docs)
 Corpus(docs::Vector{Document}; vocab=[], users=[]) = Corpus(docs=docs, vocab=vocab, users=users)
 Corpus(doc::Document) = Corpus(docs=[doc])
@@ -77,8 +80,8 @@ end
 
 Base.showerror(io::IO, e::CorpusError) = print(io, "CorpusError: ", e.msg)
 
- function check_docs(corp::Corpus)
- 	"Check Corpus documents."
+function check_docs(corp::Corpus)
+	"Check Corpus documents."
 
 	for (d, doc) in enumerate(corp)
 		try
@@ -353,11 +356,11 @@ function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userf
 	nothing
 end
 
-### The _corp and _docs functions are designed to provide safe methods for modifying corpora.
-### The _corp functions only meaningfully modify the Corpus object.
-### In so far as the _corp functions modify Document objects, it only amounts to a possible relabeling of the keys in the documents.
-### The _doc functions only modify the Document objects attached the corpus, they do not modify the Corpus object.
-### The exception to the above rule is the stop_corp! function, which removes stop words from both the Corpus vocab dictionary and associated keys in the documents.
+## The _corp and _docs functions are designed to provide safe methods for modifying corpora.
+## The _corp functions only meaningfully modify the Corpus object.
+## In so far as the _corp functions modify Document objects, it only amounts to a possible relabeling of the keys in the documents.
+## The _doc functions only modify the Document objects attached the corpus, they do not modify the Corpus object.
+## The exception to the above rule is the stop_corp! function, which removes stop words from both the Corpus vocab dictionary and associated keys in the documents.
 
 function abridge_corp!(corp::Corpus, n::Integer=0)
 	"All terms which appear less than n times in the corpus are removed from all documents."
@@ -407,7 +410,8 @@ function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 end
 
 function clip_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Keep top n terms."
+	"Keep top N terms."
+	
 	nothing
 end
 
@@ -453,8 +457,10 @@ function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 end
 
 function condense_corp!(corp::Corpus)
-	"Ignore term order in documents."
-	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
+	"""
+	Ignore term order in documents. Multiple seperate occurrences of terms
+	are stacked and their associated counts increased.
+	"""
 
 	for doc in unique(corp)
 		docdict = Dict(j => 0 for j in doc.terms)
@@ -469,7 +475,10 @@ function condense_corp!(corp::Corpus)
 end
 
 function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries."
+	""""
+	Enter generic values for vocab and/or user keys which appear in documents
+	but not in the vocab/user dictionaries.
+	"""
 
 	if vocab
 		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
@@ -496,8 +505,10 @@ function remove_empty_docs!(corp::Corpus)
 end
 
 function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Remove vocab and/or user keys which map to redundant values."
-	"Reassign Document term and/or reader keys."
+	"""
+	Remove vocab and/or user keys which map to redundant values.
+	Reassign Document term and/or reader keys.
+	"""
 
 	if vocab
 		vkey_map = Dict()
@@ -558,7 +569,10 @@ function stop_corp!(corp::Corpus)
 end
 
 function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Those keys which appear in the corpus vocab and/or user dictionaries but not in any of the documents are removed from the corpus."
+	"""
+	Those keys which appear in the corpus vocab and/or user dictionaries but
+	not in any of the documents are removed from the corpus.
+	"""
 
 	if vocab
 		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
@@ -573,7 +587,10 @@ function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 end
 
 function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
-	"Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents."
+	"""
+	Those vocab and/or user keys which appear in documents but not in the corpus
+	dictionaries are removed from the documents.
+	"""
 
 	if terms
 		doc_vkeys = Set(vcat([doc.terms for doc in corp]...))
@@ -598,10 +615,11 @@ function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
 end
 
 function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, remove_terms::Vector{String}=String[], stop::Bool=false, trim::Bool=false)
-	"Generic function to ensure that a Corpus object can be loaded into a TopicModel object."
-	"Either pad_corp! or trim_docs!."
-	"compact_corp!."
-	"Contains other optional keyword arguments."
+	"""
+	Generic function to ensure that a Corpus object can be loaded into a TopicModel object.
+	Either pad_corp! or trim_docs!, followed by compact_corp!.
+	Contains other optional keyword arguments.
+	"""
 
 	check_docs(corp)
 

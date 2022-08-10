@@ -101,15 +101,19 @@ function update_elbo!(model::CTM)
 end
 
 function update_mu!(model::CTM)
-	"Update mu."
-	"Analytic."
+	"""
+	Update mu.
+	Analytic.
+	"""
 
 	model.mu = sum(model.lambda) / model.M
 end
 
 function update_sigma!(model::CTM)
-	"Update sigma."
-	"Analytic"
+	"""
+	Update sigma.
+	Analytic.
+	"""
 
 	model.sigma = Symmetric((diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M)
 	model.invsigma = inv(model.sigma)
@@ -124,16 +128,20 @@ function update_beta!(model::CTM)
 end
 
 function update_beta!(model::CTM, d::Int)
-	"Update beta."
-	"Analytic."
+	"""
+	Update beta.
+	Analytic.
+	"""
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.beta_temp[:,terms] += model.phi[1] .* counts'
 end
 
 function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
-	"Update lambda."
-	"Newton's method."
+	"""
+	Update lambda.
+	Newton's method.
+	"""
 
 	model.lambda_old[d] = model.lambda[d]
 
@@ -150,8 +158,10 @@ function update_lambda!(model::CTM, d::Int, niter::Integer, ntol::Real)
 end
 
 function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
-	"Update vsq."
-	"Newton's method with back-tracking line search."
+	"""
+	Update vsq.
+	Newton's method with back-tracking line search.
+	"""
 
 	for i in 1:model.K
 		for _ in 1:niter
@@ -174,15 +184,19 @@ function update_vsq!(model::CTM, d::Int, niter::Integer, ntol::Real)
 end
 
 function update_logzeta!(model::CTM, d::Int)
-	"Update logzeta."
-	"Analytic."
+	"""
+	Update logzeta.
+	Analytic.
+	"""
 
 	model.logzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
 function update_phi!(model::CTM, d::Int)
-	"Update phi."
-	"Analytic."
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	terms = model.corp[d].terms
 	model.phi[1] = additive_logistic(log.(model.beta[:,terms]) .+ model.lambda[d], dims=1)

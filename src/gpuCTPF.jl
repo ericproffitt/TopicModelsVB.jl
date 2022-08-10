@@ -321,8 +321,10 @@ update_alef(long K,
 			"""
 
 function update_alef!(model::gpuCTPF)
-	"Update alef."
-	"Analytic."
+	"""
+	Update alef.
+	Analytic.
+	"""
 
 	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.a, model.J_cumsum_buffer, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.alef_buffer)
 end
@@ -351,8 +353,10 @@ update_bet(	long K,
 			"""
 
 function update_bet!(model::gpuCTPF)
-	"Update bet."
-	"Analytic."
+	"""
+	Update bet.
+	Analytic.
+	"""
 
 	model.queue(model.bet_kernel, model.K, nothing, model.K, model.M, model.b, model.alef_buffer, model.gimel_buffer, model.dalet_buffer, model.bet_buffer)
 end
@@ -388,8 +392,10 @@ update_gimel(	long K,
 				"""
 
 function update_gimel!(model::gpuCTPF)
-	"Update gimel."
-	"Analytic."
+	"""
+	Update gimel.
+	Analytic.
+	"""
 
 	model.gimel_old = model.gimel
 
@@ -427,8 +433,10 @@ update_dalet(	long K,
 				"""
 
 function update_dalet!(model::gpuCTPF)
-	"Update dalet."
-	"Analytic."
+	"""
+	Update dalet.
+	Analytic.
+	"""
 
 	model.queue(model.dalet_kernel, model.K, nothing, model.K, model.V, model.U, model.d, model.alef_buffer, model.bet_buffer, model.he_buffer, model.vav_buffer, model.dalet_buffer)
 end
@@ -458,8 +466,10 @@ update_he(	long K,
 			"""
 
 function update_he!(model::gpuCTPF)
-	"Update he."
-	"Analytic."
+	"""
+	Update he.
+	Analytic.
+	"""
 
 	(model.U > 0) && model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_cumsum_buffer, model.ratings_buffer, model.readers_sortperm_buffer, model.xi_buffer, model.he_buffer)
 end
@@ -493,8 +503,10 @@ update_vav(	long K,
 			"""
 
 function update_vav!(model::gpuCTPF)
-	"Update vav."
-	"Analytic."
+	"""
+	Update vav.
+	Analytic.
+	"""
 
 	model.queue(model.vav_kernel, model.K, nothing, model.K, model.M, model.f, model.gimel_buffer, model.dalet_buffer, model.zayin_buffer, model.het_buffer, model.vav_buffer)
 end
@@ -523,8 +535,10 @@ update_zayin(	long K,
 				"""
 
 function update_zayin!(model::gpuCTPF)
-	"Update zayin."
-	"Analytic."
+	"""
+	Update zayin.
+	Analytic.
+	"""
 
 	model.queue(model.zayin_kernel, (model.K, model.M), nothing, model.K, model.g, model.R_cumsum_buffer, model.ratings_buffer, model.xi_buffer, model.zayin_buffer)
 end
@@ -552,8 +566,10 @@ update_het(	long K,
 			"""
 
 function update_het!(model::gpuCTPF)
-	"Update het."
-	"Analytic."
+	"""
+	Update het.
+	Analytic.
+	"""
 
 	model.queue(model.het_kernel, model.K, nothing, model.K, model.U, model.h, model.he_buffer, model.vav_buffer, model.het_buffer)
 end
@@ -613,8 +629,10 @@ normalize_phi(	long K,
 				"""
 
 function update_phi!(model::gpuCTPF)
-	"Update phi."
-	"Analytic."
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.alef_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
@@ -681,8 +699,10 @@ normalize_xi(	long K,
 				"""
 
 function update_xi!(model::gpuCTPF)
-	"Update xi."
-	"Analytic."
+	"""
+	Update xi.
+	Analytic.
+	"""
 
 	if sum(model.R) > 0
 		model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_cumsum_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)

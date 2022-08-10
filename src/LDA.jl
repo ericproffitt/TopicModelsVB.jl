@@ -96,8 +96,10 @@ function update_elbo!(model::LDA)
 end
 
 function update_alpha!(model::LDA, niter::Integer, ntol::Real)
-	"Update alpha."
-	"Interior-point Newton's method with log-barrier and back-tracking line search."
+	"""
+	Update alpha.
+	Interior-point Newton's method with log-barrier and back-tracking line search.
+	"""
 
 	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
@@ -130,32 +132,40 @@ function update_beta!(model::LDA)
 end
 
 function update_beta!(model::LDA, d::Int)
-	"Update beta."
-	"Analytic."
+	"""
+	Update beta.
+	Analytic.
+	"""
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.beta_temp[:,terms] += model.phi[1] .* counts'		
 end
 
 function update_Elogtheta!(model::LDA, d::Int)
-	"Update E[log(theta)]."
-	"Analytic."
+	"""
+	Update E[log(theta)].
+	Analytic.
+	"""
 
 	model.Elogtheta_old[d] = model.Elogtheta[d]
 	model.Elogtheta[d] = digamma.(model.gamma[d]) .- digamma(sum(model.gamma[d]))
 end
 
 function update_gamma!(model::LDA, d::Int)
-	"Update gamma."
-	"Analytic."
+	"""
+	Update gamma.
+	Analytic.
+	"""
 
 	counts = model.corp[d].counts
 	@positive model.gamma[d] = model.alpha + model.phi[1] * counts
 end
 
 function update_phi!(model::LDA, d::Int)
-	"Update phi."
-	"Analytic."
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	terms = model.corp[d].terms
 	@positive model.phi[1] = model.beta[:,terms] .* exp.(model.Elogtheta[d])

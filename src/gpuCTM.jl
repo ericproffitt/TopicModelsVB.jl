@@ -165,8 +165,10 @@ update_mu(	long K,
 			"""
 
 function update_mu!(model::gpuCTM)
-	"Update mu."
-	"Analytic."
+	"""
+	Update mu.
+	Analytic.
+	"""
 
 	model.queue(model.mu_kernel, model.K, nothing, model.K, model.M, model.lambda_buffer, model.mu_buffer)
 end
@@ -200,8 +202,10 @@ update_sigma( 	long K,
 		        """
 
 function update_sigma!(model::gpuCTM)
-	"Update sigma."
-	"Analytic"
+	"""
+	Update sigma.
+	Analytic.
+	"""
 
 	model.queue(model.sigma_kernel, (model.K, model.K), nothing, model.K, model.M, model.mu_buffer, model.lambda_buffer, model.vsq_buffer, model.sigma_buffer)
 
@@ -254,8 +258,10 @@ normalize_beta(	long K,
 				"""
 
 function update_beta!(model::gpuCTM)
-	"Update beta."
-	"Analytic."
+	"""
+	Update beta.
+	Analytic.
+	"""
 
 	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_cumsum_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
@@ -343,8 +349,10 @@ update_lambda(	long niter,
 				"""
 
 function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
-	"Update lambda."
-	"Newton's method."
+	"""
+	Update lambda.
+	Newton's method.
+	"""
 	
 	model.queue(model.lambda_kernel, model.M * model.K, model.K, niter, ntol, model.K, model.phi_count_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
@@ -392,8 +400,10 @@ update_vsq(	long niter,
 			"""
 
 function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
-	"Update vsq."
-	"Newton's method with back-tracking line search."
+	"""
+	Update vsq.
+	Newton's method with back-tracking line search.
+	"""
 
 	model.queue(model.vsq_kernel, (model.M, model.K), nothing, niter, ntol, model.K, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
@@ -428,8 +438,10 @@ update_logzeta(	long K,
 				"""
 
 function update_logzeta!(model::gpuCTM)
-	"Update logzeta."
-	"Analytic."
+	"""
+	Update logzeta.
+	Analytic.
+	"""
 
 	model.queue(model.logzeta_kernel, model.M, nothing, model.K, model.lambda_buffer, model.vsq_buffer, model.logzeta_buffer)
 end
@@ -482,8 +494,10 @@ normalize_phi(	long K,
 				"""
 
 function update_phi!(model::gpuCTM)
-	"Update phi."
-	"Analytic."
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.beta_buffer, model.lambda_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)

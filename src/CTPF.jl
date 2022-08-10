@@ -258,8 +258,10 @@ function update_elbo!(model::CTPF)
 end
 
 function update_alef!(model::CTPF)
-	"Update alef."
-	"Analytic."
+	"""
+	Update alef.
+	Analytic.
+	"""
 
 	model.alef_old = model.alef
 	model.alef = model.alef_temp
@@ -267,16 +269,20 @@ function update_alef!(model::CTPF)
 end
 
 function update_alef!(model::CTPF, d::Int)
-	"Update alef."
-	"Analytic."
+	"""
+	Update alef.
+	Analytic.
+	"""
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.alef_temp[:,terms] += model.phi[1] .* counts'
 end
 
 function update_he!(model::CTPF)
-	"Update he."
-	"Analytic."
+	"""
+	Update he.
+	Analytic.
+	"""
 
 	model.he_old = model.he
 	model.he = model.he_temp
@@ -284,48 +290,60 @@ function update_he!(model::CTPF)
 end
 
 function update_he!(model::CTPF, d::Int)
-	"Update he."
-	"Analytic."
+	"""
+	Update he.
+	Analytic.
+	"""
 
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	model.he_temp[:,readers] += (model.xi[1][1:model.K,:] + model.xi[1][model.K+1:end,:]) .* ratings'
 end
 
 function update_bet!(model::CTPF)
-	"Update bet."
-	"Analytic"
+	"""
+	Update bet.
+	Analytic.
+	"""
 
 	model.bet_old = model.bet
 	model.bet = model.b .+ sum(model.gimel) ./ model.dalet
 end
 
 function update_vav!(model::CTPF)
-	"Update vav."
-	"Analytic."
+	"""
+	Update vav.
+	Analytic.
+	"""
 
 	model.vav_old = model.vav
 	model.vav = model.f .+ sum(model.gimel) ./ model.dalet + sum(model.zayin) ./ model.het
 end
 
 function update_dalet!(model::CTPF)
-	"Update dalet."
-	"Analytic."
+	"""
+	Update dalet.
+	Analytic.
+	"""
 
 	model.dalet_old = model.dalet
 	model.dalet = model.d .+ vec(sum(model.alef, dims=2)) ./ model.bet + vec(sum(model.he, dims=2)) ./ model.vav
 end
 
 function update_het!(model::CTPF)
-	"Update het."
-	"Analytic"
+	"""
+	Update het.
+	Analytic.
+	"""
 
 	model.het_old = model.het
 	model.het = model.h .+ vec(sum(model.he, dims=2)) ./ model.vav
 end
 
 function update_gimel!(model::CTPF, d::Int)
-	"Update gimel."
-	"Analytic."
+	"""
+	Update gimel.
+	Analytic.
+	"""
 
 	model.gimel_old[d] = model.gimel[d]
 
@@ -334,8 +352,10 @@ function update_gimel!(model::CTPF, d::Int)
 end
 
 function update_zayin!(model::CTPF, d::Int)
-	"Update zayin."
-	"Analytic"
+	"""
+	Update zayin.
+	Analytic.
+	"""
 
 	model.zayin_old[d] = model.zayin[d]
 
@@ -344,16 +364,20 @@ function update_zayin!(model::CTPF, d::Int)
 end
 
 function update_phi!(model::CTPF, d::Int)
-	"Update phi."
-	"Analytic."
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	terms = model.corp[d].terms
 	model.phi[1] = additive_logistic(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]), dims=1)
 end
 
 function update_xi!(model::CTPF, d::Int)
-	"Update xi."
-	"Analytic."
+	"""
+	Update xi.
+	Analytic.
+	"""
 
 	readers = model.corp[d].readers
 	model.xi[1] = additive_logistic(vcat(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.vav) .+ digamma.(model.he[:,readers]), digamma.(model.zayin[d]) - log.(model.het) - log.(model.vav) .+ digamma.(model.he[:,readers])), dims=1)

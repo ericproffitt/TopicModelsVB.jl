@@ -123,15 +123,19 @@ function update_elbo!(model::fLDA)
 end
 
 function update_eta!(model::fLDA)
-	"Update eta."
-	"Analytic."
+	"""
+	Update eta.
+	Analytic.
+	"""
 
 	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
 end
 
 function update_alpha!(model::fLDA, niter::Integer, ntol::Real)
-	"Update alpha."
-	"Interior-point Newton's method with log-barrier and back-tracking line search."
+	"""
+	Update alpha.
+	Interior-point Newton's method with log-barrier and back-tracking line search.
+	"""
 
 	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
@@ -157,7 +161,6 @@ end
 
 function update_kappa!(model::fLDA)
 	"Reset kappa variables."
-	"Analytic."
 
 	model.kappa_old = model.kappa
 	model.kappa = model.kappa_temp ./ sum(model.kappa_temp)
@@ -165,8 +168,10 @@ function update_kappa!(model::fLDA)
 end
 
 function update_kappa!(model::fLDA, d::Int)
-	"Update kappa."
-	"Analytic."
+	"""
+	Update kappa.
+	Analytic.
+	"""
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.kappa_temp[terms] += (1 .- model.tau[d]) .* counts
@@ -181,32 +186,40 @@ function update_beta!(model::fLDA)
 end
 
 function update_beta!(model::fLDA, d::Int)
-	"Update beta."
-	"Analytic."
+	"""
+	Update beta.
+	Analytic.
+	"""
 
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.beta_temp[:,terms] += model.phi[1] .* (model.tau[d] .* counts)'
 end
 
 function update_Elogtheta!(model::fLDA, d::Int)
-	"Update E[log(theta)]."
-	"Analytic."
+	"""
+	Update E[log(theta)].
+	Analytic.
+	"""
 	
 	model.Elogtheta_old[d] = model.Elogtheta[d]
 	model.Elogtheta[d] = digamma.(model.gamma[d]) .- digamma(sum(model.gamma[d]))
 end
 
 function update_gamma!(model::fLDA, d::Int)
-	"Update gamma."
-	"Analytic."
+	"""
+	Update gamma.
+	Analytic.
+	"""
 
 	counts = model.corp[d].counts
 	@positive model.gamma[d] = model.alpha + model.phi[1] * counts	
 end
 
 function update_tau!(model::fLDA, d::Int)
-	"Update tau."
-	"Analytic."
+	"""
+	Update tau.
+	Analytic.
+	"""
 
 	model.tau_old[d] = model.tau[d]
 
@@ -215,8 +228,10 @@ function update_tau!(model::fLDA, d::Int)
 end
 
 function update_phi!(model::fLDA, d::Int)
-	"Update phi."
-	"Analytic."
+	"""
+	Update phi.
+	Analytic.
+	"""
 
 	terms = model.corp[d].terms
 	model.phi[1] = additive_logistic(model.tau[d]' .* log.(@boink model.beta[:,terms]) .+ model.Elogtheta[d], dims=1)
