@@ -96,7 +96,7 @@ MatrixList{T} = Vector{Matrix{T}}
 "Prevent overflow to ±Inf."
 finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = sign.(x) .* min.(abs.(x), floatmax.(x))
 
-"LogSumExp function, overflow safe."
+## LogSumExp function, overflow safe.
 import Distributions.logsumexp
 
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
