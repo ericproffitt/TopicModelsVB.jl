@@ -142,9 +142,9 @@ function update_alpha!(model::fLDA, niter::Integer, ntol::Real)
 	nu = model.K
 	for _ in 1:niter
 		rho = 1.0
-		alpha_grad = (nu ./ model.alpha + model.M * (digamma(sum(model.alpha)) .- digamma.(model.alpha))) + Elogtheta_sum
-		alpha_invhess_diag = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
-		p = (alpha_grad .- dot(alpha_grad, alpha_invhess_diag)  * (model.M * trigamma(sum(model.alpha)) + sum(alpha_invhess_diag))) .* alpha_invhess_diag
+		alpha_grad = nu ./ model.alpha + model.M * (digamma(sum(model.alpha)) .- digamma.(model.alpha)) + Elogtheta_sum
+		h_inv = -1 ./ (model.M * trigamma.(model.alpha) + nu ./ model.alpha.^2)
+		p = (alpha_grad .- dot(alpha_grad, h_inv) / (1 / (model.M * trigamma(sum(model.alpha))) + sum(h_inv))) .* h_inv
 		
 		while minimum(model.alpha - rho * p) < 0
 			rho *= 0.5
@@ -264,7 +264,7 @@ function train!(model::fLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=10
 		update_beta!(model)
 		update_kappa!(model)
 		update_alpha!(model, niter, ntol)
-		#update_eta!(model)	
+		update_eta!(model)	
 		
 		if check_elbo!(model, checkelbo, printelbo, k, tol)
 			break
