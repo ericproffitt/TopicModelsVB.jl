@@ -1,4 +1,3 @@
-
 mutable struct Document
 	"""
 	Document mutable struct.
