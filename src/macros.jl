@@ -187,8 +187,8 @@ macro gpu(expr::Expr)
 			
 			model.topics = gpumodel.topics
 			model.mu = gpumodel.mu
-			model.sigma = convert(Symmetric{Float64,Array{Float64,2}}, model.sigma)
-			model.invsigma = convert(Symmetric{Float64,Array{Float64,2}}, model.invsigma)
+			model.sigma = convert(Symmetric{Float64,Array{Float64,2}}, gpumodel.sigma)
+			model.invsigma = convert(Symmetric{Float64,Array{Float64,2}}, gpumodel.invsigma)
 			model.beta = gpumodel.beta
 			model.lambda = gpumodel.lambda
 			model.lambda_old = deepcopy(model.lambda)
