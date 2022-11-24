@@ -10,6 +10,8 @@ const EPSILON32 = "0.000000000000000000000000000001f"
 import Base.MathConstants.eulergamma
 
 #=
+Compute the digamma function of `x > 0` (the logarithmic derivative of `gamma(x)`).
+
 Numerical approximation to the digamma function.
 Based on eq. (12), without looking at the accompanying source
 code, of: K. S. Kölbig, "Programs for computing the logarithm of
@@ -37,14 +39,14 @@ digamma(float x)
 		float t = 1 / x;
 		p += log(x) - 0.5f * t;
 		t *= t;
-		p -= t * 0.08333333333333333f
-				- 0.008333333333333333f * t
-				+ 0.003968253968253968f * t*t
-				- 0.004166666666666667f * t*t*t
-				+ 0.007575757575757576f * t*t*t*t
-				- 0.021092796092796094f * t*t*t*t*t
-				+ 0.08333333333333333f * t*t*t*t*t*t
-				- 0.4432598039215686f * t*t*t*t*t*t*t;
+		p -= 0.08333333333333333f * t
+		    - 0.008333333333333333f * t*t
+		    + 0.003968253968253968f * t*t*t
+		    - 0.004166666666666667f * t*t*t*t
+		    + 0.007575757575757576f * t*t*t*t*t
+		    - 0.021092796092796094f * t*t*t*t*t*t
+		    + 0.08333333333333333f * t*t*t*t*t*t*t
+		    - 0.4432598039215686f * t*t*t*t*t*t*t*t;
 
 		return p;
 		}
