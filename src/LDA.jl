@@ -1,6 +1,9 @@
-mutable struct LDA <: TopicModel
-	"Latent Dirichlet allocation."
+"""
+    LDA <: TopicModel
 
+Latent Dirichlet allocation model.
+"""
+mutable struct LDA <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -20,7 +23,7 @@ mutable struct LDA <: TopicModel
 
 	function LDA(corp::Corpus, K::Integer)
 		check_corp(corp)
-		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -43,47 +46,41 @@ mutable struct LDA <: TopicModel
 	end
 end
 
+## Compute E_q[log(P(theta))].
 function Elogptheta(model::LDA, d::Int)
-	"Compute E_q[log(P(theta))]."
-
 	x = finite(loggamma(sum(model.alpha))) - finite(sum(loggamma.(model.alpha))) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
+## Compute E_q[log(P(z))].
 function Elogpz(model::LDA, d::Int)
-	"Compute E_q[log(P(z))]."
-
 	counts = model.corp[d].counts
 	x = dot(model.phi[1] * counts, model.Elogtheta[d])
 	return x
 end
 
+## Compute E_q[log(P(w))].
 function Elogpw(model::LDA, d::Int)
-	"Compute E_q[log(P(w))]."
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
+## Compute E_q[log(q(theta))].
 function Elogqtheta(model::LDA, d::Int)
-	"Compute E_q[log(q(theta))]."
-
 	x = -entropy(Dirichlet(model.gamma[d]))
 	return x
 end
 
+## Compute E_q[log(q(z))].
 function Elogqz(model::LDA, d::Int)
-	"Compute E_q[log(q(z))]."
-
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[1][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
+## Update the evidence lower bound.
 function update_elbo!(model::LDA)
-	"Update the evidence lower bound."
-
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
@@ -95,12 +92,9 @@ function update_elbo!(model::LDA)
 	return model.elbo
 end
 
+## Update alpha.
+## Interior-point Newton's method with log-barrier and back-tracking line search.
 function update_alpha!(model::LDA, niter::Integer, ntol::Real)
-	"""
-	Update alpha.
-	Interior-point Newton's method with log-barrier and back-tracking line search.
-	"""
-
 	Elogtheta_sum = sum([model.Elogtheta[d] for d in 1:model.M])
 
 	nu = model.K
@@ -123,61 +117,51 @@ function update_alpha!(model::LDA, niter::Integer, ntol::Real)
 	@positive model.alpha
 end
 
+## Reset beta variables.
 function update_beta!(model::LDA)
-	"Reset beta variables."
-
 	model.beta_old = model.beta
 	model.beta = model.beta_temp ./ sum(model.beta_temp, dims=2)
 	model.beta_temp = zeros(model.K, model.V)
 end
 
+## Update beta.
+## Analytic.
 function update_beta!(model::LDA, d::Int)
-	"""
-	Update beta.
-	Analytic.
-	"""
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.beta_temp[:,terms] += model.phi[1] .* counts'		
 end
 
+## Update E[log(theta)].
+## Analytic.
 function update_Elogtheta!(model::LDA, d::Int)
-	"""
-	Update E[log(theta)].
-	Analytic.
-	"""
-
 	model.Elogtheta_old[d] = model.Elogtheta[d]
 	model.Elogtheta[d] = digamma.(model.gamma[d]) .- digamma(sum(model.gamma[d]))
 end
 
+## Update gamma.
+## Analytic.
 function update_gamma!(model::LDA, d::Int)
-	"""
-	Update gamma.
-	Analytic.
-	"""
-
 	counts = model.corp[d].counts
 	@positive model.gamma[d] = model.alpha + model.phi[1] * counts
 end
 
+## Update phi.
+## Analytic.
 function update_phi!(model::LDA, d::Int)
-	"""
-	Update phi.
-	Analytic.
-	"""
-
 	terms = model.corp[d].terms
 	@positive model.phi[1] = model.beta[:,terms] .* exp.(model.Elogtheta[d])
 	model.phi[1] ./= sum(model.phi[1], dims=1)
 end
 
-function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
-	"Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm."
+"""
+    train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 
+Coordinate ascent optimization procedure for latent Dirichlet allocation variational Bayes algorithm.
+"""
+function train!(model::LDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	check_model(model)
-	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("iteration parameters must be nonnegative."))
 	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
 	(checkelbo <= iter) && update_elbo!(model)

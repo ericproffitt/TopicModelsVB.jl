@@ -1,6 +1,9 @@
-mutable struct gpuCTPF <: TopicModel
-	"GPU accelerated collaborative topic Poisson factorization."
+"""
+    gpuCTPF <: TopicModel
 
+GPU accelerated collaborative topic Poisson factorization model.
+"""
+mutable struct gpuCTPF <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -72,7 +75,7 @@ mutable struct gpuCTPF <: TopicModel
 
 	function gpuCTPF(corp::Corpus, K::Integer)
 		check_corp(corp)
-		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -149,9 +152,8 @@ mutable struct gpuCTPF <: TopicModel
 	end
 end
 
+## Compute E_q[log(P(ya))].
 function Elogpya(model::gpuCTPF, d::Int)
-	"Compute E_q[log(P(ya))]."
-
 	x = -dot(model.gimel[d] ./ (model.dalet .* model.vav), sum(model.he, dims=2))
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
@@ -161,9 +163,8 @@ function Elogpya(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(yb))].
 function Elogpyb(model::gpuCTPF, d::Int)
-	"Compute E_q[log(P(yb))]."
-
 	x = -dot(model.zayin[d] ./ (model.het .* model.vav), sum(model.he, dims=2))
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
@@ -173,9 +174,8 @@ function Elogpyb(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(z))].
 function Elogpz(model::gpuCTPF, d::Int)
-	"Compute E_q[log(P(z))]."
-
 	x = -dot(model.gimel[d] ./ (model.dalet .* model.bet), sum(model.alef, dims=2))
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
@@ -185,9 +185,8 @@ function Elogpz(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(beta))].
 function Elogpbeta(model::gpuCTPF)
-	"Compute E_q[log(P(beta))]."
-
 	x = model.V * model.K * (model.a * log(model.b) - loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
 		x += (model.a - 1) * (digamma(model.alef[i,j]) - log(model.bet[i])) - model.b * model.alef[i,j] / model.bet[i]
@@ -195,9 +194,8 @@ function Elogpbeta(model::gpuCTPF)
 	return x
 end
 
+## Compute E_q[log(P(theta))].
 function Elogptheta(model::gpuCTPF, d::Int)
-	"Compute E_q[log(P(theta))]."
-
 	x = model.K * (model.c * log(model.d) - loggamma(model.c))
 	for i in 1:model.K
 		x += (model.c - 1) * (digamma(model.gimel[d][i]) - log(model.dalet[i])) - model.d * model.gimel[d][i] / model.dalet[i]
@@ -205,9 +203,8 @@ function Elogptheta(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(eta))].
 function Elogpeta(model::gpuCTPF)
-	"Compute E_q[log(P(eta))]."
-
 	x = model.U * model.K * (model.e * log(model.f) - loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
 		x += (model.e - 1) * (digamma(model.he[i,u]) - log(model.vav[i])) - model.f * model.he[i,u] / model.vav[i]
@@ -215,9 +212,8 @@ function Elogpeta(model::gpuCTPF)
 	return x
 end
 
+## Compute E_q[log(P(epsilon))].
 function Elogpepsilon(model::gpuCTPF, d::Int)
-	"Compute E_q[log(P(epsilon))]."
-
 	x = model.K * (model.g * log(model.h) - loggamma(model.g))
 	for i in 1:model.K
 		x += (model.g - 1) * (digamma(model.zayin[d][i]) - log(model.het[i])) - model.h * model.zayin[d][i] / model.het[i]
@@ -225,9 +221,8 @@ function Elogpepsilon(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(y))].
 function Elogqy(model::gpuCTPF, d::Int)
-	"Compute E_q[log(q(y))]."
-
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
 		x -= entropy(Multinomial(ra, model.xi[d][:,u]))
@@ -235,9 +230,8 @@ function Elogqy(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(z))].
 function Elogqz(model::gpuCTPF, d::Int)
-	"Compute E_q[log(q(z))]."
-
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
 		x -= entropy(Multinomial(c, model.phi[d][:,n]))
@@ -245,9 +239,8 @@ function Elogqz(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(beta))].
 function Elogqbeta(model::gpuCTPF)
-	"Compute E_q[log(q(beta))]."
-
 	x = 0
 	for j in 1:model.V, i in 1:model.K
 		x -= entropy(Gamma(model.alef[i,j], 1 / model.bet[i]))
@@ -255,9 +248,8 @@ function Elogqbeta(model::gpuCTPF)
 	return x
 end
 
+## Compute E_q[log(q(theta))].
 function Elogqtheta(model::gpuCTPF, d::Int)
-	"Compute E_q[log(q(theta))]."
-
 	x = 0
 	for i in 1:model.K
 		x -= entropy(Gamma(model.gimel[d][i], 1 / model.dalet[i]))
@@ -265,9 +257,8 @@ function Elogqtheta(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(eta))].
 function Elogqeta(model::gpuCTPF)
-	"Compute E_q[log(q(eta))]."
-
 	x = 0
 	for u in 1:model.U, i in 1:model.K
 		x -= entropy(Gamma(model.he[i,u], 1 / model.vav[i]))
@@ -275,9 +266,8 @@ function Elogqeta(model::gpuCTPF)
 	return x
 end	
 
+## Compute E_q[log(q(epsilon))].
 function Elogqepsilon(model::gpuCTPF, d::Int)
-	"Compute E_q[log(q(epsilon))]."
-
 	x = 0
 	for i in 1:model.K
 		x -= entropy(Gamma(model.zayin[d][i], 1 / model.het[i]))
@@ -285,9 +275,8 @@ function Elogqepsilon(model::gpuCTPF, d::Int)
 	return x
 end
 
+## Update the evidence lower bound.
 function update_elbo!(model::gpuCTPF)
-	"Update the evidence lower bound."
-
 	model.elbo = Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
 	for d in 1:model.M
 		model.elbo += Elogpya(model, d) + Elogpyb(model, d) + Elogpz(model, d) + Elogptheta(model, d) + Elogpepsilon(model, d) - Elogqy(model, d) - Elogqz(model, d) - Elogqtheta(model, d) - Elogqepsilon(model, d)
@@ -320,12 +309,9 @@ update_alef(long K,
 			}
 			"""
 
+## Update alef.
+## Analytic.
 function update_alef!(model::gpuCTPF)
-	"""
-	Update alef.
-	Analytic.
-	"""
-
 	model.queue(model.alef_kernel, (model.K, model.V), nothing, model.K, model.a, model.J_cumsum_buffer, model.counts_buffer, model.terms_sortperm_buffer, model.phi_buffer, model.alef_buffer)
 end
 
@@ -352,12 +338,9 @@ update_bet(	long K,
 			}
 			"""
 
+## Update bet.
+## Analytic.
 function update_bet!(model::gpuCTPF)
-	"""
-	Update bet.
-	Analytic.
-	"""
-
 	model.queue(model.bet_kernel, model.K, nothing, model.K, model.M, model.b, model.alef_buffer, model.gimel_buffer, model.dalet_buffer, model.bet_buffer)
 end
 
@@ -391,12 +374,9 @@ update_gimel(	long K,
 				}
 				"""
 
+## Update gimel.
+## Analytic.
 function update_gimel!(model::gpuCTPF)
-	"""
-	Update gimel.
-	Analytic.
-	"""
-
 	model.gimel_old = model.gimel
 
 	model.queue(model.gimel_kernel, (model.K, model.M), nothing, model.K, model.c, model.N_cumsum_buffer, model.R_cumsum_buffer, model.counts_buffer, model.ratings_buffer, model.phi_buffer, model.xi_buffer, model.gimel_buffer)
@@ -432,12 +412,9 @@ update_dalet(	long K,
 				}
 				"""
 
+## Update dalet.
+## Analytic.
 function update_dalet!(model::gpuCTPF)
-	"""
-	Update dalet.
-	Analytic.
-	"""
-
 	model.queue(model.dalet_kernel, model.K, nothing, model.K, model.V, model.U, model.d, model.alef_buffer, model.bet_buffer, model.he_buffer, model.vav_buffer, model.dalet_buffer)
 end
 
@@ -465,12 +442,9 @@ update_he(	long K,
 			}
 			"""
 
+## Update he.
+## Analytic.
 function update_he!(model::gpuCTPF)
-	"""
-	Update he.
-	Analytic.
-	"""
-
 	(model.U > 0) && model.queue(model.he_kernel, (model.K, model.U), nothing, model.K, model.e, model.Y_cumsum_buffer, model.ratings_buffer, model.readers_sortperm_buffer, model.xi_buffer, model.he_buffer)
 end
 
@@ -502,12 +476,9 @@ update_vav(	long K,
 			}
 			"""
 
+## Update vav.
+## Analytic.
 function update_vav!(model::gpuCTPF)
-	"""
-	Update vav.
-	Analytic.
-	"""
-
 	model.queue(model.vav_kernel, model.K, nothing, model.K, model.M, model.f, model.gimel_buffer, model.dalet_buffer, model.zayin_buffer, model.het_buffer, model.vav_buffer)
 end
 
@@ -534,12 +505,9 @@ update_zayin(	long K,
 				}
 				"""
 
+## Update zayin.
+## Analytic.
 function update_zayin!(model::gpuCTPF)
-	"""
-	Update zayin.
-	Analytic.
-	"""
-
 	model.queue(model.zayin_kernel, (model.K, model.M), nothing, model.K, model.g, model.R_cumsum_buffer, model.ratings_buffer, model.xi_buffer, model.zayin_buffer)
 end
 
@@ -565,12 +533,9 @@ update_het(	long K,
 			}
 			"""
 
+## Update het.
+## Analytic.
 function update_het!(model::gpuCTPF)
-	"""
-	Update het.
-	Analytic.
-	"""
-
 	model.queue(model.het_kernel, model.K, nothing, model.K, model.U, model.h, model.he_buffer, model.vav_buffer, model.het_buffer)
 end
 
@@ -628,12 +593,9 @@ normalize_phi(	long K,
 				}
 				"""
 
+## Update phi.
+## Analytic.
 function update_phi!(model::gpuCTPF)
-	"""
-	Update phi.
-	Analytic.
-	"""
-
 	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.alef_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
@@ -698,24 +660,24 @@ normalize_xi(	long K,
 				}
 				"""
 
+## Update xi.
+## Analytic.
 function update_xi!(model::gpuCTPF)
-	"""
-	Update xi.
-	Analytic.
-	"""
-
 	if sum(model.R) > 0
 		model.queue(model.xi_kernel, (model.K, model.M), nothing, model.K, model.R_cumsum_buffer, model.readers_buffer, model.bet_buffer, model.gimel_buffer, model.dalet_buffer, model.he_buffer, model.vav_buffer, model.zayin_buffer, model.het_buffer, model.xi_buffer)
 		model.queue(model.xi_norm_kernel, sum(model.R), nothing, model.K, model.xi_buffer)
 	end
 end
 
-function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
-	"Coordinate ascent optimization procedure for GPU accelerated collaborative topic Poisson factorization variational Bayes algorithm."
+"""
+    train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 
+Coordinate ascent optimization procedure for GPU accelerated collaborative topic Poisson factorization variational Bayes algorithm.
+"""
+function train!(model::gpuCTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	check_model(model)
-	all([tol, vtol] .>= 0)												|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, viter] .>= 0)											|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	all([tol, vtol] .>= 0)												|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, viter] .>= 0)											|| throw(ArgumentError("iteration parameters must be nonnegative."))
 	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	(checkelbo <= iter) && update_elbo!(model)

@@ -1,6 +1,9 @@
-mutable struct fCTM <: TopicModel
-	"Filtered correlated topic model."
+"""
+    fCTM <: TopicModel
 
+Filtered correlated topic model.
+"""
+mutable struct fCTM <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -29,7 +32,7 @@ mutable struct fCTM <: TopicModel
 
 	function fCTM(corp::Corpus, K::Integer)
 		check_corp(corp)
-		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -61,63 +64,55 @@ mutable struct fCTM <: TopicModel
 	end
 end
 
+## Compute E_q[log(P(eta))].
 function Elogpeta(model::fCTM, d::Int)
-	"Compute E_q[log(P(eta))]."
-
 	x = 0.5 * (logdet(model.invsigma) - model.K * log(2pi) - dot(diag(model.invsigma), model.vsq[d]) - dot(model.lambda[d] - model.mu, model.invsigma * (model.lambda[d] - model.mu)))
 	return x
 end
 
+## Compute E_q[log(P(c))].
 function Elogpc(model::fCTM, d::Int)
-	"Compute E_q[log(P(c))]."
-
 	counts = model.corp[d].counts
 	x = log(@boink model.eta^dot(model.tau[d], counts) * (1 - model.eta)^(model.C[d] - dot(model.tau[d], counts)))
 	return x
 end
 
+## Compute E_q[log(P(z))].
 function Elogpz(model::fCTM, d::Int)
-	"Compute E_q[log(P(z))]."
-
 	counts = model.corp[d].counts
 	x = dot(model.phi[1]' * model.lambda[d], counts) - model.C[d] * (sum(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])) + model.logzeta[d] - 1)
 	return x
 end
 
+## Compute E_q[log(P(w))].
 function Elogpw(model::fCTM, d::Int)
-	"Compute E_q[log(P(w))]."
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[1] .* log.(@boink model.beta[:,terms]) * (counts .* model.tau[d])) + dot(counts .* (1 .- model.tau[d]), log.(@boink model.kappa[terms]))
 	return x
 end
 
+## Compute E_q[log(q(eta))].
 function Elogqeta(model::fCTM, d::Int)
-	"Compute E_q[log(q(eta))]."
-
 	x = -entropy(MvNormal(model.lambda[d], diagm(model.vsq[d])))
 	return x
 end
 
+## Compute E_q[log(q(c))].
 function Elogqc(model::fCTM, d::Int)
-	"Compute E_q[log(q(c))]."
-
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Bernoulli(model.tau[d][n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
+## Compute E_q[log(q(z))].
 function Elogqz(model::fCTM, d::Int)
-	"Compute E_q[log(q(z))]."
-
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[1][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
+## Update the evidence lower bound.
 function update_elbo!(model::fCTM)
-	"Update the evidence lower bound."
-
 	model.elbo = 0
 	for d in 1:model.M
 		terms = model.corp[d].terms
@@ -128,76 +123,56 @@ function update_elbo!(model::fCTM)
 	return model.elbo
 end
 
+## Update eta.
+## Analytic.
 function update_eta!(model::fCTM)
-	"""
-	Update eta.
-	Analytic.
-	"""
-
 	model.eta = sum([dot(model.tau[d], model.corp[d].counts) for d in 1:model.M]) / sum(model.C)
 end
 
+## Update mu.
+## Analytic.
 function update_mu!(model::fCTM)
-	"""
-	Update mu.
-	Analytic.
-	"""
-
 	model.mu = sum(model.lambda) / model.M
 end
 
+## Update sigma.
+## Analytic.
 function update_sigma!(model::fCTM)
-	"""
-	Update sigma.
-	Analytic.
-	"""
-
 	model.sigma = Symmetric((diagm(sum(model.vsq)) + (hcat(model.lambda...) .- model.mu) * (hcat(model.lambda...) .- model.mu)') / model.M)
 	model.invsigma = inv(model.sigma)
 end
 
+## Reset kappa variables.
 function update_kappa!(model::fCTM)
-	"Reset kappa variables."
-
 	model.kappa_old = model.kappa
 	model.kappa = model.kappa_temp ./ sum(model.kappa_temp)
 	model.kappa_temp = zeros(model.V)
 end
 
+## Update kappa.
+## Analytic.
 function update_kappa!(model::fCTM, d::Int)
-	"""
-	Update kappa.
-	Analytic.
-	"""
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.kappa_temp[terms] += (1 .- model.tau[d]) .* counts
 end
 
+## Reset beta variables.
 function update_beta!(model::fCTM)
-	"Reset beta variables."
-
 	model.beta_old = model.beta
 	model.beta = model.beta_temp ./ sum(model.beta_temp, dims=2)
 	model.beta_temp = zeros(model.K, model.V)
 end
 
+## Update beta.
+## Analytic.
 function update_beta!(model::fCTM, d::Int)
-	"""
-	Update beta.
-	Analytic.
-	"""
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.beta_temp[:,terms] += model.phi[1] .* (model.tau[d] .* counts)'
 end
 
+## Update lambda.
+## Newton's method.
 function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
-	"""
-	Update lambda.
-	Newton's method.
-	"""
-
 	model.lambda_old[d] = model.lambda[d]
 
 	counts = model.corp[d].counts
@@ -212,12 +187,9 @@ function update_lambda!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	end
 end
 
+## Update vsq.
+## Newton's method with back-tracking line search.
 function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
-	"""
-	Update vsq.
-	Newton's method with back-tracking line search.
-	"""
-
 	for i in 1:model.K
 		for _ in 1:niter
 			rho = 1.0
@@ -238,43 +210,37 @@ function update_vsq!(model::fCTM, d::Int, niter::Integer, ntol::Real)
 	@positive model.vsq[d]
 end
 
+## Update logzeta.
+## Analytic.
 function update_logzeta!(model::fCTM, d::Int)
-	"""
-	Update logzeta.
-	Analytic.
-	"""
-
 	model.logzeta[d] = logsumexp(model.lambda[d] + 0.5 * model.vsq[d])	
 end
 
+## Update tau.
+## Analytic.
 function update_tau!(model::fCTM, d::Int)
-	"""
-	Update tau.
-	Analytic.
-	"""
-
 	model.tau_old[d] = model.tau[d]
 
 	terms = model.corp[d].terms
 	model.tau[d] = model.eta ./ (@boink model.eta .+ (1 - model.eta) * (model.kappa[terms] .* vec(prod(model.beta[:,terms].^-model.phi[1], dims=1))))
 end
 
+## Update phi.
+## Analytic.
 function update_phi!(model::fCTM, d::Int)
-	"""
-	Update phi.
-	Analytic.
-	"""
-
 	terms = model.corp[d].terms
 	model.phi[1] = additive_logistic(model.tau[d]' .* log.(@boink model.beta[:,terms]) .+ model.lambda[d], dims=1)
 end
 
-function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)	
-	"Coordinate ascent optimization procedure for filtered correlated topic model variational Bayes algorithm."
+"""
+    train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 
+Coordinate ascent optimization procedure for filtered correlated topic model variational Bayes algorithm.
+"""
+function train!(model::fCTM; iter::Integer=150, tol::Real=1.0, niter=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	check_model(model)
-	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("iteration parameters must be nonnegative."))
 	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
 	(checkelbo <= iter) && update_elbo!(model)

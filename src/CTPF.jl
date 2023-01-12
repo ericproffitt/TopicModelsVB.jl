@@ -1,6 +1,9 @@
-mutable struct CTPF <: TopicModel
-	"Collaborative topic Poisson factorization."
+"""
+    CTPF <: TopicModel
 
+Collaborative topic Poisson factorization model.
+"""
+mutable struct CTPF <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -46,7 +49,7 @@ mutable struct CTPF <: TopicModel
 
 	function CTPF(corp::Corpus, K::Integer)
 		check_corp(corp)
-		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -104,9 +107,8 @@ mutable struct CTPF <: TopicModel
 	end
 end
 
+## Compute E_q[log(P(ya))].
 function Elogpya(model::CTPF, d::Int)
-	"Compute E_q[log(P(ya))]."
-
 	x = -dot(model.gimel[d] ./ (model.dalet .* model.vav), sum(model.he, dims=2))
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
@@ -116,9 +118,8 @@ function Elogpya(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(yb))].
 function Elogpyb(model::CTPF, d::Int)
-	"Compute E_q[log(P(yb))]."
-
 	x = -dot(model.zayin[d] ./ (model.het .* model.vav), sum(model.he, dims=2))
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	for (u, (re, ra)) in enumerate(zip(readers, ratings)), i in 1:model.K
@@ -128,9 +129,8 @@ function Elogpyb(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(z))].
 function Elogpz(model::CTPF, d::Int)
-	"Compute E_q[log(P(z))]."
-
 	x = -dot(model.gimel[d] ./ (model.dalet .* model.bet), sum(model.alef, dims=2))
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	for (n, (j, c)) in enumerate(zip(terms, counts)), i in 1:model.K
@@ -140,9 +140,8 @@ function Elogpz(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(beta))].
 function Elogpbeta(model::CTPF)
-	"Compute E_q[log(P(beta))]."
-
 	x = model.V * model.K * (model.a * log(model.b) - loggamma(model.a))
 	for j in 1:model.V, i in 1:model.K
 		x += (model.a - 1) * (digamma(model.alef[i,j]) - log(model.bet[i])) - model.b * model.alef[i,j] / model.bet[i]
@@ -150,9 +149,8 @@ function Elogpbeta(model::CTPF)
 	return x
 end
 
+## Compute E_q[log(P(theta))].
 function Elogptheta(model::CTPF, d::Int)
-	"Compute E_q[log(P(theta))]."
-
 	x = model.K * (model.c * log(model.d) - loggamma(model.c))
 	for i in 1:model.K
 		x += (model.c - 1) * (digamma(model.gimel[d][i]) - log(model.dalet[i])) - model.d * model.gimel[d][i] / model.dalet[i]
@@ -160,9 +158,8 @@ function Elogptheta(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(P(eta))].
 function Elogpeta(model::CTPF)
-	"Compute E_q[log(P(eta))]."
-
 	x = model.U * model.K * (model.e * log(model.f) - loggamma(model.e))
 	for u in 1:model.U, i in 1:model.K
 		x += (model.e - 1) * (digamma(model.he[i,u]) - log(model.vav[i])) - model.f * model.he[i,u] / model.vav[i]
@@ -170,9 +167,8 @@ function Elogpeta(model::CTPF)
 	return x
 end
 
+## Compute E_q[log(P(epsilon))].
 function Elogpepsilon(model::CTPF, d::Int)
-	"Compute E_q[log(P(epsilon))]."
-
 	x = model.K * (model.g * log(model.h) - loggamma(model.g))
 	for i in 1:model.K
 		x += (model.g - 1) * (digamma(model.zayin[d][i]) - log(model.het[i])) - model.h * model.zayin[d][i] / model.het[i]
@@ -180,9 +176,8 @@ function Elogpepsilon(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(y))].
 function Elogqy(model::CTPF, d::Int)
-	"Compute E_q[log(q(y))]."
-
 	x = 0
 	for (u, ra) in enumerate(model.corp[d].ratings)
 		x -= entropy(Multinomial(ra, model.xi[1][:,u]))
@@ -190,9 +185,8 @@ function Elogqy(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(z))].
 function Elogqz(model::CTPF, d::Int)
-	"Compute E_q[log(q(z))]."
-
 	x = 0
 	for (n, c) in enumerate(model.corp[d].counts)
 		x -= entropy(Multinomial(c, model.phi[1][:,n]))
@@ -200,9 +194,8 @@ function Elogqz(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(beta))].
 function Elogqbeta(model::CTPF)
-	"Compute E_q[log(q(beta))]."
-
 	x = 0
 	for j in 1:model.V, i in 1:model.K
 		x -= entropy(Gamma(model.alef[i,j], 1 / model.bet[i]))
@@ -210,9 +203,8 @@ function Elogqbeta(model::CTPF)
 	return x
 end
 
+## Compute E_q[log(q(theta))].
 function Elogqtheta(model::CTPF, d::Int)
-	"Compute E_q[log(q(theta))]."
-
 	x = 0
 	for i in 1:model.K
 		x -= entropy(Gamma(model.gimel[d][i], 1 / model.dalet[i]))
@@ -220,9 +212,8 @@ function Elogqtheta(model::CTPF, d::Int)
 	return x
 end
 
+## Compute E_q[log(q(eta))].
 function Elogqeta(model::CTPF)
-	"Compute E_q[log(q(eta))]."
-
 	x = 0
 	for u in 1:model.U, i in 1:model.K
 		x -= entropy(Gamma(model.he[i,u], 1 / model.vav[i]))
@@ -230,9 +221,8 @@ function Elogqeta(model::CTPF)
 	return x
 end	
 
+## Compute E_q[log(q(epsilon))].
 function Elogqepsilon(model::CTPF, d::Int)
-	"Compute E_q[log(q(epsilon))]."
-
 	x = 0
 	for i in 1:model.K
 		x -= entropy(Gamma(model.zayin[d][i], 1 / model.het[i]))
@@ -240,9 +230,8 @@ function Elogqepsilon(model::CTPF, d::Int)
 	return x
 end
 
+## Update the evidence lower bound.
 function update_elbo!(model::CTPF)
-	"Update the evidence lower bound."
-
 	model.elbo = Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
 	for d in 1:model.M
 		terms = model.corp[d].terms
@@ -257,138 +246,105 @@ function update_elbo!(model::CTPF)
 	return model.elbo
 end
 
+## Update alef.
+## Analytic.
 function update_alef!(model::CTPF)
-	"""
-	Update alef.
-	Analytic.
-	"""
-
 	model.alef_old = model.alef
 	model.alef = model.alef_temp
 	model.alef_temp = fill(model.a, model.K, model.V)
 end
 
+## Update alef.
+## Analytic.
 function update_alef!(model::CTPF, d::Int)
-	"""
-	Update alef.
-	Analytic.
-	"""
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	model.alef_temp[:,terms] += model.phi[1] .* counts'
 end
 
+## Update he.
+## Analytic.
 function update_he!(model::CTPF)
-	"""
-	Update he.
-	Analytic.
-	"""
-
 	model.he_old = model.he
 	model.he = model.he_temp
 	model.he_temp = fill(model.e, model.K, model.U)
 end
 
+## Update he.
+## Analytic.
 function update_he!(model::CTPF, d::Int)
-	"""
-	Update he.
-	Analytic.
-	"""
-
 	readers, ratings = model.corp[d].readers, model.corp[d].ratings
 	model.he_temp[:,readers] += (model.xi[1][1:model.K,:] + model.xi[1][model.K+1:end,:]) .* ratings'
 end
 
+## Update bet.
+## Analytic.
 function update_bet!(model::CTPF)
-	"""
-	Update bet.
-	Analytic.
-	"""
-
 	model.bet_old = model.bet
 	model.bet = model.b .+ sum(model.gimel) ./ model.dalet
 end
 
+## Update vav.
+## Analytic.
 function update_vav!(model::CTPF)
-	"""
-	Update vav.
-	Analytic.
-	"""
-
 	model.vav_old = model.vav
 	model.vav = model.f .+ sum(model.gimel) ./ model.dalet + sum(model.zayin) ./ model.het
 end
 
+## Update dalet.
+## Analytic.
 function update_dalet!(model::CTPF)
-	"""
-	Update dalet.
-	Analytic.
-	"""
-
 	model.dalet_old = model.dalet
 	model.dalet = model.d .+ vec(sum(model.alef, dims=2)) ./ model.bet + vec(sum(model.he, dims=2)) ./ model.vav
 end
 
+## Update het.
+## Analytic.
 function update_het!(model::CTPF)
-	"""
-	Update het.
-	Analytic.
-	"""
-
 	model.het_old = model.het
 	model.het = model.h .+ vec(sum(model.he, dims=2)) ./ model.vav
 end
 
+## Update gimel.
+## Analytic.
 function update_gimel!(model::CTPF, d::Int)
-	"""
-	Update gimel.
-	Analytic.
-	"""
-
 	model.gimel_old[d] = model.gimel[d]
 
 	counts, ratings = model.corp[d].counts, model.corp[d].ratings
 	model.gimel[d] = model.c .+ model.phi[1] * counts + model.xi[1][1:model.K,:] * ratings
 end
 
+## Update zayin.
+## Analytic.
 function update_zayin!(model::CTPF, d::Int)
-	"""
-	Update zayin.
-	Analytic.
-	"""
-
 	model.zayin_old[d] = model.zayin[d]
 
 	ratings = model.corp[d].ratings
 	model.zayin[d] = model.g .+ model.xi[1][model.K+1:end,:] * ratings
 end
 
+## Update phi.
+## Analytic.
 function update_phi!(model::CTPF, d::Int)
-	"""
-	Update phi.
-	Analytic.
-	"""
-
 	terms = model.corp[d].terms
 	model.phi[1] = additive_logistic(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.bet) .+ digamma.(model.alef[:,terms]), dims=1)
 end
 
+## Update xi.
+## Analytic.
 function update_xi!(model::CTPF, d::Int)
-	"""
-	Update xi.
-	Analytic.
-	"""
-
 	readers = model.corp[d].readers
 	model.xi[1] = additive_logistic(vcat(digamma.(model.gimel[d]) - log.(model.dalet) - log.(model.vav) .+ digamma.(model.he[:,readers]), digamma.(model.zayin[d]) - log.(model.het) - log.(model.vav) .+ digamma.(model.he[:,readers])), dims=1)
 end
 
-function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
-	"Coordinate ascent optimization procedure for collaborative topic Poisson factorization variational Bayes algorithm."
+"""
+    train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 
+Coordinate ascent optimization procedure for collaborative topic Poisson factorization variational Bayes algorithm.
+"""
+function train!(model::CTPF; iter::Integer=150, tol::Real=1.0, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	check_model(model)
-	all([tol, vtol] .>= 0)												|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, viter] .>= 0)											|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	all([tol, vtol] .>= 0)												|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, viter] .>= 0)											|| throw(ArgumentError("iteration parameters must be nonnegative."))
 	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) && (iter = 0)
 	(checkelbo <= iter) && update_elbo!(model)

@@ -1,6 +1,9 @@
-mutable struct gpuLDA <: TopicModel
-	"GPU accelerated latent Dirichlet allocation."
+"""
+    gpuLDA <: TopicModel
 
+GPU accelerated latent Dirichlet allocation model.
+"""
+mutable struct gpuLDA <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -41,7 +44,7 @@ mutable struct gpuLDA <: TopicModel
 
 	function gpuLDA(corp::Corpus, K::Integer)
 		check_corp(corp)
-		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -81,47 +84,41 @@ mutable struct gpuLDA <: TopicModel
 	end
 end
 
+## Compute E_q[log(P(theta))].
 function Elogptheta(model::gpuLDA, d::Int)
-	"Compute E_q[log(P(theta))]."
-
 	x = finite(loggamma(sum(model.alpha))) - finite(sum(loggamma.(model.alpha))) + dot(model.alpha .- 1, model.Elogtheta[d])
 	return x
 end
 
+## Compute E_q[log(P(z))].
 function Elogpz(model::gpuLDA, d::Int)
-	"Compute E_q[log(P(z))]."
-
 	counts = model.corp[d].counts
 	x = dot(model.phi[d] * counts, model.Elogtheta[d])
 	return x
 end
 
+## Compute E_q[log(P(w))].
 function Elogpw(model::gpuLDA, d::Int)
-	"Compute E_q[log(P(w))]."
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[d] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
+## Compute E_q[log(q(theta))].
 function Elogqtheta(model::gpuLDA, d::Int)
-	"Compute E_q[log(q(theta))]."
-
 	x = -entropy(Dirichlet(model.gamma[d]))
 	return x
 end
 
+## Compute E_q[log(q(z))].
 function Elogqz(model::gpuLDA, d::Int)
-	"Compute E_q[log(q(z))]."
-
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
+## Update the evidence lower bound.
 function update_elbo!(model::gpuLDA)
-	"Update the evidence lower bound."
-
 	model.elbo = 0
 	for d in 1:model.M
 		model.elbo += Elogptheta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqtheta(model, d) - Elogqz(model, d)
@@ -130,12 +127,9 @@ function update_elbo!(model::gpuLDA)
 	return model.elbo
 end
 
+## Update alpha.
+## Interior-point Newton's method with log-barrier and back-tracking line search.
 function update_alpha!(model::gpuLDA, niter::Integer, ntol::Real)
-	"""
-	Update alpha.
-	Interior-point Newton's method with log-barrier and back-tracking line search.
-	"""
-
 	@host model.Elogtheta_sum_buffer
 
 	nu = Float32(model.K)
@@ -202,12 +196,9 @@ normalize_beta(	long K,
 				}
 				"""
 
+## Update beta.
+## Analytic.
 function update_beta!(model::gpuLDA)
-	"""
-	Update beta.
-	Analytic.
-	"""
-
 	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_cumsum_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
@@ -266,12 +257,9 @@ update_Elogtheta_sum(	long K,
 						}
 						"""
 
-function update_Elogtheta!(model::gpuLDA)
-	"""
-	Update E[log(theta)].
-	Analytic.
-	"""
-	
+## Update E[log(theta)].
+## Analytic.
+function update_Elogtheta!(model::gpuLDA)	
 	model.queue(model.Elogtheta_kernel, model.M, nothing, model.K, model.M, model.gamma_buffer, model.Elogtheta_buffer, model.Elogtheta_dist_buffer)
 	model.queue(model.Elogtheta_sum_kernel, model.K, nothing, model.K, model.M, model.Elogtheta_buffer, model.Elogtheta_sum_buffer)
 	@host model.Elogtheta_dist_buffer
@@ -300,12 +288,9 @@ update_gamma(	long K,
 				}
 				"""
 
+## Update gamma.
+## Analytic.
 function update_gamma!(model::gpuLDA)
-	"""
-	Update gamma.
-	Analytic.
-	"""
-
 	model.queue(model.gamma_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.counts_buffer, model.alpha_buffer, model.phi_buffer, model.gamma_buffer)
 end
 
@@ -347,22 +332,22 @@ normalize_phi(	long K,
 				}
 				"""
 
+## Update phi.
+## Analytic.
 function update_phi!(model::gpuLDA)
-	"""
-	Update phi.
-	Analytic.
-	"""
-
 	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.beta_buffer, model.Elogtheta_buffer, model.phi_buffer)	
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
-function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
-	"Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm."
+"""
+    train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 
+Coordinate ascent optimization procedure for GPU accelerated latent Dirichlet allocation variational Bayes algorithm.
+"""
+function train!(model::gpuLDA; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	check_model(model)
-	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("iteration parameters must be nonnegative."))
 	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf)	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	(checkelbo <= iter) && update_elbo!(model)

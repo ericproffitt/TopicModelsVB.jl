@@ -1,6 +1,9 @@
-mutable struct gpuCTM <: TopicModel
-	"GPU accelerated correlated topic model."
+"""
+    gpuCTM <: TopicModel
 
+GPU accelerated correlated topic model.
+"""
+mutable struct gpuCTM <: TopicModel
 	K::Int
 	M::Int
 	V::Int
@@ -49,7 +52,7 @@ mutable struct gpuCTM <: TopicModel
 
 	function gpuCTM(corp::Corpus, K::Integer)
 		check_corp(corp)
-		K > 0 || throw(ArgumentError("Number of topics must be a positive integer."))
+		K > 0 || throw(ArgumentError("number of topics must be a positive integer."))
 
 		M, V, U = size(corp)
 		N = [length(doc) for doc in corp]
@@ -95,47 +98,41 @@ mutable struct gpuCTM <: TopicModel
 	end
 end
 
+## Compute E_q[log(P(eta))].
 function Elogpeta(model::gpuCTM, d::Int)
-	"Compute E_q[log(P(eta))]."
-
 	x = 0.5 * (logdet(model.invsigma) - model.K * log(2pi) - dot(diag(model.invsigma), model.vsq[d]) - dot(model.lambda[d] - model.mu, model.invsigma * (model.lambda[d] - model.mu)))
 	return x
 end
 
+## Compute E_q[log(P(z))].
 function Elogpz(model::gpuCTM, d::Int)
-	"Compute E_q[log(P(z))]."
-
 	counts = model.corp[d].counts
 	x = dot(model.phi[d]' * model.lambda[d], counts) - model.C[d] * (sum(exp.(model.lambda[d] + 0.5 * model.vsq[d] .- model.logzeta[d])) + model.logzeta[d] - 1)
 	return x
 end
 
+## Compute E_q[log(P(w))].
 function Elogpw(model::gpuCTM, d::Int)
-	"Compute E_q[log(P(w))]."
-
 	terms, counts = model.corp[d].terms, model.corp[d].counts
 	x = sum(model.phi[d] .* log.(@boink model.beta[:,terms]) * counts)
 	return x
 end
 
+## Compute E_q[log(q(eta))].
 function Elogqeta(model::gpuCTM, d::Int)
-	"Compute E_q[log(q(eta))]."
-
 	x = -entropy(MvNormal(model.lambda[d], diagm(model.vsq[d])))
 	return x
 end
 
+## Compute E_q[log(q(z))].
 function Elogqz(model::gpuCTM, d::Int)
-	"Compute E_q[log(q(z))]."
-
 	counts = model.corp[d].counts
 	x = -sum([c * entropy(Categorical(model.phi[d][:,n])) for (n, c) in enumerate(counts)])
 	return x
 end
 
+## Update the evidence lower bound.
 function update_elbo!(model::gpuCTM)
-	"Update the evidence lower bound."
-
 	model.elbo = 0
 	for d in 1:model.M
 		model.elbo += Elogpeta(model, d) + Elogpz(model, d) + Elogpw(model, d) - Elogqeta(model, d) - Elogqz(model, d)			 
@@ -164,12 +161,9 @@ update_mu(	long K,
 			}
 			"""
 
+## Update mu.
+## Analytic.
 function update_mu!(model::gpuCTM)
-	"""
-	Update mu.
-	Analytic.
-	"""
-
 	model.queue(model.mu_kernel, model.K, nothing, model.K, model.M, model.lambda_buffer, model.mu_buffer)
 end
 
@@ -201,12 +195,9 @@ update_sigma( 	long K,
 		        }
 		        """
 
+## Update sigma.
+## Analytic.
 function update_sigma!(model::gpuCTM)
-	"""
-	Update sigma.
-	Analytic.
-	"""
-
 	model.queue(model.sigma_kernel, (model.K, model.K), nothing, model.K, model.M, model.mu_buffer, model.lambda_buffer, model.vsq_buffer, model.sigma_buffer)
 
 	@host model.sigma_buffer
@@ -257,12 +248,9 @@ normalize_beta(	long K,
 				}
 				"""
 
+## Update beta.
+## Analytic.
 function update_beta!(model::gpuCTM)
-	"""
-	Update beta.
-	Analytic.
-	"""
-
 	model.queue(model.beta_kernel, (model.K, model.V), nothing, model.K, model.J_cumsum_buffer, model.terms_sortperm_buffer, model.counts_buffer, model.phi_buffer, model.beta_buffer)
 	model.queue(model.beta_norm_kernel, model.K, nothing, model.K, model.V, model.beta_buffer)
 end
@@ -348,12 +336,9 @@ update_lambda(	long niter,
 				}
 				"""
 
-function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)
-	"""
-	Update lambda.
-	Newton's method.
-	"""
-	
+## Update lambda.
+## Newton's method.
+function update_lambda!(model::gpuCTM, niter::Int, ntol::Float32)	
 	model.queue(model.lambda_kernel, model.M * model.K, model.K, niter, ntol, model.K, model.phi_count_buffer, model.C_buffer, model.N_cumsum_buffer, model.counts_buffer, model.mu_buffer, model.invsigma_buffer, model.vsq_buffer, model.logzeta_buffer, model.phi_buffer, model.lambda_buffer, model.lambda_dist_buffer)
 	@host model.lambda_dist_buffer
 end
@@ -399,12 +384,9 @@ update_vsq(	long niter,
 			}
 			"""
 
+## Update vsq.
+## Newton's method with back-tracking line search.
 function update_vsq!(model::gpuCTM, niter::Int, ntol::Float32)
-	"""
-	Update vsq.
-	Newton's method with back-tracking line search.
-	"""
-
 	model.queue(model.vsq_kernel, (model.M, model.K), nothing, niter, ntol, model.K, model.C_buffer, model.invsigma_buffer, model.lambda_buffer, model.logzeta_buffer, model.vsq_buffer)
 end
 
@@ -437,12 +419,9 @@ update_logzeta(	long K,
 				}
 				"""
 
+## Update logzeta.
+## Analytic.
 function update_logzeta!(model::gpuCTM)
-	"""
-	Update logzeta.
-	Analytic.
-	"""
-
 	model.queue(model.logzeta_kernel, model.M, nothing, model.K, model.lambda_buffer, model.vsq_buffer, model.logzeta_buffer)
 end
 
@@ -493,23 +472,23 @@ normalize_phi(	long K,
 				}
 				"""
 
+## Update phi.
+## Analytic.
 function update_phi!(model::gpuCTM)
-	"""
-	Update phi.
-	Analytic.
-	"""
-
 	model.queue(model.phi_kernel, (model.K, model.M), nothing, model.K, model.N_cumsum_buffer, model.terms_buffer, model.beta_buffer, model.lambda_buffer, model.phi_buffer)
 	model.queue(model.phi_norm_kernel, sum(model.N), nothing, model.K, model.phi_buffer)
 end
 
-function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
-	"Coordinate ascent optimization procedure for GPU accelerated correlated topic model variational Bayes algorithm."
+"""
+    train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 
+Coordinate ascent optimization procedure for GPU accelerated correlated topic model variational Bayes algorithm.
+"""
+function train!(model::gpuCTM; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Real=1, printelbo::Bool=true)
 	ntol = Float32(ntol)
 	check_model(model)
-	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	all([tol, ntol, vtol] .>= 0)										|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, niter, viter] .>= 0)										|| throw(ArgumentError("iteration parameters must be nonnegative."))
 	(isa(checkelbo, Integer) & (checkelbo > 0)) | (checkelbo == Inf) 	|| throw(ArgumentError("checkelbo parameter must be a positive integer or Inf."))
 	all([isempty(doc) for doc in model.corp]) ? (iter = 0) : update_buffer!(model)
 	(checkelbo <= iter) && update_elbo!(model)

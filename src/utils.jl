@@ -89,24 +89,29 @@ linsolve(long K, long z, local float *A, local float *b)
 		}			
 		"""
 
-"Type alias for a vector of vectors."
+"""
+    VectorList{T}
+
+Alias for `Vector{Vector{T}}`.
+"""
 VectorList{T} = Vector{Vector{T}}
 
-"Type alias for a vector of matrices."
+"""
+    MatrixList{T}
+
+Alias for `Vector{Matrix{T}}`.
+"""
 MatrixList{T} = Vector{Matrix{T}}
 
-"Prevent overflow to ±Inf."
+## Prevent overflow to ±Inf.
 finite(x::Union{AbstractFloat, Array{<:AbstractFloat}}) = sign.(x) .* min.(abs.(x), floatmax.(x))
 
 ## LogSumExp function, overflow safe.
 import Distributions.logsumexp
 
+## Additive logistic function of a real-valued matrix over the given dimension.
+## Overflow safe.
 function additive_logistic(x::Matrix{<:Real}; dims::Integer)
-	"""
-	Additive logistic function of a real-valued matrix over the given dimension.
-	Overflow safe.
-	"""
-
 	if dims in [1,2]
 		x = exp.(x .- maximum(x, dims=dims))
 		x = x ./ sum(x, dims=dims)
@@ -115,37 +120,28 @@ function additive_logistic(x::Matrix{<:Real}; dims::Integer)
 	return x
 end
 
+## Additive logistic function of a real-valued vector.
+## Overflow safe.
 function additive_logistic(x::Vector{<:Real})
-	"""
-	Additive logistic function of a real-valued vector.
-	Overflow safe.
-	"""
-
 	x = exp.(x .- maximum(x))
 	x = x / sum(x)
 
 	return x
 end
 
+## Additive logistic function of a real-valued matrix.
+## Overflow safe.
 function additive_logistic(x::Matrix{<:Real})
-	"""
-	Additive logistic function of a real-valued matrix.
-	Overflow safe.
-	"""
-
 	x = exp.(x .- maximum(x))
 	x = x / sum(x)
 
 	return x
 end
 
+## Check to see if X is a stochastic matrix.
+## if dims = 1, check for left stochastic matrix.
+## if dims = 2, check for right stochastic matrix.
 function isstochastic(P::Matrix{<:Real}; dims::Integer)
-	"""
-	Check to see if X is a stochastic matrix.
-		if dims = 1, check for left stochastic matrix.
-		if dims = 2, check for right stochastic matrix.
-	"""
-
 	if dims == 1
 		x = all([isprobvec(P[:,j]) for j in 1:size(P, 2)])
 	elseif dims == 2

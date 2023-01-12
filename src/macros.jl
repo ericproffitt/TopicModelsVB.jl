@@ -1,9 +1,6 @@
+## Print Julia dots before bolded string output.
+## For vanilla strings.
 macro juliadots(str::String)
-	"""
-	Print Julia dots before bolded string output.
-	For vanilla strings.
-	"""
-
 	expr_out = :(	
 				print(Crayon(foreground=:red, bold=true), " ●");
 				print(Crayon(foreground=:green, bold=true), "●");
@@ -14,12 +11,9 @@ macro juliadots(str::String)
 	return esc(expr_out)
 end
 
+## Print Julia dots before bolded string output.
+## For interpolated strings.
 macro juliadots(expr::Expr)
-	"""
-	Print Julia dots before bolded string output.
-	For interpolated strings.
-	"""
-
 	expr_out = :(	
 				print(Crayon(foreground=:red, bold=true), " ●");
 				print(Crayon(foreground=:green, bold=true), "●");
@@ -30,16 +24,14 @@ macro juliadots(expr::Expr)
 	return esc(expr_out)
 end
 
+## Add EPSILON to a numerical variable or array.
 macro boink(expr::Expr)
-	"Add EPSILON to a numerical variable or array."
-
 	expr_out = :($expr .+ EPSILON)
 	return esc(expr_out)
 end
 
+## Add EPSILON to a numerical variable or array during variable assignment.
 macro positive(expr::Expr)
-	"Add EPSILON to a numerical variable or array during variable assignment."
-
 	if (expr.head == :.) || (expr.head == :ref)
 		expr_out = :($expr .+= EPSILON)
 	
@@ -50,9 +42,8 @@ macro positive(expr::Expr)
 	return esc(expr_out)
 end
 
+## Prevent overflow of floating point to Inf by returning floatmax() of value.
 macro finite(expr::Expr)
-	"Prevent overflow of floating point to Inf by returning floatmax() of value."
-
 	if (expr.head == :.) || (expr.head == :ref)
 		expr_out = :($expr = sign.($expr) .* min.(abs.($expr), floatmax.($expr)))
 	
@@ -66,9 +57,8 @@ macro finite(expr::Expr)
 	return esc(expr_out)
 end
 
+## Load individual variable into buffer memory.
 macro buffer(expr::Expr)
-	"Load individual variable into buffer memory."
-
 	model = expr.args[1]
 
 	if expr.args[2] == :(:alpha)
@@ -81,9 +71,8 @@ macro buffer(expr::Expr)
 	return expr_out
 end
 
+## Load individual variable into host memory.
 macro host(expr::Expr)
-	"Load individual variable into host memory."
-
 	model = expr.args[1]
 
 	if expr.args[2] == :(:Elogtheta_sum_buffer)
@@ -109,9 +98,12 @@ macro host(expr::Expr)
 	return expr_out
 end
 
-macro gpu(expr::Expr)
-	"Train model on GPU."
+"""
+    @gpu
 
+Train a topic model on the GPU.
+"""
+macro gpu(expr::Expr)
 	expr.args[1] == :train! || throw(ArgumentError("GPU acceleration only applies to the train! function."))
 
 	quote
@@ -154,7 +146,7 @@ macro gpu(expr::Expr)
 
 			model.beta ./= sum(model.beta, dims=2)
 			model.beta_old = copy(model.beta)
-			model.phi ./= sum(model.phi, dims=1)
+			!isempty(model.phi) && (model.phi[1] ./= sum(model.phi[1], dims=1))
 			nothing
 
 		elseif isa(model, CTM)
@@ -199,7 +191,7 @@ macro gpu(expr::Expr)
 
 			model.beta ./= sum(model.beta, dims=2)
 			model.beta_old = copy(model.beta)
-			model.phi ./= sum(model.phi, dims=1)
+			!isempty(model.phi) && (model.phi[1] ./= sum(model.phi[1], dims=1))
 			nothing
 
 		elseif isa(model, CTPF)
@@ -275,8 +267,8 @@ macro gpu(expr::Expr)
 			model.xi = gpumodel.xi[1:min(gpumodel.M, 1)]
 			model.elbo = gpumodel.elbo
 
-			model.phi ./= sum(model.phi, dims=1)
-			model.xi ./= sum(model.xi, dims=1)
+			!isempty(model.phi) && (model.phi[1] ./= sum(model.phi[1], dims=1))
+			!isempty(model.xi) && (model.xi[1] ./= sum(model.xi[1], dims=1))
 			nothing
 
 		elseif isa(model, fLDA)

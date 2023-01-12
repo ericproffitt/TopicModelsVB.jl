@@ -4,21 +4,26 @@ end
 
 Base.showerror(io::IO, e::TopicModelError) = print(io, "TopicModelError: ", e.msg)
 
-showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
+"    showdocs(model::TopicModel, docs::Vector{Document})"
 showdocs(model::TopicModel, docs::Vector{Document}) = showdocs(model.corp, docs)
-showdocs(model::TopicModel, d::Integer) = showdocs(model.corp, d)
+showdocs(model::TopicModel, doc::Document) = showdocs(model.corp, doc)
 showdocs(model::TopicModel, doc_indices::Vector{<:Integer}) = showdocs(model.corp, doc_indices)
+showdocs(model::TopicModel, d::Integer) = showdocs(model.corp, d)
 showdocs(model::TopicModel, doc_range::UnitRange{<:Integer}) = showdocs(model.corp, collect(doc_range))
 showdocs(model::TopicModel) = showdocs(model.corp)
 
-showtitles(model::TopicModel, doc::Document) = showtitles(model.corp, doc)
+"    showtitles(model::TopicModel, docs::Vector{Document})"
 showtitles(model::TopicModel, docs::Vector{Document}) = showtitles(model.corp, docs)
-showtitles(model::TopicModel, d::Integer) = showtitles(model.corp, d)
+showtitles(model::TopicModel, doc::Document) = showtitles(model.corp, doc)
 showtitles(model::TopicModel, doc_indices::Vector{<:Integer}) = showtitles(model.corp, doc_indices)
+showtitles(model::TopicModel, d::Integer) = showtitles(model.corp, d)
 showtitles(model::TopicModel, doc_range::UnitRange{<:Integer}) = showtitles(model.corp, collect(doc_range))
 showtitles(model::TopicModel) = showtitles(model.corp)
 
+"    getvocab(model::TopicModel)"
 getvocab(model::TopicModel) = getvocab(model.corp)
+
+"    getusers(model::TopicModel)"
 getusers(model::TopicModel) = getusers(model.corp)
 
 ## Display output for TopicModel objects.
@@ -32,10 +37,8 @@ Base.show(io::IO, model::gpuCTM) = print(io, "GPU accelerated correlated topic m
 Base.show(io::IO, model::gpuCTPF) = print(io, "GPU accelerated collaborative topic Poisson factorization model with $(model.K) topics.")
 
 function check_model(model::LDA)
-	"Check LDA parameters."
-
 	check_corp(model.corp) 
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))
 	isequal(model.M, length(model.corp))											|| throw(TopicModelError("M must equal the number of documents in the corpus."))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError("N must contain document lengths."))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])						|| throw(TopicModelError("C must contain sums of document counts."))
@@ -64,10 +67,8 @@ function check_model(model::LDA)
 end
 
 function check_model(model::fLDA)
-	"Check fLDA parameters."
-
 	check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))				|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))
 	isequal(model.M, length(model.corp))											|| throw(TopicModelError("M must equal the number of documents in the corpus."))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])						|| throw(TopicModelError("N must contain document lengths."))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])						|| throw(TopicModelError("C must contain sums of document counts."))
@@ -105,10 +106,8 @@ function check_model(model::fLDA)
 end
 
 function check_model(model::CTM)
-	"Check CTM parameters."
-
 	check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))	
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))	
 	isequal(model.M, length(model.corp))										|| throw(TopicModelError("M must equal the number of documents in the corpus."))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError("N must contain document lengths."))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError("C must contain sums of document counts."))	
@@ -139,10 +138,8 @@ function check_model(model::CTM)
 end
 
 function check_model(model::fCTM)
-	"Check fCTM parameters."
-
 	check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))
 	isequal(model.M, length(model.corp))										|| throw(TopicModelError("M must equal the number of documents in the corpus."))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])					|| throw(TopicModelError("N must contain document lengths."))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])					|| throw(TopicModelError("C must contain sums of document counts."))
@@ -182,11 +179,9 @@ function check_model(model::fCTM)
 end
 
 function check_model(model::CTPF)
-	"Check CTPF parameters."
-
 	check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
-	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))			|| throw(TopicModelError("Corpus users keys must form unit range of length U."))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))			|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))			|| throw(TopicModelError("corpus users keys must form unit range of length U."))
 	isequal(model.M, length(model.corp))										|| throw(TopicModelError("M must be equal to the number of documents in the corpus."))
 	isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])			|| throw(TopicModelError("N must contain document lengths"))
 	isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])			|| throw(TopicModelError("C must contain sums of document counts."))
@@ -258,10 +253,8 @@ function check_model(model::CTPF)
 end
 
 function check_model(model::gpuLDA)
-	"Check gpuLDA parameters."
-
 	check_corp(model.corp) 
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError("M must equal the number of documents in the corpus."))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError("N must contain document lengths."))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError("C must contain sums of document counts."))
@@ -286,10 +279,8 @@ function check_model(model::gpuLDA)
 end
 
 function check_model(model::gpuCTM)
-	"Check gpuCTM parameters."
-
 	check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))	
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))							|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))	
 	isequal(model.M, length(model.corp))														|| throw(TopicModelError("M must equal the number of documents in the corpus."))
 	isequal(model.N, [length(doc.terms) for doc in model.corp])									|| throw(TopicModelError("N must contain document lengths."))
 	isequal(model.C, [sum(doc.counts) for doc in model.corp])									|| throw(TopicModelError("C must contain sums of document counts."))	
@@ -317,11 +308,9 @@ function check_model(model::gpuCTM)
 end
 
 function check_model(model::gpuCTPF)
-	"Check gpuCTPF parameters."
-
 	check_corp(model.corp)
-	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))					|| throw(TopicModelError("Corpus vocab keys must form unit range of length V."))
-	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))					|| throw(TopicModelError("Corpus users keys must form unit range of length U."))
+	isequal(collect(1:model.V), sort(collect(keys(model.corp.vocab))))					|| throw(TopicModelError("corpus vocab keys must form unit range of length V."))
+	isequal(collect(1:model.U), sort(collect(keys(model.corp.users))))					|| throw(TopicModelError("corpus users keys must form unit range of length U."))
 	isequal(model.M, length(model.corp))												|| throw(TopicModelError("M must be equal to the number of documents in the corpus."))
 	isequal(model.N, [length(model.corp[d].terms) for d in 1:model.M])					|| throw(TopicModelError("N must contain document lengths"))
 	isequal(model.C, [sum(model.corp[d].counts) for d in 1:model.M])					|| throw(TopicModelError("C must contain sums of document counts."))
@@ -370,9 +359,15 @@ function check_model(model::gpuCTPF)
 	nothing	
 end
 
-function update_buffer!(model::gpuLDA)
-	"Update gpuLDA model data in GPU RAM."
+"""
+    check_model(model::TopicModel)
 
+Check model parameters.
+"""
+check_model(model::TopicModel) = check_model(model)
+
+## Update gpuLDA model data in GPU RAM.
+function update_buffer!(model::gpuLDA)
 	terms = vcat([doc.terms for doc in model.corp]...) .- 1
 	terms_sortperm = sortperm(terms) .- 1
 	counts = vcat([doc.counts for doc in model.corp]...)
@@ -401,9 +396,8 @@ function update_buffer!(model::gpuLDA)
 	model.phi_buffer = cl.Buffer(Float32, model.context, :rw, model.K * sum(model.N))
 end
 
+## Update gpuCTM model data in GPU RAM.
 function update_buffer!(model::gpuCTM)
-	"Update gpuCTM model data in GPU RAM."
-
 	terms = vcat([doc.terms for doc in model.corp]...) .- 1
 	terms_sortperm = sortperm(terms) .- 1
 	counts = vcat([doc.counts for doc in model.corp]...)
@@ -440,9 +434,8 @@ function update_buffer!(model::gpuCTM)
 	cl.set_arg!(model.lambda_kernel, 17, cl.LocalMem(Float32, model.K^2))
 end
 
-function update_buffer!(model::gpuCTPF)
-	"Update gpuCTPF model data in GPU RAM."
-		
+## Update gpuCTPF model data in GPU RAM.
+function update_buffer!(model::gpuCTPF)		
 	terms = vcat([doc.terms for doc in model.corp]...) .- 1
 	terms_sortperm = sortperm(terms) .- 1
 	counts = vcat([doc.counts for doc in model.corp]...)
@@ -504,9 +497,8 @@ function update_host!(model::TopicModel)
 	nothing
 end
 
+## Update gpuLDA model data in CPU RAM.
 function update_host!(model::gpuLDA)
-	"Update gpuLDA model data in CPU RAM."
-
 	N_cumsum = zeros(Int, model.M + 1)
 	for d in 1:model.M
 		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
@@ -523,9 +515,8 @@ function update_host!(model::gpuLDA)
 	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
+## Update gpuCTM model data in CPU RAM.
 function update_host!(model::gpuCTM)
-	"Update gpuCTM model data in CPU RAM."
-
 	N_cumsum = zeros(Int, model.M + 1)
 	for d in 1:model.M
 		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
@@ -544,9 +535,8 @@ function update_host!(model::gpuCTM)
 	model.phi = [phi_host[:,N_cumsum[d]+1:N_cumsum[d+1]] for d in 1:model.M]
 end
 
+## Update gpuCTPF model data in CPU RAM.
 function update_host!(model::gpuCTPF)
-	"Update gpuCTPF model data in CPU RAM."
-
 	N_cumsum = zeros(Int, model.M + 1)
 	for d in 1:model.M
 		N_cumsum[d+1] = N_cumsum[d] + model.N[d]
@@ -579,12 +569,9 @@ function update_host!(model::gpuCTPF)
 	end
 end
 
+## Check and print value of delta_elbo.
+## If abs(delta_elbo) < tol, terminate algorithm.
 function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int, tol::Real)
-	"""
-	Check and print value of delta_elbo.
-	If abs(delta_elbo) < tol, terminate algorithm.
-	"""
-
 	if k % checkelbo == 0
 		update_host!(model)
 		delta_elbo = -(model.elbo - update_elbo!(model))
@@ -597,12 +584,14 @@ function check_elbo!(model::TopicModel, checkelbo::Real, printelbo::Bool, k::Int
 	false
 end
 
-function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
-	"""
-	Generate artificial document from LDA or gpuLDA generative model.
-		laplace_smooth: governs the amount of Laplace smoothing applied to the topic-term distribution.
-	"""
+"""
+    gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
 
+Generate artificial document from LDA or gpuLDA generative model.
+
+The `laplace_smooth` parameter governs the amount of Laplace smoothing applied to the topic-term distribution.
+"""
+function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
 	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
@@ -622,12 +611,8 @@ function gendoc(model::Union{LDA, gpuLDA, fLDA}, laplace_smooth::Real=0.0)
 	return doc
 end
 
+"    gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)"
 function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
-	"""
-	Generate artificial document from CTM or gpuCTM generative model.
-		laplace_smooth: governs the amount of Laplace smoothing applied to the topic-term distribution.
-	"""
-
 	(laplace_smooth >= 0) || throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
 	C = rand(Poisson(mean(model.C)))
@@ -647,12 +632,14 @@ function gendoc(model::Union{CTM, gpuCTM, fCTM}, laplace_smooth::Real=0.0)
 	return doc
 end
 
-function gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
-	"""
-	Generate artificial corpus using specified generative model.
-		laplace_smooth: governs the amount of Laplace smoothing applied to the topic-term distribution.
-	"""
+"""
+    gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
 
+Generate artificial corpus using specified generative model.
+
+The `laplace_smooth` parameter governs the amount of Laplace smoothing applied to the topic-term distribution.
+"""
+function gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
 	(M > 0)					|| throw(ArgumentError("corp_size parameter must be a positive integer."))
 	(laplace_smooth >= 0)	|| throw(ArgumentError("laplace_smooth parameter must be nonnegative."))
 	
@@ -661,15 +648,14 @@ function gencorp(model::TopicModel, M::Integer; laplace_smooth::Real=0.0)
 	return corp
 end
 
-function showtopics(model::TopicModel, V::Integer=15; topics::Union{<:Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
-	"""
-	Display the top T terms for each topic.
-		topics: controls which topics are displayed.
-		cols: controls the number of topic columns displayed per line.
-	"""
+"""
+    showtopics(model::TopicModel, V::Integer=15; topics::Union{<:Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
 
-	(V > 0)									|| throw(ArgumentError("Number of displayed terms must be a positive integer."))
-	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("Some topic indices are outside range."))
+Display the top `T` terms for each topic.
+"""
+function showtopics(model::TopicModel, V::Integer=15; topics::Union{<:Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
+	(V > 0)									|| throw(ArgumentError("number of displayed terms must be a positive integer."))
+	checkbounds(Bool, 1:model.K, topics)	|| throw(ArgumentError("some topic indices are outside range."))
 	(cols > 0)								|| throw(ArgumentError("cols must be a positive integer."))
 	V = min(V, model.V)	
 	cols = min(cols, length(topics))
@@ -697,10 +683,13 @@ function showtopics(model::TopicModel, V::Integer=15; topics::Union{<:Integer, V
 	end
 end
 
-function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
-	"Display the documents in a user(s) library."
+"""
+    showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
 
-	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
+Display the documents in user libraries.
+"""
+function showlibs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer})
+	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("some user indices are outside range."))
 	
 	for (n, u) in enumerate(users)
 		if isempty(model.libs[u])
@@ -732,14 +721,14 @@ showlibs(model::Union{CTPF, gpuCTPF}, user::Integer) = showlibs(model, [user])
 showlibs(model::Union{CTPF, gpuCTPF}, user_range::UnitRange{<:Integer}) = showlibs(model, collect(user_range))
 showlibs(model::Union{CTPF, gpuCTPF}) = showlibs(model, 1:length(model.libs))
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=15; cols::Integer=1)
-	"""
-	Display the top U user recommendations for a document(s).
-		cols: controls the number of topic columns displayed per line.
-	"""
+"""
+    showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=15; cols::Integer=1)
 
-	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("Some document indices are outside range."))
-	(U > 0) 							|| throw(ArgumentError("Number of displayed users must be a positive integer."))
+Display the top `U` user recommendations for a set of documents.
+"""
+function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Vector{<:Integer}, U::Integer=15; cols::Integer=1)
+	checkbounds(Bool, 1:model.M, docs) 	|| throw(ArgumentError("some document indices are outside range."))
+	(U > 0) 							|| throw(ArgumentError("number of displayed users must be a positive integer."))
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	U = min(U, model.U)
 
@@ -780,14 +769,14 @@ end
 showdrecs(model::Union{CTPF, gpuCTPF}, doc::Integer, U::Integer=15; cols::Integer=1) = showdrecs(model, [doc], U, cols=cols)
 showdrecs(model::Union{CTPF, gpuCTPF}, docs::UnitRange{<:Integer}, U::Integer=15; cols::Integer=1) = showdrecs(model, collect(docs), U, cols=cols)
 
-function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=15; cols::Integer=1)
-	"""
-	Show the top 'M' document recommendations for a user(s).
-	If a document has no title, the document's index in the corpus will be shown instead.
-	"""
+"""
+    showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=15; cols::Integer=1)
 
-	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("Some user indices are outside range."))
-	(M > 0) 							|| throw(ArgumentError("Number of displayed documents must be a positive integer."))
+Show the top `M` document recommendations for a set of users.
+"""
+function showurecs(model::Union{CTPF, gpuCTPF}, users::Vector{<:Integer}, M::Integer=15; cols::Integer=1)
+	checkbounds(Bool, 1:model.U, users) || throw(ArgumentError("some user indices are outside range."))
+	(M > 0) 							|| throw(ArgumentError("number of displayed documents must be a positive integer."))
 	(cols > 0)							|| throw(ArgumentError("cols must be a positive integer."))
 	M = min(M, model.M)
 
@@ -834,14 +823,17 @@ end
 showurecs(model::Union{CTPF, gpuCTPF}, user::Integer, M::Integer=15; cols::Integer=1) = showurecs(model, [user], M, cols=cols)
 showurecs(model::Union{CTPF, gpuCTPF}, users::UnitRange{<:Integer}, M::Integer=15; cols::Integer=1) = showurecs(model, collect(users), M, cols=cols)
 
-function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10, tol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained LDA model."
+"""
+    predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10, tol::Real=1/train_model.K^2)
 
+Predict topic distributions for a corpus of documents based on a trained model.
+"""
+function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10, tol::Real=1/train_model.K^2)
 	check_corp(corp)
 	check_model(train_model)
-	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
-	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
-	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("predict corpus and train_model corpus must have identical vocabularies."))
+	(tol .>= 0)								|| throw(ArgumentError("tolerance parameter must be nonnegative."))
+	(iter .>= 0)							|| throw(ArgumentError("iteration parameter must be nonnegative."))
 
 	model = LDA(corp, train_model.K)
 	model.alpha = train_model.alpha
@@ -862,14 +854,13 @@ function predict(corp::Corpus, train_model::Union{LDA, gpuLDA}; iter::Integer=10
 	return model
 end
 
+"    predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/train_model.K^2)"
 function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained fLDA model."
-
 	check_corp(corp)
 	check_model(train_model)
-	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
-	(tol .>= 0)								|| throw(ArgumentError("Tolerance parameter must be nonnegative."))
-	(iter .>= 0)							|| throw(ArgumentError("Iteration parameter must be nonnegative."))
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("predict corpus and train_model corpus must have identical vocabularies."))
+	(tol .>= 0)								|| throw(ArgumentError("tolerance parameter must be nonnegative."))
+	(iter .>= 0)							|| throw(ArgumentError("iteration parameter must be nonnegative."))
 
 	model = fLDA(corp, train_model.K)
 	model.alpha = train_model.alpha
@@ -891,14 +882,13 @@ function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/
 	return model
 end
 
+"    predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)"
 function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained CTM model."
-
 	check_corp(corp)
 	check_model(train_model)
-	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
-	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("predict corpus and train_model corpus must have identical vocabularies."))
+	all([tol, ntol] .>= 0)					|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, niter] .>= 0)				|| throw(ArgumentError("iteration parameters must be nonnegative."))
 
 	model = CTM(corp, train_model.K)
 	model.mu = train_model.mu
@@ -922,14 +912,13 @@ function predict(corp::Corpus, train_model::Union{CTM, gpuCTM}; iter::Integer=10
 	return model
 end
 
+"   predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)"
 function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained fCTM model."
-
 	check_corp(corp)
 	check_model(train_model)
-	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("Predict Corpus and train_model Corpus must have identical vocabularies."))
-	all([tol, ntol] .>= 0)					|| throw(ArgumentError("Tolerance parameters must be nonnegative."))
-	all([iter, niter] .>= 0)				|| throw(ArgumentError("Iteration parameters must be nonnegative."))
+	(corp.vocab == train_model.corp.vocab)	|| throw(CorpusError("predict corpus and train_model corpus must have identical vocabularies."))
+	all([tol, ntol] .>= 0)					|| throw(ArgumentError("tolerance parameters must be nonnegative."))
+	all([iter, niter] .>= 0)				|| throw(ArgumentError("iteration parameters must be nonnegative."))
 
 	model = fCTM(corp, train_model.K)
 	model.mu = train_model.mu
@@ -955,36 +944,33 @@ function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/
 end
 
 function topicdist(model::Union{LDA, gpuLDA, fLDA}, d::Integer)
-	"Get the LDA topic distribution for a document as a probability vector."
-
-	(d <= length(model.corp)) || throw(CorpusError("Document index outside corpus range."))
+	(d <= length(model.corp)) || throw(CorpusError("document index outside corpus range."))
 
 	topic_distribution = model.gamma[d] / sum(model.gamma[d])
 	return topic_distribution
 end
 
 function topicdist(model::Union{CTM, gpuCTM, fCTM}, d::Integer)
-	"Get the CTM topic distribution for a document as a probability vector."
-
-	(d <= length(model.corp)) || throw(CorpusError("Document index outside corpus range."))
+	(d <= length(model.corp)) || throw(CorpusError("document index outside corpus range."))
 
 	topic_distribution = additive_logistic(model.lambda[d] + 0.5 * model.vsq[d])
 	return topic_distribution
 end
 
 function topicdist(model::Union{CTPF, gpuCTPF}, d::Integer)
-	"Get the CTPF topic distribution for a document as a probability vector."
-
-	(d <= length(model.corp)) || throw(CorpusError("Document index outside corpus range."))
+	(d <= length(model.corp)) || throw(CorpusError("document index outside corpus range."))
 
 	topic_distribution = model.gimel[d] / sum(model.gimel[d])
 	return topic_distribution
 end
 
-function topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
-	"Get TopicModel topic distributions for document(s) as a probability vector."
+"""
+    topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
 
-	issubset(doc_indices, 1:length(model.corp)) || throw(CorpusError("Some document indices outside corpus range."))
+Get TopicModel topic distributions for document(s) as a probability vector.
+"""
+function topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
+	issubset(doc_indices, 1:length(model.corp)) || throw(CorpusError("some document indices outside corpus range."))
 
 	topic_distributions = Vector{typeof(model.elbo)}[]
 	for d in doc_indices
