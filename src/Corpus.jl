@@ -535,7 +535,7 @@ function condense_corp!(corp::Corpus)
 	nothing
 end
 
-""""
+"""
     pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 
 Enter generic values for vocab/user keys which appear in documents but not in the vocab/user dicts.
