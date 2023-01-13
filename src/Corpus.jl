@@ -5,11 +5,11 @@ Document mutable struct.
 
 fields:
 
-	terms   - Vector{Int} containing keys for the Corpus vocab dict.
-	counts  - Vector{Int} denoting the counts of each term in the Document.
-	readers - Vector{Int} denoting the keys for the Corpus users dict.
-	ratings - Vector{Int} denoting the ratings for each reader in the Document.
-	title   - title of the document (String).
+	terms   :: Vector{Int} - keys for the corpus vocab dict.
+	counts  :: Vector{Int} - counts of each term in the document.
+	readers :: Vector{Int} - keys for the corpus users dict.
+	ratings :: Vector{Int} - ratings for each reader in the document.
+	title   :: String      - title of the document.
 """
 mutable struct Document
 	terms::Vector{Int}
@@ -55,9 +55,9 @@ Corpus mutable struct.
 
 fields:
 
-	docs  - Vector{Document} containing the documents which belong to the Corpus.
-	vocab - Dict{Int, String} containing a mapping term Int (key) => term String (value).
-	users - Dict{Int, String} containing a mapping user Int (key) => user String (value).
+	docs  :: Vector{Document}  - documents belonging to the corpus.
+	vocab :: Dict{Int, String} - mapping of term keys to term names.
+	users :: Dict{Int, String} - mapping of user keys to user names.
 """
 mutable struct Corpus
 	docs::Vector{Document}
@@ -692,17 +692,17 @@ minimal functionality - runs either `pad_corp!` or `trim_docs!`, followed by `co
 
 kwargs:
 
-	vocab::Bool
-	users::Bool
-	abridge::Integer
-	alphabetize::Bool
-	condense::Bool
-	pad::Bool
-	remove_empty_docs::Bool
-	remove_redundant::Bool
-	remove_terms::Vector{String}
-	stop::Bool
-	trim::Bool
+	vocab             :: Bool
+	users             :: Bool
+	abridge           :: Integer
+	alphabetize       :: Bool
+	condense          :: Bool
+	pad               :: Bool
+	remove_empty_docs :: Bool
+	remove_redundant  :: Bool
+	remove_terms      :: Vector{String}
+	stop              :: Bool
+	trim              :: Bool
 """
 function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, remove_terms::Vector{String}=String[], stop::Bool=false, trim::Bool=false)
 	check_docs(corp)
