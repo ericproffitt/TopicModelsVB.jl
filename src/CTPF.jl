@@ -230,7 +230,7 @@ function Elogqepsilon(model::CTPF, d::Int)
 	return x
 end
 
-## Update the evidence lower bound.
+## Update evidence lower bound.
 function update_elbo!(model::CTPF)
 	model.elbo = Elogpbeta(model) + Elogpeta(model) - Elogqbeta(model) - Elogqeta(model)
 	for d in 1:model.M

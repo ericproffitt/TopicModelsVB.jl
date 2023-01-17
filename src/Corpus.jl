@@ -468,7 +468,7 @@ end
 """
     remove_terms!(corp::Corpus; terms::Vector{String}=[])
 
-Vocab keys for specified terms are removed from all documents.
+Vocab keys for the specified terms are removed from all documents.
 """
 function remove_terms!(corp::Corpus; terms::Vector{String}=[])
 	remove_keys = filter(vkey -> lowercase(corp.vocab[vkey]) in terms, collect(keys(corp.vocab)))
@@ -518,8 +518,6 @@ end
 """
     condense_corp!(corp::Corpus)
 
-Ignore term order in documents.
-
 Multiple seperate occurrences of terms are stacked and their associated counts increased.
 """
 function condense_corp!(corp::Corpus)
@@ -535,7 +533,7 @@ function condense_corp!(corp::Corpus)
 	nothing
 end
 
-"""
+""""
     pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 
 Enter generic values for vocab/user keys which appear in documents but not in the vocab/user dicts.
@@ -571,9 +569,7 @@ end
 """
     remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 
-Remove vocab/user keys which map to redundant values.
-
-Reassign document term/reader keys appropriately.
+Remove vocab/user keys which map to redundant values and reassign document term/reader keys appropriately.
 """
 function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	if vocab
@@ -640,7 +636,7 @@ end
 """
     trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 
-Those keys which appear in the corpus but not in any documents are removed from the corpus.
+Those keys which appear in the corpus but not in any documents are removed.
 """
 function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
 	if vocab
@@ -686,23 +682,31 @@ end
 """
     fixcorp!(corp::Corpus; kwargs...)
 
-Generic function to ensure that a corpus object can be loaded into a topic model object.
+Master function to ensure that a corpus object can be loaded into a topic model object.
 
-minimal functionality - runs either `pad_corp!` or `trim_docs!`, followed by `compact_corp!`.
+steps:
 
-kwargs:
+    1. If pad then run pad_corp!  - enter generic values for vocab/user keys which appear in documents but not in the vocab/user dicts.
+    2. Run trim_docs!             - those vocab/user keys which appear in documents but not in the vocab/user dicts are removed from the documents.
+    3. Run corpus function kwargs - see corpus function kwargs section.
+    4. Run compact_corp!          - relabel vocab/user keys so that they form a unit range starting at 1.
 
-	vocab             :: Bool
-	users             :: Bool
-	abridge           :: Integer
-	alphabetize       :: Bool
-	condense          :: Bool
-	pad               :: Bool
-	remove_empty_docs :: Bool
-	remove_redundant  :: Bool
-	remove_terms      :: Vector{String}
-	stop              :: Bool
-	trim              :: Bool
+generic kwargs:
+
+	vocab :: Bool - apply fixcorp! to vocab (default: true).
+	users :: Bool - apply fixcorp! to users (default: true).
+
+corpus function kwargs:
+
+	abridge           :: Integer        - all terms which appear less than n times in the corpus are removed from all documents.
+	alphabetize       :: Bool           - alphabetize vocab/user dictionaries.
+	condense          :: Bool           - multiple seperate occurrences of terms are stacked and their associated counts increased.
+	pad               :: Bool           - enter generic values for vocab/user keys which appear in documents but not in the vocab/user dicts.
+	remove_empty_docs :: Bool           - documents with no terms are removed from the corpus.
+	remove_redundant  :: Bool           - remove vocab/user keys which map to redundant values and reassign document term/reader keys appropriately.
+	remove_terms      :: Vector{String} - vocab keys for the specified terms are removed from all documents.
+	stop              :: Bool           - remove stop words from the corpus.
+	trim              :: Bool           - those keys which appear in the corpus but not in any documents are removed.
 """
 function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, remove_terms::Vector{String}=String[], stop::Bool=false, trim::Bool=false)
 	check_docs(corp)
@@ -715,10 +719,9 @@ function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Int
 	remove_redundant			&& remove_redundant!(corp)
 	condense 					&& condense_corp!(corp)
 	abridge > 0 				&& abridge_corp!(corp, abridge)
-	pad 						&& pad_corp!(corp, vocab=vocab, users=users)
 	length(remove_terms) > 0	&& remove_terms!(corp, terms=remove_terms)
 	stop 						&& stop_corp!(corp)
-	trim 						&& trim_corp!(corp, vocab=vocab, users=users)
+	trim 					    && trim_corp!(corp, vocab=vocab, users=users)
 	alphabetize 				&& alphabetize_corp!(corp, vocab=vocab, users=users)
 	remove_empty_docs 			&& remove_empty_docs!(corp)
 

@@ -85,7 +85,7 @@ function Elogqz(model::CTM, d::Int)
 	return x
 end
 
-## Update the evidence lower bound.
+## Update evidence lower bound.
 function update_elbo!(model::CTM)
 	model.elbo = 0
 	for d in 1:model.M

@@ -700,210 +700,101 @@ Note that it's expected that your computer will lag when training on the GPU, si
 ## Types
 
 ```julia
+"""
 mutable struct Document
-	"Document mutable struct"
-
-	"terms:   A vector{Int} containing keys for the Corpus vocab Dict."
-	"counts:  A Vector{Int} denoting the counts of each term in the Document."
-	"readers: A Vector{Int} denoting the keys for the Corpus users Dict."
-	"ratings: A Vector{Int} denoting the ratings for each reader in the Document."
-	"title:   The title of the document (String)."
-
-	terms::Vector{Int}
-	counts::Vector{Int}
-	readers::Vector{Int}
-	ratings::Vector{Int}
-	title::String
 
 mutable struct Corpus
-	"Corpus mutable struct."
-
-	"docs:  A Vector{Document} containing the documents which belong to the Corpus."
-	"vocab: A Dict{Int, String} containing a mapping term Int (key) => term String (value)."
-	"users: A Dict{Int, String} containing a mapping user Int (key) => user String (value)."
-
-	docs::Vector{Document}
-	vocab::Dict{Int, String}
-	users::Dict{Int, String}
 
 abstract type TopicModel end
 
 mutable struct LDA <: TopicModel
-	"LDA mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 
 mutable struct fLDA <: TopicModel
-	"fLDA mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 
 mutable struct CTM <: TopicModel
-	"CTM mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 
 mutable struct fCTM <: TopicModel
-	"fCTM mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 
 mutable struct CTPF <: TopicModel
-	"CTPF mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 
 mutable struct gpuLDA <: TopicModel
-	"gpuLDA mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 
 mutable struct gpuCTM <: TopicModel
-	"gpuCTM mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 
 mutable struct gpuCTPF <: TopicModel
-	"gpuCTPF mutable struct."
-
-	corpus::Corpus
-	K::Int
-	...
 ```
 
 ## Document/Corpus Functions
 ```julia
-function check_doc(doc::Document)
-	"Check Document parameters."
+function check_doc
 
-function check_corp(corp::Corpus)
-	"Check Corpus parameters."
+function check_corp
 
-function readcorp(;docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
-	"Load a Corpus object from text file(s)."
+function readcorp
 
-	## readcorp(:nsf)   	- National Science Foundation Corpus.
-	## readcorp(:citeu)	- CiteULike Corpus.
+function writecorp
 
-function writecorp(corp::Corpus; docfile::String="", vocabfile::String="", userfile::String="", titlefile::String="", delim::Char=',', counts::Bool=false, readers::Bool=false, ratings::Bool=false)	
-	"Write a corpus."
+function abridge_corp!
 
-function abridge_corp!(corp::Corpus, n::Integer=0)
-	"All terms which appear less than n times in the corpus are removed from all documents."
+function alphabetize_corp!
 
-function alphabetize_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Alphabetize vocab and/or user dictionaries."
+function remove_terms!
 
-function remove_terms!(corp::Corpus; terms::Vector{String}=[])
-	"Vocab keys for specified terms are removed from all documents."
+function compact_corp!
 
-function compact_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Relabel vocab and/or user keys so that they form a unit range."
+function condense_corp!
 
-function condense_corp!(corp::Corpus)
-	"Ignore term order in documents."
-	"Multiple seperate occurrences of terms are stacked and their associated counts increased."
+function pad_corp!
 
-function pad_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Enter generic values for vocab and/or user keys which appear in documents but not in the vocab/user dictionaries."
+function remove_empty_docs!
 
-function remove_empty_docs!(corp::Corpus)
-	"Documents with no terms are removed from the corpus."
+function remove_redundant!
 
-function remove_redundant!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Remove vocab and/or user keys which map to redundant values."
-	"Reassign Document term and/or reader keys."
+function stop_corp!
 
-function stop_corp!(corp::Corpus)
-	"Filter stop words in the associated corpus."
+function trim_corp!
 
-function trim_corp!(corp::Corpus; vocab::Bool=true, users::Bool=true)
-	"Those keys which appear in the corpus vocab and/or user dictionaries but not in any of the documents are removed from the corpus."
+function trim_docs!
 
-function trim_docs!(corp::Corpus; terms::Bool=true, readers::Bool=true)
-	"Those vocab and/or user keys which appear in documents but not in the corpus dictionaries are removed from the documents."
+function fixcorp!
 
-function fixcorp!(corp::Corpus; vocab::Bool=true, users::Bool=true, abridge::Integer=0, alphabetize::Bool=false, condense::Bool=false, pad::Bool=false, remove_empty_docs::Bool=false, remove_redundant::Bool=false, remove_terms::Vector{String}=String[], stop::Bool=false, trim::Bool=false)
-	"Generic function to ensure that a Corpus object can be loaded into a TopicModel object."
-	"Either pad_corp! or trim_docs!."
-	"compact_corp!."
-	"Contains other optional keyword arguments."
+function showdocs
 
-function showdocs(corp::Corpus, docs / doc_indices)
-	"Display document(s) in readable format."
+function showtitles
 
-function showtitles(corp::Corpus, docs / doc_indices)
-	"Display document title(s) in readable format."
+function getvocab
 
-function getvocab(corp::Corpus)
-
-function getusers(corp::Corpus)
+function getusers
 ```
 
 ## Model Functions
 
 ```julia
-function showdocs(model::TopicModel, docs / doc_indices)
-	"Display document(s) in readable format."
+function showdocs
 
-function showtitles(model::TopicModel, docs / doc_indices)
-	"Display document title(s) in readable format."
+function showtitles
 
-function check_model(model::TopicModel)
-	"Check model parameters."
+function check_model
 
-function train!(model::TopicModel; iter::Integer=150, tol::Real=1.0, niter::Integer=1000, ntol::Real=1/model.K^2, viter::Integer=10, vtol::Real=1/model.K^2, checkelbo::Union{Integer, Inf}=1, printelbo::Bool=true)
-	"Train TopicModel."
-
-	## 'iter'	- maximum number of iterations through the corpus.
-	## 'tol'	- absolute tolerance for ∆elbo as a stopping criterion.
-	## 'niter'	- maximum number of iterations for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-	## 'ntol'	- tolerance for change in function value as a stopping criterion for Newton's and interior-point Newton's methods. (not included for CTPF and gpuCTPF models.)
-	## 'viter'	- maximum number of iterations for optimizing variational parameters (at the document level).
-	## 'vtol'	- tolerance for change in variational parameter values as stopping criterion.
-	## 'checkelbo'	- number of iterations between ∆elbo checks (for both evaluation and convergence of the evidence lower-bound).
-	## 'printelbo'	- if true, print ∆elbo to REPL.
+function train!
 
 @gpu train!
-	"Train model on GPU."
 
-function gendoc(model::TopicModel, laplace_smooth::Real=0.0)
-	"Generate a generic document from model parameters by running the associated graphical model as a generative process."
+function gendoc
 
-function gencorp(model::TopicModel, M::Integer, laplace_smooth::Real=0.0)
-	"Generate a generic corpus of size M from model parameters."
+function gencorp
 
-function showtopics(model::TopicModel, V::Integer=15; topics::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}=1:model.K, cols::Integer=4)
-	"Display the top V words for each topic in topics."
+function showtopics
 
-function showlibs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}})
-	"Show the document(s) in a user's library."
+function showlibs
 
-function showdrecs(model::Union{CTPF, gpuCTPF}, docs::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, U::Integer=16; cols=4)
-	"Show the top U user recommendations for a document(s)."
+function showdrecs
 
-function showurecs(model::Union{CTPF, gpuCTPF}, users::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}}, M::Integer=10; cols=1)
-	"Show the top M document recommendations for a user(s)."
+function showurecs
 
-function predict(corp::Corpus, train_model::Union{LDA, gpuLDA, fLDA, CTM, gpuCTM, fCTM}; iter::Integer=10, tol::Real=1/train_model.K^2, niter::Integer=1000, ntol::Real=1/train_model.K^2)
-	"Predict topic distributions for corpus of documents based on trained LDA or CTM model."
+function predict
 
-function topicdist(model::TopicModel, doc_indices::Union{Integer, Vector{<:Integer}, UnitRange{<:Integer}})
-	"Get TopicModel topic distributions for document(s) as a probability vector."
+function topicdist
 ```
 
 ## Bibliography
