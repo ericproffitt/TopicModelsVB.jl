@@ -710,15 +710,15 @@ mutable struct LDA <: TopicModel
 
 mutable struct fLDA <: TopicModel
 
+mutable struct gpuLDA <: TopicModel
+
 mutable struct CTM <: TopicModel
 
 mutable struct fCTM <: TopicModel
 
-mutable struct CTPF <: TopicModel
-
-mutable struct gpuLDA <: TopicModel
-
 mutable struct gpuCTM <: TopicModel
+
+mutable struct CTPF <: TopicModel
 
 mutable struct gpuCTPF <: TopicModel
 ```
