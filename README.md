@@ -700,7 +700,6 @@ Note that it's expected that your computer will lag when training on the GPU, si
 ## Types
 
 ```julia
-"""
 mutable struct Document
 
 mutable struct Corpus
