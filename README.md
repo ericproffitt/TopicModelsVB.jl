@@ -723,7 +723,7 @@ mutable struct CTPF <: TopicModel
 mutable struct gpuCTPF <: TopicModel
 ```
 
-## Document/Corpus Functions
+## Corpus Functions
 ```julia
 function check_doc
 
