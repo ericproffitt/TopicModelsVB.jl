@@ -704,7 +704,7 @@ mutable struct Document
 
 mutable struct Corpus
 
-abstract type TopicModel end
+abstract type TopicModel
 
 mutable struct LDA <: TopicModel
 
