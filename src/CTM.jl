@@ -1,7 +1,7 @@
 """
     CTM <: TopicModel
 
-correlated topic model.
+Correlated topic model.
 """
 mutable struct CTM <: TopicModel
 	K::Int
