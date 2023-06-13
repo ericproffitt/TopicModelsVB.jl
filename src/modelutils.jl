@@ -981,3 +981,135 @@ function topicdist(model::TopicModel, doc_indices::Vector{<:Integer})
 end
 
 topicdist(model::TopicModel, doc_range::UnitRange{<:Integer}) = topicdist(model, collect(doc_range))
+
+function findcoherence(model::TopicModel, num_topic_words::Integer=20, buffer=Threads.nthreads())
+	"""
+    Calculate the coherence of topic words based on the model's corpus.
+    This algorithm is based on a modified version of the UMass Coherence score.
+    """
+
+    (num_topic_words > 0) || throw(ArgumentError("num_topic_words must be a positive integer."))
+
+    num_topic_words = min(num_topic_words, model.V)
+
+	## Get top topic words
+	topic_words = Matrix{Int}(undef, num_topic_words, model.K)
+	for i in 1:model.K
+        topic_words[:,i] .= model.topics[i][1:num_topic_words]
+    end
+
+	## Create Pair Generator Channel
+	topic_word_pairs =  one2prev_generator(topic_words, model.corp.vocab, buffer)
+
+	## Collect confirmation scores in a results channel
+	coherence_values = Channel{Float64}(buffer) do ch
+        Threads.foreach(topic_word_pairs) do pair
+            confirmation = calculate_confirmation(pair, model.corp)
+            put!(ch, confirmation)
+        end
+    end
+    
+	## Accumulate results channel
+    sum_coherence = 0.0
+    coherence_val_count = 0
+	num_pairs = 0
+    for r in coherence_values
+		num_pairs += 1
+		if isnan(r)
+			continue
+		else
+			sum_coherence += r
+			coherence_val_count += 1
+		end
+    end
+
+	(num_pairs > 0) || throw(error("None of the topic words appear in the vocabulary"))
+	(coherence_val_count > 0) || throw(error("None of the topic words appear in the coprus"))
+
+    coherence = sum_coherence / coherence_val_count
+
+    return coherence
+end
+
+function one2prev_generator(topic_words::Matrix{Int}, vocab::Dict{Int, String}, buffer=Threads.nthreads())
+	"Create a channel the returns one topic word pair at a time."
+
+    Channel{Tuple{Int, Int}}(buffer) do ch
+		for i in CartesianIndices(topic_words)
+			row, col = i[1], i[2]
+			current_tok = topic_words[i]
+
+			## Skip this topic word if it is not found in the vocabulary
+			current_gram = if current_tok in keys(vocab)
+				vocab[current_tok]
+			else
+				continue
+			end
+
+			for j in 1:row
+				previous_tok = topic_words[j,col]
+				gram_overlap::Bool = false
+				
+				## Skip this topic word pairing if previous is not found in the vocabulary
+				previous_gram = if previous_tok in keys(vocab)
+					vocab[previous_tok]
+				else
+					continue
+				end
+
+				## If one token is a n-gram, split them and check if either token
+				## Is completely contained in the other token
+				if occursin(" ", current_gram*previous_gram)
+					cur_gram_split = split(current_gram, " ")
+					prev_gram_split = split(previous_gram, " ")
+					gram_overlap = 
+					sum([1 for w in cur_gram_split if w in prev_gram_split]) == length(cur_gram_split) ||
+					sum([1 for w in prev_gram_split if w in cur_gram_split]) == length(previous_gram)
+				end
+
+				if !(gram_overlap)
+					put!(ch, (current_tok, previous_tok))
+				end
+			end
+        end
+    end
+end
+
+function calculate_confirmation(word_pair::Tuple{Int, Int}, corp::Corpus)
+	"Find the relationship between this word pair across all documents."
+
+    ## Count how many documents contain one word, the other, or both
+    num_w_current = 0
+    num_wo_current = 0
+    num_w_prev_not_current = 0
+    num_w_pair = 0
+    for doc in corp
+        terms = doc.terms
+        if word_pair[1] in terms
+            num_w_current += 1
+            if word_pair[2] in terms
+                num_w_pair += 1
+            end
+        else 
+            num_wo_current += 1
+            if word_pair[2] in terms
+                num_w_prev_not_current += 1
+            end
+        end
+    end
+    
+	## If either word is completely missing from the corpus, then we skip this confirmation
+	(num_w_current == 0) || (num_w_pair + num_w_prev_not_current == 0) || return NaN
+
+	## If current word is in all documents, then there is no confirmation between the pair
+	(num_wo_current == 0) || return 0
+
+    ## Calculate intermediate probabilities
+    p_prev_given_c = (num_w_pair / num_w_current)
+    p_prev_given_not_c = (num_w_prev_not_current / num_wo_current)
+    
+    ## Calculate confirmation measure
+    confirmation = (p_prev_given_c - p_prev_given_not_c) / ((p_prev_given_c + p_prev_given_not_c))
+
+    return confirmation
+end
