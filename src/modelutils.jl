@@ -873,7 +873,7 @@ function predict(corp::Corpus, train_model::fLDA; iter::Integer=10, tol::Real=1/
 			update_tau!(model, d)
 			update_gamma!(model, d)
 			update_Elogtheta!(model, d)
-			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < vtol
+			if norm(model.Elogtheta[d] - model.Elogtheta_old[d]) < tol
 				break
 			end
 		end
@@ -934,7 +934,7 @@ function predict(corp::Corpus, train_model::fCTM; iter::Integer=10, tol::Real=1/
 			update_logzeta!(model, d)
 			update_lambda!(model, d, niter, ntol)
 			update_vsq!(model, d, niter, ntol)
-			if norm(model.lambda[d] - model.lambda_old[d]) < vtol
+			if norm(model.lambda[d] - model.lambda_old[d]) < tol
 				break
 			end
 		end

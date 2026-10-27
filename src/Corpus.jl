@@ -77,9 +77,7 @@ mutable struct Corpus
 	end
 end
 
-Corpus(docs::Vector{Document}) = Corpus(docs=docs)
 Corpus(docs::Vector{Document}; vocab=[], users=[]) = Corpus(docs=docs, vocab=vocab, users=users)
-Corpus(doc::Document) = Corpus(docs=[doc])
 Corpus(doc::Document; vocab=[], users=[]) = Corpus(docs=[doc], vocab=vocab, users=users)
 
 struct CorpusError <: Exception
